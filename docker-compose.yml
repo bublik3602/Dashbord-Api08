@@ -1,0 +1,34 @@
+name: factory_dashboard
+
+services:
+  web:
+    build: .
+    container_name: factory_dashboard_web
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/html
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: dashboard_zavod
+      DB_USER: dash_user
+      DB_PASS: dash_pass123
+    depends_on:
+      - db
+
+  db:
+    image: mariadb:10.11
+    container_name: factory_dashboard_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_DATABASE: dashboard_zavod
+      MYSQL_USER: dash_user
+      MYSQL_PASSWORD: dash_pass123
+    volumes:
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed_data.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    ports:
+      - "3307:3306"

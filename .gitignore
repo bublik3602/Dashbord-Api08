@@ -1,0 +1,29 @@
+# Configuration files containing credentials
+config.php
+.env
+.env.local
+
+# Logs and cache
+*.log
+logs/
+cache/
+tmp/
+
+# Composer and vendor (if used)
+/vendor/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE and editor files
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Docker data volumes (if mounted locally)
+docker-data/
+mariadb_data/
+mysql_data/
