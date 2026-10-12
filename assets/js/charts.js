@@ -25,7 +25,7 @@ window.FactoryCharts = {
                     speed: 600
                 }
             },
-            labels: initialData.labels || ['Масло', 'Шрот', 'Лузга', 'Потери'],
+            labels: initialData.labels || ['Олія', 'Шрот', 'Лузга', 'Втрати'],
             colors: ['#f59e0b', '#3b82f6', '#10b981', '#ef4444'],
             stroke: {
                 show: true,
@@ -36,7 +36,7 @@ window.FactoryCharts = {
                 enabled: false
             },
             legend: {
-                show: false // Отображаем кастомную детальную легенду с тоннами и процентами
+                show: false // Відображаємо кастомну легінду
             },
             plotOptions: {
                 pie: {
@@ -61,7 +61,7 @@ window.FactoryCharts = {
                             },
                             total: {
                                 show: true,
-                                label: 'Продукция',
+                                label: 'Продукція',
                                 fontSize: '12px',
                                 fontWeight: 600,
                                 color: '#94a3b8',
@@ -88,7 +88,7 @@ window.FactoryCharts = {
     },
 
     /**
-     * Инициализация графика энергопотребления и расхода воды
+     * Ініціалізація графіка енергоспоживання та витрати води
      */
     initEnergyChart: function (timelineData) {
         const el = document.querySelector("#energy-timeline-chart");
@@ -97,12 +97,12 @@ window.FactoryCharts = {
         const options = {
             series: [
                 {
-                    name: 'Электроэнергия (кВт)',
+                    name: 'Електроенергія (кВт)',
                     type: 'area',
                     data: timelineData.power || [3420, 3510, 3580, 3620, 3590, 3480, 3410, 3650, 3820, 3890, 3850, 3940]
                 },
                 {
-                    name: 'Расход воды (м³/ч)',
+                    name: 'Витрата води (м³/год)',
                     type: 'line',
                     data: timelineData.water || [48, 51, 52, 53, 52, 49, 47, 54, 57, 58, 56, 58]
                 }
@@ -169,7 +169,7 @@ window.FactoryCharts = {
                 {
                     opposite: true,
                     title: {
-                        text: 'м³/ч',
+                        text: 'м³/год',
                         style: { color: '#10b981', fontSize: '11px', fontWeight: 600 }
                     },
                     labels: {
@@ -201,7 +201,7 @@ window.FactoryCharts = {
     },
 
     /**
-     * Обновление данных графиков
+     * Оновлення даних графіків
      */
     updateCharts: function (data) {
         if (this.donutChart && data.material_balance && data.material_balance.yield_chart) {
@@ -216,11 +216,11 @@ window.FactoryCharts = {
             });
             this.energyChart.updateSeries([
                 {
-                    name: 'Электроэнергия (кВт)',
+                    name: 'Електроенергія (кВт)',
                     data: data.energy.timeline.power
                 },
                 {
-                    name: 'Расход воды (м³/ч)',
+                    name: 'Витрата води (м³/год)',
                     data: data.energy.timeline.water
                 }
             ]);

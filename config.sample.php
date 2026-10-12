@@ -10,8 +10,8 @@ return [
     // Режим работы: 'production' или 'demo'
     // В режиме 'demo' при отсутствии связи с Zabbix/CRM используются данные из локальной БД/генератора
     'app_mode' => 'demo',
-    'app_name' => 'Завод Маслоэкстракционный — Единый Мониторинг',
-    'timezone' => 'Europe/Moscow',
+    'app_name' => 'Олійноекстракційний Завод — Єдиний Моніторинг',
+    'timezone' => 'Europe/Kyiv',
 
     // Локальная база данных дашборда (Hestia CP / MariaDB / MySQL)
     'db' => [

@@ -90,10 +90,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $sampleConfigFile = __DIR__ . '/config.sample.php';
             $sampleContent = file_exists($sampleConfigFile) ? file_get_contents($sampleConfigFile) : '';
 
-            $configCode = "<?php\n/**\n * Конфигурация дашборда завода (Сгенерировано установщиком)\n * Дата: " . date('Y-m-d H:i:s') . "\n */\n\nreturn [\n"
+            $configCode = "<?php\n/**\n * Конфігурація дашборда заводу (Згенеровано інсталятором)\n * Дата: " . date('Y-m-d H:i:s') . "\n */\n\nreturn [\n"
                 . "    'app_mode' => 'production',\n"
-                . "    'app_name' => 'Завод Маслоэкстракционный — Единый Мониторинг',\n"
-                . "    'timezone' => 'Europe/Moscow',\n\n"
+                . "    'app_name' => 'Олійноекстракційний Завод — Єдиний Моніторинг',\n"
+                . "    'timezone' => 'Europe/Kyiv',\n\n"
                 . "    'db' => [\n"
                 . "        'host'     => " . var_export($dbHost, true) . ",\n"
                 . "        'port'     => " . $dbPort . ",\n"

@@ -52,21 +52,46 @@ function format_water(float $value, int $decimals = 1): string {
 }
 
 /**
- * Форматирование минут в строку "X ч Y мин"
+ * Межі поточної виробничої доби (з 08:00 до 08:00 наступного дня)
+ */
+function get_operational_day_bounds(?DateTimeInterface $now = null): array {
+    $tz = new DateTimeZone('Europe/Kyiv');
+    $dt = $now ? (new DateTime($now->format('Y-m-d H:i:s'), $tz)) : new DateTime('now', $tz);
+    
+    $hour = (int)$dt->format('G');
+    if ($hour >= 8) {
+        $start = (clone $dt)->setTime(8, 0, 0);
+        $end   = (clone $start)->modify('+1 day');
+    } else {
+        $end   = (clone $dt)->setTime(8, 0, 0);
+        $start = (clone $end)->modify('-1 day');
+    }
+
+    return [
+        'start'      => $start->format('Y-m-d H:i:s'),
+        'end'        => $end->format('Y-m-d H:i:s'),
+        'start_fmt'  => $start->format('d.m H:i'),
+        'end_fmt'    => $end->format('d.m H:i'),
+        'label'      => $start->format('d.m.Y 08:00') . ' — ' . $end->format('d.m.Y 08:00'),
+    ];
+}
+
+/**
+ * Форматування хвилин у рядок "X год Y хв"
  */
 function format_duration_minutes(int $minutes): string {
     if ($minutes <= 0) {
-        return '0 мин';
+        return '0 хв';
     }
     $hours = intdiv($minutes, 60);
     $mins = $minutes % 60;
     
     if ($hours > 0 && $mins > 0) {
-        return "{$hours} ч {$mins} мин";
+        return "{$hours} год {$mins} хв";
     } elseif ($hours > 0) {
-        return "{$hours} ч";
+        return "{$hours} год";
     } else {
-        return "{$mins} мин";
+        return "{$mins} хв";
     }
 }
 
@@ -125,16 +150,16 @@ function format_datetime(string $dtString): string {
 }
 
 /**
- * Классификация груза по 4 целевым категориям завода: Семена, Масло, Шрот, Лузга
+ * Класифікація вантажу за 4 цільовими категоріями заводу: Насіння, Олія, Шрот, Лузга
  */
 function categorize_cargo(string $rawCargo): string {
     $c = mb_strtolower(trim($rawCargo));
     if (preg_match('/масл|олі|oil/u', $c)) {
-        return 'Масло';
+        return 'Олія';
     } elseif (preg_match('/шрот|жмых|макух|meal/u', $c)) {
         return 'Шрот';
     } elseif (preg_match('/лузг|лушп|пеллет|топлив|husk/u', $c)) {
         return 'Лузга';
     }
-    return 'Семена';
+    return 'Насіння';
 }

@@ -4,7 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     let currentPeriod = 'day';
-    let currentCargo = 'Все';
+    let currentCargo = 'Всі';
     let refreshSecondsLeft = 30;
     let refreshTimerInterval = null;
     let isFetching = false;
@@ -15,13 +15,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const periodButtons = document.querySelectorAll('.period-btn');
     const cargoButtons = document.querySelectorAll('.cargo-tab-btn');
 
-    // 1. Инициализация графиков при первой загрузке страницы
+    // 1. Ініціалізація графіків при першому завантаженні сторінки
     if (window.INITIAL_DASHBOARD_DATA) {
         FactoryCharts.initDonutChart(window.INITIAL_DASHBOARD_DATA.material_balance.yield_chart);
         FactoryCharts.initEnergyChart(window.INITIAL_DASHBOARD_DATA.energy.timeline);
     }
 
-    // 2. Обработчики клика по фильтру периода
+    // 2. Обробники кліку на фільтр періоду
     periodButtons.forEach(btn => {
         btn.addEventListener('click', function () {
             const period = this.getAttribute('data-period');
@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // 2.1 Обработчики переключения табов груза (Все, Семена, Масло, Шрот, Лузга)
+    // 2.1 Обробники перемикання вкладок вантажу (Всі, Насіння, Олія, Шрот, Лузга)
     cargoButtons.forEach(btn => {
         btn.addEventListener('click', function () {
             const cargo = this.getAttribute('data-cargo');
@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // 3. Ручное обновление данных
+    // 3. Ручне оновлення даних
     if (btnRefresh) {
         btnRefresh.addEventListener('click', function () {
             if (isFetching) return;
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 4. Таймер автообновления
+    // 4. Таймер автооновлення
     function startRefreshTimer() {
         if (refreshTimerInterval) clearInterval(refreshTimerInterval);
         refreshSecondsLeft = 30;
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // 5. Запрос к REST API
+    // 5. Запит до REST API
     async function fetchDashboardData(showFeedback = false) {
         if (isFetching) return;
         isFetching = true;
@@ -99,14 +99,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (json.status === 'success' && json.data) {
                 updateDashboardUI(json.data);
                 if (showFeedback) {
-                    showToast('Данные дашборда обновлены');
+                    showToast('Дані дашборда оновлено');
                 }
             } else {
-                throw new Error(json.message || 'Ошибка ответа сервера');
+                throw new Error(json.message || 'Помилка відповіді сервера');
             }
         } catch (err) {
-            console.error('Ошибка обновления данных:', err);
-            showToast('Сбой обновления данных: ' + err.message, true);
+            console.error('Помилка оновлення даних:', err);
+            showToast('Збій оновлення даних: ' + err.message, true);
         } finally {
             isFetching = false;
             refreshSecondsLeft = 30;
@@ -118,14 +118,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // 6. Обновление значений в интерфейсе
+    // 6. Оновлення значень в інтерфейсі
     function updateDashboardUI(data) {
         const mb = data.material_balance;
         const en = data.energy;
         const log = data.logistics;
         const eq = data.equipment;
 
-        // --- Блок А: Зона приемки ---
+        // --- Блок А: Зона приймання ---
         const rz = mb.receiving_zone;
         setElementText('#val-seed-in-plant', formatNumber(rz.seed_in_plant) + ' т');
         setElementText('#val-seed-plan', 'План: ' + formatNumber(rz.seed_plan) + ' т (' + rz.plan_fulfillment_pct + '%)');
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
             condLossBadge.className = 'kpi-badge ' + rz.status_class;
         }
 
-        // --- Блок А: Зона производства ---
+        // --- Блок А: Зона виробництва ---
         const pz = mb.production_zone;
         setElementText('#val-seed-in-prod', formatNumber(pz.seed_processed) + ' т');
         setElementText('#val-prod-loss', formatNumber(pz.production_loss) + ' т');
@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function () {
             prodLossBadge.className = 'kpi-badge ' + pz.status_class;
         }
 
-        // Легенда выхода продукции
+        // Легенда виходу продукції
         setElementText('#legend-oil-val', formatNumber(pz.oil_out) + ' т');
         setElementText('#legend-oil-pct', mb.yield_chart.percentages[0] + '%');
 
@@ -161,69 +161,82 @@ document.addEventListener('DOMContentLoaded', function () {
         setElementText('#legend-loss-val', formatNumber(pz.production_loss) + ' т');
         setElementText('#legend-loss-pct', mb.yield_chart.percentages[3] + '%');
 
-        // --- Блок Б: Логистика и воронка (разделение на Семена, Масло, Шрот, Лузга) ---
+        // --- Блок Б: Логістика та воронка (Насіння, Олія, Шрот, Лузга) ---
         cachedLogisticsData = log;
         if (log && log.categories) {
             const cats = log.categories;
-            if (cats['Семена']) {
-                setElementText('#val-stay-seed', cats['Семена'].avg_stay_text);
-                setElementText('#val-cnt-seed', 'На заводе: ' + (cats['Семена'].on_site !== undefined ? cats['Семена'].on_site : cats['Семена'].total_active));
+            const seedCat = cats['Насіння'] || cats['Семена'];
+            if (seedCat) {
+                setElementText('#val-stay-seed', seedCat.avg_stay_text);
+                setElementText('#val-cnt-seed', 'На заводі: ' + (seedCat.on_site !== undefined ? seedCat.on_site : seedCat.total_active));
             }
-            if (cats['Масло']) {
-                setElementText('#val-stay-oil', cats['Масло'].avg_stay_text);
-                setElementText('#val-cnt-oil', 'На заводе: ' + (cats['Масло'].on_site !== undefined ? cats['Масло'].on_site : cats['Масло'].total_active));
+            const oilCat = cats['Олія'] || cats['Масло'];
+            if (oilCat) {
+                setElementText('#val-stay-oil', oilCat.avg_stay_text);
+                setElementText('#val-cnt-oil', 'На заводі: ' + (oilCat.on_site !== undefined ? oilCat.on_site : oilCat.total_active));
             }
-            if (cats['Шрот']) {
-                setElementText('#val-stay-meal', cats['Шрот'].avg_stay_text);
-                setElementText('#val-cnt-meal', 'На заводе: ' + (cats['Шрот'].on_site !== undefined ? cats['Шрот'].on_site : cats['Шрот'].total_active));
+            const mealCat = cats['Шрот'];
+            if (mealCat) {
+                setElementText('#val-stay-meal', mealCat.avg_stay_text);
+                setElementText('#val-cnt-meal', 'На заводі: ' + (mealCat.on_site !== undefined ? mealCat.on_site : mealCat.total_active));
             }
-            if (cats['Лузга']) {
-                setElementText('#val-stay-husk', cats['Лузга'].avg_stay_text);
-                setElementText('#val-cnt-husk', 'На заводе: ' + (cats['Лузга'].on_site !== undefined ? cats['Лузга'].on_site : cats['Лузга'].total_active));
+            const huskCat = cats['Лузга'];
+            if (huskCat) {
+                setElementText('#val-stay-husk', huskCat.avg_stay_text);
+                setElementText('#val-cnt-husk', 'На заводі: ' + (huskCat.on_site !== undefined ? huskCat.on_site : huskCat.total_active));
             }
         }
         renderLogisticsByCargo(currentCargo);
 
-        // --- Блок В: Энергетика ---
+        // --- Блок В: Енергетика ---
         setElementText('#val-current-power', formatNumber(en.current_power_kw, 0) + ' кВт');
-        setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт*ч');
-        setElementText('#val-water-flow', formatNumber(en.current_water_m3_hour, 1) + ' м³/ч');
+        setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт*год');
+        setElementText('#val-water-flow', formatNumber(en.current_water_m3_hour, 1) + ' м³/год');
         setElementText('#val-water-total', formatNumber(en.total_water_m3, 0) + ' м³');
-        setElementText('#val-specific-kwh', en.specific_kwh_per_tonne + ' кВт*ч / т');
+        setElementText('#val-specific-kwh', en.specific_kwh_per_tonne + ' кВт*год / т');
         setElementText('#val-steam-pressure', en.steam_pressure_bar + ' бар');
 
-        // --- Блок В: Статусы оборудования ---
+        // --- Блок В: Статуси обладнання ---
         if (eq && eq.nodes) {
-            setElementText('#equip-health-summary', `${eq.running_count}/${eq.total_count} узлов в работе`);
+            setElementText('#equip-health-summary', `${eq.running_count}/${eq.total_count} вузлів у роботі`);
         }
 
-        // Обновление графиков
+        // Оновлення графіків
         FactoryCharts.updateCharts(data);
 
-        // Предупреждение о потерях
+        // Попередження про втрати
         if (rz.status_class === 'status-danger') {
-            showToast(`Внимание! Потери при подработке превысили норму: ${rz.conditioning_loss_pct}%`, true);
+            showToast(`Увага! Втрати підробки перевищили норму: ${rz.conditioning_loss_pct}%`, true);
         } else if (pz.status_class === 'status-danger') {
-            showToast(`Внимание! Производственные потери превысили норму: ${pz.production_loss_pct}%`, true);
+            showToast(`Увага! Виробничі втрати перевищили норму: ${pz.production_loss_pct}%`, true);
         }
     }
 
-    // Отрисовка воронки и показателей для выбранной культуры (Все, Семена, Масло, Шрот, Лузга)
+    // Відмальовка воронки та показників для вибраної культури (Всі, Насіння, Олія, Шрот, Лузга)
     function renderLogisticsByCargo(cargoKey) {
         if (!cachedLogisticsData || !cachedLogisticsData.categories) return;
-        const catData = cachedLogisticsData.categories[cargoKey] || cachedLogisticsData.categories['Все'] || cachedLogisticsData;
+        const cats = cachedLogisticsData.categories;
+        const catData = cats[cargoKey] || 
+                        (cargoKey === 'Всі' || cargoKey === 'Все' ? (cats['Всі'] || cats['Все']) : null) || 
+                        cats['Всі'] || 
+                        cats['Все'] || 
+                        cachedLogisticsData;
 
+        // 1. У черзі
         setElementText('#funnel-queued-count', catData.queued !== undefined ? catData.queued : 0);
-        setElementText('#funnel-entered-count', catData.entered !== undefined ? catData.entered : 0);
-        setElementText('#funnel-weighing-count', catData.weighing !== undefined ? catData.weighing : 0);
+        // 2. На заводі
+        const onSiteCount = catData.on_site !== undefined ? catData.on_site : (catData.entered !== undefined ? catData.entered : 0);
+        setElementText('#funnel-entered-count', onSiteCount);
+        // 3. Виїхало за добу 08:00 - 08:00
         setElementText('#funnel-exited-count', catData.exited !== undefined ? catData.exited : 0);
+
         setElementText('#active-cargo-label', cargoKey);
         setElementText('#active-cargo-count-label', cargoKey);
         setElementText('#val-avg-stay-time', catData.avg_stay_text || formatMinutes(catData.avg_stay_minutes || 0));
-        setElementText('#val-on-territory', 'На территории: ' + (catData.on_site !== undefined ? catData.on_site : ((catData.entered || 0) + (catData.weighing || 0))));
+        setElementText('#val-on-territory', 'На території: ' + onSiteCount);
     }
 
-    // Вспомогательные функции
+    // Допоміжні функції
     function setElementText(selector, text) {
         const el = document.querySelector(selector);
         if (el) el.textContent = text;
@@ -231,19 +244,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function formatNumber(num, decimals = 1) {
         if (num === undefined || num === null) return '0';
-        return parseFloat(num).toLocaleString('ru-RU', {
+        return parseFloat(num).toLocaleString('uk-UA', {
             minimumFractionDigits: decimals,
             maximumFractionDigits: decimals
         });
     }
 
     function formatMinutes(mins) {
-        if (!mins) return '0 мин';
+        if (!mins || mins <= 0) return '0 хв';
         const h = Math.floor(mins / 60);
         const m = mins % 60;
-        if (h > 0 && m > 0) return `${h} ч ${m} мин`;
-        if (h > 0) return `${h} ч`;
-        return `${m} мин`;
+        if (h > 0 && m > 0) return `${h} год ${m} хв`;
+        if (h > 0) return `${h} год`;
+        return `${m} хв`;
     }
 
     function showToast(message, isError = false) {
