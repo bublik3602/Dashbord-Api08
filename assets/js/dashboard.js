@@ -168,22 +168,26 @@ document.addEventListener('DOMContentLoaded', function () {
             const seedCat = cats['Насіння'] || cats['Семена'];
             if (seedCat) {
                 setElementText('#val-stay-seed', seedCat.avg_stay_text);
-                setElementText('#val-cnt-seed', 'На заводі: ' + (seedCat.on_site !== undefined ? seedCat.on_site : seedCat.total_active));
+                const cnt = seedCat.on_site !== undefined ? seedCat.on_site : (seedCat.total_active || 0);
+                setElementText('#val-cnt-seed', `Зараз на заводі: ${cnt} авто`);
             }
             const oilCat = cats['Олія'] || cats['Масло'];
             if (oilCat) {
                 setElementText('#val-stay-oil', oilCat.avg_stay_text);
-                setElementText('#val-cnt-oil', 'На заводі: ' + (oilCat.on_site !== undefined ? oilCat.on_site : oilCat.total_active));
+                const cnt = oilCat.on_site !== undefined ? oilCat.on_site : (oilCat.total_active || 0);
+                setElementText('#val-cnt-oil', `Зараз на заводі: ${cnt} авто`);
             }
             const mealCat = cats['Шрот'];
             if (mealCat) {
                 setElementText('#val-stay-meal', mealCat.avg_stay_text);
-                setElementText('#val-cnt-meal', 'На заводі: ' + (mealCat.on_site !== undefined ? mealCat.on_site : mealCat.total_active));
+                const cnt = mealCat.on_site !== undefined ? mealCat.on_site : (mealCat.total_active || 0);
+                setElementText('#val-cnt-meal', `Зараз на заводі: ${cnt} авто`);
             }
             const huskCat = cats['Лузга'];
             if (huskCat) {
                 setElementText('#val-stay-husk', huskCat.avg_stay_text);
-                setElementText('#val-cnt-husk', 'На заводі: ' + (huskCat.on_site !== undefined ? huskCat.on_site : huskCat.total_active));
+                const cnt = huskCat.on_site !== undefined ? huskCat.on_site : (huskCat.total_active || 0);
+                setElementText('#val-cnt-husk', `Зараз на заводі: ${cnt} авто`);
             }
         }
         renderLogisticsByCargo(currentCargo);
