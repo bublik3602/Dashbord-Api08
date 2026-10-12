@@ -96,13 +96,13 @@ INSERT INTO `transport_queue` (`truck_number`, `driver_name`, `cargo_type`, `sta
 ('В119ТР 68',  'Новиков Г. А.',   'Семечка подсолнечника', 'weighing', DATE_SUB(NOW(), INTERVAL 85 MINUTE), DATE_SUB(NOW(), INTERVAL 48 MINUTE), DATE_SUB(NOW(), INTERVAL 3 MINUTE), NULL, 31.200);
 
 -- Выехало (завершенные рейсы за сегодня с фиксацией времени нахождения)
-INSERT INTO `transport_queue` (`truck_number`, `driver_name`, `cargo_type`, `status`, `recorded_at`, `entry_time`, `weighing_time`, `exit_time`, `weight_netto_tonnes`) VALUES
-('А102ВК 61', 'Павлов С. В.',     'Семечка подсолнечника', 'exited', DATE_SUB(NOW(), INTERVAL 5 HOUR), DATE_SUB(NOW(), INTERVAL 4 HOUR), DATE_SUB(NOW(), INTERVAL 3 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR 30 MINUTE), 29.800),
-('Р218СХ 161', 'Козлов М. Д.',    'Семечка подсолнечника', 'exited', DATE_SUB(NOW(), INTERVAL 4 HOUR 30 MINUTE), DATE_SUB(NOW(), INTERVAL 3 HOUR 40 MINUTE), DATE_SUB(NOW(), INTERVAL 2 HOUR 40 MINUTE), DATE_SUB(NOW(), INTERVAL 2 HOUR), 32.150),
-('О432ТМ 31', 'Лебедев Д. Н.',    'Семечка подсолнечника', 'exited', DATE_SUB(NOW(), INTERVAL 4 HOUR), DATE_SUB(NOW(), INTERVAL 3 HOUR 15 MINUTE), DATE_SUB(NOW(), INTERVAL 2 HOUR 10 MINUTE), DATE_SUB(NOW(), INTERVAL 1 HOUR 45 MINUTE), 27.900),
-('Е501ХР 161', 'Семенов Б. И.',   'Масло налив',          'exited', DATE_SUB(NOW(), INTERVAL 3 HOUR 30 MINUTE), DATE_SUB(NOW(), INTERVAL 2 HOUR 45 MINUTE), DATE_SUB(NOW(), INTERVAL 1 HOUR 50 MINUTE), DATE_SUB(NOW(), INTERVAL 1 HOUR 15 MINUTE), 24.500),
-('К612АС 26', 'Егоров А. М.',     'Шрот насыпью',         'exited', DATE_SUB(NOW(), INTERVAL 3 HOUR), DATE_SUB(NOW(), INTERVAL 2 HOUR 20 MINUTE), DATE_SUB(NOW(), INTERVAL 1 HOUR 20 MINUTE), DATE_SUB(NOW(), INTERVAL 50 MINUTE), 26.300),
-('М723ММ 161', 'Волков П. Е.',    'Семечка подсолнечника', 'exited', DATE_SUB(NOW(), INTERVAL 2 HOUR 30 MINUTE), DATE_SUB(NOW(), INTERVAL 1 HOUR 50 MINUTE), DATE_SUB(NOW(), INTERVAL 55 MINUTE), DATE_SUB(NOW(), INTERVAL 20 MINUTE), 30.700);
+INSERT INTO `transport_queue` (`truck_number`, `driver_name`, `cargo_type`, `status`, `recorded_at`, `entry_time`, `weighing_time`, `exit_time`, `weight_netto_tonnes`, `stay_duration_minutes`) VALUES
+('А102ВК 61', 'Павлов С. В.',     'Семечка подсолнечника', 'exited', DATE_SUB(NOW(), INTERVAL 300 MINUTE), DATE_SUB(NOW(), INTERVAL 240 MINUTE), DATE_SUB(NOW(), INTERVAL 180 MINUTE), DATE_SUB(NOW(), INTERVAL 150 MINUTE), 29.800, 90),
+('Р218СХ 161', 'Козлов М. Д.',    'Семечка подсолнечника', 'exited', DATE_SUB(NOW(), INTERVAL 270 MINUTE), DATE_SUB(NOW(), INTERVAL 220 MINUTE), DATE_SUB(NOW(), INTERVAL 160 MINUTE), DATE_SUB(NOW(), INTERVAL 120 MINUTE), 32.150, 100),
+('О432ТМ 31', 'Лебедев Д. Н.',    'Семечка подсолнечника', 'exited', DATE_SUB(NOW(), INTERVAL 240 MINUTE), DATE_SUB(NOW(), INTERVAL 195 MINUTE), DATE_SUB(NOW(), INTERVAL 130 MINUTE), DATE_SUB(NOW(), INTERVAL 105 MINUTE), 27.900, 90),
+('Е501ХР 161', 'Семенов Б. И.',   'Масло налив',          'exited', DATE_SUB(NOW(), INTERVAL 210 MINUTE), DATE_SUB(NOW(), INTERVAL 165 MINUTE), DATE_SUB(NOW(), INTERVAL 110 MINUTE), DATE_SUB(NOW(), INTERVAL 75 MINUTE), 24.500, 90),
+('К612АС 26', 'Егоров А. М.',     'Шрот насыпью',         'exited', DATE_SUB(NOW(), INTERVAL 180 MINUTE), DATE_SUB(NOW(), INTERVAL 140 MINUTE), DATE_SUB(NOW(), INTERVAL 80 MINUTE), DATE_SUB(NOW(), INTERVAL 50 MINUTE), 26.300, 90),
+('М723ММ 161', 'Волков П. Е.',    'Семечка подсолнечника', 'exited', DATE_SUB(NOW(), INTERVAL 150 MINUTE), DATE_SUB(NOW(), INTERVAL 110 MINUTE), DATE_SUB(NOW(), INTERVAL 55 MINUTE), DATE_SUB(NOW(), INTERVAL 20 MINUTE), 30.700, 90);
 
 -- 5. Журнал синхронизации
 INSERT INTO `sync_logs` (`source`, `status`, `records_processed`, `message`) VALUES

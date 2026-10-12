@@ -81,13 +81,7 @@ CREATE TABLE IF NOT EXISTS `transport_queue` (
     `exit_time` DATETIME DEFAULT NULL COMMENT 'Время выезда с завода',
     
     `weight_netto_tonnes` DECIMAL(8, 3) DEFAULT 0.000,
-    `stay_duration_minutes` INT GENERATED ALWAYS AS (
-        CASE WHEN `exit_time` IS NOT NULL AND `entry_time` IS NOT NULL 
-             THEN TIMESTAMPDIFF(MINUTE, `entry_time`, `exit_time`)
-             WHEN `entry_time` IS NOT NULL
-             THEN TIMESTAMPDIFF(MINUTE, `entry_time`, NOW())
-             ELSE 0 END
-    ) VIRTUAL COMMENT 'Время на заводе (минуты)',
+    `stay_duration_minutes` INT DEFAULT 0 COMMENT 'Время на заводе (минуты)',
     
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX `idx_transport_status` (`status`),

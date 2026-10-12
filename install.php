@@ -48,18 +48,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $error = "Пожалуйста, укажите имя базы данных и имя пользователя.";
     } else {
         try {
-            // 1. Подключение к MySQL
-            $dsn = "mysql:host={$dbHost};port={$dbPort};charset=utf8mb4";
-            $pdo = new PDO($dsn, $dbUser, $dbPass, [
-                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                PDO::ATTR_TIMEOUT => 5
-            ]);
+            // 1. Подключение к MySQL / MariaDB
+            try {
+                // Сначала пробуем подключиться напрямую к указанной БД
+                $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset=utf8mb4";
+                $pdo = new PDO($dsn, $dbUser, $dbPass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_TIMEOUT => 5,
+                    PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
+                ]);
+            } catch (PDOException $e) {
+                // Если база еще не создана и есть права администратора — пробуем создать
+                $dsn = "mysql:host={$dbHost};port={$dbPort};charset=utf8mb4";
+                $pdo = new PDO($dsn, $dbUser, $dbPass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_TIMEOUT => 5,
+                    PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
+                ]);
+                $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+                $pdo->exec("USE `{$dbName}`");
+            }
 
-            // 2. Создание базы данных (если не существует)
-            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-            $pdo->exec("USE `{$dbName}`");
-
-            // 3. Выполнение схемы таблиц
+            // 2. Выполнение схемы таблиц
             $schemaFile = __DIR__ . '/database/schema.sql';
             if (!file_exists($schemaFile)) {
                 throw new Exception("Файл database/schema.sql не найден.");
@@ -67,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $schemaSql = file_get_contents($schemaFile);
             $pdo->exec($schemaSql);
 
-            // 4. Загрузка демонстрационных данных при выборе
+            // 3. Загрузка демонстрационных данных при выборе
             if ($installDemo) {
                 $seedFile = __DIR__ . '/database/seed_data.sql';
                 if (file_exists($seedFile)) {
@@ -368,13 +378,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             </div>
 
             <div class="form-group">
-                <label>Имя базы данных:</label>
-                <input type="text" name="db_name" class="form-control" placeholder="например: admin_dashboard" value="dashboard_zavod" required>
+                <label>Имя базы данных (с префиксом Hestia CP):</label>
+                <input type="text" name="db_name" class="form-control" placeholder="например: apgk_dash-api08" value="" required>
+                <small style="color: var(--muted); font-size: 11px;">В Hestia CP указывайте полное имя базы данных с префиксом (например, <code>apgk_dash-api08</code>)</small>
             </div>
 
             <div class="form-group">
-                <label>Пользователь базы данных:</label>
-                <input type="text" name="db_user" class="form-control" placeholder="например: admin_user" value="root" required>
+                <label>Пользователь базы данных (с префиксом Hestia CP):</label>
+                <input type="text" name="db_user" class="form-control" placeholder="например: apgk_dash-api08" value="" required>
+                <small style="color: var(--muted); font-size: 11px;">Полное имя пользователя в Hestia CP (например, <code>apgk_dash-api08</code>)</small>
             </div>
 
             <div class="form-group">
