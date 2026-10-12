@@ -936,6 +936,64 @@ body {
     text-transform: uppercase;
 }
 
+.exited-breakdown-box {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.exited-breakdown-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.exited-breakdown-title strong {
+    color: var(--text-primary);
+    font-weight: 800;
+}
+
+.exited-breakdown-pills {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+@media (max-width: 600px) {
+    .exited-breakdown-pills {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.exited-pill {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #334155;
+}
+
+.exited-pill strong {
+    font-size: 13px;
+    font-weight: 800;
+    color: #0f172a;
+}
+
+.exited-pill.pill-seed { border-left: 3px solid #eab308; }
+.exited-pill.pill-oil  { border-left: 3px solid #f59e0b; }
+.exited-pill.pill-meal { border-left: 3px solid #3b82f6; }
+.exited-pill.pill-husk { border-left: 3px solid #10b981; }
+
 .logistics-stats-row {
     display: flex;
     justify-content: space-between;

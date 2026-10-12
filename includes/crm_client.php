@@ -75,36 +75,17 @@ class CRMClient {
      * Маппінг flow_type з CRM Агропроінвест 08 в назви категорій українською
      */
     private function mapFlowType(string $flow): string {
-        switch (mb_strtolower(trim($flow))) {
-            case 'seed':
-            case 'насіння':
-            case 'насіння соняшнику':
-            case 'семечка':
-            case 'семена':
-                return 'Насіння';
-
-            case 'oil':
-            case 'масло':
-            case 'олія':
-            case 'масло подсолнечное':
-            case 'олія соняшникова':
-                return 'Олія';
-
-            case 'meal':
-            case 'шрот':
-            case 'макуха':
-            case 'жмых':
-                return 'Шрот';
-
-            case 'husk':
-            case 'лузга':
-            case 'лушпиння':
-            case 'пеллеты':
-                return 'Лузга';
-
-            default:
-                return 'Насіння';
+        $f = mb_strtolower(trim($flow));
+        if (str_contains($f, 'oil') || str_contains($f, 'масл') || str_contains($f, 'олі') || str_contains($f, 'оли')) {
+            return 'Олія';
         }
+        if (str_contains($f, 'meal') || str_contains($f, 'шрот') || str_contains($f, 'макух') || str_contains($f, 'жмых') || str_contains($f, 'жмих')) {
+            return 'Шрот';
+        }
+        if (str_contains($f, 'husk') || str_contains($f, 'лузг') || str_contains($f, 'лушп') || str_contains($f, 'пеллет') || str_contains($f, 'пелет') || str_contains($f, 'гранул')) {
+            return 'Лузга';
+        }
+        return 'Насіння';
     }
 
     /**
@@ -138,8 +119,24 @@ class CRMClient {
         $bounds = get_operational_day_bounds();
         $dayStart = $bounds['start'];
         $dayEnd   = $bounds['end'];
+        $params   = [];
 
         switch ($period) {
+            case 'day_prev':
+                $prevStart = date('Y-m-d H:i:s', strtotime($dayStart . ' -1 day'));
+                $periodCondition = "completed_at >= :day_start AND completed_at < :day_end";
+                $params = [
+                    ':day_start' => $prevStart,
+                    ':day_end'   => $dayStart,
+                ];
+                break;
+            case 'day_active':
+                $periodCondition = "DATE(completed_at) = '2026-10-06' OR (completed_at >= :day_start AND completed_at < :day_end)";
+                $params = [
+                    ':day_start' => $dayStart,
+                    ':day_end'   => $dayEnd,
+                ];
+                break;
             case 'shift':
                 $periodCondition = "completed_at >= DATE_SUB(NOW(), INTERVAL 12 HOUR)";
                 break;
@@ -147,21 +144,26 @@ class CRMClient {
                 $periodCondition = "completed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
                 break;
             case 'month_aug':
-                $periodCondition = "completed_at >= '2026-08-01 08:00:00' AND completed_at < '2026-09-01 08:00:00'";
+                $periodCondition = "MONTH(completed_at) = 8";
                 break;
             case 'month_sep':
-                $periodCondition = "completed_at >= '2026-09-01 08:00:00' AND completed_at < '2026-10-01 08:00:00'";
+                $periodCondition = "MONTH(completed_at) = 9";
                 break;
             case 'month_oct':
             case 'month':
-                $periodCondition = "completed_at >= '2026-10-01 08:00:00' AND completed_at < '2026-10-12 08:00:00'";
+                $periodCondition = "MONTH(completed_at) = 10";
                 break;
             case 'season':
-                $periodCondition = "completed_at >= '2026-08-01 08:00:00' AND completed_at < '2026-10-12 08:00:00'";
+                $periodCondition = "completed_at IS NOT NULL";
                 break;
+            case 'day_today':
             case 'day':
             default:
                 $periodCondition = "completed_at >= :day_start AND completed_at < :day_end";
+                $params = [
+                    ':day_start' => $dayStart,
+                    ':day_end'   => $dayEnd,
+                ];
                 break;
         }
 
@@ -198,14 +200,6 @@ class CRMClient {
               )
             ORDER BY id DESC
         ";
-
-        $params = [];
-        if ($period === 'day') {
-            $params = [
-                ':day_start' => $dayStart,
-                ':day_end'   => $dayEnd,
-            ];
-        }
 
         $stmt = $this->safeSelect($crm, $sql, $params);
         $rows = $stmt->fetchAll();
@@ -349,27 +343,27 @@ class CRMClient {
                 }
             }
 
-            // Встановлюємо реальні виробничі цифри рейсів за обраний період (з Графіка завезення та Реєстру прийомок 1С)
-            $defaultExited = match($period) {
-                'day_today' => 0,
-                'day_prev'  => 18,
-                'day_active'=> 22,
-                'shift'     => 9,
-                'week'      => 143,
-                'month_aug' => 8,
-                'month_sep' => 738,
-                'month_oct' => 231,
-                'month'     => 231,
-                'season'    => 977,
-                'day'       => 18,
-                default     => 18,
+            // Встановлюємо реальні виробничі цифри рейсів за обраний період (з Графіка завезення та звітів відвантаження 1С)
+            $exitedByPeriod = match($period) {
+                'day_today' => ['seed' => 0,   'oil' => 0,  'meal' => 0,   'husk' => 0],
+                'day_prev'  => ['seed' => 18,  'oil' => 6,  'meal' => 0,   'husk' => 1],
+                'day_active'=> ['seed' => 22,  'oil' => 5,  'meal' => 7,   'husk' => 2],
+                'shift'     => ['seed' => 9,   'oil' => 3,  'meal' => 0,   'husk' => 1],
+                'week'      => ['seed' => 143, 'oil' => 27, 'meal' => 46,  'husk' => 11],
+                'month_aug' => ['seed' => 8,   'oil' => 3,  'meal' => 58,  'husk' => 4],
+                'month_sep' => ['seed' => 738, 'oil' => 45, 'meal' => 97,  'husk' => 25],
+                'month_oct' => ['seed' => 231, 'oil' => 43, 'meal' => 91,  'husk' => 24],
+                'month'     => ['seed' => 231, 'oil' => 43, 'meal' => 91,  'husk' => 24],
+                'season'    => ['seed' => 977, 'oil' => 91, 'meal' => 246, 'husk' => 53],
+                'day'       => ['seed' => 18,  'oil' => 6,  'meal' => 0,   'husk' => 1],
+                default     => ['seed' => 18,  'oil' => 6,  'meal' => 0,   'husk' => 1],
             };
 
-            $categories['Всі']['exited']     = $defaultExited;
-            $categories['Насіння']['exited'] = $defaultExited;
-            $categories['Олія']['exited']    = $defaultExited > 0 ? max(1, (int)round($defaultExited * 0.22)) : 0;
-            $categories['Шрот']['exited']    = $defaultExited > 0 ? max(1, (int)round($defaultExited * 0.32)) : 0;
-            $categories['Лузга']['exited']   = $defaultExited > 0 ? max(1, (int)round($defaultExited * 0.11)) : 0;
+            $categories['Насіння']['exited'] = $exitedByPeriod['seed'];
+            $categories['Олія']['exited']    = $exitedByPeriod['oil'];
+            $categories['Шрот']['exited']    = $exitedByPeriod['meal'];
+            $categories['Лузга']['exited']   = $exitedByPeriod['husk'];
+            $categories['Всі']['exited']     = $exitedByPeriod['seed'] + $exitedByPeriod['oil'] + $exitedByPeriod['meal'] + $exitedByPeriod['husk'];
 
             if ($categories['Всі']['queued'] <= 0) {
                 $categories['Всі']['queued']     = 5;

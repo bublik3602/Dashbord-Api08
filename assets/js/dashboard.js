@@ -355,34 +355,47 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             };
 
+            const allCat  = cats['Всі'] || cats['Все'] || log;
             const seedCat = cats['Насіння'] || cats['Семена'];
+            const oilCat  = cats['Олія'] || cats['Масло'];
+            const mealCat = cats['Шрот'];
+            const huskCat = cats['Лузга'];
+
             if (seedCat) {
                 setElementText('#val-stay-seed', seedCat.avg_stay_text);
                 const cnt = seedCat.on_site !== undefined ? seedCat.on_site : (seedCat.total_active || 0);
-                setElementText('#val-cnt-seed', `Зараз на заводі: ${cnt} авто`);
+                const ex  = seedCat.exited !== undefined ? seedCat.exited : 0;
+                setElementText('#val-cnt-seed', `На заводі: ${cnt} • Виїхало: ${ex}`);
+                setElementText('#val-exited-seed', ex);
                 updateCargoStayBar('#bar-stay-seed', seedCat.avg_stay_minutes);
             }
-            const oilCat = cats['Олія'] || cats['Масло'];
             if (oilCat) {
                 setElementText('#val-stay-oil', oilCat.avg_stay_text);
                 const cnt = oilCat.on_site !== undefined ? oilCat.on_site : (oilCat.total_active || 0);
-                setElementText('#val-cnt-oil', `Зараз на заводі: ${cnt} авто`);
+                const ex  = oilCat.exited !== undefined ? oilCat.exited : 0;
+                setElementText('#val-cnt-oil', `На заводі: ${cnt} • Виїхало: ${ex}`);
+                setElementText('#val-exited-oil', ex);
                 updateCargoStayBar('#bar-stay-oil', oilCat.avg_stay_minutes);
             }
-            const mealCat = cats['Шрот'];
             if (mealCat) {
                 setElementText('#val-stay-meal', mealCat.avg_stay_text);
                 const cnt = mealCat.on_site !== undefined ? mealCat.on_site : (mealCat.total_active || 0);
-                setElementText('#val-cnt-meal', `Зараз на заводі: ${cnt} авто`);
+                const ex  = mealCat.exited !== undefined ? mealCat.exited : 0;
+                setElementText('#val-cnt-meal', `На заводі: ${cnt} • Виїхало: ${ex}`);
+                setElementText('#val-exited-meal', ex);
                 updateCargoStayBar('#bar-stay-meal', mealCat.avg_stay_minutes);
             }
-            const huskCat = cats['Лузга'];
             if (huskCat) {
                 setElementText('#val-stay-husk', huskCat.avg_stay_text);
                 const cnt = huskCat.on_site !== undefined ? huskCat.on_site : (huskCat.total_active || 0);
-                setElementText('#val-cnt-husk', `Зараз на заводі: ${cnt} авто`);
+                const ex  = huskCat.exited !== undefined ? huskCat.exited : 0;
+                setElementText('#val-cnt-husk', `На заводі: ${cnt} • Виїхало: ${ex}`);
+                setElementText('#val-exited-husk', ex);
                 updateCargoStayBar('#bar-stay-husk', huskCat.avg_stay_minutes);
             }
+
+            const totalExited = (allCat && allCat.exited !== undefined) ? allCat.exited : (log.exited || 0);
+            setElementText('#val-exited-total-inline', `${totalExited} машин`);
         }
         renderLogisticsByCargo(currentCargo);
 

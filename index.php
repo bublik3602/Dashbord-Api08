@@ -462,7 +462,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="cargo-meter-bar">
                         <div class="cargo-meter-fill <?= (($log['categories']['Насіння']['avg_stay_minutes'] ?? 84) > 120) ? 'meter-warn' : 'meter-good' ?>" id="bar-stay-seed" style="width: <?= min(100, round((($log['categories']['Насіння']['avg_stay_minutes'] ?? 84) / 120) * 100)) ?>%;"></div>
                     </div>
-                    <span class="cargo-truck-count" id="val-cnt-seed">Зараз на заводі: <?= $log['categories']['Насіння']['on_site'] ?? $log['categories']['Семена']['on_site'] ?? 0 ?> авто</span>
+                    <span class="cargo-truck-count" id="val-cnt-seed">На заводі: <?= $log['categories']['Насіння']['on_site'] ?? $log['categories']['Семена']['on_site'] ?? 0 ?> &bull; Виїхало: <?= $log['categories']['Насіння']['exited'] ?? $log['categories']['Семена']['exited'] ?? 0 ?></span>
                 </div>
                 <div class="cargo-stay-card">
                     <span class="cargo-name">💧 Олія</span>
@@ -470,7 +470,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="cargo-meter-bar">
                         <div class="cargo-meter-fill <?= (($log['categories']['Олія']['avg_stay_minutes'] ?? 75) > 120) ? 'meter-warn' : 'meter-good' ?>" id="bar-stay-oil" style="width: <?= min(100, round((($log['categories']['Олія']['avg_stay_minutes'] ?? 75) / 120) * 100)) ?>%;"></div>
                     </div>
-                    <span class="cargo-truck-count" id="val-cnt-oil">Зараз на заводі: <?= $log['categories']['Олія']['on_site'] ?? $log['categories']['Масло']['on_site'] ?? 0 ?> авто</span>
+                    <span class="cargo-truck-count" id="val-cnt-oil">На заводі: <?= $log['categories']['Олія']['on_site'] ?? $log['categories']['Масло']['on_site'] ?? 0 ?> &bull; Виїхало: <?= $log['categories']['Олія']['exited'] ?? $log['categories']['Масло']['exited'] ?? 0 ?></span>
                 </div>
                 <div class="cargo-stay-card">
                     <span class="cargo-name">🌾 Шрот</span>
@@ -478,7 +478,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="cargo-meter-bar">
                         <div class="cargo-meter-fill <?= (($log['categories']['Шрот']['avg_stay_minutes'] ?? 90) > 120) ? 'meter-warn' : 'meter-good' ?>" id="bar-stay-meal" style="width: <?= min(100, round((($log['categories']['Шрот']['avg_stay_minutes'] ?? 90) / 120) * 100)) ?>%;"></div>
                     </div>
-                    <span class="cargo-truck-count" id="val-cnt-meal">Зараз на заводі: <?= $log['categories']['Шрот']['on_site'] ?? 0 ?> авто</span>
+                    <span class="cargo-truck-count" id="val-cnt-meal">На заводі: <?= $log['categories']['Шрот']['on_site'] ?? 0 ?> &bull; Виїхало: <?= $log['categories']['Шрот']['exited'] ?? 0 ?></span>
                 </div>
                 <div class="cargo-stay-card">
                     <span class="cargo-name">🪵 Лузга</span>
@@ -486,7 +486,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="cargo-meter-bar">
                         <div class="cargo-meter-fill <?= (($log['categories']['Лузга']['avg_stay_minutes'] ?? 45) > 120) ? 'meter-warn' : 'meter-good' ?>" id="bar-stay-husk" style="width: <?= min(100, round((($log['categories']['Лузга']['avg_stay_minutes'] ?? 45) / 120) * 100)) ?>%;"></div>
                     </div>
-                    <span class="cargo-truck-count" id="val-cnt-husk">Зараз на заводі: <?= $log['categories']['Лузга']['on_site'] ?? 0 ?> авто</span>
+                    <span class="cargo-truck-count" id="val-cnt-husk">На заводі: <?= $log['categories']['Лузга']['on_site'] ?? 0 ?> &bull; Виїхало: <?= $log['categories']['Лузга']['exited'] ?? 0 ?></span>
                 </div>
             </div>
 
@@ -508,6 +508,19 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <span class="funnel-icon">🏁</span>
                     <div class="funnel-count" id="funnel-exited-count"><?= $log['exited'] ?? 0 ?></div>
                     <div class="funnel-label">3. Виїхало</div>
+                </div>
+            </div>
+
+            <!-- Деталізація виїхавших машин за культурами (Насіння, Олія, Шрот, Лузга) -->
+            <div class="exited-breakdown-box" id="exited-breakdown-box">
+                <div class="exited-breakdown-title">
+                    🏁 Виїхало: <strong id="val-exited-total-inline"><?= $log['categories']['Всі']['exited'] ?? ($log['exited'] ?? 0) ?> машин</strong> — з них:
+                </div>
+                <div class="exited-breakdown-pills">
+                    <span class="exited-pill pill-seed">🌻 Насіння: <strong id="val-exited-seed"><?= $log['categories']['Насіння']['exited'] ?? $log['categories']['Семена']['exited'] ?? 0 ?></strong></span>
+                    <span class="exited-pill pill-oil">💧 Олія: <strong id="val-exited-oil"><?= $log['categories']['Олія']['exited'] ?? $log['categories']['Масло']['exited'] ?? 0 ?></strong></span>
+                    <span class="exited-pill pill-meal">🌾 Шрот: <strong id="val-exited-meal"><?= $log['categories']['Шрот']['exited'] ?? 0 ?></strong></span>
+                    <span class="exited-pill pill-husk">🪵 Лузга: <strong id="val-exited-husk"><?= $log['categories']['Лузга']['exited'] ?? 0 ?></strong></span>
                 </div>
             </div>
 
