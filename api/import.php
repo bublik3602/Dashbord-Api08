@@ -291,35 +291,53 @@ try {
                         if ($moistP > 0) $latestMoist = $moistP;
                         if ($impP > 0) $latestImp = $impP;
 
-                        // Перевіряємо чи вже існує запис за цей день
-                        $checkStmt = $db->prepare("SELECT id, seed_in_production, oil_out, meal_out, husk_out FROM material_balance_logs WHERE date(recorded_at) = ?");
-                        $checkStmt->execute([$isoDate]);
-                        $existingRow = $checkStmt->fetch(PDO::FETCH_ASSOC);
+                        // Перевіряємо чи вже існує запис за цей день у material_balance_logs
+                        try {
+                            $checkStmt = $db->prepare("SELECT id FROM material_balance_logs WHERE substr(recorded_at, 1, 10) = ?");
+                            $checkStmt->execute([$isoDate]);
+                            $existingRow = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
-                        if ($existingRow) {
-                            $prodVal = (float)$existingRow['seed_in_production'];
-                            $oilVal  = (float)$existingRow['oil_out'];
-                            $mealVal = (float)$existingRow['meal_out'];
-                            $huskVal = (float)$existingRow['husk_out'];
+                            if ($existingRow) {
+                                $upd = $db->prepare("
+                                    UPDATE material_balance_logs 
+                                    SET report_date = ?, seed_in_plant = ?
+                                    WHERE id = ?
+                                ");
+                                $upd->execute([$latestScheduleDay, $phys, $existingRow['id']]);
+                            } else {
+                                $ins = $db->prepare("
+                                    INSERT INTO material_balance_logs 
+                                    (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out)
+                                    VALUES (?, ?, 'day', ?, 0.0, 0.0, 0.0, 0.0)
+                                ");
+                                $ins->execute(["{$isoDate} 20:00:00", $latestScheduleDay, $phys]);
+                            }
+                        } catch (Throwable $e) {}
 
-                            $condLoss = $prodVal > 0 ? round($prodVal * 0.0145, 2) : 0.0;
-                            $condLossPct = $prodVal > 0 ? 1.45 : 0.0;
-                            $prodLoss = $prodVal > 0 ? round(max(0, $prodVal - ($oilVal + $mealVal + $huskVal)), 2) : 0.0;
-                            $prodLossPct = $prodVal > 0 ? round(($prodLoss / $prodVal) * 100, 2) : 0.0;
-
-                            $upd = $db->prepare("
-                                UPDATE material_balance_logs 
-                                SET report_date = ?, seed_in_plant = ?, conditioning_loss = ?, conditioning_loss_pct = ?, production_loss = ?, production_loss_pct = ?
-                                WHERE id = ?
-                            ");
-                            $upd->execute([$latestScheduleDay, $phys, $condLoss, $condLossPct, $prodLoss, $prodLossPct, $existingRow['id']]);
-                        } else {
-                            $ins = $db->prepare("
-                                INSERT INTO material_balance_logs 
-                                (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
-                                VALUES (?, ?, 'day', ?, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
-                            ");
-                            $ins->execute(["{$isoDate} 20:00:00", $latestScheduleDay, $phys]);
+                        // Зберігаємо щоденні показники якості (олійність, волога, смітна домішка, скидка) у lab_quality_logs
+                        if ($oilP > 0) {
+                            try {
+                                $dayDiscount = round(max(0.0, $phys - $acc), 3);
+                                $dayOilDev   = round($oilP - 48.0, 2);
+                                $chkLab = $db->prepare("SELECT id FROM lab_quality_logs WHERE substr(recorded_at, 1, 10) = ?");
+                                $chkLab->execute([$isoDate]);
+                                $exLab = $chkLab->fetch(PDO::FETCH_ASSOC);
+                                if ($exLab) {
+                                    $updLab = $db->prepare("
+                                        UPDATE lab_quality_logs
+                                        SET report_date = ?, oil_content_pct = ?, oil_content_base_pct = 48.00, oil_deviation_pct = ?, moisture_pct = ?, impurity_pct = ?, weight_discount_tonnes = ?
+                                        WHERE id = ?
+                                    ");
+                                    $updLab->execute([$latestScheduleDay, $oilP, $dayOilDev, $moistP, $impP, $dayDiscount, $exLab['id']]);
+                                } else {
+                                    $insLab = $db->prepare("
+                                        INSERT INTO lab_quality_logs
+                                        (recorded_at, report_date, oil_content_pct, oil_content_base_pct, oil_deviation_pct, moisture_pct, impurity_pct, weight_discount_tonnes)
+                                        VALUES (?, ?, ?, 48.00, ?, ?, ?, ?)
+                                    ");
+                                    $insLab->execute(["{$isoDate} 20:00:00", $latestScheduleDay, $oilP, $dayOilDev, $moistP, $impP, $dayDiscount]);
+                                }
+                            } catch (Throwable $e) {}
                         }
                     }
                 }
@@ -328,8 +346,9 @@ try {
             if ($parsedDays > 0) {
                 $processedReports[] = 'material_balance';
                 $processedReports[] = 'schedule';
+                $processedReports[] = 'lab_quality';
                 $detectedDates['material_balance'] = $latestScheduleDay;
-                $details[] = "✅ «Графік завезення (по днях)»: імпортовано {$parsedDays} діб прийомки. Остання завершена доба ({$latestScheduleDay}): {$latestSchedulePhys} т насіння, {$latestCars} авто";
+                $details[] = "✅ «Графік завезення (по днях)»: імпортовано {$parsedDays} діб приймання та якості (олійність, волога, сор). Остання доба ({$latestScheduleDay}): {$latestSchedulePhys} т, {$latestCars} авто, олійність {$latestOil}%, волога {$latestMoist}%, сор {$latestImp}%";
                 $fileHadProcessedReport = true;
             }
         }
@@ -782,24 +801,23 @@ try {
                         $prodLossPct = $seedCleaned > 0 ? round(($prodLossT / $seedCleaned) * 100, 2) : 0.0;
 
                         try {
-                            $chk = $db->prepare("SELECT id, seed_in_plant FROM material_balance_logs WHERE date(recorded_at) = ?");
+                            $chk = $db->prepare("SELECT id, seed_in_plant FROM material_balance_logs WHERE substr(recorded_at, 1, 10) = ?");
                             $chk->execute([$isoDate]);
                             $ex = $chk->fetch(PDO::FETCH_ASSOC);
                             if ($ex) {
                                 $upd = $db->prepare("
                                     UPDATE material_balance_logs
-                                    SET report_date = ?, seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?,
-                                        conditioning_loss = ?, conditioning_loss_pct = ?, production_loss = ?, production_loss_pct = ?
+                                    SET report_date = ?, seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?
                                     WHERE id = ?
                                 ");
-                                $upd->execute([$dCell, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes, $elevLoss, $condLossPct, $prodLossT, $prodLossPct, $ex['id']]);
+                                $upd->execute([$dCell, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes, $ex['id']]);
                             } else {
                                 $ins = $db->prepare("
                                     INSERT INTO material_balance_logs
-                                    (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
-                                    VALUES (?, ?, 'day', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                    (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out)
+                                    VALUES (?, ?, 'day', ?, ?, ?, ?, ?)
                                 ");
-                                $ins->execute(["{$isoDate} 20:00:00", $dCell, $seedCleaned + $elevLoss, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes, $elevLoss, $condLossPct, $prodLossT, $prodLossPct]);
+                                $ins->execute(["{$isoDate} 20:00:00", $dCell, $seedCleaned + $elevLoss, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes]);
                             }
                             $importedProdDays++;
                             $lastProdDate = $dCell;
@@ -826,10 +844,10 @@ try {
         }
 
         // -------------------------------------------------------------
-        // 6. АРКУШ: ЕЛЕКТРОЕНЕРГІЯ ТА ВОДОПОСТАЧАННЯ («РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx», «АГРОПРОІНВЕСТ 08(28).xlsx»)
+        // 6. АРКУШ: ЕЛЕКТРОЕНЕРГІЯ ТА ВОДОПОСТАЧАННЯ («РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx», «АГРОПРОІНВЕСТ 08(28).xlsx», «Облік води.xlsx»)
         // -------------------------------------------------------------
         $isEnergyReport = false;
-        if (strpos($fnLower, 'энергоносител') !== false || strpos($fnLower, 'енергоносі') !== false || strpos($fnLower, 'агропроінвест') !== false || strpos($fnLower, 'агропроинвест') !== false) {
+        if (strpos($fnLower, 'энергоносител') !== false || strpos($fnLower, 'енергоносі') !== false || strpos($fnLower, 'агропроінвест') !== false || strpos($fnLower, 'агропроинвест') !== false || strpos($fnLower, 'вод') !== false) {
             $isEnergyReport = true;
         }
         if (!$isEnergyReport) {
@@ -839,9 +857,9 @@ try {
                     $isEnergyReport = true;
                     break;
                 }
-                foreach (array_slice($rows, 0, 10) as $r) {
+                foreach (array_slice($rows, 0, 12) as $r) {
                     $rTxt = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                    if (strpos($rTxt, 'распределение энергоносителей') !== false || strpos($rTxt, 'вхідний лічильник') !== false || strpos($rTxt, 'водопостачання') !== false) {
+                    if (strpos($rTxt, 'распределение энергоносителей') !== false || strpos($rTxt, 'вхідний лічильник') !== false || strpos($rTxt, 'водопостачання') !== false || strpos($rTxt, 'водонасосна') !== false || strpos($rTxt, 'пермеат') !== false) {
                         $isEnergyReport = true;
                         break 2;
                     }

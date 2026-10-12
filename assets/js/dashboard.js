@@ -176,8 +176,8 @@ document.addEventListener('DOMContentLoaded', function () {
             setElementText('#banner-sync-time', 'Оновлено: ' + (pi.generated_at || new Date().toLocaleTimeString()));
 
             const subElem = document.querySelector('#banner-period-sub');
-            if (subElem && pi.shift_name) {
-                subElem.innerHTML = `Розрахунок доби: <strong>з 08:00 до 08:00</strong> наступного дня &bull; Поточна: <strong>${escapeHtml(pi.shift_name)}</strong>`;
+            if (subElem) {
+                subElem.innerHTML = `Розрахунок доби: <strong>з 08:00 до 08:00</strong> наступного дня`;
             }
         }
 
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const oilDevBadge = document.querySelector('#badge-lab-oil-dev');
             if (oilDevBadge) {
-                oilDevBadge.className = 'lab-badge ' + (lq.oil_deviation_pct >= 0 ? 'badge-bonus' : 'badge-discount');
+                oilDevBadge.className = 'gauge-badge ' + (lq.oil_deviation_pct >= 0 ? 'badge-bonus' : 'badge-discount');
             }
             setElementText('#val-lab-oil-sub', `Базова норма: ${formatNumber(lq.oil_content_base_pct, 1)}% (Лабораторія)`);
 
@@ -258,15 +258,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (moistBadge) {
                 if (lq.moisture_pct <= 8.0) {
                     moistBadge.textContent = 'В нормі (< 8%)';
-                    moistBadge.className = 'lab-badge badge-bonus';
+                    moistBadge.className = 'gauge-badge badge-bonus';
                 } else {
                     moistBadge.textContent = 'Перевищення (> 8%)';
-                    moistBadge.className = 'lab-badge badge-discount';
+                    moistBadge.className = 'gauge-badge badge-discount';
                 }
             }
 
             setElementText('#val-lab-impurity', formatNumber(lq.impurity_pct, 2) + '%');
-            setElementText('#badge-lab-impurity', `Знижка: ${formatNumber(lq.weight_discount_tonnes, 1)} т`);
+            setElementText('#badge-lab-impurity', `Знижка: ${formatNumber(lq.weight_discount_tonnes, 2)} т`);
         }
 
         if (data.contracts_summary) {
@@ -628,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (lower.includes('ежедневный отчет') || lower.includes('план производства')) {
             return { key: 'daily_prod', label: 'План-факт виробництва' };
         }
-        if (lower.includes('энергоносител') || lower.includes('енергоносі') || lower.includes('агропроінвест') || lower.includes('агропроинвест') || lower.includes('вода') || lower.includes('енерг')) {
+        if (lower.includes('энергоносител') || lower.includes('енергоносі') || lower.includes('агропроінвест') || lower.includes('агропроинвест') || lower.includes('вод') || lower.includes('енерг')) {
             return { key: 'energy', label: 'Електроенергія та Вода' };
         }
         return { key: null, label: 'Звіт Excel' };

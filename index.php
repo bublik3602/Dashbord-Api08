@@ -74,8 +74,6 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="brand-subtitle">
                     <span class="live-pill"><span class="pulse-dot"></span> LIVE</span>
                     <span>&bull;</span>
-                    <span><?= $shiftName ?></span>
-                    <span>&bull;</span>
                     <span>Оновлено: <?= date('H:i:s') ?></span>
                 </div>
             </div>
@@ -90,10 +88,10 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-select-wrapper">
                     <select id="select-other-months" class="month-dropdown-select" title="Обрати інший місяць або період">
                         <option value="" disabled selected>📅 Інші місяці...</option>
-                        <option value="month_oct">Жовтень 2026 (11 діб)</option>
-                        <option value="month_sep">Вересень 2026 (30 діб)</option>
-                        <option value="month_aug">Серпень 2026 (31 доба, ППР)</option>
-                        <option value="season">Сезон 2026 (Серпень — Жовтень)</option>
+                        <option value="month_oct">Жовтень 2026 (працював 7 діб з 11)</option>
+                        <option value="month_sep">Вересень 2026 (працював 16 діб з 30)</option>
+                        <option value="month_aug">Серпень 2026 (0 діб переробки, ППР)</option>
+                        <option value="season">Сезон 2026 (працював 23 доби з 72)</option>
                         <option value="day_prev">Минула доба (11.10 — прийомка 465,9 т, переробка 0 т)</option>
                         <option value="day_active">Остання доба переробки (06.10 — перероблено 600,3 т)</option>
                         <option value="day_today">Сьогодні (12.10, без переробки)</option>
@@ -131,7 +129,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     $bounds = get_operational_day_bounds();
     $pInfo = $dashboardData['period_info'] ?? [];
     $activeRangeText = $pInfo['range_display'] ?? ("Виробнича доба (" . $bounds['label'] . ", з 08:00 до 08:00)");
-    $labDate = $lab['report_date'] ?? '12.10.2026 09:34';
+    $labDate = $lab['report_date'] ?? '11.10.2026 (Лист погодження — по днях)';
     $stocksDate = $stocks['report_date'] ?? '12.10.2026 08:00';
     ?>
     <div class="active-period-banner" id="active-period-banner">
@@ -145,7 +143,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <strong id="banner-period-title"><?= htmlspecialchars($activeRangeText) ?></strong>
                 </div>
                 <div class="banner-sub-text">
-                    <span id="banner-period-sub">Розрахунок доби: <strong>з 08:00 до 08:00</strong> наступного дня &bull; Поточна: <strong><?= $shiftName ?></strong></span>
+                    <span id="banner-period-sub">Розрахунок доби: <strong>з 08:00 до 08:00</strong> наступного дня</span>
                     <span class="banner-separator">&bull;</span>
                     <span>Лабораторія 1С: <strong id="banner-lab-time"><?= htmlspecialchars($labDate) ?></strong></span>
                     <span class="banner-separator">&bull;</span>
@@ -636,8 +634,42 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                 </details>
 
-                <!-- Таблиця 2: Помісячне зведення енергоносіїв за 12 місяців -->
+                <!-- Таблиця 2: Детальний технологічний облік води та стоків по вузлах і відповідальних («Облік води») -->
                 <details class="season-monthly-details" open>
+                    <summary>
+                        <span><i data-lucide="droplets" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #059669;"></i> Детальний облік води та стоків по вузлах і відповідальних (Журнал «Облік води»)</span>
+                        <span style="font-size: 11px; color: #059669; font-weight: 600;">Пермеат котельні &bull; Випар ГМВ &bull; Побутові та пром. стоки</span>
+                    </summary>
+                    <div class="season-monthly-table-wrap">
+                        <table class="data-table-clean" style="font-size: 11px;">
+                            <thead>
+                                <tr>
+                                    <th>Вузол обліку води / стоків</th>
+                                    <th>Відповідальний</th>
+                                    <th>Вересень (м³ / доб.)</th>
+                                    <th>Жовтень (м³ / доб.)</th>
+                                    <th>Разом (м³)</th>
+                                    <th>Технологічний баланс (пермеат / випар / КНС)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach (($en['water_meters'] ?? []) as $wm): ?>
+                                <tr>
+                                    <td class="bold"><?= htmlspecialchars($wm['node']) ?></td>
+                                    <td><span class="kpi-badge badge-blue" style="font-size: 10px; padding: 2px 6px;"><?= htmlspecialchars($wm['responsible']) ?></span></td>
+                                    <td><strong><?= number_format($wm['sep_m3'], 0, ',', ' ') ?></strong> <span style="color:#64748b;">(<?= number_format($wm['sep_daily'], 1, ',', '') ?>/д)</span></td>
+                                    <td style="color: #059669;"><strong><?= number_format($wm['oct_m3'], 0, ',', ' ') ?></strong> <span style="color:#64748b;">(<?= number_format($wm['oct_daily'], 1, ',', '') ?>/д)</span></td>
+                                    <td class="bold" style="color: #0284c7;"><?= number_format($wm['season_m3'], 0, ',', ' ') ?></td>
+                                    <td style="font-size: 10.5px; color: #475569;"><?= htmlspecialchars($wm['note']) ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+
+                <!-- Таблиця 3: Помісячне зведення енергоносіїв за 12 місяців -->
+                <details class="season-monthly-details">
                     <summary>
                         <span><i data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Річний баланс: Електроенергія, Вода, Газ та Каналізація (12 місяців)</span>
                         <span style="font-size: 11px; color: #64748b;">Січень — Грудень</span>
@@ -696,7 +728,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         <div class="section-title">
             <i data-lucide="line-chart" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
             <span>Блок Г: Порівняльна аналітика періодів (Серпень — Вересень — Жовтень 2026)</span>
-            <span class="section-badge badge-blue">Виробничий сезон 2026 (72 доби)</span>
+            <span class="section-badge badge-blue">Виробничий сезон 2026 (23 доби переробки з 72)</span>
         </div>
 
         <!-- Картки-підсумки помісячно (Серпень, Вересень, Жовтень, Сезон) -->
@@ -707,13 +739,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-card-header">
                     <div class="month-card-title">
                         <span class="month-name">Серпень 2026</span>
-                        <span class="month-badge badge-amber">31 доба &bull; ППР</span>
+                        <span class="month-badge badge-amber">Працював: 0 діб з 31 &bull; ППР</span>
                     </div>
                     <button type="button" class="btn-quick-period" data-period="month_aug" title="Показати дашборд за серпень">
                         <span>Детально</span> &rarr;
                     </button>
                 </div>
                 <div class="month-metrics-list">
+                    <div class="metric-row">
+                        <span class="metric-lbl">🗓️ Днів роботи (переробка):</span>
+                        <span class="metric-val text-muted bold">0 діб (з 31 доби &bull; ППР)</span>
+                    </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌻 Завіз насіння:</span>
                         <span class="metric-val bold"><?= number_format($mAug['seed_in'] ?? 207.96, 2, ',', ' ') ?> т</span>
@@ -749,7 +785,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-card-header">
                     <div class="month-card-title">
                         <span class="month-name">Вересень 2026</span>
-                        <span class="month-badge badge-green">30 діб &bull; 100% запуск</span>
+                        <span class="month-badge badge-green">Працював: 16 діб з 30 (15.09–30.09)</span>
                     </div>
                     <button type="button" class="btn-quick-period" data-period="month_sep" title="Показати дашборд за вересень">
                         <span>Детально</span> &rarr;
@@ -757,12 +793,16 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
                 <div class="month-metrics-list">
                     <div class="metric-row">
+                        <span class="metric-lbl">🗓️ Днів роботи (переробка):</span>
+                        <span class="metric-val bold" style="color: #059669;">16 діб (15.09 — 30.09) з 30</span>
+                    </div>
+                    <div class="metric-row">
                         <span class="metric-lbl">🌻 Завіз насіння:</span>
                         <span class="metric-val bold text-primary"><?= number_format($mSep['seed_in'] ?? 19070.05, 2, ',', ' ') ?> т</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">⚙️ Переробка:</span>
-                        <span class="metric-val bold"><?= number_format($mSep['seed_processed'] ?? 8823.66, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val bold"><?= number_format($mSep['seed_processed'] ?? 8823.66, 2, ',', ' ') ?> т (16 діб)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">💧 Вихід олії:</span>
@@ -791,7 +831,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-card-header">
                     <div class="month-card-title">
                         <span class="month-name">Жовтень 2026</span>
-                        <span class="month-badge badge-blue">11 діб (01.10 — 11.10)</span>
+                        <span class="month-badge badge-blue">Працював: 7 діб з 11 (01.10–07.10)</span>
                     </div>
                     <button type="button" class="btn-quick-period" data-period="month_oct" title="Показати дашборд за жовтень">
                         <span>Детально</span> &rarr;
@@ -799,12 +839,16 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
                 <div class="month-metrics-list">
                     <div class="metric-row">
+                        <span class="metric-lbl">🗓️ Днів роботи (переробка):</span>
+                        <span class="metric-val bold" style="color: #0284c7;">7 діб (01.10 — 07.10) з 11</span>
+                    </div>
+                    <div class="metric-row">
                         <span class="metric-lbl">🌻 Завіз насіння:</span>
                         <span class="metric-val bold text-primary"><?= number_format($mOct['seed_in'] ?? 6075.91, 2, ',', ' ') ?> т</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">⚙️ Переробка:</span>
-                        <span class="metric-val bold"><?= number_format($mOct['seed_processed'] ?? 3646.35, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val bold"><?= number_format($mOct['seed_processed'] ?? 3646.35, 2, ',', ' ') ?> т (7 діб)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">💧 Вихід олії:</span>
@@ -833,7 +877,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-card-header">
                     <div class="month-card-title">
                         <span class="month-name">Сезон 2026 РАЗОМ</span>
-                        <span class="month-badge badge-green">72 доби моніторингу</span>
+                        <span class="month-badge badge-green">Працював: 23 доби з 72</span>
                     </div>
                     <button type="button" class="btn-quick-period" data-period="season" title="Показати дашборд за сезон">
                         <span>Детально</span> &rarr;
@@ -841,12 +885,16 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
                 <div class="month-metrics-list">
                     <div class="metric-row">
+                        <span class="metric-lbl">🗓️ Днів роботи (переробка):</span>
+                        <span class="metric-val bold" style="color: #059669;">23 доби переробки (з 72 діб)</span>
+                    </div>
+                    <div class="metric-row">
                         <span class="metric-lbl">🌻 Завіз насіння:</span>
                         <span class="metric-val bold text-primary"><?= number_format($seasonTot['seed_in'] ?? 25353.92, 2, ',', ' ') ?> т</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">⚙️ Переробка:</span>
-                        <span class="metric-val bold"><?= number_format($seasonTot['seed_processed'] ?? 12470.01, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val bold"><?= number_format($seasonTot['seed_processed'] ?? 12470.01, 2, ',', ' ') ?> т (23 доби)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">💧 Вихід олії:</span>
@@ -1218,13 +1266,13 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <span class="guide-tag tag-slate">План виробництва</span>
                     </div>
 
-                    <!-- Файл 5: РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx та АГРОПРОІНВЕСТ 08(28).xlsx -->
+                    <!-- Файл 5: РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx, АГРОПРОІНВЕСТ 08(28).xlsx та Облік води.xlsx -->
                     <div class="guide-item" data-expected="energy">
                         <div class="guide-item-icon">⚡</div>
                         <div class="guide-item-content">
-                            <div class="guide-item-name">5. <code>РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx</code> та <code>АГРОПРОІНВЕСТ 08(28).xlsx</code> <span class="guide-status-pill" id="guide-status-energy" style="display:none;">✓ Обрано</span></div>
-                            <div class="guide-item-filename">Вкладки всередині: <code>січень 26</code> … <code>вересень 26</code>, <code>ЖОВТЕНЬ</code>, <code>2026</code>, <code>ел. енергія 2026</code></div>
-                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Блок В — графік електроенергії та води по днях, питому витрату кВт·год/т, показники лічильників ТП 2×1600 / ТП-2000, водомірного вузла, котельні, екстракції та стоків.</div>
+                            <div class="guide-item-name">5. <code>РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx</code>, <code>АГРОПРОІНВЕСТ 08(28).xlsx</code> та <code>Облік води.xlsx</code> <span class="guide-status-pill" id="guide-status-energy" style="display:none;">✓ Обрано</span></div>
+                            <div class="guide-item-filename">Вкладки всередині: <code>січень 26</code> … <code>вересень 26</code>, <code>ЖОВТЕНЬ</code>, <code>2026</code>, <code>ел. енергія 2026</code>, <code>Лист1 (Облік води)</code></div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Блок В — графік електроенергії та води по днях, питому витрату кВт·год/т, показники водомірного вузла по відповідальних (Усов А.В., Хлібець В., Нікітіна А., Довгаленко С.), пермеат котельні, випар ГМВ та стоки.</div>
                         </div>
                         <span class="guide-tag tag-primary">Електроенергія + Вода</span>
                     </div>

@@ -47,18 +47,18 @@ class MetricsCalculator {
         $rangeDisplay = '';
         switch ($period) {
             case 'day_today':  $rangeDisplay = "Поточна доба (12.10.2026 — приймання: 0 т, переробка МЕЗ: 0 т)"; break;
-            case 'day_prev':   $rangeDisplay = "Минула виробнича доба (11.10.2026 — прийнято 465,9 т, переробка МЕЗ: 0 т)"; break;
+            case 'day_prev':   $rangeDisplay = "Минула виробнича доба (11.10.2026 — прийнято 465,9 т з плану 600 т, переробка МЕЗ: 0 т)"; break;
             case 'day_active': $rangeDisplay = "Остання доба активної переробки (06.10.2026 — прийнято 589,8 т, перероблено 600,3 т)"; break;
             case 'shift':      $rangeDisplay = "Поточна зміна ({$shiftBounds})"; break;
-            case 'week':       $rangeDisplay = "За тиждень (05.10.2026 — 11.10.2026, 7 діб: прийнято 3 767,8 т, перероблено 1 310,3 т)"; break;
-            case 'month_aug':  $rangeDisplay = "Місяць Серпень 2026 (01.08.2026 — 31.08.2026, 31 доба, ППР)"; break;
-            case 'month_sep':  $rangeDisplay = "Місяць Вересень 2026 (01.09.2026 — 30.09.2026, 30 діб: перероблено 8 823,7 т)"; break;
+            case 'week':       $rangeDisplay = "За тиждень (05.10 — 11.10.2026, 7 діб приймання / 3 доби переробки: прийнято 3 767,8 т, перероблено 1 310,3 т)"; break;
+            case 'month_aug':  $rangeDisplay = "Місяць Серпень 2026 (0 діб переробки з 31 доби • ППР заводу, прийнято 208,0 т)"; break;
+            case 'month_sep':  $rangeDisplay = "Місяць Вересень 2026 (працював 16 діб переробки: 15.09–30.09 з 30 діб • перероблено 8 823,7 т)"; break;
             case 'month_oct':
-            case 'month':      $rangeDisplay = "Місяць Жовтень 2026 (01.10.2026 — 11.10.2026, 11 діб: перероблено 3 646,4 т)"; break;
-            case 'season':     $rangeDisplay = "Виробничий сезон 2026 (Серпень — Жовтень 2026, 72 доби: перероблено 12 470,0 т)"; break;
+            case 'month':      $rangeDisplay = "Місяць Жовтень 2026 (працював 7 діб переробки: 01.10–07.10 з 11 діб • перероблено 3 646,4 т)"; break;
+            case 'season':     $rangeDisplay = "Виробничий сезон 2026 (працював 23 доби переробки з 72 діб • перероблено 12 470,0 т)"; break;
             case 'day':
             default:
-                $rangeDisplay = "Минула виробнича доба (11.10.2026 — прийнято 465,9 т, переробка МЕЗ: 0 т, вихід: 0 т)";
+                $rangeDisplay = "Минула виробнича доба (11.10.2026 — прийнято 465,9 т з плану 600 т, переробка МЕЗ: 0 т, вихід: 0 т)";
                 break;
         }
 
@@ -129,12 +129,12 @@ class MetricsCalculator {
             case 'day_prev':   return 'Минула доба (11.10.2026 — 465,9 т прийомка, 0 т переробка)';
             case 'day_active': return 'Остання доба переробки (06.10.2026 — 600,3 т)';
             case 'shift':      return 'Поточна зміна (12 год)';
-            case 'week':       return 'За тиждень (05.10 — 11.10, 7 діб)';
-            case 'month_aug':  return 'Серпень 2026 (31 доба, ППР)';
-            case 'month_sep':  return 'Вересень 2026 (30 діб)';
+            case 'week':       return 'За тиждень (05.10 — 11.10, 7 діб прийомки / 3 доби переробки)';
+            case 'month_aug':  return 'Серпень 2026 (0 діб переробки з 31 • ППР)';
+            case 'month_sep':  return 'Вересень 2026 (працював 16 діб: 15.09–30.09 з 30)';
             case 'month_oct':
-            case 'month':      return 'Жовтень 2026 (01.10 — 11.10, 11 діб)';
-            case 'season':     return 'Сезон 2026 (Серпень — Жовтень)';
+            case 'month':      return 'Жовтень 2026 (працював 7 діб: 01.10–07.10 з 11)';
+            case 'season':     return 'Сезон 2026 (працював 23 доби переробки з 72)';
             case 'day':
             default:           return 'Минула виробнича доба (11.10.2026)';
         }
@@ -145,6 +145,7 @@ class MetricsCalculator {
      */
     private function calculateMaterialBalance(string $dateFilter, string $period): array {
         // Еталонні перевірені дані безпосередньо з вкладок «Октябрь26», «Сент.26», «СВОДНАЯ 2026-27», «Графік завезення» та «1..12 число»
+        // План приймання на добу = 600,0 т
         $verifiedPeriods = [
             'day_today' => [
                 'seed_in_plant' => 0.00,
@@ -154,10 +155,10 @@ class MetricsCalculator {
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 0.00,
-                'seed_plan'     => 500.0,
+                'seed_plan'     => 600.0,
             ],
             'day_prev' => [
-                // 11.10.2026: прийомка 465,86 т (18 авто), переробка МЕЗ стояла (0,00 т)
+                // 11.10.2026: прийомка 465,86 т з плану 600,0 т (77,6%, 18 авто), переробка МЕЗ стояла (0,00 т)
                 'seed_in_plant' => 465.86,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
@@ -165,10 +166,10 @@ class MetricsCalculator {
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 0.00,
-                'seed_plan'     => 500.0,
+                'seed_plan'     => 600.0,
             ],
             'day' => [
-                // Остання завершена доба 11.10.2026: прийомка 465,86 т, переробка 0,00 т
+                // Остання завершена доба 11.10.2026: прийомка 465,86 т з плану 600,0 т (77,6%), переробка 0,00 т
                 'seed_in_plant' => 465.86,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
@@ -176,7 +177,7 @@ class MetricsCalculator {
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 0.00,
-                'seed_plan'     => 500.0,
+                'seed_plan'     => 600.0,
             ],
             'day_active' => [
                 // 06.10.2026 (остання повна доба переробки перед зупинкою 07.10): з вкладки «Октябрь26»
@@ -197,11 +198,10 @@ class MetricsCalculator {
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 0.00,
-                'seed_plan'     => 250.0,
+                'seed_plan'     => 300.0,
             ],
             'week' => [
-                // Тиждень 05.10 — 11.10 (7 діб): сума за 05.10..11.10 з «Графік завезення» та «Октябрь26»
-                // Подано з елеватора 1 328,233 т, втрати з елеватора 17,896 т (1,35%), очищене у переробку 1 310,337 т
+                // Тиждень 05.10 — 11.10 (7 діб * 600 т = 4 200 т план): сума за 05.10..11.10 з «Графік завезення» та «Октябрь26»
                 'seed_in_plant' => 3767.78,
                 'seed_in_prod'  => 1310.34,
                 'cond_loss'     => 17.90,
@@ -209,10 +209,10 @@ class MetricsCalculator {
                 'oil_out'       => 598.98,
                 'meal_out'      => 575.86,
                 'husk_out'      => 194.32,
-                'seed_plan'     => 3500.0,
+                'seed_plan'     => 4200.0,
             ],
             'month_aug' => [
-                // Серпень 2026: ППР, прийомка 207,96 т (8 авто), переробка 0 т
+                // Серпень 2026: ППР, прийомка 207,96 т (8 авто, 2 дні приймання), переробка 0 т
                 'seed_in_plant' => 207.96,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
@@ -220,11 +220,10 @@ class MetricsCalculator {
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 5.91,
-                'seed_plan'     => 500.0,
+                'seed_plan'     => 600.0,
             ],
             'month_sep' => [
-                // Вересень 2026 (з «Сент.26» та «СВОДНАЯ 2026-27»):
-                // Подано з елеватора 8 918,404 т, втрати з елеватора 94,744 т (1,06%), очищене у переробку 8 823,660 т
+                // Вересень 2026 (з «Сент.26» та «СВОДНАЯ 2026-27»): працював 16 діб переробки (15.09-30.09)
                 'seed_in_plant' => 19070.05,
                 'seed_in_prod'  => 8823.66,
                 'cond_loss'     => 94.74,
@@ -235,8 +234,7 @@ class MetricsCalculator {
                 'seed_plan'     => 18000.0,
             ],
             'month_oct' => [
-                // Жовтень 2026 (01.10 — 11.10 з «Октябрь26» та «СВОДНАЯ 2026-27»):
-                // Подано з елеватора 3 699,956 т, втрати з елеватора 53,602 т (1,45%), очищене у переробку 3 646,354 т
+                // Жовтень 2026 (01.10 — 11.10 з «Октябрь26»): працював 7 діб переробки (01.10-07.10), 11 діб приймання * 600 т = 6 600 т
                 'seed_in_plant' => 6075.91,
                 'seed_in_prod'  => 3646.35,
                 'cond_loss'     => 53.60,
@@ -244,7 +242,7 @@ class MetricsCalculator {
                 'oil_out'       => 1646.15,
                 'meal_out'      => 1521.68,
                 'husk_out'      => 554.87,
-                'seed_plan'     => 6000.0,
+                'seed_plan'     => 6600.0,
             ],
             'month' => [
                 'seed_in_plant' => 6075.91,
@@ -254,11 +252,10 @@ class MetricsCalculator {
                 'oil_out'       => 1646.15,
                 'meal_out'      => 1521.68,
                 'husk_out'      => 554.87,
-                'seed_plan'     => 6000.0,
+                'seed_plan'     => 6600.0,
             ],
             'season' => [
-                // Сезон 2026-27 разом (Серпень — Жовтень з «СВОДНАЯ 2026-27»):
-                // Подано з елеватора 12 618,360 т, втрати з елеватора 148,346 т (1,18%), очищене у переробку 12 470,014 т
+                // Сезон 2026-27 разом (Серпень — Жовтень з «СВОДНАЯ 2026-27»): працював 23 доби переробки
                 'seed_in_plant' => 25353.92,
                 'seed_in_prod'  => 12470.01,
                 'cond_loss'     => 148.35,
@@ -266,7 +263,7 @@ class MetricsCalculator {
                 'oil_out'       => 5457.81,
                 'meal_out'      => 5204.89,
                 'husk_out'      => 1816.10,
-                'seed_plan'     => 25000.0,
+                'seed_plan'     => 25200.0,
             ],
         ];
 
@@ -436,6 +433,130 @@ class MetricsCalculator {
             ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => 1899,   'reactive_kvarh' => 0.0,      'specific_kwh' => 0.0,   'water_m3' => 416,  'sewage_m3' => 361],
         ];
 
+        // Детальний технологічний облік води та стоків по вузлах і відповідальних («Облік води» головний інженер / головний енергетик)
+        $waterMetersAccounting = [
+            [
+                'node'        => '1. Вхідний лічильник (Загальний ввід МЕЗ)',
+                'responsible' => 'Усов А.В.',
+                'sep_m3'      => 2059.0,
+                'sep_daily'   => 137.3,
+                'oct_m3'      => 5325.0,
+                'oct_daily'   => 171.8,
+                'season_m3'   => 7384.0,
+                'note'        => 'Загальний баланс водопостачання заводу (Вересень з 15.09 + Жовтень)',
+            ],
+            [
+                'node'        => '2. Водонасосна станція (Тех. вода на виробництво)',
+                'responsible' => 'Усов А.В.',
+                'sep_m3'      => 2001.0,
+                'sep_daily'   => 133.4,
+                'oct_m3'      => 4684.0,
+                'oct_daily'   => 151.1,
+                'season_m3'   => 6685.0,
+                'note'        => 'Подача води у виробничі цехи (88,0% — 97,2% загального вводу)',
+            ],
+            [
+                'node'        => '3. Котельня на лушпинні (Загальна подача ХВО)',
+                'responsible' => 'Усов А.В.',
+                'sep_m3'      => 1023.0,
+                'sep_daily'   => 68.2,
+                'oct_m3'      => 2882.0,
+                'oct_daily'   => 93.0,
+                'season_m3'   => 3905.0,
+                'note'        => 'Пермеат (пара): 716 м³ (70,0%) у Вер / 1 663 м³ (57,7%) у Жов • Скид у КНС: 307 м³ (30%) / 1 219 м³ (42,3%)',
+            ],
+            [
+                'node'        => '4. Водооборотка цеху екстракції (Підживлення градирень)',
+                'responsible' => 'Хлібець В.',
+                'sep_m3'      => 544.0,
+                'sep_daily'   => 36.3,
+                'oct_m3'      => 1117.0,
+                'oct_daily'   => 36.0,
+                'season_m3'   => 1661.0,
+                'note'        => 'Випар на градирнях ГМВ: 544 м³ (100%) у Вер / 1 043 м³ (93,4%) у Жов (різниця з ГМВ: 74 м³)',
+            ],
+            [
+                'node'        => '5. Барометричний конденсатор (Екстракція)',
+                'responsible' => 'Хлібець В.',
+                'sep_m3'      => 137.0,
+                'sep_daily'   => 9.1,
+                'oct_m3'      => 96.0,
+                'oct_daily'   => 3.1,
+                'season_m3'   => 233.0,
+                'note'        => 'Технологічні стоки барометрички (скид у пром. каналізацію)',
+            ],
+            [
+                'node'        => '6. СБК (Станція біологічної / побутової очистки)',
+                'responsible' => 'Усов А.В.',
+                'sep_m3'      => 161.0,
+                'sep_daily'   => 10.7,
+                'oct_m3'      => 280.0,
+                'oct_daily'   => 9.0,
+                'season_m3'   => 441.0,
+                'note'        => 'Очистка господарсько-побутових стоків',
+            ],
+            [
+                'node'        => '7. ВТЛ (Виробничо-технічна лабораторія)',
+                'responsible' => 'Нікітіна А.',
+                'sep_m3'      => 36.0,
+                'sep_daily'   => 2.4,
+                'oct_m3'      => 140.0,
+                'oct_daily'   => 4.5,
+                'season_m3'   => 176.0,
+                'note'        => 'Лабораторні потреби та охолодження дистиляторів',
+            ],
+            [
+                'node'        => '8. Ввід №1 (Загальнозаводська мережа)',
+                'responsible' => 'Усов А.В.',
+                'sep_m3'      => 93.0,
+                'sep_daily'   => 6.2,
+                'oct_m3'      => 132.0,
+                'oct_daily'   => 4.3,
+                'season_m3'   => 225.0,
+                'note'        => 'Побутові та допоміжні приміщення вводу №1',
+            ],
+            [
+                'node'        => '9. Госп.-питні потреби: АПК (Адмінпобуткорпус)',
+                'responsible' => 'Усов А.В.',
+                'sep_m3'      => 34.0,
+                'sep_daily'   => 2.3,
+                'oct_m3'      => 81.0,
+                'oct_daily'   => 2.6,
+                'season_m3'   => 115.0,
+                'note'        => 'Душові, санвузли та побутові приміщення АПК',
+            ],
+            [
+                'node'        => '10. Госп.-питні потреби: ОПЦ (Олійнопресовий цех)',
+                'responsible' => 'Довгаленко С.',
+                'sep_m3'      => 22.0,
+                'sep_daily'   => 1.5,
+                'oct_m3'      => 20.0,
+                'oct_daily'   => 0.6,
+                'season_m3'   => 42.0,
+                'note'        => 'Побутові та санітарні потреби персоналу пресового цеху',
+            ],
+            [
+                'node'        => '11. Госп.-питні потреби: Пожежна / мех. майстерня та Вагова',
+                'responsible' => 'Усов А.В. / Судак Л.',
+                'sep_m3'      => 9.0,
+                'sep_daily'   => 0.6,
+                'oct_m3'      => 18.0,
+                'oct_daily'   => 0.6,
+                'season_m3'   => 27.0,
+                'note'        => 'Пож./мех. майстерня: 1 м³ (Вер) / 11 м³ (Жов) + Вагова: 8 м³ / 7 м³',
+            ],
+            [
+                'node'        => '12. КАНАЛІЗАЦІЯ РАЗОМ (Госп.-побутові + Пром. стоки)',
+                'responsible' => 'Усов А.В.',
+                'sep_m3'      => 764.3,
+                'sep_daily'   => 51.0,
+                'oct_m3'      => 2004.4,
+                'oct_daily'   => 64.7,
+                'season_m3'   => 2768.7,
+                'note'        => 'Госп.-побутові: 182 м³ (Вер) / 279 м³ (Жов) + Пром. стоки: 582,3 м³ / 1 725,4 м³ (з КНС з підкачкою: 1 409 / 2 995 м³)',
+            ],
+        ];
+
         switch ($period) {
             case 'day_active':
                 // 06.10.2026 (активна доба переробки 600,3 т): ел.енергія 31 930 кВт*год (1 330 кВт), вода 206,0 м3 (8,58 м3/год)
@@ -455,6 +576,7 @@ class MetricsCalculator {
                     'extraction_water_m3'    => 46.0,
                     'period_note'            => 'Доба 06.10 (600,3 т переробки) • Графік по днях Жовтня',
                     'departments'            => $departmentsOct,
+                    'water_meters'           => $waterMetersAccounting,
                     'monthly_12'             => $monthly12,
                     'timeline' => [
                         'labels'     => ['01.10', '02.10', '03.10', '04.10', '05.10', '06.10', '07.10', '08.10', '09.10', '10.10', '11.10', '12.10'],
@@ -485,6 +607,7 @@ class MetricsCalculator {
                     'extraction_water_m3'    => 282.0,
                     'period_note'            => 'Тиждень 05.10 — 11.10 (по днях)',
                     'departments'            => $departmentsOct,
+                    'water_meters'           => $waterMetersAccounting,
                     'monthly_12'             => $monthly12,
                     'timeline' => [
                         'labels'     => ['05.10', '06.10', '07.10', '08.10', '09.10', '10.10', '11.10'],
@@ -515,6 +638,7 @@ class MetricsCalculator {
                     'extraction_water_m3'    => 28.0,
                     'period_note'            => 'Серпень 2026 (по днях)',
                     'departments'            => $departmentsAug,
+                    'water_meters'           => $waterMetersAccounting,
                     'monthly_12'             => $monthly12,
                     'timeline' => [
                         'labels'     => ['01.08', '03.08', '05.08', '07.08', '09.08', '11.08', '13.08', '15.08', '17.08', '19.08', '21.08', '23.08', '25.08', '27.08', '29.08', '31.08'],
@@ -545,6 +669,7 @@ class MetricsCalculator {
                     'extraction_water_m3'    => 544.0,
                     'period_note'            => 'Вересень 2026 (по днях)',
                     'departments'            => $departmentsSep,
+                    'water_meters'           => $waterMetersAccounting,
                     'monthly_12'             => $monthly12,
                     'timeline' => [
                         'labels'     => ['15.09', '16.09', '17.09', '18.09', '19.09', '20.09', '21.09', '22.09', '23.09', '24.09', '25.09', '26.09', '27.09', '28.09', '29.09', '30.09'],
@@ -576,6 +701,7 @@ class MetricsCalculator {
                     'extraction_water_m3'    => 1540.0,
                     'period_note'            => 'Жовтень (по днях)',
                     'departments'            => $departmentsOct,
+                    'water_meters'           => $waterMetersAccounting,
                     'monthly_12'             => $monthly12,
                     'timeline' => [
                         'labels'     => ['01.10', '02.10', '03.10', '06.10', '07.10', '08.10', '09.10', '10.10', '13.10', '14.10', '15.10', '16.10', '17.10', '20.10', '21.10', '22.10', '23.10', '24.10', '27.10', '28.10', '29.10', '30.10', '31.10'],
@@ -606,6 +732,7 @@ class MetricsCalculator {
                     'extraction_water_m3'    => 5630.0,
                     'period_note'            => 'Помісячна динаміка за рік (12 місяців)',
                     'departments'            => $departmentsOct,
+                    'water_meters'           => $waterMetersAccounting,
                     'monthly_12'             => $monthly12,
                     'timeline' => [
                         'labels'     => ['Січ', 'Лют', 'Бер', 'Кві', 'Тра', 'Чер', 'Лип', 'Сер', 'Вер', 'Жов', 'Лис', 'Гру'],
@@ -639,6 +766,7 @@ class MetricsCalculator {
                     'extraction_water_m3'    => 32.0,
                     'period_note'            => 'Доба 11.10 (163,7 м³ води) • Графік по днях 01.10–12.10',
                     'departments'            => $departmentsOct,
+                    'water_meters'           => $waterMetersAccounting,
                     'monthly_12'             => $monthly12,
                     'timeline' => [
                         'labels'     => ['01.10', '02.10', '03.10', '04.10', '05.10', '06.10', '07.10', '08.10', '09.10', '10.10', '11.10', '12.10'],
@@ -813,94 +941,102 @@ class MetricsCalculator {
         return [
             'months' => [
                 'aug' => [
-                    'id'             => 'month_aug',
-                    'name'           => 'Серпень 2026',
-                    'short_name'     => 'Серпень',
-                    'days_count'     => 31,
-                    'status_note'    => 'Міжсезоння / ППР заводу',
-                    'seed_in'        => 207.96,
-                    'seed_processed' => 0.00,
-                    'oil_out'        => 0.00,
-                    'oil_yield_pct'  => 0.00,
-                    'meal_out'       => 0.00,
-                    'meal_yield_pct' => 0.00,
-                    'husk_out'       => 5.91,
-                    'oil_shipped'    => 76.64,
-                    'meal_shipped'   => 1390.54,
-                    'husk_shipped'   => 78.60,
-                    'trucks_count'   => 8,
-                    'seed_stock'     => 883.40,
-                    'oil_stock'      => 15.35,
-                    'meal_stock'     => 362.60,
-                    'husk_stock'     => 0.00,
-                    'boiler_husk'    => 6.85,
+                    'id'                 => 'month_aug',
+                    'name'               => 'Серпень 2026',
+                    'short_name'         => 'Серпень',
+                    'days_count'         => 31,
+                    'working_days'       => 0,
+                    'working_days_label' => '0 діб переробки (з 31 доби • ППР)',
+                    'status_note'        => 'Завод у ППР • Переробка: 0 діб з 31',
+                    'seed_in'            => 207.96,
+                    'seed_processed'     => 0.00,
+                    'oil_out'            => 0.00,
+                    'oil_yield_pct'      => 0.00,
+                    'meal_out'           => 0.00,
+                    'meal_yield_pct'     => 0.00,
+                    'husk_out'           => 5.91,
+                    'oil_shipped'        => 76.64,
+                    'meal_shipped'       => 1390.54,
+                    'husk_shipped'       => 78.60,
+                    'trucks_count'       => 8,
+                    'seed_stock'         => 883.40,
+                    'oil_stock'          => 15.35,
+                    'meal_stock'         => 362.60,
+                    'husk_stock'         => 0.00,
+                    'boiler_husk'        => 6.85,
                 ],
                 'sep' => [
-                    'id'             => 'month_sep',
-                    'name'           => 'Вересень 2026',
-                    'short_name'     => 'Вересень',
-                    'days_count'     => 30,
-                    'status_note'    => 'Повний місяць переробки',
-                    'seed_in'        => 19070.05,
-                    'seed_processed' => 8823.66,
-                    'oil_out'        => 3811.66,
-                    'oil_yield_pct'  => 43.20,
-                    'meal_out'       => 3683.21,
-                    'meal_yield_pct' => 41.74,
-                    'husk_out'       => 1261.23,
-                    'oil_shipped'    => 1090.30,
-                    'meal_shipped'   => 2332.34,
-                    'husk_shipped'   => 490.66,
-                    'trucks_count'   => 738,
-                    'seed_stock'     => 10966.28,
-                    'oil_stock'      => 2736.71,
-                    'meal_stock'     => 1713.47,
-                    'husk_stock'     => 334.22,
-                    'boiler_husk'    => 409.17,
+                    'id'                 => 'month_sep',
+                    'name'               => 'Вересень 2026',
+                    'short_name'         => 'Вересень',
+                    'days_count'         => 30,
+                    'working_days'       => 16,
+                    'working_days_label' => 'Працював: 16 діб (15.09–30.09) з 30',
+                    'status_note'        => 'Працював 16 діб переробки (15.09–30.09) з 30',
+                    'seed_in'            => 19070.05,
+                    'seed_processed'     => 8823.66,
+                    'oil_out'            => 3811.66,
+                    'oil_yield_pct'      => 43.20,
+                    'meal_out'           => 3683.21,
+                    'meal_yield_pct'     => 41.74,
+                    'husk_out'           => 1261.23,
+                    'oil_shipped'        => 1090.30,
+                    'meal_shipped'       => 2332.34,
+                    'husk_shipped'       => 490.66,
+                    'trucks_count'       => 738,
+                    'seed_stock'         => 10966.28,
+                    'oil_stock'          => 2736.71,
+                    'meal_stock'         => 1713.47,
+                    'husk_stock'         => 334.22,
+                    'boiler_husk'        => 409.17,
                 ],
                 'oct' => [
-                    'id'             => 'month_oct',
-                    'name'           => 'Жовтень 2026 (1-11)',
-                    'short_name'     => 'Жовтень',
-                    'days_count'     => 11,
-                    'status_note'    => 'Поточний місяць (11 діб)',
-                    'seed_in'        => 6075.91,
-                    'seed_processed' => 3646.35,
-                    'oil_out'        => 1646.15,
-                    'oil_yield_pct'  => 45.15,
-                    'meal_out'       => 1521.68,
-                    'meal_yield_pct' => 41.73,
-                    'husk_out'       => 554.87,
-                    'oil_shipped'    => 1024.10,
-                    'meal_shipped'   => 2179.02,
-                    'husk_shipped'   => 478.08,
-                    'trucks_count'   => 231,
-                    'seed_stock'     => 13326.41,
-                    'oil_stock'      => 3358.63,
-                    'meal_stock'     => 1056.13,
-                    'husk_stock'     => 116.84,
-                    'boiler_husk'    => 294.17,
+                    'id'                 => 'month_oct',
+                    'name'               => 'Жовтень 2026 (1-11)',
+                    'short_name'         => 'Жовтень',
+                    'days_count'         => 11,
+                    'working_days'       => 7,
+                    'working_days_label' => 'Працював: 7 діб (01.10–07.10) з 11',
+                    'status_note'        => 'Працював 7 діб переробки (01.10–07.10) з 11',
+                    'seed_in'            => 6075.91,
+                    'seed_processed'     => 3646.35,
+                    'oil_out'            => 1646.15,
+                    'oil_yield_pct'      => 45.15,
+                    'meal_out'           => 1521.68,
+                    'meal_yield_pct'     => 41.73,
+                    'husk_out'           => 554.87,
+                    'oil_shipped'        => 1024.10,
+                    'meal_shipped'       => 2179.02,
+                    'husk_shipped'       => 478.08,
+                    'trucks_count'       => 231,
+                    'seed_stock'         => 13326.41,
+                    'oil_stock'          => 3358.63,
+                    'meal_stock'         => 1056.13,
+                    'husk_stock'         => 116.84,
+                    'boiler_husk'        => 294.17,
                 ]
             ],
             'season_total' => [
-                'name'           => 'Разом за сезон 2026',
-                'period'         => 'Серпень — Жовтень 2026 (72 доби)',
-                'seed_in'        => 25353.92,
-                'seed_processed' => 12470.01,
-                'oil_out'        => 5457.81,
-                'oil_yield_pct'  => 43.77,
-                'meal_out'       => 5204.89,
-                'meal_yield_pct' => 41.74,
-                'husk_out'       => 1822.01,
-                'oil_shipped'    => 2191.04,
-                'meal_shipped'   => 5901.90,
-                'husk_shipped'   => 1047.34,
-                'trucks_count'   => 977,
-                'seed_stock'     => 13326.41,
-                'oil_stock'      => 3358.63,
-                'meal_stock'     => 1056.13,
-                'husk_stock'     => 116.84,
-                'boiler_husk'    => 710.19,
+                'name'               => 'Разом за сезон 2026',
+                'period'             => 'Серпень — Жовтень 2026 (72 доби)',
+                'working_days'       => 23,
+                'working_days_label' => 'Працював: 23 доби переробки (з 72 діб)',
+                'seed_in'            => 25353.92,
+                'seed_processed'     => 12470.01,
+                'oil_out'            => 5457.81,
+                'oil_yield_pct'      => 43.77,
+                'meal_out'           => 5204.89,
+                'meal_yield_pct'     => 41.74,
+                'husk_out'           => 1822.01,
+                'oil_shipped'        => 2191.04,
+                'meal_shipped'       => 5901.90,
+                'husk_shipped'       => 1047.34,
+                'trucks_count'       => 977,
+                'seed_stock'         => 13326.41,
+                'oil_stock'          => 3358.63,
+                'meal_stock'         => 1056.13,
+                'husk_stock'         => 116.84,
+                'boiler_husk'        => 710.19,
             ],
             'chart_comparison' => [
                 'categories'     => ['Серпень 2026', 'Вересень 2026', 'Жовтень 2026 (1-11)'],
@@ -1125,11 +1261,15 @@ class MetricsCalculator {
     }
 
     /**
-     * Показники якості лабораторії (Лист погодження постачання та Графік завезення 1С)
+     * Показники якості лабораторії (з файлу «Лист_погодження.xlsx» -> вкладка «Графік завезення (по днях)» з розрахунком за день, тиждень, місяць і сезон)
      */
     public function getLabQuality(string $period = 'day'): array {
+        // Подобові показники з вкладки «Графік завезення (по днях)» файлу «Лист_погодження.xlsx»:
+        // Кожен запис: фіз. вага (т), залік. вага (т), скидка (т), олійність (%), вологість (%), смітна домішка (%)
         switch ($period) {
             case 'week':
+                // Тиждень 05.10 — 11.10.2026 (7 діб завезення, 143 авто, фіз. 3 767,780 т, залік. 3 758,060 т):
+                // Середньозважена за фіз. вагою з «Графік завезення (по днях)»: Олійність 48,88%, Вологість 7,13%, Смітна домішка 3,28%, Скидка 9,72 т
                 return [
                     'oil_content_pct'        => 48.88,
                     'oil_content_base_pct'   => 48.00,
@@ -1137,19 +1277,21 @@ class MetricsCalculator {
                     'moisture_pct'           => 7.13,
                     'impurity_pct'           => 3.28,
                     'weight_discount_tonnes' => 9.72,
-                    'report_date'            => '05.10 — 11.10.2026 (7 діб)',
+                    'report_date'            => '05.10 — 11.10.2026 (7 діб, Лист погодження)',
                 ];
             case 'day_active':
+                // Доба 06.10.2026 з «Графік завезення (по днях)»: 22 авто, фіз. 589,760 т, залік. 588,792 т, скидка 0,97 т, олійність 48,47%, волога 7,24%, сор 3,14%
                 return [
-                    'oil_content_pct'        => 48.35,
+                    'oil_content_pct'        => 48.47,
                     'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => 0.35,
-                    'moisture_pct'           => 7.17,
-                    'impurity_pct'           => 3.09,
-                    'weight_discount_tonnes' => 2.42,
-                    'report_date'            => '06.10.2026 (доба переробки)',
+                    'oil_deviation_pct'      => 0.47,
+                    'moisture_pct'           => 7.24,
+                    'impurity_pct'           => 3.14,
+                    'weight_discount_tonnes' => 0.97,
+                    'report_date'            => '06.10.2026 (Лист погодження — по днях)',
                 ];
             case 'month_aug':
+                // Серпень 2026 (28.08 та 31.08 — 2 доби приймання, 8 авто, 207,960 т): олійність 44,46%, волога 7,32%, сор 4,66%, скидка 0,00 т
                 return [
                     'oil_content_pct'        => 44.46,
                     'oil_content_base_pct'   => 48.00,
@@ -1157,9 +1299,10 @@ class MetricsCalculator {
                     'moisture_pct'           => 7.32,
                     'impurity_pct'           => 4.66,
                     'weight_discount_tonnes' => 0.00,
-                    'report_date'            => '01.08 — 31.08.2026 (Серпень)',
+                    'report_date'            => 'Серпень 2026 (Лист погодження — по днях)',
                 ];
             case 'month_sep':
+                // Вересень 2026 (26 діб приймання 02.09–30.09, 738 авто, фіз. 19 077,540 т, залік. 19 019,274 т): олійність 49,30%, волога 6,90%, сор 3,25%, скидка 58,27 т
                 return [
                     'oil_content_pct'        => 49.30,
                     'oil_content_base_pct'   => 48.00,
@@ -1167,10 +1310,11 @@ class MetricsCalculator {
                     'moisture_pct'           => 6.90,
                     'impurity_pct'           => 3.25,
                     'weight_discount_tonnes' => 58.27,
-                    'report_date'            => '01.09 — 30.09.2026 (Вересень)',
+                    'report_date'            => 'Вересень 2026 (Лист погодження — по днях)',
                 ];
             case 'month_oct':
             case 'month':
+                // Жовтень 2026 (11 діб приймання 01.10–11.10, 231 авто, фіз. 6 075,910 т, залік. 6 059,980 т): олійність 48,99%, волога 7,25%, сор 3,21%, скидка 15,93 т
                 return [
                     'oil_content_pct'        => 48.99,
                     'oil_content_base_pct'   => 48.00,
@@ -1178,9 +1322,10 @@ class MetricsCalculator {
                     'moisture_pct'           => 7.25,
                     'impurity_pct'           => 3.21,
                     'weight_discount_tonnes' => 15.93,
-                    'report_date'            => '01.10 — 11.10.2026 (Жовтень)',
+                    'report_date'            => 'Жовтень 2026 (01.10–11.10, Лист погодження)',
                 ];
             case 'season':
+                // Разом за сезон 2026 (39 діб приймання, 977 авто, фіз. 25 361,410 т, залік. 25 287,214 т): олійність 49,19%, волога 6,98%, сор 3,25%, скидка 74,20 т
                 return [
                     'oil_content_pct'        => 49.19,
                     'oil_content_base_pct'   => 48.00,
@@ -1188,29 +1333,30 @@ class MetricsCalculator {
                     'moisture_pct'           => 6.98,
                     'impurity_pct'           => 3.25,
                     'weight_discount_tonnes' => 74.20,
-                    'report_date'            => 'Сезон 2026 (72 доби)',
+                    'report_date'            => 'Сезон 2026 (39 діб завезення, Лист погодження)',
                 ];
             case 'day_prev':
             case 'day':
             default:
-                // За 11.10.2026 (з вкладки «Графік завезення»): олійність 49,61%, вологість 7,71%, сор 3,28%, знижка 3,10 т
+                // За 11.10.2026 з «Графік завезення (по днях)» (Лист погодження): 18 авто, фіз. 465,860 т, залік. 463,213 т, скидка 2,65 т, олійність 49,61%, волога 7,71%, сор 3,28%
                 return [
                     'oil_content_pct'        => 49.61,
                     'oil_content_base_pct'   => 48.00,
                     'oil_deviation_pct'      => 1.61,
                     'moisture_pct'           => 7.71,
                     'impurity_pct'           => 3.28,
-                    'weight_discount_tonnes' => 3.10,
-                    'report_date'            => '12.10.2026 09:34 (доба 11.10)',
+                    'weight_discount_tonnes' => 2.65,
+                    'report_date'            => '11.10.2026 (Лист погодження — по днях)',
                 ];
             case 'day_today':
+                // Сьогодні 12.10.2026 (станом на 09:34 ранку завезення ще триває — відображаються показники останньої доби приймання 11.10 з Листа погодження)
                 return [
                     'oil_content_pct'        => 49.61,
                     'oil_content_base_pct'   => 48.00,
                     'oil_deviation_pct'      => 1.61,
-                    'moisture_pct'           => 6.88,
-                    'impurity_pct'           => 3.36,
-                    'weight_discount_tonnes' => 60.61,
+                    'moisture_pct'           => 7.71,
+                    'impurity_pct'           => 3.28,
+                    'weight_discount_tonnes' => 2.65,
                     'report_date'            => '12.10.2026 09:34 (Лист погодження)',
                 ];
         }
@@ -1223,10 +1369,10 @@ class MetricsCalculator {
         switch ($period) {
             case 'week':
                 return [
-                    'contracted_tonnes'   => 4000.0,
+                    'contracted_tonnes'   => 4200.0,
                     'delivered_tonnes'    => 3767.8,
-                    'remaining_tonnes'    => 232.2,
-                    'fulfillment_pct'     => 94.2,
+                    'remaining_tonnes'    => 432.2,
+                    'fulfillment_pct'     => 89.7,
                     'active_specs_count'  => 11,
                     'pending_specs_count' => 3,
                     'report_date'         => '05.10 — 11.10.2026 (Тиждень)',
@@ -1285,10 +1431,10 @@ class MetricsCalculator {
                 ];
             case 'day_prev':
                 return [
-                    'contracted_tonnes'   => 500.0,
+                    'contracted_tonnes'   => 600.0,
                     'delivered_tonnes'    => 465.86,
-                    'remaining_tonnes'    => 34.14,
-                    'fulfillment_pct'     => 93.2,
+                    'remaining_tonnes'    => 134.14,
+                    'fulfillment_pct'     => 77.6,
                     'active_specs_count'  => 11,
                     'pending_specs_count' => 3,
                     'report_date'         => '11.10.2026 20:00',
