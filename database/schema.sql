@@ -10,6 +10,7 @@ SET FOREIGN_KEY_CHECKS = 0;
 CREATE TABLE IF NOT EXISTS `material_balance_logs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `recorded_at` DATETIME NOT NULL COMMENT 'Время замера или фиксации смены',
+    `report_date` VARCHAR(50) DEFAULT NULL COMMENT 'Дата звіту або доби (наприклад 11.10.2026)',
     `shift_type` ENUM('day', 'night') NOT NULL DEFAULT 'day' COMMENT 'Смена: дневная (8-20) или ночная (20-8)',
     
     -- Входящие потоки сырья (тонн)
@@ -102,6 +103,7 @@ CREATE TABLE IF NOT EXISTS `sync_logs` (
 CREATE TABLE IF NOT EXISTS `warehouse_stocks` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `recorded_at` DATETIME NOT NULL COMMENT 'Дата фіксації залишків',
+    `report_date` VARCHAR(50) DEFAULT NULL COMMENT 'Дата та час фіксації СВОД (наприклад 12.10.2026 08:00)',
     `seed_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Залишок насіння на елеваторі (фіз. вага), т',
     `seed_stock_accounting_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Залишок насіння заліковий (бух. облік), т',
     `oil_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Олія в резервуарному парку, т',
@@ -120,6 +122,7 @@ CREATE TABLE IF NOT EXISTS `warehouse_stocks` (
 CREATE TABLE IF NOT EXISTS `lab_quality_logs` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `recorded_at` DATETIME NOT NULL,
+    `report_date` VARCHAR(50) DEFAULT NULL COMMENT 'Дата та час листа погодження лабораторії 1С',
     `oil_content_pct` DECIMAL(5, 2) NOT NULL DEFAULT 49.50 COMMENT 'Фактична олійність на суху речовину, %',
     `oil_content_base_pct` DECIMAL(5, 2) NOT NULL DEFAULT 48.00 COMMENT 'Базова договірна олійність, %',
     `oil_deviation_pct` DECIMAL(5, 2) GENERATED ALWAYS AS (`oil_content_pct` - `oil_content_base_pct`) STORED COMMENT 'Відхилення олійності, %',
@@ -134,6 +137,7 @@ CREATE TABLE IF NOT EXISTS `lab_quality_logs` (
 CREATE TABLE IF NOT EXISTS `contracts_summary` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `recorded_at` DATETIME NOT NULL,
+    `report_date` VARCHAR(50) DEFAULT NULL COMMENT 'Дата та час реєстру договорів 1С',
     `contracted_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 15000.000 COMMENT 'Законтрактовано за договорами, т',
     `delivered_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 13328.694 COMMENT 'Завезено фактично, т',
     `remaining_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 1671.306 COMMENT 'Залишок довезти (на довозі), т',

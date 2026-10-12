@@ -77,6 +77,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $schemaSql = file_get_contents($schemaFile);
             $pdo->exec($schemaSql);
 
+            // 2.1 Гарантоване додавання колонки report_date, якщо таблиці вже існували раніше
+            $upgradeColumns = [
+                'material_balance_logs' => 'report_date',
+                'warehouse_stocks'      => 'report_date',
+                'lab_quality_logs'      => 'report_date',
+                'contracts_summary'     => 'report_date',
+            ];
+            foreach ($upgradeColumns as $tbl => $col) {
+                try {
+                    $pdo->exec("ALTER TABLE `{$tbl}` ADD COLUMN `{$col}` VARCHAR(50) DEFAULT NULL");
+                } catch (Throwable $ignore) {
+                    // Колонка вже існує або таблиця була створена зі свіжої схеми
+                }
+            }
+
             // 3. Загрузка демонстрационных данных при выборе
             if ($installDemo) {
                 $seedFile = __DIR__ . '/database/seed_data.sql';

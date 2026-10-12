@@ -101,13 +101,13 @@ INSERT INTO `sync_logs` (`source`, `status`, `records_processed`, `message`) VAL
 ('crm',    'success', 18, 'Синхронизация статусов электронной очереди выполнена успешно');
 
 -- 6. Складські залишки готової продукції та насіння (реальні дані Агропроінвест 08)
-INSERT INTO `warehouse_stocks` (`recorded_at`, `seed_stock_tonnes`, `seed_stock_accounting_tonnes`, `oil_stock_tonnes`, `meal_stock_tonnes`, `husk_stock_tonnes`, `husk_boiler_spent_tonnes`, `days_seed_reserve`, `oil_shipped_tonnes`, `meal_shipped_tonnes`, `husk_shipped_tonnes`) VALUES
-(NOW(), 7284.327, 7268.882, 3091.323, 757.074, 116.844, 37.618, 12.1, 130.000, 189.960, 48.760);
+INSERT INTO `warehouse_stocks` (`recorded_at`, `report_date`, `seed_stock_tonnes`, `seed_stock_accounting_tonnes`, `oil_stock_tonnes`, `meal_stock_tonnes`, `husk_stock_tonnes`, `husk_boiler_spent_tonnes`, `days_seed_reserve`, `oil_shipped_tonnes`, `meal_shipped_tonnes`, `husk_shipped_tonnes`) VALUES
+(NOW(), '12.10.2026 08:00', 7284.327, 7268.882, 3091.323, 757.074, 116.844, 37.618, 12.1, 130.000, 189.960, 48.760);
 
 -- 7. Показники якості лабораторії (реальні середньозважені з Листа погодження)
-INSERT INTO `lab_quality_logs` (`recorded_at`, `oil_content_pct`, `oil_content_base_pct`, `moisture_pct`, `impurity_pct`, `weight_discount_tonnes`) VALUES
-(NOW(), 49.62, 48.00, 7.15, 3.20, 12.450);
+INSERT INTO `lab_quality_logs` (`recorded_at`, `report_date`, `oil_content_pct`, `oil_content_base_pct`, `moisture_pct`, `impurity_pct`, `weight_discount_tonnes`) VALUES
+(NOW(), '12.10.2026 09:34', 49.62, 48.00, 7.15, 3.20, 12.450);
 
 -- 8. Контрактація та виконання специфікацій (реальні дані з Реєстру)
-INSERT INTO `contracts_summary` (`recorded_at`, `contracted_tonnes`, `delivered_tonnes`, `remaining_tonnes`, `active_specs_count`, `pending_specs_count`) VALUES
-(NOW(), 15146.000, 13328.694, 1817.306, 14, 3);
+INSERT INTO `contracts_summary` (`recorded_at`, `report_date`, `contracted_tonnes`, `delivered_tonnes`, `remaining_tonnes`, `active_specs_count`, `pending_specs_count`) VALUES
+(NOW(), '12.10.2026 09:34', 15146.000, 13328.694, 1817.306, 14, 3);

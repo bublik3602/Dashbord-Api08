@@ -78,6 +78,7 @@ class DashboardDB {
             CREATE TABLE IF NOT EXISTS material_balance_logs (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 recorded_at DATETIME NOT NULL,
+                report_date TEXT DEFAULT NULL,
                 shift_type TEXT NOT NULL DEFAULT 'day',
                 seed_in_plant REAL NOT NULL DEFAULT 0,
                 seed_in_production REAL NOT NULL DEFAULT 0,
