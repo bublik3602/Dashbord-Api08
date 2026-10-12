@@ -614,8 +614,53 @@ document.addEventListener('DOMContentLoaded', function () {
         renderSelectedFiles();
     }
 
+    function detectFileGuideCategory(filename) {
+        const lower = (filename || '').toLowerCase();
+        if (lower.includes('погоджен') || lower.includes('согласован') || lower.includes('лаборатор')) {
+            return { key: 'lab', label: '1С / Лабораторія / Приймання' };
+        }
+        if (lower.includes('ежедн.отчет2') || lower.includes('свод') || lower.includes('залишк') || lower.includes('остатк')) {
+            return { key: 'stocks', label: 'Залишки СВОД / Відвантаження' };
+        }
+        if (lower.includes('справка по переработке') || lower.includes('переработк') || lower.includes('переробк')) {
+            return { key: 'prod', label: 'Переробка / Вихід продукції' };
+        }
+        if (lower.includes('ежедневный отчет') || lower.includes('план производства')) {
+            return { key: 'daily_prod', label: 'План-факт виробництва' };
+        }
+        if (lower.includes('энергоносител') || lower.includes('енергоносі') || lower.includes('агропроінвест') || lower.includes('агропроинвест') || lower.includes('вода') || lower.includes('енерг')) {
+            return { key: 'energy', label: 'Електроенергія та Вода' };
+        }
+        return { key: null, label: 'Звіт Excel' };
+    }
+
+    function updateGuideHighlights() {
+        const allKeys = ['lab', 'stocks', 'prod', 'daily_prod', 'energy'];
+        const matchedKeys = new Set();
+        pendingFiles.forEach(f => {
+            const cat = detectFileGuideCategory(f.name);
+            if (cat.key) matchedKeys.add(cat.key);
+        });
+
+        allKeys.forEach(k => {
+            const itemEl = document.querySelector(`.guide-item[data-expected="${k}"]`);
+            const badgeEl = document.getElementById(`guide-status-${k}`);
+            if (matchedKeys.has(k)) {
+                if (itemEl) itemEl.style.borderColor = '#10b981';
+                if (itemEl) itemEl.style.background = '#f0fdf4';
+                if (badgeEl) badgeEl.style.display = 'inline-block';
+            } else {
+                if (itemEl) itemEl.style.borderColor = '';
+                if (itemEl) itemEl.style.background = '';
+                if (badgeEl) badgeEl.style.display = 'none';
+            }
+        });
+    }
+
     function renderSelectedFiles() {
         if (!selectedFilesList || !filesPillsWrap) return;
+
+        updateGuideHighlights();
 
         if (pendingFiles.length === 0) {
             selectedFilesList.style.display = 'none';
@@ -631,7 +676,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const pill = document.createElement('div');
             pill.className = 'file-pill';
             const sizeKb = (f.size / 1024).toFixed(1);
-            pill.innerHTML = `<span>📄 <strong>${escapeHtml(f.name)}</strong> (${sizeKb} KB)</span>`;
+            const cat = detectFileGuideCategory(f.name);
+            pill.innerHTML = `<span>📄 <strong>${escapeHtml(f.name)}</strong> <small style="color:#059669; font-weight:600;">[${escapeHtml(cat.label)}]</small> (${sizeKb} KB)</span>`;
             filesPillsWrap.appendChild(pill);
         });
     }
@@ -644,6 +690,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function resetUploadState() {
         pendingFiles = [];
+        updateGuideHighlights();
         if (fileInput) fileInput.value = '';
         if (selectedFilesList) selectedFilesList.style.display = 'none';
         if (btnSubmitImport) {

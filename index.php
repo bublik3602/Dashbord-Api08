@@ -1166,56 +1166,67 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         </div>
 
         <div class="modal-body">
-            <!-- Список файлів з обов'язковими назвами та описом -->
+            <!-- Список файлів з точними назвами, які ви скидали -->
             <div class="import-files-guide">
                 <div class="guide-title">
                     <i data-lucide="info" style="width: 15px; height: 15px; color: var(--color-primary);"></i>
-                    <span>Перелік щоденних звітів та обов'язкові назви файлів:</span>
+                    <span>Точні назви ваших файлів Excel для завантаження (можна завантажувати по одному або всі разом):</span>
                 </div>
 
                 <div class="guide-list">
-                    <!-- Файл 1 -->
+                    <!-- Файл 1: Лист_погодження.xlsx -->
                     <div class="guide-item" data-expected="lab">
                         <div class="guide-item-icon">📋</div>
                         <div class="guide-item-content">
-                            <div class="guide-item-name">1. Звіт «Лист погодження» з постачання соняшнику (1С)</div>
-                            <div class="guide-item-filename">Орієнтовна назва: <code>Лист погодження.xlsx</code> або <code>Лист_погодження_*.xlsx</code></div>
-                            <div class="guide-item-desc">Містить показники лабораторії (олійність факт/база, вологість, смітна домішка, знижка з ваги) та реєстр специфікацій на довіз.</div>
+                            <div class="guide-item-name">1. <code>Лист_погодження.xlsx</code> <span class="guide-status-pill" id="guide-status-lab" style="display:none;">✓ Обрано</span></div>
+                            <div class="guide-item-filename">Вкладки всередині: <code>Лист погодження</code>, <code>Невиконані специфікації</code>, <code>Графік завезення (по днях)</code></div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Лабораторію якості (олійність, вологість, смітна домішка), Контрактацію 1С (залишок на довозі) та Зону приймання за добу/тиждень/місяць (тонни та кількість авто по днях).</div>
                         </div>
-                        <span class="guide-tag tag-primary">Лабораторія + 1С</span>
+                        <span class="guide-tag tag-primary">1С + Лабораторія + Приймання</span>
                     </div>
 
-                    <!-- Файл 2 -->
+                    <!-- Файл 2: Ежедн.отчет2_ Октябрь 26  31.xlsx -->
                     <div class="guide-item" data-expected="stocks">
                         <div class="guide-item-icon">🏢</div>
                         <div class="guide-item-content">
-                            <div class="guide-item-name">2. Звіт «Рух сировини та готової продукції» (СВОД)</div>
-                            <div class="guide-item-filename">Орієнтовна назва: <code>СВОД руху продукції.xlsx</code> або <code>Залишки.xlsx</code></div>
-                            <div class="guide-item-desc">Містить фізичний залишок насіння на елеваторі (розрахунок днів автономії при 600 т/д), залишок олії в баках, шроту та лузги, списання лузги на котельню.</div>
+                            <div class="guide-item-name">2. <code>Ежедн.отчет2_ Октябрь 26  31.xlsx</code> <span style="font-weight:400; font-size:11px; color:#64748b;">(або <code>Ежедн.отчет2_ Сентябрь 26.xlsx</code> / <code>Август 26.xlsx</code>)</span> <span class="guide-status-pill" id="guide-status-stocks" style="display:none;">✓ Обрано</span></div>
+                            <div class="guide-item-filename">Вкладки всередині: <code>СВОД_ОКТЯБРЬ 26</code>, <code>СВОД_сент.</code>, <code>СВОД_авг.</code> та щоденні <code>1 число</code> … <code>31 число</code></div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Складські залишки СВОД на ранок (насіння на елеваторі, олія в баках, шрот, лузга), запас автономної роботи заводу в добах, добове відвантаження та спалювання лузги в котельні.</div>
                         </div>
-                        <span class="guide-tag tag-emerald">Складські залишки</span>
+                        <span class="guide-tag tag-emerald">Залишки СВОД + Відвантаження</span>
                     </div>
 
-                    <!-- Файл 3 -->
+                    <!-- Файл 3: Справка по переработке урожая 2026 .xlsx -->
                     <div class="guide-item" data-expected="prod">
                         <div class="guide-item-icon">⚙️</div>
                         <div class="guide-item-content">
-                            <div class="guide-item-name">3. Звіт «Виробництво та переробка МЕЗ» (Пресування / Екстракція)</div>
-                            <div class="guide-item-filename">Орієнтовна назва: <code>Виробництво МЕЗ.xlsx</code> або <code>Матеріальний_баланс.xlsx</code></div>
-                            <div class="guide-item-desc">Містить фактичну переробку насіння за зміну/добу, вихід олії, шроту, лузги та технологічні втрати.</div>
+                            <div class="guide-item-name">3. <code>Справка по переработке урожая 2026 .xlsx</code> <span style="font-weight:400; font-size:11px; color:#64748b;">(також <code>Справка по переработке урожая 2025 .xlsx</code>)</span> <span class="guide-status-pill" id="guide-status-prod" style="display:none;">✓ Обрано</span></div>
+                            <div class="guide-item-filename">Вкладки всередині: <code>Октябрь26</code>, <code>Сент.26</code>, <code>СВОДНАЯ 2026-27</code> (та <code>СВОДНАЯ 2025-26</code>)</div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Переробку насіння у виробництві (цех екстракції) по днях та місяцях, вихід готової продукції у тоннах і % (Олія + Шрот + Лузга, включно з плюсовим виходом >100%) та втрати.</div>
                         </div>
-                        <span class="guide-tag tag-amber">Матеріальний баланс</span>
+                        <span class="guide-tag tag-amber">Переробка + Вихід продукції</span>
                     </div>
 
-                    <!-- Файл 4 -->
-                    <div class="guide-item" data-expected="logistics">
-                        <div class="guide-item-icon">🚚</div>
+                    <!-- Файл 4: Ежедневный отчет _ Октябрь 26.xlsx -->
+                    <div class="guide-item" data-expected="daily_prod">
+                        <div class="guide-item-icon">📊</div>
                         <div class="guide-item-content">
-                            <div class="guide-item-name">4. Реєстр ТТН та вагових (опціонально)</div>
-                            <div class="guide-item-filename">Орієнтовна назва: <code>ТТН_автотранспорт.xlsx</code> або <code>Вагова.xlsx</code></div>
-                            <div class="guide-item-desc">Використовується для додаткової синхронізації рейсів автотранспорту (якщо відключено пряму базу CRM apgk_api08).</div>
+                            <div class="guide-item-name">4. <code>Ежедневный отчет _ Октябрь 26.xlsx</code> <span style="font-weight:400; font-size:11px; color:#64748b;">(або за Вересень / Серпень)</span> <span class="guide-status-pill" id="guide-status-daily_prod" style="display:none;">✓ Обрано</span></div>
+                            <div class="guide-item-filename">Вкладки всередині: <code>ПЛАН производства</code>, <code>СВОД за период</code>, <code>1 число</code> … <code>31 число</code></div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Оперативний щоденний звіт виробництва та виконання виробничого плану по змінах/добах.</div>
                         </div>
-                        <span class="guide-tag tag-slate">Логістика (опція)</span>
+                        <span class="guide-tag tag-slate">План виробництва</span>
+                    </div>
+
+                    <!-- Файл 5: РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx та АГРОПРОІНВЕСТ 08(28).xlsx -->
+                    <div class="guide-item" data-expected="energy">
+                        <div class="guide-item-icon">⚡</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">5. <code>РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx</code> та <code>АГРОПРОІНВЕСТ 08(28).xlsx</code> <span class="guide-status-pill" id="guide-status-energy" style="display:none;">✓ Обрано</span></div>
+                            <div class="guide-item-filename">Вкладки всередині: <code>січень 26</code> … <code>вересень 26</code>, <code>ЖОВТЕНЬ</code>, <code>2026</code>, <code>ел. енергія 2026</code></div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Блок В — графік електроенергії та води по днях, питому витрату кВт·год/т, показники лічильників ТП 2×1600 / ТП-2000, водомірного вузла, котельні, екстракції та стоків.</div>
+                        </div>
+                        <span class="guide-tag tag-primary">Електроенергія + Вода</span>
                     </div>
                 </div>
             </div>

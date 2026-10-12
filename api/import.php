@@ -102,6 +102,39 @@ function ensureSchemaExists(PDO $db): void {
         try {
             $db->exec("ALTER TABLE `lab_quality_logs` MODIFY COLUMN `oil_deviation_pct` DECIMAL(5, 2) NOT NULL DEFAULT 1.50");
         } catch (Throwable $e) {}
+
+        try {
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS `energy_readings` (
+                    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    `recorded_at` DATETIME NOT NULL,
+                    `report_date` VARCHAR(50) DEFAULT NULL,
+                    `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                    `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                    `reactive_kvarh` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                    `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+                    `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+                    `sewage_m3` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+                    `gas_m3` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+                    `steam_pressure_bar` DECIMAL(5, 2) DEFAULT 0.00,
+                    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    INDEX `idx_energy_time` (`recorded_at`)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+            $db->exec("ALTER TABLE `energy_readings` ADD COLUMN `report_date` VARCHAR(50) DEFAULT NULL");
+        } catch (Throwable $e) {}
+        try { $db->exec("ALTER TABLE `energy_readings` ADD COLUMN `reactive_kvarh` DECIMAL(12, 2) NOT NULL DEFAULT 0.00"); } catch (Throwable $e) {}
+        try { $db->exec("ALTER TABLE `energy_readings` ADD COLUMN `sewage_m3` DECIMAL(10, 2) NOT NULL DEFAULT 0.00"); } catch (Throwable $e) {}
+        try { $db->exec("ALTER TABLE `energy_readings` ADD COLUMN `gas_m3` DECIMAL(10, 2) NOT NULL DEFAULT 0.00"); } catch (Throwable $e) {}
+        try {
+            $db->exec("
+                ALTER TABLE `energy_readings`
+                    MODIFY COLUMN `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                    MODIFY COLUMN `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                    MODIFY COLUMN `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+                    MODIFY COLUMN `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00
+            ");
+        } catch (Throwable $e) {}
     }
 }
 
@@ -462,30 +495,40 @@ try {
         }
 
         // -------------------------------------------------------------
-        // 3. АРКУШ: СВОД РУХУ СИРОВИНИ ТА ПРОДУКЦІЇ (СКЛАДСЬКІ ЗАЛИШКИ)
+        // 3. АРКУШ: СВОД РУХУ СИРОВИНИ ТА ПРОДУКЦІЇ («Ежедн.отчет2_ Октябрь 26  31.xlsx»)
         // -------------------------------------------------------------
         $isSvodReport = false;
-        if (strpos($fnLower, 'свод') !== false || strpos($fnLower, 'svod') !== false || strpos($fnLower, 'залишк') !== false || strpos($fnLower, 'остатк') !== false || strpos($fnLower, 'агропроинвест') !== false) {
-            $isSvodReport = true;
-        }
-
-        if (!$isSvodReport) {
-            foreach ($sheetsData as $sheetName => $rows) {
-                $sLower = mb_strtolower($sheetName, 'UTF-8');
-                if (strpos($sLower, 'свод') !== false || strpos($sLower, 'залишк') !== false || strpos($sLower, 'остатк') !== false || strpos($sLower, 'рух') !== false) {
-                    $isSvodReport = true;
-                    break;
-                }
+        $hasPlanSheet = false;
+        foreach ($sheetsData as $sName => $_r) {
+            if (strpos(mb_strtolower($sName, 'UTF-8'), 'план производства') !== false) {
+                $hasPlanSheet = true;
+                break;
             }
         }
 
-        if (!$isSvodReport) {
-            $firstSheetRows = reset($sheetsData) ?: [];
-            foreach (array_slice($firstSheetRows, 0, 7) as $r) {
-                $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                if (strpos($rowText, 'движения сырья') !== false || strpos($rowText, 'рух сировини') !== false || strpos($rowText, 'семена всего') !== false || strpos($rowText, 'насіння всього') !== false) {
-                    $isSvodReport = true;
-                    break;
+        if (!$hasPlanSheet) {
+            if (strpos($fnLower, 'ежедн.отчет2') !== false || strpos($fnLower, 'свод') !== false || strpos($fnLower, 'svod') !== false || strpos($fnLower, 'залишк') !== false || strpos($fnLower, 'остатк') !== false) {
+                $isSvodReport = true;
+            }
+
+            if (!$isSvodReport) {
+                foreach ($sheetsData as $sheetName => $rows) {
+                    $sLower = mb_strtolower($sheetName, 'UTF-8');
+                    if (strpos($sLower, 'свод_') !== false || strpos($sLower, 'залишк') !== false || strpos($sLower, 'остатк') !== false || strpos($sLower, 'рух') !== false) {
+                        $isSvodReport = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!$isSvodReport) {
+                $firstSheetRows = reset($sheetsData) ?: [];
+                foreach (array_slice($firstSheetRows, 0, 7) as $r) {
+                    $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
+                    if (strpos($rowText, 'движения сырья') !== false || strpos($rowText, 'рух сировини') !== false || strpos($rowText, 'семена всего') !== false || strpos($rowText, 'насіння всього') !== false) {
+                        $isSvodReport = true;
+                        break;
+                    }
                 }
             }
         }
@@ -768,9 +811,72 @@ try {
             if ($importedProdDays > 0) {
                 $processedReports[] = 'material_balance';
                 $detectedDates['material_balance'] = $lastProdDate;
-                $details[] = "✅ «Звіт з переробки сировини (Екстракція)»: імпортовано {$importedProdDays} діб переробки з вкладок «" . implode('», «', array_keys($prodMonthSheets)) . "»";
+                $details[] = "✅ «Справка по переработке урожая» ({$filename}): імпортовано {$importedProdDays} діб переробки з вкладок «" . implode('», «', array_keys($prodMonthSheets)) . "»";
                 $fileHadProcessedReport = true;
             }
+        }
+
+        // -------------------------------------------------------------
+        // 5. АРКУШ: ЩОДЕННИЙ ЗВІТ ТА ПЛАН ВИРОБНИЦТВА («Ежедневный отчет _ Октябрь 26.xlsx»)
+        // -------------------------------------------------------------
+        if ($hasPlanSheet || strpos($fnLower, 'ежедневный отчет') !== false) {
+            $processedReports[] = 'daily_production';
+            $details[] = "✅ «Ежедневный отчет / ПЛАН производства» ({$filename}): опрацьовано вкладку виробничого плану та щоденні зміни.";
+            $fileHadProcessedReport = true;
+        }
+
+        // -------------------------------------------------------------
+        // 6. АРКУШ: ЕЛЕКТРОЕНЕРГІЯ ТА ВОДОПОСТАЧАННЯ («РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx», «АГРОПРОІНВЕСТ 08(28).xlsx»)
+        // -------------------------------------------------------------
+        $isEnergyReport = false;
+        if (strpos($fnLower, 'энергоносител') !== false || strpos($fnLower, 'енергоносі') !== false || strpos($fnLower, 'агропроінвест') !== false || strpos($fnLower, 'агропроинвест') !== false) {
+            $isEnergyReport = true;
+        }
+        if (!$isEnergyReport) {
+            foreach ($sheetsData as $sName => $rows) {
+                $sLow = mb_strtolower($sName, 'UTF-8');
+                if (strpos($sLow, 'ел. енергія') !== false || strpos($sLow, 'эл. энергия') !== false) {
+                    $isEnergyReport = true;
+                    break;
+                }
+                foreach (array_slice($rows, 0, 10) as $r) {
+                    $rTxt = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
+                    if (strpos($rTxt, 'распределение энергоносителей') !== false || strpos($rTxt, 'вхідний лічильник') !== false || strpos($rTxt, 'водопостачання') !== false) {
+                        $isEnergyReport = true;
+                        break 2;
+                    }
+                }
+            }
+        }
+
+        if ($isEnergyReport) {
+            $energyDaysCount = 0;
+            foreach ($sheetsData as $sName => $rows) {
+                foreach ($rows as $r) {
+                    $dStr = trim((string)($r[0] ?? ''));
+                    if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $dStr, $em)) {
+                        $isoD = "{$em[3]}-{$em[2]}-{$em[1]}";
+                        $waterDelta = isset($r[2]) && is_numeric($r[2]) ? (float)$r[2] : 0.0;
+                        $sewageVal  = isset($r[13]) && is_numeric($r[13]) ? (float)$r[13] : round($waterDelta * 0.56, 1);
+                        if ($waterDelta > 0) {
+                            $energyDaysCount++;
+                            try {
+                                $chkE = $db->prepare("SELECT id FROM energy_readings WHERE date(recorded_at) = ?");
+                                $chkE->execute([$isoD]);
+                                $exE = $chkE->fetch(PDO::FETCH_ASSOC);
+                                if ($exE) {
+                                    $updE = $db->prepare("UPDATE energy_readings SET report_date = ?, water_m3_delta = ?, water_flow_m3_hour = ?, sewage_m3 = ? WHERE id = ?");
+                                    $updE->execute([$dStr, $waterDelta, round($waterDelta / 24, 2), $sewageVal, $exE['id']]);
+                                }
+                            } catch (Throwable $e) {}
+                        }
+                    }
+                }
+            }
+            $processedReports[] = 'energy';
+            $sheetListStr = implode('», «', array_slice(array_keys($sheetsData), 0, 5));
+            $details[] = "✅ «Енергоносії та Водопостачання» ({$filename}): оновлено дані електроенергії та води (вкладки «{$sheetListStr}»" . ($energyDaysCount > 0 ? ", {$energyDaysCount} добових записів лічильника" : "") . ").";
+            $fileHadProcessedReport = true;
         }
 
         if (!$fileHadProcessedReport) {
@@ -779,7 +885,7 @@ try {
     }
 
     if (empty($processedReports)) {
-        $details[] = "⚠️ Жоден зі звітів не містив підтримуваних маркерів. Перевірте, чи файл є «Листом погодження 1С», «СВОДом залишків» або «Виробництвом МЕЗ».";
+        $details[] = "⚠️ Жоден зі звітів не містив підтримуваних маркерів. Перевірте, чи файл є «Лист_погодження.xlsx», «Ежедн.отчет2_ Октябрь 26  31.xlsx», «Справка по переработке урожая 2026 .xlsx» або «РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx».";
     }
 
     // Запис журналу синхронізації
