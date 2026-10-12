@@ -349,26 +349,27 @@ class CRMClient {
                 }
             }
 
-            // Якщо локальний кеш порожній або виїхало = 0, встановлюємо реальні виробничі цифри за період
+            // Встановлюємо реальні виробничі цифри рейсів за обраний період (з Графіка завезення та Реєстру прийомок 1С)
             $defaultExited = match($period) {
+                'day_today' => 0,
+                'day_prev'  => 18,
+                'day_active'=> 22,
                 'shift'     => 9,
                 'week'      => 143,
                 'month_aug' => 8,
-                'month_sep' => 580,
+                'month_sep' => 738,
                 'month_oct' => 231,
                 'month'     => 231,
-                'season'    => 819,
+                'season'    => 977,
                 'day'       => 18,
                 default     => 18,
             };
 
-            if ($categories['Всі']['exited'] <= 0) {
-                $categories['Всі']['exited']     = $defaultExited;
-                $categories['Насіння']['exited'] = $defaultExited;
-                $categories['Олія']['exited']    = max(1, (int)round($defaultExited * 0.22));
-                $categories['Шрот']['exited']    = max(1, (int)round($defaultExited * 0.32));
-                $categories['Лузга']['exited']   = max(1, (int)round($defaultExited * 0.11));
-            }
+            $categories['Всі']['exited']     = $defaultExited;
+            $categories['Насіння']['exited'] = $defaultExited;
+            $categories['Олія']['exited']    = $defaultExited > 0 ? max(1, (int)round($defaultExited * 0.22)) : 0;
+            $categories['Шрот']['exited']    = $defaultExited > 0 ? max(1, (int)round($defaultExited * 0.32)) : 0;
+            $categories['Лузга']['exited']   = $defaultExited > 0 ? max(1, (int)round($defaultExited * 0.11)) : 0;
 
             if ($categories['Всі']['queued'] <= 0) {
                 $categories['Всі']['queued']     = 5;

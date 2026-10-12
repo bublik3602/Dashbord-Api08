@@ -94,8 +94,9 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <option value="month_sep">Вересень 2026 (30 діб)</option>
                         <option value="month_aug">Серпень 2026 (31 доба, ППР)</option>
                         <option value="season">Сезон 2026 (Серпень — Жовтень)</option>
+                        <option value="day_prev">Минула доба (11.10 — прийомка 465,9 т, переробка 0 т)</option>
+                        <option value="day_active">Остання доба переробки (06.10 — перероблено 600,3 т)</option>
                         <option value="day_today">Сьогодні (12.10, без переробки)</option>
-                        <option value="day_prev">Минула доба (11.10, перероблено 452 т)</option>
                     </select>
                 </div>
             </div>
@@ -220,7 +221,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </span>
             </div>
             <div class="kpi-subtext">
-                <span>Усушка/сміття: <?= number_format($mb['receiving_zone']['conditioning_loss'], 1, ',', ' ') ?> т</span>
+                <span id="val-cond-loss">Усушка/сміття: <?= number_format($mb['receiving_zone']['conditioning_loss'], 1, ',', ' ') ?> т</span>
                 <span>Подача в РВЦ</span>
             </div>
         </div>
@@ -259,7 +260,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="gauge-card">
                 <div class="gauge-header">
                     <span class="gauge-title">🧪 Олійність насіння</span>
-                    <span class="gauge-badge badge-bonus" id="badge-lab-oil-dev">+<?= number_format($lab['oil_deviation_pct'] ?? 1.62, 2, ',', ' ') ?>% (Бонус)</span>
+                    <span class="gauge-badge badge-bonus" id="badge-lab-oil-dev">+<?= number_format($lab['oil_deviation_pct'] ?? 1.61, 2, ',', ' ') ?>% (Бонус)</span>
                 </div>
                 <div id="chart-gauge-oil" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
@@ -272,8 +273,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="gauge-card">
                 <div class="gauge-header">
                     <span class="gauge-title">💧 Вологість сировини</span>
-                    <span class="gauge-badge <?= ($lab['moisture_pct'] ?? 7.15) <= 8.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-lab-moisture">
-                        <?= ($lab['moisture_pct'] ?? 7.15) <= 8.0 ? 'В нормі (< 8%)' : 'Перевищення' ?>
+                    <span class="gauge-badge <?= ($lab['moisture_pct'] ?? 7.71) <= 8.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-lab-moisture">
+                        <?= ($lab['moisture_pct'] ?? 7.71) <= 8.0 ? 'В нормі (< 8%)' : 'Перевищення' ?>
                     </span>
                 </div>
                 <div id="chart-gauge-moisture" class="gauge-chart-container"></div>
@@ -287,7 +288,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="gauge-card">
                 <div class="gauge-header">
                     <span class="gauge-title">🌾 Смітна домішка (сор)</span>
-                    <span class="gauge-badge badge-normal" id="badge-lab-impurity">Знижка: <?= number_format($lab['weight_discount_tonnes'] ?? 12.45, 1, ',', ' ') ?> т</span>
+                    <span class="gauge-badge badge-normal" id="badge-lab-impurity">Знижка: <?= number_format($lab['weight_discount_tonnes'] ?? 3.10, 1, ',', ' ') ?> т</span>
                 </div>
                 <div id="chart-gauge-impurity" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
@@ -300,12 +301,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="gauge-card">
                 <div class="gauge-header">
                     <span class="gauge-title">📋 Виконання контрактів (1С)</span>
-                    <span class="gauge-badge badge-bonus" id="badge-contracts-pct"><?= number_format($contracts['fulfillment_pct'] ?? 88.0, 1, ',', ' ') ?>%</span>
+                    <span class="gauge-badge badge-bonus" id="badge-contracts-pct"><?= number_format($contracts['fulfillment_pct'] ?? 94.3, 1, ',', ' ') ?>%</span>
                 </div>
                 <div id="chart-gauge-contracts" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
-                    <div class="gauge-sub">Завезено: <strong id="val-contracts-delivered"><?= number_format($contracts['delivered_tonnes'] ?? 13328.7, 0, ',', ' ') ?> т</strong> / <?= number_format($contracts['contracted_tonnes'] ?? 15146.0, 0, ',', ' ') ?> т</div>
-                    <div class="gauge-note" id="val-contracts-sub">Залишок: <?= number_format($contracts['remaining_tonnes'] ?? 1817.3, 0, ',', ' ') ?> т (<?= $contracts['active_specs_count'] ?? 14 ?> у роботі, <?= $contracts['pending_specs_count'] ?? 3 ?> очікують)</div>
+                    <div class="gauge-sub">Завезено: <strong id="val-contracts-delivered"><?= number_format($contracts['delivered_tonnes'] ?? 17642.9, 0, ',', ' ') ?> т / <?= number_format($contracts['contracted_tonnes'] ?? 18711.0, 0, ',', ' ') ?> т</strong></div>
+                    <div class="gauge-note" id="val-contracts-sub">Залишок: <?= number_format($contracts['remaining_tonnes'] ?? 1647.9, 0, ',', ' ') ?> т (<?= $contracts['active_specs_count'] ?? 11 ?> у роботі, <?= $contracts['pending_specs_count'] ?? 3 ?> очікують)</div>
                 </div>
             </div>
         </div>
@@ -658,19 +659,19 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">⚙️ Переробка:</span>
-                        <span class="metric-val bold"><?= number_format($mSep['seed_processed'] ?? 8918.40, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val bold"><?= number_format($mSep['seed_processed'] ?? 8823.66, 2, ',', ' ') ?> т</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">💧 Вихід олії:</span>
-                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($mSep['oil_out'] ?? 3811.66, 2, ',', ' ') ?> т (<?= $mSep['oil_yield_pct'] ?? 42.74 ?>%)</span>
+                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($mSep['oil_out'] ?? 3811.66, 2, ',', ' ') ?> т (<?= $mSep['oil_yield_pct'] ?? 43.20 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌾 Вихід шроту:</span>
-                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($mSep['meal_out'] ?? 3683.21, 2, ',', ' ') ?> т (<?= $mSep['meal_yield_pct'] ?? 41.30 ?>%)</span>
+                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($mSep['meal_out'] ?? 3683.21, 2, ',', ' ') ?> т (<?= $mSep['meal_yield_pct'] ?? 41.74 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🚚 Автотранспорт:</span>
-                        <span class="metric-val bold"><?= $mSep['trucks_count'] ?? 580 ?> авто</span>
+                        <span class="metric-val bold"><?= $mSep['trucks_count'] ?? 738 ?> авто</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🏢 Залишок насіння:</span>
@@ -700,15 +701,15 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">⚙️ Переробка:</span>
-                        <span class="metric-val bold"><?= number_format($mOct['seed_processed'] ?? 4296.35, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val bold"><?= number_format($mOct['seed_processed'] ?? 3646.35, 2, ',', ' ') ?> т</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">💧 Вихід олії:</span>
-                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($mOct['oil_out'] ?? 1593.13, 2, ',', ' ') ?> т (<?= $mOct['oil_yield_pct'] ?? 43.80 ?>%)</span>
+                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($mOct['oil_out'] ?? 1646.15, 2, ',', ' ') ?> т (<?= $mOct['oil_yield_pct'] ?? 45.15 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌾 Вихід шроту:</span>
-                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($mOct['meal_out'] ?? 1521.68, 2, ',', ' ') ?> т (<?= $mOct['meal_yield_pct'] ?? 41.20 ?>%)</span>
+                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($mOct['meal_out'] ?? 1521.68, 2, ',', ' ') ?> т (<?= $mOct['meal_yield_pct'] ?? 41.73 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🚚 Автотранспорт:</span>
@@ -742,23 +743,23 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">⚙️ Переробка:</span>
-                        <span class="metric-val bold"><?= number_format($seasonTot['seed_processed'] ?? 13214.75, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val bold"><?= number_format($seasonTot['seed_processed'] ?? 12470.01, 2, ',', ' ') ?> т</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">💧 Вихід олії:</span>
-                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($seasonTot['oil_out'] ?? 5404.79, 2, ',', ' ') ?> т (<?= $seasonTot['oil_yield_pct'] ?? 42.92 ?>%)</span>
+                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($seasonTot['oil_out'] ?? 5457.81, 2, ',', ' ') ?> т (<?= $seasonTot['oil_yield_pct'] ?? 43.77 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌾 Вихід шроту:</span>
-                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($seasonTot['meal_out'] ?? 5204.89, 2, ',', ' ') ?> т (<?= $seasonTot['meal_yield_pct'] ?? 41.33 ?>%)</span>
+                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($seasonTot['meal_out'] ?? 5204.89, 2, ',', ' ') ?> т (<?= $seasonTot['meal_yield_pct'] ?? 41.74 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🚚 Автотранспорт:</span>
-                        <span class="metric-val bold"><?= $seasonTot['trucks_count'] ?? 819 ?> авто</span>
+                        <span class="metric-val bold"><?= $seasonTot['trucks_count'] ?? 977 ?> авто</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🪵 Лузга всього:</span>
-                        <span class="metric-val"><?= number_format($seasonTot['husk_out'] ?? 1822.00, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val"><?= number_format($seasonTot['husk_out'] ?? 1822.01, 2, ',', ' ') ?> т</span>
                     </div>
                 </div>
                 <div class="month-card-footer">
@@ -807,10 +808,10 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <span class="season-kpi-unit">т (рік)</span>
                         </div>
                         <div class="season-kpi-subtext">
-                            Сезон 2026: <strong><?= number_format($seasonTot['seed_processed'] ?? 13214.75, 1, ',', ' ') ?> т</strong> (запуск у вересні)
+                            Сезон 2026: <strong><?= number_format($seasonTot['seed_processed'] ?? 12470.01, 1, ',', ' ') ?> т</strong> (запуск у вересні)
                         </div>
                         <div class="season-progress-track" title="Співвідношення поточного обсягу до річного обсягу 2025">
-                            <div class="season-progress-fill" style="width: 21.3%; background: #10b981;"></div>
+                            <div class="season-progress-fill" style="width: 20.1%; background: #10b981;"></div>
                         </div>
                     </div>
 
@@ -825,7 +826,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <span class="season-kpi-unit">еталон року</span>
                         </div>
                         <div class="season-kpi-subtext">
-                            Вер–Жов 2025: <strong>43,94%</strong> &bull; Сезон 2026: <strong><?= number_format($seasonTot['oil_yield_pct'] ?? 42.92, 1, ',', '') ?>%</strong>
+                            Вер–Жов 2025: <strong>43,94%</strong> &bull; Сезон 2026: <strong><?= number_format($seasonTot['oil_yield_pct'] ?? 43.77, 2, ',', '') ?>%</strong>
                         </div>
                         <div class="season-progress-track">
                             <div class="season-progress-fill" style="width: 44.3%; background: #f59e0b;"></div>
@@ -843,7 +844,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <span class="season-kpi-unit">еталон року</span>
                         </div>
                         <div class="season-kpi-subtext">
-                            Вер–Жов 2025: <strong>41,84%</strong> &bull; Сезон 2026: <strong><?= number_format($seasonTot['meal_yield_pct'] ?? 41.33, 1, ',', '') ?>%</strong>
+                            Вер–Жов 2025: <strong>41,84%</strong> &bull; Сезон 2026: <strong><?= number_format($seasonTot['meal_yield_pct'] ?? 41.74, 2, ',', '') ?>%</strong>
                         </div>
                         <div class="season-progress-track">
                             <div class="season-progress-fill" style="width: 41.7%; background: #2563eb;"></div>
@@ -851,17 +852,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
 
                     <!-- 4. Сума Олія + Шрот -->
-                    <div class="season-kpi-card card-accent-sum" title="Сума олія+шрот: 85.97% за рік (85.78% за Вер-Жов). Загальний вихід готової продукції з лузгою 98.85%">
+                    <div class="season-kpi-card card-accent-sum" title="Сума олія+шрот: 85.97% за рік (85.78% за Вер-Жов 2025; 85.51% за Сезон 2026). Загальний вихід готової продукції з лузгою 98.85%">
                         <div class="season-kpi-header">
                             <span class="season-kpi-title" style="color: #6d28d9;">⚖️ Олія + Шрот</span>
-                            <span class="season-kpi-badge" style="background: #ede9fe; color: #6d28d9;">Вихід 98,85%</span>
+                            <span class="season-kpi-badge" style="background: #ede9fe; color: #6d28d9;">Сезон 26: 85,51%</span>
                         </div>
                         <div class="season-kpi-number-wrap">
                             <span class="season-kpi-number" style="color: #7c3aed;"><?= number_format($full2025['oil_meal_pct'] ?? 85.97, 2, ',', '') ?>%</span>
-                            <span class="season-kpi-unit">разом</span>
+                            <span class="season-kpi-unit">еталон року</span>
                         </div>
                         <div class="season-kpi-subtext">
-                            Втрати виробництва: лише <strong>1,15%</strong> (713,7 т за рік)
+                            Втрати виробництва 2025: <strong>1,15%</strong> &bull; Сезон 2026: <strong>85,51% (олія+шрот)</strong>
                         </div>
                         <div class="season-progress-track">
                             <div class="season-progress-fill" style="width: 86.0%; background: #8b5cf6;"></div>
@@ -886,72 +887,72 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <tr>
                                 <td>Завезено насіння (авто/елеватор)</td>
                                 <td class="bold">25 353,9 т</td>
-                                <td>21 655,3 т</td>
+                                <td>21 329,0 т</td>
                                 <td>62 403,3 т</td>
-                                <td><span class="trend-badge trend-good">+17.1% завіз</span></td>
+                                <td><span class="trend-badge trend-good">+18.9% завіз</span></td>
                             </tr>
                             <tr>
-                                <td>Перероблено соняшнику</td>
-                                <td class="bold">13 214,8 т</td>
+                                <td>Перероблено соняшнику (очищене)</td>
+                                <td class="bold">12 470,0 т</td>
                                 <td>21 117,1 т</td>
                                 <td>61 892,9 т</td>
                                 <td><span class="trend-badge trend-neutral">Запуск вересень</span></td>
                             </tr>
                             <tr>
-                                <td>Середня олійність сировини</td>
-                                <td class="bold">45,60%</td>
+                                <td>Середня олійність сировини (вхід у цех)</td>
+                                <td class="bold">44,69% (лаб. 49,19%)</td>
                                 <td>44,79%</td>
                                 <td>45,13%</td>
-                                <td><span class="trend-badge trend-good">+0,47% олійність</span></td>
+                                <td><span class="trend-badge trend-good">В межах норми</span></td>
                             </tr>
                             <tr>
                                 <td>Вихід олії (т / %)</td>
-                                <td class="bold" style="color: #d97706;">5 404,8 т (42,9%)</td>
-                                <td>9 279,8 т (43,9%)</td>
-                                <td>27 416,9 т (44,3%)</td>
-                                <td><span class="trend-badge trend-good">Якість в нормі</span></td>
+                                <td class="bold" style="color: #d97706;">5 457,8 т (43,77%)</td>
+                                <td>9 279,8 т (43,94%)</td>
+                                <td>27 416,9 т (44,30%)</td>
+                                <td><span class="trend-badge trend-good">Жовтень 45,15%</span></td>
                             </tr>
                             <tr>
                                 <td>Вихід шроту (т / %)</td>
-                                <td class="bold" style="color: #2563eb;">5 204,9 т (41,3%)</td>
-                                <td>8 835,8 т (41,8%)</td>
-                                <td>25 790,4 т (41,7%)</td>
-                                <td><span class="trend-badge trend-good">Стабільний віджим</span></td>
+                                <td class="bold" style="color: #2563eb;">5 204,9 т (41,74%)</td>
+                                <td>8 835,8 т (41,84%)</td>
+                                <td>25 790,4 т (41,67%)</td>
+                                <td><span class="trend-badge trend-good">+0,07% до року</span></td>
                             </tr>
                             <tr>
                                 <td>Вихід лузги (т / %)</td>
-                                <td class="bold">1 822,0 т (13,8%)</td>
-                                <td>2 678,6 т (12,7%)</td>
-                                <td>7 971,8 т (12,9%)</td>
+                                <td class="bold">1 816,1 т (14,56%)</td>
+                                <td>2 678,6 т (12,68%)</td>
+                                <td>7 971,8 т (12,88%)</td>
                                 <td><span class="trend-badge trend-neutral">Паливний баланс</span></td>
                             </tr>
                             <tr>
-                                <td>Технологічні втрати</td>
-                                <td class="bold">783,1 т (5,9%)</td>
-                                <td>322,9 т (1,53%)</td>
-                                <td>713,7 т (1,15%)</td>
-                                <td><span class="trend-badge trend-neutral">Еталон 1,15%</span></td>
+                                <td>Втрати з елеватора (підробка)</td>
+                                <td class="bold">148,3 т (1,18%)</td>
+                                <td>211,9 т (1,00%)</td>
+                                <td>510,4 т (0,82%)</td>
+                                <td><span class="trend-badge trend-good">Норма &lt; 2,5%</span></td>
                             </tr>
                             <tr>
                                 <td>Сума Олія + Шрот (%)</td>
-                                <td class="bold" style="color: #7c3aed;">84,25%</td>
+                                <td class="bold" style="color: #7c3aed;">85,51%</td>
                                 <td>85,78%</td>
                                 <td>85,97%</td>
-                                <td><span class="trend-badge trend-good">Ціль 85-86%</span></td>
+                                <td><span class="trend-badge trend-good">Ціль 85–86%</span></td>
                             </tr>
                             <tr>
                                 <td>Загальний вихід готової продукції</td>
-                                <td class="bold">94,1%</td>
+                                <td class="bold">99,23% (Вер) / 100%</td>
                                 <td>98,47%</td>
                                 <td>98,85%</td>
-                                <td><span class="trend-badge trend-good">Еталон 98,85%</span></td>
+                                <td><span class="trend-badge trend-good">Вище еталону</span></td>
                             </tr>
                             <tr>
                                 <td>Залишок насіння на складі заводу</td>
                                 <td class="bold" style="color: #059669;">13 326,4 т</td>
-                                <td>538,2 т</td>
+                                <td>211,9 т</td>
                                 <td>510,4 т</td>
-                                <td><span class="trend-badge trend-good">22 доби автономії</span></td>
+                                <td><span class="trend-badge trend-good">22,2 доби автономії</span></td>
                             </tr>
                         </tbody>
                     </table>

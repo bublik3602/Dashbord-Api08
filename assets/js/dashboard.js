@@ -237,6 +237,7 @@ document.addEventListener('DOMContentLoaded', function () {
             condLossBadge.textContent = 'Підробка: ' + rz.conditioning_loss_pct + '%';
             condLossBadge.className = 'kpi-badge ' + rz.status_class;
         }
+        setElementText('#val-cond-loss', 'Усушка/сміття: ' + formatNumber(rz.conditioning_loss) + ' т');
 
         // --- Блок А: Лабораторія якості та виконання контрактів ---
         if (data.lab_quality) {
