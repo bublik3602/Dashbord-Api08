@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $schemaSql = file_get_contents($schemaFile);
             $pdo->exec($schemaSql);
 
-            // 2.1 Гарантоване додавання колонки report_date, якщо таблиці вже існували раніше
+            // 2.1 Гарантоване додавання колонки report_date та зняття GENERATED ALWAYS, якщо таблиці вже існували раніше
             $upgradeColumns = [
                 'material_balance_logs' => 'report_date',
                 'warehouse_stocks'      => 'report_date',
@@ -91,6 +91,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     // Колонка вже існує або таблиця була створена зі свіжої схеми
                 }
             }
+
+            try {
+                $pdo->exec("
+                    ALTER TABLE `material_balance_logs`
+                        MODIFY COLUMN `conditioning_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                        MODIFY COLUMN `conditioning_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00,
+                        MODIFY COLUMN `production_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                        MODIFY COLUMN `production_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00
+                ");
+            } catch (Throwable $ignore) {}
+
+            try {
+                $pdo->exec("ALTER TABLE `lab_quality_logs` MODIFY COLUMN `oil_deviation_pct` DECIMAL(5, 2) NOT NULL DEFAULT 1.50");
+            } catch (Throwable $ignore) {}
 
             // 3. Загрузка демонстрационных данных при выборе
             if ($installDemo) {

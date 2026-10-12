@@ -88,6 +88,20 @@ function ensureSchemaExists(PDO $db): void {
         try { $db->exec("ALTER TABLE `contracts_summary` ADD COLUMN `report_date` VARCHAR(50) DEFAULT NULL AFTER `recorded_at`"); } catch (Throwable $e) {}
         try { $db->exec("ALTER TABLE `warehouse_stocks` ADD COLUMN `report_date` VARCHAR(50) DEFAULT NULL AFTER `recorded_at`"); } catch (Throwable $e) {}
         try { $db->exec("ALTER TABLE `material_balance_logs` ADD COLUMN `report_date` VARCHAR(50) DEFAULT NULL AFTER `recorded_at`"); } catch (Throwable $e) {}
+
+        // Конвертуємо старі GENERATED ALWAYS колонки у звичайні DECIMAL
+        try {
+            $db->exec("
+                ALTER TABLE `material_balance_logs`
+                    MODIFY COLUMN `conditioning_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                    MODIFY COLUMN `conditioning_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00,
+                    MODIFY COLUMN `production_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                    MODIFY COLUMN `production_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00
+            ");
+        } catch (Throwable $e) {}
+        try {
+            $db->exec("ALTER TABLE `lab_quality_logs` MODIFY COLUMN `oil_deviation_pct` DECIMAL(5, 2) NOT NULL DEFAULT 1.50");
+        } catch (Throwable $e) {}
     }
 }
 

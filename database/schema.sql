@@ -23,19 +23,10 @@ CREATE TABLE IF NOT EXISTS `material_balance_logs` (
     `husk_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Выход: Лузга',
     
     -- Расчетные потери (тонн и проценты)
-    `conditioning_loss` DECIMAL(10, 3) GENERATED ALWAYS AS (`seed_in_plant` - `seed_in_production`) STORED COMMENT 'Потери при подработке (усушка/сор)',
-    `conditioning_loss_pct` DECIMAL(6, 2) GENERATED ALWAYS AS (
-        CASE WHEN `seed_in_plant` > 0 
-             THEN ROUND(((`seed_in_plant` - `seed_in_production`) / `seed_in_plant`) * 100, 2)
-             ELSE 0.00 END
-    ) STORED COMMENT 'Потери подработки, %',
-    
-    `production_loss` DECIMAL(10, 3) GENERATED ALWAYS AS (`seed_in_production` - (`oil_out` + `meal_out` + `husk_out`)) STORED COMMENT 'Производственные потери переработки',
-    `production_loss_pct` DECIMAL(6, 2) GENERATED ALWAYS AS (
-        CASE WHEN `seed_in_production` > 0 
-             THEN ROUND(((`seed_in_production` - (`oil_out` + `meal_out` + `husk_out`)) / `seed_in_production`) * 100, 2)
-             ELSE 0.00 END
-    ) STORED COMMENT 'Потери переработки, %',
+    `conditioning_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Потери при подработке с элеватора (усушка/сор)',
+    `conditioning_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00 COMMENT 'Потери подработки, %',
+    `production_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Производственные потери переработки',
+    `production_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00 COMMENT 'Потери переработки, %',
     
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX `idx_recorded_at` (`recorded_at`),
@@ -125,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `lab_quality_logs` (
     `report_date` VARCHAR(50) DEFAULT NULL COMMENT 'Дата та час листа погодження лабораторії 1С',
     `oil_content_pct` DECIMAL(5, 2) NOT NULL DEFAULT 49.50 COMMENT 'Фактична олійність на суху речовину, %',
     `oil_content_base_pct` DECIMAL(5, 2) NOT NULL DEFAULT 48.00 COMMENT 'Базова договірна олійність, %',
-    `oil_deviation_pct` DECIMAL(5, 2) GENERATED ALWAYS AS (`oil_content_pct` - `oil_content_base_pct`) STORED COMMENT 'Відхилення олійності, %',
+    `oil_deviation_pct` DECIMAL(5, 2) NOT NULL DEFAULT 1.50 COMMENT 'Відхилення олійності, %',
     `moisture_pct` DECIMAL(5, 2) NOT NULL DEFAULT 7.20 COMMENT 'Вологість факт, % (база 8.0%)',
     `impurity_pct` DECIMAL(5, 2) NOT NULL DEFAULT 3.20 COMMENT 'Смітна домішка (сор) факт, % (база 3.0%)',
     `weight_discount_tonnes` DECIMAL(8, 3) NOT NULL DEFAULT 0.000 COMMENT 'Натуральна скидка ваги на смітті та волозі, т',

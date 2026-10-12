@@ -14,6 +14,16 @@ TRUNCATE TABLE `warehouse_stocks`;
 TRUNCATE TABLE `lab_quality_logs`;
 TRUNCATE TABLE `contracts_summary`;
 
+-- Переведення розрахункових колонок зі статусу GENERATED ALWAYS у звичайні DECIMAL (для сумісності зі старими таблицями)
+ALTER TABLE `material_balance_logs`
+    MODIFY COLUMN `conditioning_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    MODIFY COLUMN `conditioning_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00,
+    MODIFY COLUMN `production_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    MODIFY COLUMN `production_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00;
+
+ALTER TABLE `lab_quality_logs`
+    MODIFY COLUMN `oil_deviation_pct` DECIMAL(5, 2) NOT NULL DEFAULT 1.50;
+
 -- 1. Оборудование и узлы завода
 INSERT INTO `equipment_nodes` (`code`, `name`, `section`, `status`, `load_pct`, `current_temperature_c`, `last_update`, `details`) VALUES
 ('cleaner_01', 'Сепаратор БИС-100 (Очистка семян)', 'Приемно-очистительный участок', 'running', 94.5, 24.2, NOW(), 'Сорность на выходе 1.4% (Норма)'),
