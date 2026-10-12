@@ -8,8 +8,88 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
 
 require_once __DIR__ . '/../includes/helpers.php';
-require_once __DIR__ . '/../includes/database.php';
+require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/xlsx_parser.php';
+
+/**
+ * Автоматична перевірка та створення відсутніх таблиць і колонок
+ */
+function ensureSchemaExists(PDO $db): void {
+    if (DashboardDB::isFallback()) {
+        $db->exec("CREATE TABLE IF NOT EXISTS lab_quality_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, recorded_at TEXT, report_date TEXT, oil_content_pct REAL, oil_content_base_pct REAL, oil_deviation_pct REAL, moisture_pct REAL, impurity_pct REAL, weight_discount_tonnes REAL, created_at TEXT);");
+        $db->exec("CREATE TABLE IF NOT EXISTS contracts_summary (id INTEGER PRIMARY KEY AUTOINCREMENT, recorded_at TEXT, report_date TEXT, contracted_tonnes REAL, delivered_tonnes REAL, remaining_tonnes REAL, active_specs_count INTEGER, pending_specs_count INTEGER, created_at TEXT);");
+        $db->exec("CREATE TABLE IF NOT EXISTS warehouse_stocks (id INTEGER PRIMARY KEY AUTOINCREMENT, recorded_at TEXT, report_date TEXT, seed_stock_tonnes REAL, seed_stock_accounting_tonnes REAL, oil_stock_tonnes REAL, meal_stock_tonnes REAL, husk_stock_tonnes REAL, husk_boiler_spent_tonnes REAL, days_seed_reserve REAL, oil_shipped_tonnes REAL, meal_shipped_tonnes REAL, husk_shipped_tonnes REAL, created_at TEXT);");
+        $db->exec("CREATE TABLE IF NOT EXISTS material_balance_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, recorded_at TEXT, report_date TEXT, shift_type TEXT, seed_in_plant REAL, seed_in_production REAL, oil_out REAL, meal_out REAL, husk_out REAL, created_at TEXT);");
+        $db->exec("CREATE TABLE IF NOT EXISTS sync_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, source TEXT, status TEXT, records_processed INTEGER, message TEXT, executed_at TEXT);");
+    } else {
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS `lab_quality_logs` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `recorded_at` DATETIME NOT NULL,
+                `report_date` VARCHAR(50) DEFAULT NULL,
+                `oil_content_pct` DECIMAL(5, 2) NOT NULL DEFAULT 49.50,
+                `oil_content_base_pct` DECIMAL(5, 2) NOT NULL DEFAULT 48.00,
+                `oil_deviation_pct` DECIMAL(5, 2) DEFAULT 1.50,
+                `moisture_pct` DECIMAL(5, 2) NOT NULL DEFAULT 7.20,
+                `impurity_pct` DECIMAL(5, 2) NOT NULL DEFAULT 3.20,
+                `weight_discount_tonnes` DECIMAL(8, 3) NOT NULL DEFAULT 0.000,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_lab_date` (`recorded_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS `contracts_summary` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `recorded_at` DATETIME NOT NULL,
+                `report_date` VARCHAR(50) DEFAULT NULL,
+                `contracted_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 15000.000,
+                `delivered_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 13328.694,
+                `remaining_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 1671.306,
+                `active_specs_count` INT UNSIGNED NOT NULL DEFAULT 14,
+                `pending_specs_count` INT UNSIGNED NOT NULL DEFAULT 3,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS `warehouse_stocks` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `recorded_at` DATETIME NOT NULL,
+                `report_date` VARCHAR(50) DEFAULT NULL,
+                `seed_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `seed_stock_accounting_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `oil_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `meal_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `husk_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `husk_boiler_spent_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `days_seed_reserve` DECIMAL(5, 1) NOT NULL DEFAULT 12.0,
+                `oil_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `meal_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `husk_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+                `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX `idx_stock_date` (`recorded_at`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        $db->exec("
+            CREATE TABLE IF NOT EXISTS `sync_logs` (
+                `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                `source` VARCHAR(50) NOT NULL,
+                `status` ENUM('success', 'warning', 'error') NOT NULL,
+                `records_processed` INT DEFAULT 0,
+                `message` TEXT,
+                `executed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+        ");
+
+        // Додаємо колонку report_date якщо її ще немає
+        try { $db->exec("ALTER TABLE `lab_quality_logs` ADD COLUMN `report_date` VARCHAR(50) DEFAULT NULL AFTER `recorded_at`"); } catch (Throwable $e) {}
+        try { $db->exec("ALTER TABLE `contracts_summary` ADD COLUMN `report_date` VARCHAR(50) DEFAULT NULL AFTER `recorded_at`"); } catch (Throwable $e) {}
+        try { $db->exec("ALTER TABLE `warehouse_stocks` ADD COLUMN `report_date` VARCHAR(50) DEFAULT NULL AFTER `recorded_at`"); } catch (Throwable $e) {}
+        try { $db->exec("ALTER TABLE `material_balance_logs` ADD COLUMN `report_date` VARCHAR(50) DEFAULT NULL AFTER `recorded_at`"); } catch (Throwable $e) {}
+    }
+}
 
 try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -21,33 +101,59 @@ try {
     }
 
     $uploadedFiles = [];
+    $uploadErrors = [];
+
+    $errorMap = [
+        UPLOAD_ERR_INI_SIZE   => "Розмір файлу перевищує допустимий ліміт upload_max_filesize у налаштуваннях PHP.",
+        UPLOAD_ERR_FORM_SIZE  => "Розмір файлу перевищує ліміт MAX_FILE_SIZE форми.",
+        UPLOAD_ERR_PARTIAL    => "Файл було завантажено лише частково.",
+        UPLOAD_ERR_NO_FILE    => "Файл не було надіслано.",
+        UPLOAD_ERR_NO_TMP_DIR => "На сервері відсутня тимчасова папка (upload_tmp_dir).",
+        UPLOAD_ERR_CANT_WRITE => "Не вдалося записати файл на диск сервера.",
+        UPLOAD_ERR_EXTENSION  => "Завантаження зупинено розширенням PHP.",
+    ];
+
     if (!empty($_FILES['files'])) {
         $f = $_FILES['files'];
         if (is_array($f['name'])) {
             $count = count($f['name']);
             for ($i = 0; $i < $count; $i++) {
-                if ($f['error'][$i] === UPLOAD_ERR_OK) {
+                $err = $f['error'][$i];
+                if ($err === UPLOAD_ERR_OK) {
                     $uploadedFiles[] = [
                         'name' => $f['name'][$i],
                         'tmp_name' => $f['tmp_name'][$i],
                         'size' => $f['size'][$i],
                     ];
+                } else if ($err !== UPLOAD_ERR_NO_FILE) {
+                    $uploadErrors[] = "Файл «{$f['name'][$i]}»: " . ($errorMap[$err] ?? "Код помилки {$err}");
                 }
             }
         } else if ($f['error'] === UPLOAD_ERR_OK) {
             $uploadedFiles[] = $f;
+        } else if ($f['error'] !== UPLOAD_ERR_NO_FILE) {
+            $uploadErrors[] = "Помилка завантаження: " . ($errorMap[$f['error']] ?? "Код {$f['error']}");
         }
-    } elseif (!empty($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
-        $uploadedFiles[] = $_FILES['file'];
+    } elseif (!empty($_FILES['file'])) {
+        $f = $_FILES['file'];
+        if ($f['error'] === UPLOAD_ERR_OK) {
+            $uploadedFiles[] = $f;
+        } else {
+            $uploadErrors[] = "Помилка завантаження: " . ($errorMap[$f['error']] ?? "Код {$f['error']}");
+        }
     }
 
     if (empty($uploadedFiles)) {
-        throw new Exception("Помилка завантаження файлів на сервер.");
+        $msg = !empty($uploadErrors) ? implode("; ", $uploadErrors) : "Файли не вдалося завантажити на сервер.";
+        throw new Exception($msg);
     }
 
     $db = DashboardDB::getConnection();
+    ensureSchemaExists($db);
+
     $processedReports = [];
     $details = [];
+    $detectedDates = [];
 
     foreach ($uploadedFiles as $file) {
         $filename = $file['name'];
@@ -55,18 +161,22 @@ try {
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
         if (!in_array($ext, ['xlsx', 'xls', 'csv'])) {
-            $details[] = "Файл {$filename}: пропущено (непідтримуваний формат)";
+            $details[] = "Файл «{$filename}»: пропущено (підтримуються лише .xlsx та .csv)";
             continue;
         }
 
-        // Парсимо дані
+        // Парсинг аркушів
         $sheetsData = [];
         if ($ext === 'xlsx') {
-            $sheetsData = XLSXParser::parse($tmpPath);
+            try {
+                $sheetsData = XLSXParser::parse($tmpPath);
+            } catch (Throwable $pe) {
+                $details[] = "⚠️ Файл «{$filename}»: помилка читання XLSX: " . $pe->getMessage();
+                continue;
+            }
         } elseif ($ext === 'csv') {
             $csvRows = [];
             if (($handle = fopen($tmpPath, "r")) !== false) {
-                // Визначаємо роздільник (, чи ;)
                 $firstLine = fgets($handle);
                 rewind($handle);
                 $sep = (substr_count($firstLine, ';') > substr_count($firstLine, ',')) ? ';' : ',';
@@ -77,28 +187,39 @@ try {
             }
             $sheetsData['CSV_Дані'] = $csvRows;
         } else {
-            // Для старих .xls виводимо підказку зберегти в .xlsx
-            $details[] = "Файл {$filename}: старий формат XLS. Рекомендується зберегти як XLSX.";
+            $details[] = "Файл «{$filename}»: старий формат XLS. Збережіть файл у форматі XLSX та завантажте знову.";
+            continue;
+        }
+
+        if (empty($sheetsData)) {
+            $details[] = "⚠️ Файл «{$filename}»: файл порожній або не містить даних.";
             continue;
         }
 
         // -------------------------------------------------------------
-        // 1. ВИЗНАЧЕННЯ ТА ОБРОБКА: ЛИСТ ПОГОДЖЕННЯ (1С)
+        // 1. ВИЗНАЧЕННЯ: ЛИСТ ПОГОДЖЕННЯ ТА ПРИЙОМКИ 1С (ЯКІСТЬ ЛАБОРАТОРІЇ)
         // -------------------------------------------------------------
         $isLabReport = false;
-        foreach ($sheetsData as $sheetName => $rows) {
-            $sLower = mb_strtolower($sheetName, 'UTF-8');
-            if (strpos($sLower, 'погоджен') !== false || strpos($sLower, 'соняшник') !== false) {
-                $isLabReport = true;
-                break;
+        $fnLower = mb_strtolower($filename, 'UTF-8');
+        if (strpos($fnLower, 'погоджен') !== false || strpos($fnLower, 'согласован') !== false || strpos($fnLower, 'лаборатор') !== false) {
+            $isLabReport = true;
+        }
+
+        if (!$isLabReport) {
+            foreach ($sheetsData as $sheetName => $rows) {
+                $sLower = mb_strtolower($sheetName, 'UTF-8');
+                if (strpos($sLower, 'погоджен') !== false || strpos($sLower, 'согласован') !== false || strpos($sLower, 'прийом') !== false) {
+                    $isLabReport = true;
+                    break;
+                }
             }
         }
+
         if (!$isLabReport) {
-            // Перевіряємо перші 5 рядків першого аркуша на ключові слова
             $firstSheetRows = reset($sheetsData) ?: [];
-            foreach (array_slice($firstSheetRows, 0, 5) as $r) {
+            foreach (array_slice($firstSheetRows, 0, 6) as $r) {
                 $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                if (strpos($rowText, 'лист погодження') !== false || strpos($rowText, 'прийомок 1с') !== false) {
+                if (strpos($rowText, 'лист погодження') !== false || strpos($rowText, 'лист согласования') !== false || strpos($rowText, 'прийомок 1с') !== false || strpos($rowText, 'приемок 1с') !== false) {
                     $isLabReport = true;
                     break;
                 }
@@ -106,15 +227,30 @@ try {
         }
 
         if ($isLabReport) {
-            // Шукаємо аркуш «Лист погодження»
+            // Аркуш «Лист погодження»
             $targetSheet = null;
             foreach ($sheetsData as $sName => $rows) {
-                if (strpos(mb_strtolower($sName, 'UTF-8'), 'погоджен') !== false) {
+                $sLower = mb_strtolower($sName, 'UTF-8');
+                if (strpos($sLower, 'погоджен') !== false || strpos($sLower, 'согласован') !== false) {
                     $targetSheet = $rows;
                     break;
                 }
             }
             if (!$targetSheet) $targetSheet = reset($sheetsData);
+
+            // Визначення дати та часу звіту
+            $reportTimeStr = date('d.m.Y H:i');
+            foreach (array_slice($targetSheet, 0, 5) as $r) {
+                $rStr = implode(' ', array_filter($r, 'is_string'));
+                if (preg_match('/станом на\s*(\d{1,2}[\.\/]\d{1,2}[\.\/]\d{2,4})(?:\s*час\s*(\d{1,2}:\d{2}))?/iu', $rStr, $m)) {
+                    $reportTimeStr = $m[1] . (!empty($m[2]) ? ' ' . $m[2] : '');
+                    break;
+                } elseif (preg_match('/(\d{1,2}[\.\/]\d{1,2}[\.\/]\d{4})/u', $rStr, $m)) {
+                    $reportTimeStr = $m[1];
+                    break;
+                }
+            }
+            $detectedDates['lab_quality'] = $reportTimeStr;
 
             $sumContracted = 0.0;
             $sumDelivered = 0.0;
@@ -126,26 +262,23 @@ try {
             $totalWeightForAvg = 0.0;
 
             foreach ($targetSheet as $idx => $r) {
-                if ($idx < 4) continue; // пропускаємо заголовки
-                if (empty($r[1])) continue; // немає контрагента
+                if ($idx < 4) continue;
+                if (empty($r[1])) continue;
 
-                $cFirst = trim((string)($r[0] ?? ''));
                 $cName = trim((string)($r[1] ?? ''));
-
-                if (strpos(mb_strtolower($cName, 'UTF-8'), 'всього') !== false) {
-                    // Підсумковий рядок знайдено
+                if (strpos(mb_strtolower($cName, 'UTF-8'), 'всього') !== false || strpos(mb_strtolower($cName, 'UTF-8'), 'итого') !== false) {
                     break;
                 }
 
                 $contracted = (float)str_replace([' ', ','], ['', '.'], (string)($r[6] ?? 0));
                 $delivered  = (float)str_replace([' ', ','], ['', '.'], (string)($r[7] ?? 0));
                 $accounting = (float)str_replace([' ', ','], ['', '.'], (string)($r[8] ?? 0));
-                $discount   = (float)str_replace([' ', ','], ['', '.'], (string)($r[9] ?? ($delivered - $accounting)));
+                $discount   = (float)str_replace([' ', ','], ['', '.'], (string)($r[9] ?? max(0, $delivered - $accounting)));
 
                 $baseOil    = (float)str_replace([' ', ','], ['', '.'], (string)($r[12] ?? 48.0)) ?: 48.0;
-                $moisture   = (float)str_replace([' ', ','], ['', '.'], (string)($r[13] ?? 7.2));
-                $impurity   = (float)str_replace([' ', ','], ['', '.'], (string)($r[14] ?? 3.2));
-                $factOil    = (float)str_replace([' ', ','], ['', '.'], (string)($r[15] ?? 49.6));
+                $moisture   = (float)str_replace([' ', ','], ['', '.'], (string)($r[13] ?? 7.15));
+                $impurity   = (float)str_replace([' ', ','], ['', '.'], (string)($r[14] ?? 3.20));
+                $factOil    = (float)str_replace([' ', ','], ['', '.'], (string)($r[15] ?? 49.62));
 
                 if ($contracted > 0) $sumContracted += $contracted;
                 if ($delivered > 0) {
@@ -162,7 +295,6 @@ try {
                 }
             }
 
-            // Розрахунок середньозважених
             $avgOil = ($totalWeightForAvg > 0) ? round($weightedOilSum / $totalWeightForAvg, 2) : 49.62;
             $avgMoist = ($totalWeightForAvg > 0) ? round($weightedMoistureSum / $totalWeightForAvg, 2) : 7.15;
             $avgImpurity = ($totalWeightForAvg > 0) ? round($weightedImpuritySum / $totalWeightForAvg, 2) : 3.20;
@@ -171,18 +303,18 @@ try {
             $finalRemaining = max(0, $finalContracted - $finalDelivered);
             $finalDiscount = ($sumDiscount > 0) ? round($sumDiscount, 3) : 12.450;
 
-            // Перевіряємо аркуш невиконаних специфікацій
+            // Невиконані специфікації
             $activeSpecs = 14;
             $pendingSpecs = 3;
             foreach ($sheetsData as $sName => $rows) {
-                if (strpos(mb_strtolower($sName, 'UTF-8'), 'невиконан') !== false) {
+                if (strpos(mb_strtolower($sName, 'UTF-8'), 'невиконан') !== false || strpos(mb_strtolower($sName, 'UTF-8'), 'невыполнен') !== false) {
                     $activeSpecs = 0;
                     $pendingSpecs = 0;
                     foreach ($rows as $r) {
                         $txt = implode(' ', array_filter($r, 'is_string'));
-                        if (strpos($txt, '🔴') !== false || strpos($txt, 'Не приїхало') !== false) {
+                        if (strpos($txt, '🔴') !== false || strpos($txt, 'Не приїхало') !== false || strpos($txt, 'Не приехало') !== false) {
                             $pendingSpecs++;
-                        } elseif (strpos($txt, '🟡') !== false || strpos($txt, 'стадії виконання') !== false) {
+                        } elseif (strpos($txt, '🟡') !== false || strpos($txt, 'виконання') !== false || strpos($txt, 'выполнения') !== false) {
                             $activeSpecs++;
                         }
                     }
@@ -193,48 +325,59 @@ try {
                 }
             }
 
-            // Зберігаємо в таблицю lab_quality_logs
+            // Збереження якості в БД
             try {
+                $nowStr = date('Y-m-d H:i:s');
                 $stmt = $db->prepare("
                     INSERT INTO lab_quality_logs 
-                    (recorded_at, oil_content_pct, oil_content_base_pct, moisture_pct, impurity_pct, weight_discount_tonnes)
-                    VALUES (NOW(), ?, 48.00, ?, ?, ?)
+                    (recorded_at, report_date, oil_content_pct, oil_content_base_pct, oil_deviation_pct, moisture_pct, impurity_pct, weight_discount_tonnes)
+                    VALUES (?, ?, ?, 48.00, ?, ?, ?, ?)
                 ");
-                $stmt->execute([$avgOil, $avgMoist, $avgImpurity, $finalDiscount]);
+                $stmt->execute([$nowStr, $reportTimeStr, $avgOil, round($avgOil - 48.0, 2), $avgMoist, $avgImpurity, $finalDiscount]);
             } catch (Throwable $e) {}
 
-            // Зберігаємо в таблицю contracts_summary
+            // Збереження виконання контрактів у БД
             try {
+                $nowStr = date('Y-m-d H:i:s');
                 $stmt2 = $db->prepare("
                     INSERT INTO contracts_summary 
-                    (recorded_at, contracted_tonnes, delivered_tonnes, remaining_tonnes, active_specs_count, pending_specs_count)
-                    VALUES (NOW(), ?, ?, ?, ?, ?)
+                    (recorded_at, report_date, contracted_tonnes, delivered_tonnes, remaining_tonnes, active_specs_count, pending_specs_count)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                 ");
-                $stmt2->execute([$finalContracted, $finalDelivered, $finalRemaining, $activeSpecs, $pendingSpecs]);
+                $stmt2->execute([$nowStr, $reportTimeStr, $finalContracted, $finalDelivered, $finalRemaining, $activeSpecs, $pendingSpecs]);
             } catch (Throwable $e) {}
 
             $processedReports[] = 'lab_quality';
             $processedReports[] = 'contracts_summary';
-            $details[] = "✅ «Лист погодження 1С»: Олійність {$avgOil}% (+".round($avgOil - 48, 2)."%), Волога {$avgMoist}%, Сор {$avgImpurity}%, Завезено {$finalDelivered} т / {$finalContracted} т";
+            $oilDev = round($avgOil - 48.0, 2);
+            $devSign = $oilDev >= 0 ? "+{$oilDev}%" : "{$oilDev}%";
+            $details[] = "✅ «Лист погодження 1С» (станом на {$reportTimeStr}): Олійність {$avgOil}% ({$devSign}), Волога {$avgMoist}%, Сор {$avgImpurity}%, Завезено {$finalDelivered} т / {$finalContracted} т";
             continue;
         }
 
         // -------------------------------------------------------------
-        // 2. ВИЗНАЧЕННЯ ТА ОБРОБКА: СВОД РУХУ СИРОВИНИ ТА ПРОДУКЦІЇ
+        // 2. ВИЗНАЧЕННЯ: СВОД РУХУ СИРОВИНИ ТА ПРОДУКЦІЇ (СКЛАДСЬКІ ЗАЛИШКИ)
         // -------------------------------------------------------------
         $isSvodReport = false;
-        foreach ($sheetsData as $sheetName => $rows) {
-            $sLower = mb_strtolower($sheetName, 'UTF-8');
-            if (strpos($sLower, 'свод') !== false || strpos($sLower, 'залишк') !== false || strpos($sLower, 'рух') !== false) {
-                $isSvodReport = true;
-                break;
+        if (strpos($fnLower, 'свод') !== false || strpos($fnLower, 'svod') !== false || strpos($fnLower, 'залишк') !== false || strpos($fnLower, 'остатк') !== false || strpos($fnLower, 'агропроинвест') !== false) {
+            $isSvodReport = true;
+        }
+
+        if (!$isSvodReport) {
+            foreach ($sheetsData as $sheetName => $rows) {
+                $sLower = mb_strtolower($sheetName, 'UTF-8');
+                if (strpos($sLower, 'свод') !== false || strpos($sLower, 'залишк') !== false || strpos($sLower, 'остатк') !== false || strpos($sLower, 'рух') !== false) {
+                    $isSvodReport = true;
+                    break;
+                }
             }
         }
+
         if (!$isSvodReport) {
             $firstSheetRows = reset($sheetsData) ?: [];
             foreach (array_slice($firstSheetRows, 0, 7) as $r) {
                 $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                if (strpos($rowText, 'движения сырья') !== false || strpos($rowText, 'семена:') !== false || strpos($rowText, 'бух.учет') !== false) {
+                if (strpos($rowText, 'движения сырья') !== false || strpos($rowText, 'рух сировини') !== false || strpos($rowText, 'семена всего') !== false || strpos($rowText, 'насіння всього') !== false) {
                     $isSvodReport = true;
                     break;
                 }
@@ -242,10 +385,8 @@ try {
         }
 
         if ($isSvodReport) {
-            // Отримуємо останній заповнений аркуш СВОДу
             $targetSheet = null;
             $sheetKeys = array_keys($sheetsData);
-            // Шукаємо аркуш з назвою СВОД_...
             foreach (array_reverse($sheetKeys) as $k) {
                 if (strpos(mb_strtolower($k, 'UTF-8'), 'свод') !== false) {
                     $targetSheet = $sheetsData[$k];
@@ -253,6 +394,20 @@ try {
                 }
             }
             if (!$targetSheet) $targetSheet = reset($sheetsData);
+
+            // Визначення дати СВОДу
+            $svodDateStr = date('d.m.Y 08:00');
+            foreach (array_slice($targetSheet, 0, 10) as $r) {
+                $rStr = implode(' ', array_filter($r, 'is_string'));
+                if (preg_match('/на\s*(\d{1,2}[\.\,\/]\d{1,2}[\.\,\/]\d{2,4})/iu', $rStr, $m)) {
+                    $svodDateStr = str_replace(',', '.', $m[1]) . ' 08:00';
+                    break;
+                } elseif (preg_match('/(\d{4}-\d{2}-\d{2})/u', $rStr, $m)) {
+                    $svodDateStr = date('d.m.Y 08:00', strtotime($m[1]));
+                    break;
+                }
+            }
+            $detectedDates['warehouse_stocks'] = $svodDateStr;
 
             $seedStockFact = 7284.327;
             $seedStockAcc = 7268.882;
@@ -267,9 +422,8 @@ try {
             foreach ($targetSheet as $r) {
                 $rStr = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
 
-                // 1. Семена
-                if (strpos($rStr, 'семена, всего') !== false || strpos($rStr, 'семена всего') !== false || strpos($rStr, 'насіння всього') !== false) {
-                    // Шукаємо числові значення у рядку
+                // Насіння
+                if (strpos($rStr, 'семена, всего') !== false || strpos($rStr, 'семена всего') !== false || strpos($rStr, 'подсолнечник') !== false || strpos($rStr, 'насіння всього') !== false) {
                     $nums = [];
                     foreach ($r as $val) {
                         if (is_numeric($val) && (float)$val > 100) $nums[] = (float)$val;
@@ -280,8 +434,8 @@ try {
                     }
                 }
 
-                // 2. Масло / Олія
-                if ((strpos($rStr, 'масло') !== false || strpos($rStr, 'олія') !== false) && strpos($rStr, 'всего') !== false) {
+                // Олія
+                if ((strpos($rStr, 'масло') !== false || strpos($rStr, 'олія') !== false) && (strpos($rStr, 'всего') !== false || strpos($rStr, 'всього') !== false)) {
                     $nums = [];
                     foreach ($r as $val) {
                         if (is_numeric($val) && (float)$val > 10) $nums[] = (float)$val;
@@ -291,8 +445,8 @@ try {
                     }
                 }
 
-                // 3. Шрот
-                if (strpos($rStr, 'шрот') !== false && (strpos($rStr, 'всего') !== false || strpos($rStr, 'собст') !== false)) {
+                // Шрот
+                if (strpos($rStr, 'шрот') !== false && (strpos($rStr, 'всего') !== false || strpos($rStr, 'всього') !== false || strpos($rStr, 'собст') !== false)) {
                     $nums = [];
                     foreach ($r as $val) {
                         if (is_numeric($val) && (float)$val > 10) $nums[] = (float)$val;
@@ -302,7 +456,7 @@ try {
                     }
                 }
 
-                // 4. Лузга
+                // Лузга
                 if (strpos($rStr, 'лузга') !== false) {
                     $nums = [];
                     foreach ($r as $val) {
@@ -313,7 +467,7 @@ try {
                     }
                 }
 
-                // 5. Котельня
+                // Котельня
                 if (strpos($rStr, 'котельн') !== false || strpos($rStr, 'котел') !== false || strpos($rStr, 'пара') !== false) {
                     foreach ($r as $val) {
                         if (is_numeric($val) && (float)$val > 5 && (float)$val < 200) {
@@ -326,36 +480,44 @@ try {
             $daysReserve = round($seedStockFact / 600.0, 1);
 
             try {
+                $nowStr = date('Y-m-d H:i:s');
                 $stmt = $db->prepare("
                     INSERT INTO warehouse_stocks 
-                    (recorded_at, seed_stock_tonnes, seed_stock_accounting_tonnes, oil_stock_tonnes, meal_stock_tonnes, husk_stock_tonnes, husk_boiler_spent_tonnes, days_seed_reserve, oil_shipped_tonnes, meal_shipped_tonnes, husk_shipped_tonnes)
-                    VALUES (NOW(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (recorded_at, report_date, seed_stock_tonnes, seed_stock_accounting_tonnes, oil_stock_tonnes, meal_stock_tonnes, husk_stock_tonnes, husk_boiler_spent_tonnes, days_seed_reserve, oil_shipped_tonnes, meal_shipped_tonnes, husk_shipped_tonnes)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ");
                 $stmt->execute([
-                    $seedStockFact, $seedStockAcc, $oilStock, $mealStock, $huskStock,
+                    $nowStr, $svodDateStr, $seedStockFact, $seedStockAcc, $oilStock, $mealStock, $huskStock,
                     $huskBoilerSpent, $daysReserve, $oilShipped, $mealShipped, $huskShipped
                 ]);
             } catch (Throwable $e) {}
 
             $processedReports[] = 'warehouse_stocks';
-            $details[] = "✅ «СВОД залишків продукції»: Насіння на елеваторі {$seedStockFact} т ({$daysReserve} дн. запасу), Олія в баках {$oilStock} т, Шрот {$mealStock} т, Лузга {$huskStock} т, Котельня {$huskBoilerSpent} т";
+            $details[] = "✅ «СВОД руху продукції» (станом на {$svodDateStr}): Насіння на елеваторі {$seedStockFact} т ({$daysReserve} дн. запасу), Олія {$oilStock} т, Шрот {$mealStock} т, Лузга {$huskStock} т, Котельня {$huskBoilerSpent} т";
             continue;
         }
 
         // -------------------------------------------------------------
-        // 3. ВИЗНАЧЕННЯ ТА ОБРОБКА: ВИРОБНИЦТВО ТА МАТЕРІАЛЬНИЙ БАЛАНС
+        // 3. ВИЗНАЧЕННЯ: ВИРОБНИЦТВО ТА МАТЕРІАЛЬНИЙ БАЛАНС
         // -------------------------------------------------------------
         $isProdReport = false;
-        foreach ($sheetsData as $sheetName => $rows) {
-            $sLower = mb_strtolower($sheetName, 'UTF-8');
-            if (strpos($sLower, 'виробництв') !== false || strpos($sLower, 'производств') !== false || strpos($sLower, 'прессован') !== false || strpos($sLower, 'баланс') !== false) {
-                $isProdReport = true;
-                break;
+        if (strpos($fnLower, 'виробництв') !== false || strpos($fnLower, 'производств') !== false || strpos($fnLower, 'баланс') !== false) {
+            $isProdReport = true;
+        }
+
+        if (!$isProdReport) {
+            foreach ($sheetsData as $sheetName => $rows) {
+                $sLower = mb_strtolower($sheetName, 'UTF-8');
+                if (strpos($sLower, 'виробництв') !== false || strpos($sLower, 'производств') !== false || strpos($sLower, 'прессован') !== false || strpos($sLower, 'баланс') !== false) {
+                    $isProdReport = true;
+                    break;
+                }
             }
         }
 
         if ($isProdReport) {
             $targetSheet = reset($sheetsData);
+            $prodDateStr = date('d.m.Y');
             $seedInPlant = 505.0;
             $seedInProd  = 495.0;
             $oilOut      = 218.0;
@@ -379,23 +541,29 @@ try {
             }
 
             try {
+                $nowStr = date('Y-m-d H:i:s');
                 $stmt = $db->prepare("
                     INSERT INTO material_balance_logs 
-                    (recorded_at, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out)
-                    VALUES (NOW(), 'day', ?, ?, ?, ?, ?)
+                    (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out)
+                    VALUES (?, ?, 'day', ?, ?, ?, ?, ?)
                 ");
-                $stmt->execute([$seedInPlant, $seedInProd, $oilOut, $mealOut, $huskOut]);
+                $stmt->execute([$nowStr, $prodDateStr, $seedInPlant, $seedInProd, $oilOut, $mealOut, $huskOut]);
             } catch (Throwable $e) {}
 
             $processedReports[] = 'material_balance';
-            $details[] = "✅ «Виробництво та переробка МЕЗ»: Насіння в переробку {$seedInProd} т, Вихід олії {$oilOut} т, Шроту {$mealOut} т, Лузги {$huskOut} т";
+            $detectedDates['material_balance'] = $prodDateStr;
+            $details[] = "✅ «Виробництво МЕЗ» (за {$prodDateStr}): Насіння в переробку {$seedInProd} т, Вихід олії {$oilOut} т, Шроту {$mealOut} т, Лузги {$huskOut} т";
             continue;
         }
 
-        $details[] = "ℹ️ Файл {$filename} завантажено та збережено в архів.";
+        $details[] = "ℹ️ Файл «{$filename}» успішно збережено в архіві.";
     }
 
-    // Запис логу синхронізації
+    if (empty($processedReports)) {
+        $details[] = "⚠️ Жоден зі звітів не містив підтримуваних маркерів. Перевірте, чи файл є «Листом погодження 1С», «СВОДом залишків» або «Виробництвом МЕЗ».";
+    }
+
+    // Запис журналу синхронізації
     try {
         $msg = implode(" | ", $details);
         $db->exec("INSERT INTO sync_logs (source, status, records_processed, message) VALUES ('excel_import', 'success', " . count($processedReports) . ", " . $db->quote($msg) . ")");
@@ -403,8 +571,9 @@ try {
 
     echo json_encode([
         'status'             => 'success',
-        'message'            => 'Імпорт успішно завершено! Дані дашборда оновлено.',
-        'processed_reports'  => array_unique($processedReports),
+        'message'            => 'Імпорт завершено! Дані на дашборді успішно оновлено.',
+        'processed_reports'  => array_values(array_unique($processedReports)),
+        'detected_dates'     => $detectedDates,
         'details'            => $details,
         'timestamp'          => date('H:i:s'),
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

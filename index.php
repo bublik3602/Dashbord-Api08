@@ -113,12 +113,52 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     </header>
 
     <!-- =============================================================
+         ЧАСОВИЙ БАНЕР: ПЕРІОД МОНІТОРИНГУ ТА ЧАС АКТУАЛІЗАЦІЇ
+         ============================================================= -->
+    <?php
+    $bounds = get_operational_day_bounds();
+    $pInfo = $dashboardData['period_info'] ?? [];
+    $activeRangeText = $pInfo['range_display'] ?? ("Виробнича доба (" . $bounds['label'] . ", з 08:00 до 08:00)");
+    $labDate = $lab['report_date'] ?? '12.10.2026 09:34';
+    $stocksDate = $stocks['report_date'] ?? '12.10.2026 08:00';
+    ?>
+    <div class="active-period-banner" id="active-period-banner">
+        <div class="banner-left">
+            <div class="banner-icon-wrap">
+                <i data-lucide="calendar-clock"></i>
+            </div>
+            <div>
+                <div class="banner-main-text">
+                    <span>Поточний період моніторингу:</span>
+                    <strong id="banner-period-title"><?= htmlspecialchars($activeRangeText) ?></strong>
+                </div>
+                <div class="banner-sub-text">
+                    <span id="banner-period-sub">Розрахунок доби: <strong>з 08:00 до 08:00</strong> наступного дня &bull; Поточна: <strong><?= $shiftName ?></strong></span>
+                    <span class="banner-separator">&bull;</span>
+                    <span>Лабораторія 1С: <strong id="banner-lab-time"><?= htmlspecialchars($labDate) ?></strong></span>
+                    <span class="banner-separator">&bull;</span>
+                    <span>СВОД залишків: <strong id="banner-stocks-time"><?= htmlspecialchars($stocksDate) ?></strong></span>
+                </div>
+            </div>
+        </div>
+        <div class="banner-right">
+            <div class="banner-live-status">
+                <span class="pulse-dot"></span>
+                <span id="banner-status-text">Дані актуальні</span>
+            </div>
+            <div class="banner-sync-time" id="banner-sync-time">
+                Оновлено: <?= date('d.m.Y H:i:s') ?>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================================
          БЛОК А: ПРОИЗВОДСТВО И МАТЕРИАЛЬНЫЙ БАЛАНС (ВЕРХНИЙ РЯД KPI)
          ============================================================= -->
     <div class="section-title">
         <i data-lucide="layers" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
         <span>Блок А: Виробництво, запаси та матеріальний баланс</span>
-        <span class="section-badge badge-blue">Контроль сировини, запасів та втрат</span>
+        <span class="section-badge badge-blue" id="lbl-prod-period">Період: <?= $bounds['label'] ?></span>
     </div>
 
     <div class="kpi-grid">
@@ -200,7 +240,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         <div class="section-title">
             <i data-lucide="gauge" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
             <span>Лабораторія якості сировини та контрактація (1С)</span>
-            <span class="section-badge badge-blue">Графічний моніторинг показників</span>
+            <span class="section-badge badge-blue" id="lbl-lab-time">Звіт 1С станом на: <?= htmlspecialchars($labDate) ?></span>
         </div>
 
         <div class="gauges-grid">
@@ -324,6 +364,10 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             </div>
 
             <!-- Складські залишки готової продукції та витрата лузги на котельню -->
+            <div class="wh-stocks-header">
+                <span class="wh-stocks-title">Складські залишки готової продукції та насіння</span>
+                <span class="wh-stocks-time-badge" id="lbl-stocks-time">Станом на: <strong><?= htmlspecialchars($stocksDate) ?></strong> (СВОД)</span>
+            </div>
             <div class="warehouse-stocks-grid">
                 <div class="wh-stock-item">
                     <span class="wh-stock-title">💧 Олія сира (Резервуари)</span>

@@ -127,6 +127,35 @@ document.addEventListener('DOMContentLoaded', function () {
         const log = data.logistics;
         const eq = data.equipment;
 
+        // --- Часовий банер та період моніторингу ---
+        if (data.period_info) {
+            const pi = data.period_info;
+            setElementText('#banner-period-title', pi.range_display || pi.period_label);
+            setElementText('#lbl-prod-period', 'Період: ' + (pi.operational_day || pi.range_display));
+            setElementText('#banner-sync-time', 'Оновлено: ' + (pi.generated_at || new Date().toLocaleTimeString()));
+
+            const subElem = document.querySelector('#banner-period-sub');
+            if (subElem && pi.shift_name) {
+                subElem.innerHTML = `Розрахунок доби: <strong>з 08:00 до 08:00</strong> наступного дня &bull; Поточна: <strong>${escapeHtml(pi.shift_name)}</strong>`;
+            }
+        }
+
+        if (data.lab_quality && data.lab_quality.report_date) {
+            setElementText('#lbl-lab-time', 'Звіт 1С станом на: ' + data.lab_quality.report_date);
+            setElementText('#banner-lab-time', data.lab_quality.report_date);
+        }
+
+        if (data.warehouse_stocks && data.warehouse_stocks.report_date) {
+            const stocksLbl = document.querySelector('#lbl-stocks-time');
+            if (stocksLbl) stocksLbl.innerHTML = `Станом на: <strong>${escapeHtml(data.warehouse_stocks.report_date)}</strong> (СВОД)`;
+            setElementText('#banner-stocks-time', data.warehouse_stocks.report_date);
+        }
+
+        if (data.logistics && data.logistics.operational_day) {
+            setElementText('#lbl-logistics-time', 'Доба: ' + data.logistics.operational_day + ' (08:00 — 08:00)');
+            setElementText('#val-operational-day-text', data.logistics.operational_day);
+        }
+
         // --- Блок А: Зона приймання та склад насіння ---
         const rz = mb.receiving_zone;
         setElementText('#val-seed-in-plant', formatNumber(rz.seed_in_plant) + ' т');
@@ -516,7 +545,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     body: formData
                 });
 
-                const res = await response.json();
+                let res;
+                const responseText = await response.text();
+                try {
+                    res = JSON.parse(responseText);
+                } catch (jsonErr) {
+                    throw new Error(`Помилка сервера (HTTP ${response.status}): ${responseText.replace(/<[^>]*>/g, ' ').substring(0, 250)}`);
+                }
 
                 if (res.status === 'success') {
                     if (importResultBox) {

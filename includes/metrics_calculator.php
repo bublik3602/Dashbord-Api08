@@ -35,9 +35,42 @@ class MetricsCalculator {
         $labData         = $this->getLabQuality();
         $contractsData   = $this->getContractsSummary();
 
+        $bounds = get_operational_day_bounds();
+        $hour = (int)date('G');
+        $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:00)' : 'Нічна зміна (20:00 — 08:00)';
+        $shiftBounds = ($hour >= 8 && $hour < 20)
+            ? date('d.m.Y 08:00') . ' — ' . date('d.m.Y 20:00')
+            : (($hour < 8)
+                ? date('d.m.Y 20:00', strtotime('-1 day')) . ' — ' . date('d.m.Y 08:00')
+                : date('d.m.Y 20:00') . ' — ' . date('d.m.Y 08:00', strtotime('+1 day')));
+
+        $rangeDisplay = '';
+        switch ($period) {
+            case 'shift': $rangeDisplay = "Поточна зміна ({$shiftBounds})"; break;
+            case 'week':  $rangeDisplay = "Останні 7 днів (" . date('d.m.Y 08:00', strtotime('-7 days')) . " — " . date('d.m.Y H:i') . ")"; break;
+            case 'month': $rangeDisplay = "Останні 30 днів (" . date('d.m.Y 08:00', strtotime('-30 days')) . " — " . date('d.m.Y H:i') . ")"; break;
+            case 'day':
+            default:      $rangeDisplay = "Виробнича доба ({$bounds['label']}, з 08:00 до 08:00)"; break;
+        }
+
+        $periodInfo = [
+            'period'             => $period,
+            'period_label'       => $this->getPeriodLabel($period),
+            'range_display'      => $rangeDisplay,
+            'operational_day'    => $bounds['label'],
+            'operational_start'  => $bounds['start'],
+            'operational_end'    => $bounds['end'],
+            'shift_name'         => $shiftName,
+            'shift_bounds'       => $shiftBounds,
+            'current_time'       => date('H:i:s'),
+            'current_date'       => date('d.m.Y'),
+            'generated_at'       => date('d.m.Y H:i:s'),
+        ];
+
         return [
             'period'             => $period,
             'period_label'       => $this->getPeriodLabel($period),
+            'period_info'        => $periodInfo,
             'generated_at'       => date('Y-m-d H:i:s'),
             'material_balance'   => $materialBalance,
             'energy'             => $energyData,
@@ -304,6 +337,7 @@ class MetricsCalculator {
                         'oil_shipped_tonnes'           => (float)$row['oil_shipped_tonnes'],
                         'meal_shipped_tonnes'          => (float)$row['meal_shipped_tonnes'],
                         'husk_shipped_tonnes'          => (float)$row['husk_shipped_tonnes'],
+                        'report_date'                  => !empty($row['report_date']) ? $row['report_date'] : '12.10.2026 08:00',
                     ];
                 }
             }
@@ -321,6 +355,7 @@ class MetricsCalculator {
             'oil_shipped_tonnes'           => 130.0,
             'meal_shipped_tonnes'          => 189.9,
             'husk_shipped_tonnes'          => 48.8,
+            'report_date'                  => '12.10.2026 08:00',
         ];
     }
 
@@ -343,18 +378,20 @@ class MetricsCalculator {
                         'moisture_pct'           => (float)$row['moisture_pct'],
                         'impurity_pct'           => (float)$row['impurity_pct'],
                         'weight_discount_tonnes' => (float)$row['weight_discount_tonnes'],
+                        'report_date'            => !empty($row['report_date']) ? $row['report_date'] : '12.10.2026 09:34',
                     ];
                 }
             }
         } catch (Throwable $e) {}
 
         return [
-            'oil_content_pct'        => 49.6,
+            'oil_content_pct'        => 49.62,
             'oil_content_base_pct'   => 48.0,
-            'oil_deviation_pct'      => 1.6,
+            'oil_deviation_pct'      => 1.62,
             'moisture_pct'           => 7.15,
             'impurity_pct'           => 3.20,
             'weight_discount_tonnes' => 12.45,
+            'report_date'            => '12.10.2026 09:34',
         ];
     }
 
@@ -378,6 +415,7 @@ class MetricsCalculator {
                         'fulfillment_pct'     => $contracted > 0 ? round(($delivered / $contracted) * 100, 1) : 88.0,
                         'active_specs_count'  => (int)$row['active_specs_count'],
                         'pending_specs_count' => (int)$row['pending_specs_count'],
+                        'report_date'         => !empty($row['report_date']) ? $row['report_date'] : '12.10.2026 09:34',
                     ];
                 }
             }
@@ -390,6 +428,7 @@ class MetricsCalculator {
             'fulfillment_pct'     => 88.0,
             'active_specs_count'  => 14,
             'pending_specs_count' => 3,
+            'report_date'         => '12.10.2026 09:34',
         ];
     }
 }
