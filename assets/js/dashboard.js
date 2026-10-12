@@ -31,6 +31,7 @@ document.addEventListener('DOMContentLoaded', function () {
             this.classList.add('active');
 
             currentPeriod = period;
+            if (typeof updateExportLink === 'function') updateExportLink();
             fetchDashboardData(true);
         });
     });
@@ -332,6 +333,227 @@ document.addEventListener('DOMContentLoaded', function () {
             toast.classList.remove('show');
             setTimeout(() => toast.remove(), 300);
         }, 3500);
+    }
+
+    // =============================================================
+    // 7. МОДАЛЬНЕ ВІКНО ІМПОРТУ ЗВІТІВ ТА ЕКСПОРТ В EXCEL
+    // =============================================================
+    const btnOpenImport     = document.getElementById('btn-open-import');
+    const importModal       = document.getElementById('import-modal');
+    const btnCloseImport    = document.getElementById('btn-close-import');
+    const btnCancelModal    = document.getElementById('btn-cancel-modal');
+    const dropzone          = document.getElementById('upload-dropzone');
+    const fileInput         = document.getElementById('file-input-modal');
+    const btnBrowse         = document.getElementById('btn-browse-files');
+    const selectedFilesList = document.getElementById('selected-files-list');
+    const filesPillsWrap    = document.getElementById('files-pills-wrap');
+    const btnClearFiles     = document.getElementById('btn-clear-files');
+    const btnSubmitImport   = document.getElementById('btn-submit-import');
+    const importResultBox   = document.getElementById('import-result-box');
+    const btnExportExcel    = document.getElementById('btn-export-excel');
+
+    let pendingFiles = [];
+
+    // Оновлення посилання на експорт при зміні періоду
+    function updateExportLink() {
+        if (btnExportExcel) {
+            btnExportExcel.href = `api/export.php?period=${currentPeriod}`;
+        }
+    }
+    updateExportLink();
+
+    if (btnOpenImport && importModal) {
+        btnOpenImport.addEventListener('click', () => {
+            importModal.style.display = 'flex';
+            if (window.lucide) lucide.createIcons();
+        });
+
+        const closeModal = () => {
+            importModal.style.display = 'none';
+            resetUploadState();
+        };
+
+        if (btnCloseImport) btnCloseImport.addEventListener('click', closeModal);
+        if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
+
+        importModal.addEventListener('click', (e) => {
+            if (e.target === importModal) closeModal();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && importModal.style.display === 'flex') {
+                closeModal();
+            }
+        });
+    }
+
+    if (dropzone && fileInput) {
+        if (btnBrowse) {
+            btnBrowse.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput.click();
+            });
+        }
+
+        dropzone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                addFilesToPending(Array.from(e.target.files));
+            }
+        });
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.add('dragover');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropzone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropzone.classList.remove('dragover');
+            });
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                addFilesToPending(Array.from(e.dataTransfer.files));
+            }
+        });
+    }
+
+    function addFilesToPending(newFiles) {
+        newFiles.forEach(f => {
+            if (!pendingFiles.some(existing => existing.name === f.name && existing.size === f.size)) {
+                pendingFiles.push(f);
+            }
+        });
+        renderSelectedFiles();
+    }
+
+    function renderSelectedFiles() {
+        if (!selectedFilesList || !filesPillsWrap) return;
+
+        if (pendingFiles.length === 0) {
+            selectedFilesList.style.display = 'none';
+            if (btnSubmitImport) btnSubmitImport.disabled = true;
+            return;
+        }
+
+        selectedFilesList.style.display = 'block';
+        if (btnSubmitImport) btnSubmitImport.disabled = false;
+
+        filesPillsWrap.innerHTML = '';
+        pendingFiles.forEach((f) => {
+            const pill = document.createElement('div');
+            pill.className = 'file-pill';
+            const sizeKb = (f.size / 1024).toFixed(1);
+            pill.innerHTML = `<span>📄 <strong>${escapeHtml(f.name)}</strong> (${sizeKb} KB)</span>`;
+            filesPillsWrap.appendChild(pill);
+        });
+    }
+
+    if (btnClearFiles) {
+        btnClearFiles.addEventListener('click', () => {
+            resetUploadState();
+        });
+    }
+
+    function resetUploadState() {
+        pendingFiles = [];
+        if (fileInput) fileInput.value = '';
+        if (selectedFilesList) selectedFilesList.style.display = 'none';
+        if (btnSubmitImport) {
+            btnSubmitImport.disabled = true;
+            btnSubmitImport.innerHTML = `<i data-lucide="check-circle" style="width: 16px; height: 16px;"></i><span>Завантажити та оновити дашборд</span>`;
+        }
+        if (importResultBox) {
+            importResultBox.style.display = 'none';
+            importResultBox.className = 'import-result-box';
+            importResultBox.innerHTML = '';
+        }
+        if (window.lucide) lucide.createIcons();
+    }
+
+    if (btnSubmitImport) {
+        btnSubmitImport.addEventListener('click', async () => {
+            if (pendingFiles.length === 0) return;
+
+            btnSubmitImport.disabled = true;
+            btnSubmitImport.innerHTML = `<span>⏳ Обробка файлів...</span>`;
+            if (importResultBox) {
+                importResultBox.style.display = 'none';
+            }
+
+            const formData = new FormData();
+            pendingFiles.forEach(f => {
+                formData.append('files[]', f);
+            });
+
+            try {
+                const response = await fetch('api/import.php', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const res = await response.json();
+
+                if (res.status === 'success') {
+                    if (importResultBox) {
+                        importResultBox.style.display = 'block';
+                        importResultBox.className = 'import-result-box success';
+                        let html = `<strong>🎉 ${escapeHtml(res.message)}</strong>`;
+                        if (res.details && res.details.length > 0) {
+                            html += `<ul style="margin: 8px 0 0 18px; font-size: 12px; line-height: 1.5;">`;
+                            res.details.forEach(d => {
+                                html += `<li>${escapeHtml(d)}</li>`;
+                            });
+                            html += `</ul>`;
+                        }
+                        importResultBox.innerHTML = html;
+                    }
+
+                    showToast('Імпорт успішно завершено! Показники оновлено.');
+                    btnSubmitImport.innerHTML = `<span>✅ Успішно оновлено!</span>`;
+
+                    // Оновлюємо дані на дашборді в реальному часі
+                    fetchDashboardData(true);
+
+                    // Закриваємо модалку через 3.5 секунди
+                    setTimeout(() => {
+                        if (importModal && importModal.style.display === 'flex') {
+                            importModal.style.display = 'none';
+                            resetUploadState();
+                        }
+                    }, 3500);
+
+                } else {
+                    throw new Error(res.message || 'Помилка обробки файлів.');
+                }
+            } catch (err) {
+                console.error('Помилка імпорту:', err);
+                if (importResultBox) {
+                    importResultBox.style.display = 'block';
+                    importResultBox.className = 'import-result-box error';
+                    importResultBox.innerHTML = `<strong>⚠️ Помилка імпорту:</strong> ${escapeHtml(err.message)}`;
+                }
+                showToast('Помилка імпорту: ' + err.message, true);
+                btnSubmitImport.disabled = false;
+                btnSubmitImport.innerHTML = `<span>Спробувати ще раз</span>`;
+            }
+        });
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+        return text.replace(/[&<>"']/g, m => map[m]);
     }
 
     // Запуск таймера

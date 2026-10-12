@@ -89,6 +89,18 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <button type="button" class="period-btn" data-period="month">Місяць</button>
             </div>
 
+            <!-- Дії: Імпорт та Експорт звітів -->
+            <div class="action-buttons-group">
+                <button type="button" class="btn-action btn-import" id="btn-open-import" title="Імпортувати щоденні звіти завода (Лист погодження, СВОД, Баланс)">
+                    <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
+                    <span>Імпорт Excel</span>
+                </button>
+                <a href="api/export.php" class="btn-action btn-export" id="btn-export-excel" title="Завантажити звіт за зміну / добу в Excel">
+                    <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                    <span>Експорт в Excel</span>
+                </a>
+            </div>
+
             <!-- Ручне оновлення та зворотний відлік -->
             <div class="refresh-control">
                 <button type="button" class="btn-refresh" id="btn-manual-refresh" title="Оновити зараз">
@@ -467,34 +479,6 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div id="energy-timeline-chart"></div>
         </div>
 
-        <!-- Панель статусу обладнання -->
-        <div class="card-panel">
-            <div class="section-title">
-                <i data-lucide="activity" style="width: 18px; height: 18px; color: #10b981;"></i>
-                <span>Стан вузлів заводу</span>
-                <span class="section-badge badge-blue" id="equip-health-summary"><?= $eq['running_count'] ?>/<?= $eq['total_count'] ?> у роботі</span>
-            </div>
-
-            <div class="equipment-list">
-                <?php foreach ($eq['nodes'] as $node): ?>
-                    <div class="equip-item">
-                        <div class="equip-info">
-                            <div class="equip-status-light <?= $node['status'] === 'running' ? 'light-online' : 'light-offline' ?>"></div>
-                            <div>
-                                <div class="equip-name"><?= htmlspecialchars($node['name']) ?></div>
-                                <div class="equip-section"><?= htmlspecialchars($node['section']) ?></div>
-                            </div>
-                        </div>
-                        <div>
-                            <span class="equip-badge <?= $node['status'] === 'running' ? 'status-normal' : 'status-danger' ?>">
-                                <?= $node['status'] === 'running' ? 'У РОБОТІ' : 'СТОП' ?>
-                            </span>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-
     </div>
 
     <!-- =============================================================
@@ -511,6 +495,114 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         </div>
     </footer>
 
+</div>
+
+<!-- =============================================================
+     МОДАЛЬНЕ ВІКНО: ЩОДЕННИЙ ІМПОРТ ЗВІТІВ ЗАВОДУ
+     ============================================================= -->
+<div id="import-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-title-wrap">
+                <div class="modal-icon"><i data-lucide="file-spreadsheet"></i></div>
+                <div>
+                    <h2 class="modal-title">Щоденний імпорт звітів заводу</h2>
+                    <p class="modal-subtitle">Завантажте файли Excel (.xlsx / .csv) для автоматичного оновлення показників МЕЗ</p>
+                </div>
+            </div>
+            <button type="button" class="modal-close-btn" id="btn-close-import" title="Закрити">&times;</button>
+        </div>
+
+        <div class="modal-body">
+            <!-- Список файлів з обов'язковими назвами та описом -->
+            <div class="import-files-guide">
+                <div class="guide-title">
+                    <i data-lucide="info" style="width: 15px; height: 15px; color: var(--color-primary);"></i>
+                    <span>Перелік щоденних звітів та обов'язкові назви файлів:</span>
+                </div>
+
+                <div class="guide-list">
+                    <!-- Файл 1 -->
+                    <div class="guide-item" data-expected="lab">
+                        <div class="guide-item-icon">📋</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">1. Звіт «Лист погодження» з постачання соняшнику (1С)</div>
+                            <div class="guide-item-filename">Орієнтовна назва: <code>Лист погодження.xlsx</code> або <code>Лист_погодження_*.xlsx</code></div>
+                            <div class="guide-item-desc">Містить показники лабораторії (олійність факт/база, вологість, смітна домішка, знижка з ваги) та реєстр специфікацій на довіз.</div>
+                        </div>
+                        <span class="guide-tag tag-primary">Лабораторія + 1С</span>
+                    </div>
+
+                    <!-- Файл 2 -->
+                    <div class="guide-item" data-expected="stocks">
+                        <div class="guide-item-icon">🏢</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">2. Звіт «Рух сировини та готової продукції» (СВОД)</div>
+                            <div class="guide-item-filename">Орієнтовна назва: <code>СВОД руху продукції.xlsx</code> або <code>Залишки.xlsx</code></div>
+                            <div class="guide-item-desc">Містить фізичний залишок насіння на елеваторі (розрахунок днів автономії при 600 т/д), залишок олії в баках, шроту та лузги, списання лузги на котельню.</div>
+                        </div>
+                        <span class="guide-tag tag-emerald">Складські залишки</span>
+                    </div>
+
+                    <!-- Файл 3 -->
+                    <div class="guide-item" data-expected="prod">
+                        <div class="guide-item-icon">⚙️</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">3. Звіт «Виробництво та переробка МЕЗ» (Пресування / Екстракція)</div>
+                            <div class="guide-item-filename">Орієнтовна назва: <code>Виробництво МЕЗ.xlsx</code> або <code>Матеріальний_баланс.xlsx</code></div>
+                            <div class="guide-item-desc">Містить фактичну переробку насіння за зміну/добу, вихід сирої олії, тостованого шроту, гранульованої лузги та технологічні втрати.</div>
+                        </div>
+                        <span class="guide-tag tag-amber">Матеріальний баланс</span>
+                    </div>
+
+                    <!-- Файл 4 -->
+                    <div class="guide-item" data-expected="logistics">
+                        <div class="guide-item-icon">🚚</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">4. Реєстр ТТН та вагових (опціонально)</div>
+                            <div class="guide-item-filename">Орієнтовна назва: <code>ТТН_автотранспорт.xlsx</code> або <code>Вагова.xlsx</code></div>
+                            <div class="guide-item-desc">Використовується для додаткової синхронізації рейсів автотранспорту (якщо відключено пряму базу CRM apgk_api08).</div>
+                        </div>
+                        <span class="guide-tag tag-slate">Логістика (опція)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Зона завантаження файлів (Drag-and-Drop) -->
+            <div class="upload-dropzone" id="upload-dropzone">
+                <input type="file" id="file-input-modal" multiple accept=".xlsx,.xls,.csv" style="display: none;">
+                <div class="dropzone-icon">
+                    <i data-lucide="cloud-upload" style="width: 44px; height: 44px; color: var(--color-primary);"></i>
+                </div>
+                <div class="dropzone-title">Перетягніть файли звітів сюди або натисніть для вибору</div>
+                <div class="dropzone-hint">Підтримуються формати: .xlsx, .xls, .csv (можна обрати кілька файлів одночасно)</div>
+                <button type="button" class="btn-browse-files" id="btn-browse-files">
+                    <i data-lucide="folder-open" style="width: 14px; height: 14px;"></i>
+                    <span>Обрати файли на комп'ютері</span>
+                </button>
+            </div>
+
+            <!-- Список обраних файлів перед завантаженням -->
+            <div class="selected-files-list" id="selected-files-list" style="display: none;">
+                <div class="selected-files-header">
+                    <span>Обрані файли для імпорту:</span>
+                    <button type="button" class="btn-clear-selection" id="btn-clear-files">Очистити</button>
+                </div>
+                <div class="files-pills-wrap" id="files-pills-wrap"></div>
+            </div>
+
+            <!-- Лог результату імпорту -->
+            <div id="import-result-box" class="import-result-box" style="display: none;"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button type="button" class="btn-modal-cancel" id="btn-cancel-modal">Скасувати</button>
+            <button type="button" class="btn-modal-submit" id="btn-submit-import" disabled>
+                <i data-lucide="check-circle" style="width: 16px; height: 16px;"></i>
+                <span>Завантажити та оновити дашборд</span>
+            </button>
+        </div>
+    </div>
 </div>
 
 <!-- Контейнер для всплывающих уведомлений (Toast) -->
