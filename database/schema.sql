@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS `material_balance_logs` (
     
     -- Выходящие потоки готовой продукции (тонн)
     `oil_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Выход: Масло подсолнечное',
-    `meal_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Выход: Шрот тостированный',
-    `husk_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Выход: Лузга гранулированная/топливная',
+    `meal_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Выход: Шрот',
+    `husk_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Выход: Лузга',
     
     -- Расчетные потери (тонн и проценты)
     `conditioning_loss` DECIMAL(10, 3) GENERATED ALWAYS AS (`seed_in_plant` - `seed_in_production`) STORED COMMENT 'Потери при подработке (усушка/сор)',

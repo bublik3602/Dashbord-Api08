@@ -23,6 +23,13 @@ document.addEventListener('DOMContentLoaded', function () {
         FactoryCharts.initMonthlyAnalyticsChart(window.INITIAL_DASHBOARD_DATA.historical_analytics);
     }
 
+    function updateExportLink() {
+        const btnExport = document.getElementById('btn-export-excel');
+        if (btnExport) {
+            btnExport.href = `api/export.php?period=${currentPeriod}`;
+        }
+    }
+
     // 2. Обробники кліку на фільтр періоду
     periodButtons.forEach(btn => {
         btn.addEventListener('click', function () {
@@ -32,13 +39,30 @@ document.addEventListener('DOMContentLoaded', function () {
             periodButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
 
+            const monthDropdown = document.getElementById('select-other-months');
+            if (monthDropdown) monthDropdown.value = '';
+
             currentPeriod = period;
-            if (typeof updateExportLink === 'function') updateExportLink();
+            updateExportLink();
             fetchDashboardData(true);
         });
     });
 
-    // 2.0 Обробники швидкого переходу на місяць з карток аналітики
+    // 2.0 Обробник вибору місяця/періоду з випадаючого списку
+    const monthDropdown = document.getElementById('select-other-months');
+    if (monthDropdown) {
+        monthDropdown.addEventListener('change', function () {
+            const period = this.value;
+            if (!period || isFetching) return;
+
+            periodButtons.forEach(b => b.classList.remove('active'));
+            currentPeriod = period;
+            updateExportLink();
+            fetchDashboardData(true);
+        });
+    }
+
+    // 2.01 Обробники швидкого переходу на місяць з карток аналітики
     document.querySelectorAll('.btn-quick-period, .history-month-card').forEach(elem => {
         elem.addEventListener('click', function (e) {
             const p = this.getAttribute('data-period') || this.getAttribute('data-period-trigger');
@@ -46,8 +70,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const targetBtn = document.querySelector(`.period-btn[data-period="${p}"]`);
             if (targetBtn) {
                 targetBtn.click();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else if (monthDropdown) {
+                monthDropdown.value = p;
+                monthDropdown.dispatchEvent(new Event('change'));
             }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
     });
 
@@ -248,15 +275,33 @@ document.addEventListener('DOMContentLoaded', function () {
             prodLossBadge.className = 'kpi-badge ' + pz.status_class;
         }
 
+        // Великі цифри виходу продукції у відсотках (Олія + Шрот + Лузга)
+        const oilPctVal = (pz.oil_yield_pct !== undefined) ? pz.oil_yield_pct : (mb.yield_chart.percentages[0] || 0.0);
+        const mealPctVal = (pz.meal_yield_pct !== undefined) ? pz.meal_yield_pct : (mb.yield_chart.percentages[1] || 0.0);
+        const huskPctVal = (pz.husk_yield_pct !== undefined) ? pz.husk_yield_pct : (mb.yield_chart.percentages[2] || 0.0);
+        const totalPctVal = (pz.total_yield_pct !== undefined) ? pz.total_yield_pct : (Math.round((oilPctVal + mealPctVal + huskPctVal) * 10) / 10);
+
+        setElementText('#big-yield-oil', oilPctVal + '%');
+        setElementText('#sub-yield-oil', formatNumber(pz.oil_out) + ' т');
+
+        setElementText('#big-yield-meal', mealPctVal + '%');
+        setElementText('#sub-yield-meal', formatNumber(pz.meal_out) + ' т');
+
+        setElementText('#big-yield-husk', huskPctVal + '%');
+        setElementText('#sub-yield-husk', formatNumber(pz.husk_out) + ' т');
+
+        setElementText('#big-yield-total', totalPctVal + '%');
+        setElementText('#sub-yield-total', formatNumber(pz.products_total) + ' т');
+
         // Легенда виходу продукції
         setElementText('#legend-oil-val', formatNumber(pz.oil_out) + ' т');
-        setElementText('#legend-oil-pct', mb.yield_chart.percentages[0] + '%');
+        setElementText('#legend-oil-pct', oilPctVal + '%');
 
         setElementText('#legend-meal-val', formatNumber(pz.meal_out) + ' т');
-        setElementText('#legend-meal-pct', mb.yield_chart.percentages[1] + '%');
+        setElementText('#legend-meal-pct', mealPctVal + '%');
 
         setElementText('#legend-husk-val', formatNumber(pz.husk_out) + ' т');
-        setElementText('#legend-husk-pct', mb.yield_chart.percentages[2] + '%');
+        setElementText('#legend-husk-pct', huskPctVal + '%');
 
         setElementText('#legend-loss-val', formatNumber(pz.production_loss) + ' т');
         setElementText('#legend-loss-pct', mb.yield_chart.percentages[3] + '%');

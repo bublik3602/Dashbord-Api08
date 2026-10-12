@@ -319,11 +319,11 @@ window.FactoryCharts = {
                     data: hist.seed_processed || [0, 8918, 4296]
                 },
                 {
-                    name: 'Олія сира (т)',
+                    name: 'Олія (т)',
                     data: hist.oil_out || [0, 3812, 1593]
                 },
                 {
-                    name: 'Шрот тостований (т)',
+                    name: 'Шрот (т)',
                     data: hist.meal_out || [0, 3683, 1522]
                 }
             ],
@@ -464,8 +464,8 @@ window.FactoryCharts = {
             this.monthlyChart.updateSeries([
                 { name: 'Завіз насіння (т)', data: hc.seed_in },
                 { name: 'Переробка сировини (т)', data: hc.seed_processed },
-                { name: 'Олія сира (т)', data: hc.oil_out },
-                { name: 'Шрот тостований (т)', data: hc.meal_out }
+                { name: 'Олія (т)', data: hc.oil_out },
+                { name: 'Шрот (т)', data: hc.meal_out }
             ]);
         }
     }

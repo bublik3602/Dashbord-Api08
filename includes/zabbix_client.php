@@ -125,9 +125,9 @@ class ZabbixClient {
         return [
             'scale.seed.in.plant.total'   => ['value' => 465.80, 'name' => 'Ваги приймання насіння'],
             'scale.seed.in.prod.total'    => ['value' => 452.00, 'name' => 'Ваги подачі у виробництво'],
-            'production.oil.yield.tonnes' => ['value' => 198.80, 'name' => 'Вихід олії сирої'],
-            'production.meal.yield.tonnes'=> ['value' => 185.30, 'name' => 'Вихід шроту тостованого'],
-            'production.husk.yield.tonnes'=> ['value' => 62.40,  'name' => 'Вихід лузги гранульованої'],
+            'production.oil.yield.tonnes' => ['value' => 198.80, 'name' => 'Вихід олії'],
+            'production.meal.yield.tonnes'=> ['value' => 185.30, 'name' => 'Вихід шроту'],
+            'production.husk.yield.tonnes'=> ['value' => 62.40,  'name' => 'Вихід лузги'],
             'power.meter.main.kw'         => ['value' => 3940.0, 'name' => 'Общая мощность ввода'],
             'water.meter.feed.flow.rate'  => ['value' => 58.9,   'name' => 'Расход воды технической'],
             'equipment.cleaner.status'    => ['value' => 1,      'name' => 'Статус сепаратора'],

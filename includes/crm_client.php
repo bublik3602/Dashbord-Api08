@@ -215,8 +215,8 @@ class CRMClient {
             'Всі'     => ['name' => 'Всі вантажі', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
             'Насіння' => ['name' => 'Насіння соняшнику', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
             'Олія'    => ['name' => 'Олія соняшникова', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
-            'Шрот'    => ['name' => 'Шрот тостований', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
-            'Лузга'   => ['name' => 'Лузга гранульована', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
+            'Шрот'    => ['name' => 'Шрот', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
+            'Лузга'   => ['name' => 'Лузга', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
         ];
 
         $classifiedTrucks = [];
@@ -322,8 +322,8 @@ class CRMClient {
                 'Всі'     => ['name' => 'Всі вантажі', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
                 'Насіння' => ['name' => 'Насіння соняшнику', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
                 'Олія'    => ['name' => 'Олія соняшникова', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
-                'Шрот'    => ['name' => 'Шрот тостований', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
-                'Лузга'   => ['name' => 'Лузга гранульована', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
+                'Шрот'    => ['name' => 'Шрот', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
+                'Лузга'   => ['name' => 'Лузга', 'queued' => 0, 'on_site' => 0, 'exited' => 0, 'stay_minutes' => []],
             ];
 
             foreach ($trucks as $t) {

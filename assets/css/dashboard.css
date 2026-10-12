@@ -338,6 +338,34 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
+.month-select-wrapper {
+    display: flex;
+    align-items: center;
+    margin-left: 3px;
+}
+
+.month-dropdown-select {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    padding: 5px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    cursor: pointer;
+    outline: none;
+    transition: all 0.15s ease;
+    box-shadow: var(--shadow-sm);
+    font-family: inherit;
+}
+
+.month-dropdown-select:hover,
+.month-dropdown-select:focus {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2);
+}
+
 .refresh-control {
     display: flex;
     align-items: center;
@@ -587,6 +615,94 @@ body {
     border-radius: var(--radius-lg);
     padding: 20px 22px;
     box-shadow: var(--shadow-sm);
+}
+
+/* Великі цифри виходу продукції у відсотках (Олія + Шрот + Лузга) */
+.yield-big-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.yield-big-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.yield-big-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+}
+
+.yield-card-oil::before { background: var(--color-oil, #f59e0b); }
+.yield-card-meal::before { background: var(--color-meal, #3b82f6); }
+.yield-card-husk::before { background: var(--color-husk, #10b981); }
+.yield-card-total::before { background: linear-gradient(90deg, #f59e0b, #3b82f6, #10b981); }
+
+.yield-card-total {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+
+.yield-big-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.yield-card-total .yield-big-label {
+    color: #166534;
+}
+
+.yield-big-pct {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 3px 0;
+    font-feature-settings: "tnum";
+}
+
+.yield-card-oil .yield-big-pct { color: #d97706; }
+.yield-card-meal .yield-big-pct { color: #2563eb; }
+.yield-card-husk .yield-big-pct { color: #059669; }
+.yield-card-total .yield-big-pct { color: #15803d; }
+
+.yield-big-val {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+@media (max-width: 800px) {
+    .yield-big-metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .yield-big-metrics-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Круговая диаграмма выхода готовой продукции */

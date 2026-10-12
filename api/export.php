@@ -102,22 +102,28 @@ try {
             <td class="num">100.0%</td>
         </tr>
         <tr>
-            <td>Вихід: Олія соняшникова сира</td>
+            <td>Вихід: Олія</td>
             <td class="num"><?= number_format($mb['production_zone']['oil_out'], 1, ',', ' ') ?></td>
             <td class="num"><?= number_format($mb['production_zone']['oil_plan'], 1, ',', ' ') ?></td>
-            <td class="num"><?= $mb['yield_chart']['percentages'][0] ?>%</td>
+            <td class="num"><?= $mb['production_zone']['oil_yield_pct'] ?>%</td>
         </tr>
         <tr>
-            <td>Вихід: Шрот тостований</td>
+            <td>Вихід: Шрот</td>
             <td class="num"><?= number_format($mb['production_zone']['meal_out'], 1, ',', ' ') ?></td>
             <td class="num">-</td>
-            <td class="num"><?= $mb['yield_chart']['percentages'][1] ?>%</td>
+            <td class="num"><?= $mb['production_zone']['meal_yield_pct'] ?>%</td>
         </tr>
         <tr>
-            <td>Вихід: Лузга гранульована</td>
+            <td>Вихід: Лузга</td>
             <td class="num"><?= number_format($mb['production_zone']['husk_out'], 1, ',', ' ') ?></td>
             <td class="num">-</td>
-            <td class="num"><?= $mb['yield_chart']['percentages'][2] ?>%</td>
+            <td class="num"><?= $mb['production_zone']['husk_yield_pct'] ?>%</td>
+        </tr>
+        <tr class="sub-header">
+            <td class="bold">Разом вихід готової продукції (Олія + Шрот + Лузга)</td>
+            <td class="num bold"><?= number_format($mb['production_zone']['products_total'], 1, ',', ' ') ?></td>
+            <td class="num">-</td>
+            <td class="num bold"><?= $mb['production_zone']['total_yield_pct'] ?>%</td>
         </tr>
         <tr>
             <td>Технологічні виробничі втрати переробки</td>
@@ -151,13 +157,13 @@ try {
             <td>Різниця обліку: <?= number_format($stocks['seed_stock_tonnes'] - $stocks['seed_stock_accounting_tonnes'], 1, ',', ' ') ?> т</td>
         </tr>
         <tr>
-            <td>Олія сира в резервуарному парку</td>
+            <td>Олія в резервуарному парку</td>
             <td class="num"><?= number_format($stocks['oil_stock_tonnes'], 1, ',', ' ') ?></td>
             <td class="num"><?= number_format($stocks['oil_shipped_tonnes'], 1, ',', ' ') ?></td>
             <td>Автоцистерни</td>
         </tr>
         <tr>
-            <td>Шрот тостований на складі СГП</td>
+            <td>Шрот на складі СГП</td>
             <td class="num"><?= number_format($stocks['meal_stock_tonnes'], 1, ',', ' ') ?></td>
             <td class="num"><?= number_format($stocks['meal_shipped_tonnes'], 1, ',', ' ') ?></td>
             <td>Насипом / Автотранспорт</td>
@@ -166,7 +172,7 @@ try {
             <td>Лузга на складі готової продукції</td>
             <td class="num"><?= number_format($stocks['husk_stock_tonnes'], 1, ',', ' ') ?></td>
             <td class="num"><?= number_format($stocks['husk_shipped_tonnes'], 1, ',', ' ') ?></td>
-            <td>Гранульована</td>
+            <td>Насипом / Автотранспорт</td>
         </tr>
         <tr>
             <td class="bold">Лузга, спалена в котельні заводу</td>

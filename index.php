@@ -82,15 +82,22 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         </div>
 
         <div class="controls-section">
-            <!-- Перемикач періодів -->
+            <!-- Перемикач періодів: Доба, Тиждень, Місяць та випадаючий список інших місяців -->
             <div class="period-switcher">
-                <button type="button" class="period-btn" data-period="shift">Зміна</button>
                 <button type="button" class="period-btn active" data-period="day">Доба</button>
                 <button type="button" class="period-btn" data-period="week">Тиждень</button>
-                <button type="button" class="period-btn" data-period="month_oct">Жовтень</button>
-                <button type="button" class="period-btn" data-period="month_sep">Вересень</button>
-                <button type="button" class="period-btn" data-period="month_aug">Серпень</button>
-                <button type="button" class="period-btn" data-period="season">Сезон '26</button>
+                <button type="button" class="period-btn" data-period="month">Місяць</button>
+                <div class="month-select-wrapper">
+                    <select id="select-other-months" class="month-dropdown-select" title="Обрати інший місяць або період">
+                        <option value="" disabled selected>📅 Інші місяці...</option>
+                        <option value="month_oct">Жовтень 2026 (11 діб)</option>
+                        <option value="month_sep">Вересень 2026 (30 діб)</option>
+                        <option value="month_aug">Серпень 2026 (31 доба, ППР)</option>
+                        <option value="season">Сезон 2026 (Серпень — Жовтень)</option>
+                        <option value="day_today">Сьогодні (12.10, без переробки)</option>
+                        <option value="day_prev">Минула доба (11.10, перероблено 452 т)</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Дії: Імпорт та Експорт звітів -->
@@ -317,6 +324,30 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <span class="section-badge badge-orange">Матеріальний баланс</span>
             </div>
 
+            <!-- ВЕЛИКІ ЦИФРИ: ВИХІД ПРОДУКЦІЇ У ВІДСОТКАХ (ОЛІЯ + ШРОТ + ЛУЗГА) -->
+            <div class="yield-big-metrics-grid">
+                <div class="yield-big-card yield-card-oil">
+                    <div class="yield-big-label">💧 Олія</div>
+                    <div class="yield-big-pct" id="big-yield-oil"><?= $mb['production_zone']['oil_yield_pct'] ?>%</div>
+                    <div class="yield-big-val" id="sub-yield-oil"><?= number_format($mb['production_zone']['oil_out'], 1, ',', ' ') ?> т</div>
+                </div>
+                <div class="yield-big-card yield-card-meal">
+                    <div class="yield-big-label">🌾 Шрот</div>
+                    <div class="yield-big-pct" id="big-yield-meal"><?= $mb['production_zone']['meal_yield_pct'] ?>%</div>
+                    <div class="yield-big-val" id="sub-yield-meal"><?= number_format($mb['production_zone']['meal_out'], 1, ',', ' ') ?> т</div>
+                </div>
+                <div class="yield-big-card yield-card-husk">
+                    <div class="yield-big-label">🪵 Лузга</div>
+                    <div class="yield-big-pct" id="big-yield-husk"><?= $mb['production_zone']['husk_yield_pct'] ?>%</div>
+                    <div class="yield-big-val" id="sub-yield-husk"><?= number_format($mb['production_zone']['husk_out'], 1, ',', ' ') ?> т</div>
+                </div>
+                <div class="yield-big-card yield-card-total">
+                    <div class="yield-big-label">📦 Разом (Олія + Шрот + Лузга)</div>
+                    <div class="yield-big-pct" id="big-yield-total"><?= $mb['production_zone']['total_yield_pct'] ?>%</div>
+                    <div class="yield-big-val" id="sub-yield-total"><?= number_format($mb['production_zone']['products_total'], 1, ',', ' ') ?> т</div>
+                </div>
+            </div>
+
             <div class="chart-layout">
                 <div id="production-donut-chart"></div>
 
@@ -324,7 +355,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="legend-item">
                         <span class="legend-name">
                             <span class="legend-color-tag" style="background: var(--color-oil);"></span>
-                            Олія сира
+                            Олія
                         </span>
                         <div>
                             <span class="legend-values" id="legend-oil-val"><?= number_format($mb['production_zone']['oil_out'], 1, ',', ' ') ?> т</span>
@@ -335,7 +366,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="legend-item">
                         <span class="legend-name">
                             <span class="legend-color-tag" style="background: var(--color-meal);"></span>
-                            Шрот тостований
+                            Шрот
                         </span>
                         <div>
                             <span class="legend-values" id="legend-meal-val"><?= number_format($mb['production_zone']['meal_out'], 1, ',', ' ') ?> т</span>
@@ -346,7 +377,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="legend-item">
                         <span class="legend-name">
                             <span class="legend-color-tag" style="background: var(--color-husk);"></span>
-                            Лузга гранульована
+                            Лузга
                         </span>
                         <div>
                             <span class="legend-values" id="legend-husk-val"><?= number_format($mb['production_zone']['husk_out'], 1, ',', ' ') ?> т</span>
@@ -374,13 +405,13 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             </div>
             <div class="warehouse-stocks-grid">
                 <div class="wh-stock-item">
-                    <span class="wh-stock-title">💧 Олія сира (Резервуари)</span>
+                    <span class="wh-stock-title">💧 Олія (Резервуари)</span>
                     <span class="wh-stock-value" id="val-stock-oil"><?= number_format($stocks['oil_stock_tonnes'] ?? 3091.3, 1, ',', ' ') ?> т</span>
                     <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-oil" style="width: <?= min(100, round((($stocks['oil_stock_tonnes'] ?? 3091.3) / 5000) * 100)) ?>%;"></div></div>
                     <span class="wh-stock-sub" id="val-shipped-oil">Відвантажено за добу: <?= number_format($stocks['oil_shipped_tonnes'] ?? 130.0, 1, ',', ' ') ?> т</span>
                 </div>
                 <div class="wh-stock-item">
-                    <span class="wh-stock-title">🌾 Шрот тостований</span>
+                    <span class="wh-stock-title">🌾 Шрот на складі</span>
                     <span class="wh-stock-value" id="val-stock-meal"><?= number_format($stocks['meal_stock_tonnes'] ?? 757.1, 1, ',', ' ') ?> т</span>
                     <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-meal" style="width: <?= min(100, round((($stocks['meal_stock_tonnes'] ?? 757.1) / 1500) * 100)) ?>%;"></div></div>
                     <span class="wh-stock-sub" id="val-shipped-meal">Відвантажено за добу: <?= number_format($stocks['meal_shipped_tonnes'] ?? 189.9, 1, ',', ' ') ?> т</span>
@@ -782,13 +813,13 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 <td><span class="trend-badge trend-neutral">Запуск вересень</span></td>
                             </tr>
                             <tr>
-                                <td>Вихід олії сирої</td>
+                                <td>Вихід олії</td>
                                 <td class="bold" style="color: #d97706;">5 404,8 т (42,9%)</td>
                                 <td>17 154,2 т (43,8%)</td>
                                 <td><span class="trend-badge trend-good">Якість в нормі</span></td>
                             </tr>
                             <tr>
-                                <td>Вихід шроту тостованого</td>
+                                <td>Вихід шроту</td>
                                 <td class="bold" style="color: #2563eb;">5 204,9 т (41,3%)</td>
                                 <td>14 957,2 т (38,2%)</td>
                                 <td><span class="trend-badge trend-good">+3,1% приріст шроту</span></td>
@@ -888,7 +919,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <div class="guide-item-content">
                             <div class="guide-item-name">3. Звіт «Виробництво та переробка МЕЗ» (Пресування / Екстракція)</div>
                             <div class="guide-item-filename">Орієнтовна назва: <code>Виробництво МЕЗ.xlsx</code> або <code>Матеріальний_баланс.xlsx</code></div>
-                            <div class="guide-item-desc">Містить фактичну переробку насіння за зміну/добу, вихід сирої олії, тостованого шроту, гранульованої лузги та технологічні втрати.</div>
+                            <div class="guide-item-desc">Містить фактичну переробку насіння за зміну/добу, вихід олії, шроту, лузги та технологічні втрати.</div>
                         </div>
                         <span class="guide-tag tag-amber">Матеріальний баланс</span>
                     </div>

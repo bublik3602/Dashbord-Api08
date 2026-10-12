@@ -14,7 +14,7 @@ require_once __DIR__ . '/../includes/metrics_calculator.php';
 
 try {
     $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';
-    $validPeriods = ['shift', 'day', 'week', 'month', 'month_oct', 'month_sep', 'month_aug', 'season'];
+    $validPeriods = ['shift', 'day', 'day_today', 'day_prev', 'week', 'month', 'month_oct', 'month_sep', 'month_aug', 'season'];
     if (!in_array($period, $validPeriods, true)) {
         $period = 'day';
     }

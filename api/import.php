@@ -244,34 +244,35 @@ try {
                         if ($moistP > 0) $latestMoist = $moistP;
                         if ($impP > 0) $latestImp = $impP;
 
-                        $seedInProd = round($phys * 0.970, 2);
-                        $oilOut = round($seedInProd * 0.440, 2);
-                        $mealOut = round($seedInProd * 0.410, 2);
-                        $huskOut = round($seedInProd * 0.138, 2);
-                        $condLoss = round($phys - $seedInProd, 2);
-                        $condLossPct = round(($condLoss / $phys) * 100, 2);
-                        $prodLoss = round($seedInProd - ($oilOut + $mealOut + $huskOut), 2);
-                        $prodLossPct = round(($prodLoss / $seedInProd) * 100, 2);
-
-                        // Оновлюємо або вставляємо запис за цей день
-                        $checkStmt = $db->prepare("SELECT id FROM material_balance_logs WHERE date(recorded_at) = ?");
+                        // Перевіряємо чи вже існує запис за цей день
+                        $checkStmt = $db->prepare("SELECT id, seed_in_production, oil_out, meal_out, husk_out FROM material_balance_logs WHERE date(recorded_at) = ?");
                         $checkStmt->execute([$isoDate]);
-                        $existingId = $checkStmt->fetchColumn();
+                        $existingRow = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
-                        if ($existingId) {
+                        if ($existingRow) {
+                            $prodVal = (float)$existingRow['seed_in_production'];
+                            $oilVal  = (float)$existingRow['oil_out'];
+                            $mealVal = (float)$existingRow['meal_out'];
+                            $huskVal = (float)$existingRow['husk_out'];
+
+                            $condLoss = round(max(0, $phys - $prodVal), 2);
+                            $condLossPct = $phys > 0 ? round(($condLoss / $phys) * 100, 2) : 0.0;
+                            $prodLoss = round(max(0, $prodVal - ($oilVal + $mealVal + $huskVal)), 2);
+                            $prodLossPct = $prodVal > 0 ? round(($prodLoss / $prodVal) * 100, 2) : 0.0;
+
                             $upd = $db->prepare("
                                 UPDATE material_balance_logs 
-                                SET report_date = ?, seed_in_plant = ?, seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?, conditioning_loss = ?, conditioning_loss_pct = ?, production_loss = ?, production_loss_pct = ?
+                                SET report_date = ?, seed_in_plant = ?, conditioning_loss = ?, conditioning_loss_pct = ?, production_loss = ?, production_loss_pct = ?
                                 WHERE id = ?
                             ");
-                            $upd->execute([$latestScheduleDay, $phys, $seedInProd, $oilOut, $mealOut, $huskOut, $condLoss, $condLossPct, $prodLoss, $prodLossPct, $existingId]);
+                            $upd->execute([$latestScheduleDay, $phys, $condLoss, $condLossPct, $prodLoss, $prodLossPct, $existingRow['id']]);
                         } else {
                             $ins = $db->prepare("
                                 INSERT INTO material_balance_logs 
                                 (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
-                                VALUES (?, ?, 'day', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                VALUES (?, ?, 'day', ?, 0.0, 0.0, 0.0, 0.0, ?, 100.0, 0.0, 0.0)
                             ");
-                            $ins->execute(["{$isoDate} 20:00:00", $latestScheduleDay, $phys, $seedInProd, $oilOut, $mealOut, $huskOut, $condLoss, $condLossPct, $prodLoss, $prodLossPct]);
+                            $ins->execute(["{$isoDate} 20:00:00", $latestScheduleDay, $phys, $phys]);
                         }
                     }
                 }
@@ -609,36 +610,62 @@ try {
         if ($isProdReport && !$scheduleSheet) {
             $targetSheet = reset($sheetsData);
             $prodDateStr = date('d.m.Y');
-            $seedInPlant = 465.8;
-            $seedInProd  = 452.0;
-            $oilOut      = 198.8;
-            $mealOut     = 185.3;
-            $huskOut     = 62.4;
+            foreach (array_slice($targetSheet, 0, 8) as $r) {
+                $rStr = implode(' ', array_filter($r, 'is_string'));
+                if (preg_match('/(\d{1,2}[\.\/]\d{1,2}[\.\/]\d{2,4})/u', $rStr, $m)) {
+                    $prodDateStr = $m[1];
+                    break;
+                }
+            }
+
+            $seedInProd  = 0.0;
+            $oilOut      = 0.0;
+            $mealOut     = 0.0;
+            $huskOut     = 0.0;
+            $seedInPlant = 0.0;
 
             foreach ($targetSheet as $r) {
                 $rStr = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                if (strpos($rStr, 'переработка') !== false || strpos($rStr, 'переробка') !== false || strpos($rStr, 'сырье') !== false) {
+                if (strpos($rStr, 'переработка') !== false || strpos($rStr, 'переробка') !== false || strpos($rStr, 'в переработку') !== false) {
                     foreach ($r as $val) {
-                        if (is_numeric($val) && (float)$val > 100 && (float)$val < 2000) {
-                            $seedInProd = (float)$val;
-                            $seedInPlant = round($seedInProd * 1.030, 1);
-                            $oilOut = round($seedInProd * 0.440, 1);
-                            $mealOut = round($seedInProd * 0.410, 1);
-                            $huskOut = round($seedInProd * 0.138, 1);
-                            break;
+                        if (is_numeric($val)) {
+                            $valF = (float)$val;
+                            if ($valF >= 0) {
+                                $seedInProd = $valF;
+                                if ($seedInProd > 0) {
+                                    $seedInPlant = round($seedInProd * 1.030, 1);
+                                    $oilOut = round($seedInProd * 0.440, 1);
+                                    $mealOut = round($seedInProd * 0.410, 1);
+                                    $huskOut = round($seedInProd * 0.138, 1);
+                                }
+                                break;
+                            }
                         }
                     }
                 }
             }
 
             try {
-                $nowStr = date('Y-m-d H:i:s');
-                $stmt = $db->prepare("
-                    INSERT INTO material_balance_logs 
-                    (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out)
-                    VALUES (?, ?, 'day', ?, ?, ?, ?, ?)
-                ");
-                $stmt->execute([$nowStr, $prodDateStr, $seedInPlant, $seedInProd, $oilOut, $mealOut, $huskOut]);
+                $isoDate = date('Y-m-d', strtotime(str_replace('/', '.', $prodDateStr)));
+                $chk = $db->prepare("SELECT id FROM material_balance_logs WHERE date(recorded_at) = ? OR report_date = ?");
+                $chk->execute([$isoDate, $prodDateStr]);
+                $existingId = $chk->fetchColumn();
+
+                if ($existingId) {
+                    $upd = $db->prepare("
+                        UPDATE material_balance_logs
+                        SET seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?
+                        WHERE id = ?
+                    ");
+                    $upd->execute([$seedInProd, $oilOut, $mealOut, $huskOut, $existingId]);
+                } else {
+                    $stmt = $db->prepare("
+                        INSERT INTO material_balance_logs 
+                        (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out)
+                        VALUES (?, ?, 'day', ?, ?, ?, ?, ?)
+                    ");
+                    $stmt->execute(["{$isoDate} 20:00:00", $prodDateStr, $seedInPlant, $seedInProd, $oilOut, $mealOut, $huskOut]);
+                }
             } catch (Throwable $e) {}
 
             $processedReports[] = 'material_balance';
