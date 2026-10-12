@@ -69,12 +69,135 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $pdo->exec("USE `{$dbName}`");
             }
 
-            // 2. Выполнение схемы таблиц
+            // 2. Выполнение схемы таблиц (из database/schema.sql или встроенного резерва)
             $schemaFile = __DIR__ . '/database/schema.sql';
-            if (!file_exists($schemaFile)) {
-                throw new Exception("Файл database/schema.sql не найден.");
+            if (file_exists($schemaFile)) {
+                $schemaSql = file_get_contents($schemaFile);
+            } else {
+                $schemaSql = "
+SET NAMES utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
+CREATE TABLE IF NOT EXISTS `material_balance_logs` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `recorded_at` DATETIME NOT NULL,
+    `report_date` VARCHAR(50) DEFAULT NULL,
+    `shift_type` ENUM('day', 'night') NOT NULL DEFAULT 'day',
+    `seed_in_plant` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `seed_in_production` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `oil_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `meal_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `husk_out` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `conditioning_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `conditioning_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00,
+    `production_loss` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `production_loss_pct` DECIMAL(6, 2) NOT NULL DEFAULT 0.00,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_recorded_at` (`recorded_at`),
+    INDEX `idx_shift` (`recorded_at`, `shift_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `energy_readings` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `recorded_at` DATETIME NOT NULL,
+    `report_date` VARCHAR(50) DEFAULT NULL,
+    `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `reactive_kvarh` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `sewage_m3` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `gas_m3` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+    `steam_pressure_bar` DECIMAL(5, 2) DEFAULT 0.00,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_energy_time` (`recorded_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `equipment_nodes` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL UNIQUE,
+    `name` VARCHAR(150) NOT NULL,
+    `section` VARCHAR(100) NOT NULL,
+    `status` ENUM('running', 'warning', 'stopped', 'maintenance') NOT NULL DEFAULT 'running',
+    `load_pct` DECIMAL(5, 1) DEFAULT 100.0,
+    `current_temperature_c` DECIMAL(5, 1) DEFAULT NULL,
+    `last_update` DATETIME NOT NULL,
+    `details` VARCHAR(255) DEFAULT 'Работает штатно'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `transport_queue` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `truck_number` VARCHAR(30) NOT NULL,
+    `driver_name` VARCHAR(100) DEFAULT NULL,
+    `cargo_type` VARCHAR(100) NOT NULL DEFAULT 'Семечка подсолнечника',
+    `status` ENUM('queued', 'entered', 'weighing', 'exited') NOT NULL DEFAULT 'queued',
+    `recorded_at` DATETIME NOT NULL,
+    `entry_time` DATETIME DEFAULT NULL,
+    `weighing_time` DATETIME DEFAULT NULL,
+    `exit_time` DATETIME DEFAULT NULL,
+    `weight_netto_tonnes` DECIMAL(8, 3) DEFAULT 0.000,
+    `stay_duration_minutes` INT DEFAULT 0,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_transport_status` (`status`),
+    INDEX `idx_transport_recorded` (`recorded_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `sync_logs` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `source` VARCHAR(50) NOT NULL,
+    `status` ENUM('success', 'warning', 'error') NOT NULL,
+    `records_processed` INT DEFAULT 0,
+    `message` TEXT,
+    `executed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `warehouse_stocks` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `recorded_at` DATETIME NOT NULL,
+    `report_date` VARCHAR(50) DEFAULT NULL,
+    `seed_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `seed_stock_accounting_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `oil_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `meal_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `husk_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `husk_boiler_spent_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `days_seed_reserve` DECIMAL(5, 1) NOT NULL DEFAULT 12.0,
+    `oil_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `meal_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `husk_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_stock_date` (`recorded_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `lab_quality_logs` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `recorded_at` DATETIME NOT NULL,
+    `report_date` VARCHAR(50) DEFAULT NULL,
+    `oil_content_pct` DECIMAL(5, 2) NOT NULL DEFAULT 49.50,
+    `oil_content_base_pct` DECIMAL(5, 2) NOT NULL DEFAULT 48.00,
+    `oil_deviation_pct` DECIMAL(5, 2) NOT NULL DEFAULT 1.50,
+    `moisture_pct` DECIMAL(5, 2) NOT NULL DEFAULT 7.20,
+    `impurity_pct` DECIMAL(5, 2) NOT NULL DEFAULT 3.20,
+    `weight_discount_tonnes` DECIMAL(8, 3) NOT NULL DEFAULT 0.000,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_lab_date` (`recorded_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `contracts_summary` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `recorded_at` DATETIME NOT NULL,
+    `report_date` VARCHAR(50) DEFAULT NULL,
+    `contracted_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 15000.000,
+    `delivered_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 13328.694,
+    `remaining_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 1671.306,
+    `active_specs_count` INT UNSIGNED NOT NULL DEFAULT 14,
+    `pending_specs_count` INT UNSIGNED NOT NULL DEFAULT 3,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;
+";
             }
-            $schemaSql = file_get_contents($schemaFile);
             $pdo->exec($schemaSql);
 
             // 2.1 Гарантоване додавання колонки report_date та зняття GENERATED ALWAYS, якщо таблиці вже існували раніше
@@ -83,13 +206,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 'warehouse_stocks'      => 'report_date',
                 'lab_quality_logs'      => 'report_date',
                 'contracts_summary'     => 'report_date',
+                'energy_readings'       => 'report_date',
             ];
             foreach ($upgradeColumns as $tbl => $col) {
                 try {
                     $pdo->exec("ALTER TABLE `{$tbl}` ADD COLUMN `{$col}` VARCHAR(50) DEFAULT NULL");
-                } catch (Throwable $ignore) {
-                    // Колонка вже існує або таблиця була створена зі свіжої схеми
-                }
+                } catch (Throwable $ignore) {}
+            }
+
+            $energyNewCols = [
+                'reactive_kvarh' => 'DECIMAL(12, 2) NOT NULL DEFAULT 0.00',
+                'sewage_m3'      => 'DECIMAL(10, 2) NOT NULL DEFAULT 0.00',
+                'gas_m3'         => 'DECIMAL(10, 2) NOT NULL DEFAULT 0.00',
+            ];
+            foreach ($energyNewCols as $col => $def) {
+                try {
+                    $pdo->exec("ALTER TABLE `energy_readings` ADD COLUMN `{$col}` {$def}");
+                } catch (Throwable $ignore) {}
             }
 
             try {
