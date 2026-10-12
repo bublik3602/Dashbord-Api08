@@ -123,3 +123,18 @@ function format_datetime(string $dtString): string {
     if (!$time) return $dtString;
     return date('d.m.Y H:i', $time);
 }
+
+/**
+ * Классификация груза по 4 целевым категориям завода: Семена, Масло, Шрот, Лузга
+ */
+function categorize_cargo(string $rawCargo): string {
+    $c = mb_strtolower(trim($rawCargo));
+    if (preg_match('/масл|олі|oil/u', $c)) {
+        return 'Масло';
+    } elseif (preg_match('/шрот|жмых|макух|meal/u', $c)) {
+        return 'Шрот';
+    } elseif (preg_match('/лузг|лушп|пеллет|топлив|husk/u', $c)) {
+        return 'Лузга';
+    }
+    return 'Семена';
+}

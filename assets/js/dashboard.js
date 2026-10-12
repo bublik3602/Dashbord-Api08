@@ -4,13 +4,16 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     let currentPeriod = 'day';
+    let currentCargo = 'Все';
     let refreshSecondsLeft = 30;
     let refreshTimerInterval = null;
     let isFetching = false;
+    let cachedLogisticsData = window.INITIAL_DASHBOARD_DATA ? window.INITIAL_DASHBOARD_DATA.logistics : null;
 
     const timerDisplay = document.getElementById('refresh-timer-count');
     const btnRefresh = document.getElementById('btn-manual-refresh');
     const periodButtons = document.querySelectorAll('.period-btn');
+    const cargoButtons = document.querySelectorAll('.cargo-tab-btn');
 
     // 1. Инициализация графиков при первой загрузке страницы
     if (window.INITIAL_DASHBOARD_DATA) {
@@ -29,6 +32,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
             currentPeriod = period;
             fetchDashboardData(true);
+        });
+    });
+
+    // 2.1 Обработчики переключения табов груза (Все, Семена, Масло, Шрот, Лузга)
+    cargoButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const cargo = this.getAttribute('data-cargo');
+            if (cargo === currentCargo) return;
+
+            cargoButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            currentCargo = cargo;
+            renderLogisticsByCargo(currentCargo);
         });
     });
 
@@ -144,13 +161,28 @@ document.addEventListener('DOMContentLoaded', function () {
         setElementText('#legend-loss-val', formatNumber(pz.production_loss) + ' т');
         setElementText('#legend-loss-pct', mb.yield_chart.percentages[3] + '%');
 
-        // --- Блок Б: Логистика и воронка ---
-        setElementText('#funnel-queued-count', log.queued);
-        setElementText('#funnel-entered-count', log.entered);
-        setElementText('#funnel-weighing-count', log.weighing);
-        setElementText('#funnel-exited-count', log.exited);
-        setElementText('#val-total-active-trucks', log.total_active + ' машин');
-        setElementText('#val-avg-stay-time', formatMinutes(log.avg_stay_minutes));
+        // --- Блок Б: Логистика и воронка (разделение на Семена, Масло, Шрот, Лузга) ---
+        cachedLogisticsData = log;
+        if (log && log.categories) {
+            const cats = log.categories;
+            if (cats['Семена']) {
+                setElementText('#val-stay-seed', cats['Семена'].avg_stay_text);
+                setElementText('#val-cnt-seed', 'На заводе: ' + cats['Семена'].total_active);
+            }
+            if (cats['Масло']) {
+                setElementText('#val-stay-oil', cats['Масло'].avg_stay_text);
+                setElementText('#val-cnt-oil', 'На заводе: ' + cats['Масло'].total_active);
+            }
+            if (cats['Шрот']) {
+                setElementText('#val-stay-meal', cats['Шрот'].avg_stay_text);
+                setElementText('#val-cnt-meal', 'На заводе: ' + cats['Шрот'].total_active);
+            }
+            if (cats['Лузга']) {
+                setElementText('#val-stay-husk', cats['Лузга'].avg_stay_text);
+                setElementText('#val-cnt-husk', 'На заводе: ' + cats['Лузга'].total_active);
+            }
+        }
+        renderLogisticsByCargo(currentCargo);
 
         // --- Блок В: Энергетика ---
         setElementText('#val-current-power', formatNumber(en.current_power_kw, 0) + ' кВт');
@@ -174,6 +206,22 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (pz.status_class === 'status-danger') {
             showToast(`Внимание! Производственные потери превысили норму: ${pz.production_loss_pct}%`, true);
         }
+    }
+
+    // Отрисовка воронки и показателей для выбранной культуры (Все, Семена, Масло, Шрот, Лузга)
+    function renderLogisticsByCargo(cargoKey) {
+        if (!cachedLogisticsData || !cachedLogisticsData.categories) return;
+        const catData = cachedLogisticsData.categories[cargoKey] || cachedLogisticsData.categories['Все'] || cachedLogisticsData;
+
+        setElementText('#funnel-queued-count', catData.queued !== undefined ? catData.queued : 0);
+        setElementText('#funnel-entered-count', catData.entered !== undefined ? catData.entered : 0);
+        setElementText('#funnel-weighing-count', catData.weighing !== undefined ? catData.weighing : 0);
+        setElementText('#funnel-exited-count', catData.exited !== undefined ? catData.exited : 0);
+        setElementText('#active-cargo-label', cargoKey);
+        setElementText('#active-cargo-count-label', cargoKey);
+        setElementText('#val-avg-stay-time', catData.avg_stay_text || formatMinutes(catData.avg_stay_minutes || 0));
+        setElementText('#val-total-active-trucks', (catData.total_active !== undefined ? catData.total_active : 0) + ' машин');
+        setElementText('#val-on-territory', 'На территории: ' + ((catData.entered || 0) + (catData.weighing || 0)));
     }
 
     // Вспомогательные функции

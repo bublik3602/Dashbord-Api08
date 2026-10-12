@@ -240,12 +240,46 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Дневная смена (08:00 — 
             </div>
         </div>
 
-        <!-- Блок Б: Логистика (Электронная очередь CRM) -->
+        <!-- Блок Б: Логистика (Электронная очередь CRM - Только чтение) -->
         <div class="card-panel">
-            <div class="section-title">
-                <i data-lucide="truck" style="width: 18px; height: 18px; color: #0284c7;"></i>
-                <span>Блок Б: Логистика транспорта (Электронная очередь)</span>
-                <span class="section-badge badge-blue">CRM Интеграция</span>
+            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="truck" style="width: 18px; height: 18px; color: #0284c7;"></i>
+                    <span>Блок Б: Логистика транспорта</span>
+                    <span class="section-badge badge-blue">БД: apgk_api08 (Read-Only)</span>
+                </div>
+                <!-- Фильтр по потокам груза -->
+                <div class="cargo-tabs" id="cargo-tabs-container">
+                    <button type="button" class="cargo-tab-btn active" data-cargo="Все">Все</button>
+                    <button type="button" class="cargo-tab-btn" data-cargo="Семена">🌻 Семена</button>
+                    <button type="button" class="cargo-tab-btn" data-cargo="Масло">🛢️ Масло</button>
+                    <button type="button" class="cargo-tab-btn" data-cargo="Шрот">🌾 Шрот</button>
+                    <button type="button" class="cargo-tab-btn" data-cargo="Лузга">🪵 Лузга</button>
+                </div>
+            </div>
+
+            <!-- Время нахождения (въезд -> выезд) раздельно по 4 культурам -->
+            <div class="cargo-stay-grid">
+                <div class="cargo-stay-card">
+                    <span class="cargo-name">🌻 Семена</span>
+                    <span class="cargo-stay-time" id="val-stay-seed"><?= $log['categories']['Семена']['avg_stay_text'] ?? '1 ч 30 мин' ?></span>
+                    <span class="cargo-truck-count" id="val-cnt-seed">На заводе: <?= $log['categories']['Семена']['total_active'] ?? 0 ?></span>
+                </div>
+                <div class="cargo-stay-card">
+                    <span class="cargo-name">🛢️ Масло</span>
+                    <span class="cargo-stay-time" id="val-stay-oil"><?= $log['categories']['Масло']['avg_stay_text'] ?? '1 ч 15 мин' ?></span>
+                    <span class="cargo-truck-count" id="val-cnt-oil">На заводе: <?= $log['categories']['Масло']['total_active'] ?? 0 ?></span>
+                </div>
+                <div class="cargo-stay-card">
+                    <span class="cargo-name">🌾 Шрот</span>
+                    <span class="cargo-stay-time" id="val-stay-meal"><?= $log['categories']['Шрот']['avg_stay_text'] ?? '1 ч 30 мин' ?></span>
+                    <span class="cargo-truck-count" id="val-cnt-meal">На заводе: <?= $log['categories']['Шрот']['total_active'] ?? 0 ?></span>
+                </div>
+                <div class="cargo-stay-card">
+                    <span class="cargo-name">🪵 Лузга</span>
+                    <span class="cargo-stay-time" id="val-stay-husk"><?= $log['categories']['Лузга']['avg_stay_text'] ?? '50 мин' ?></span>
+                    <span class="cargo-truck-count" id="val-cnt-husk">На заводе: <?= $log['categories']['Лузга']['total_active'] ?? 0 ?></span>
+                </div>
             </div>
 
             <!-- Воронка движения автотранспорта -->
@@ -282,12 +316,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Дневная смена (08:00 — 
                         <i data-lucide="clock" style="width: 20px; height: 20px;"></i>
                     </div>
                     <div>
-                        <div class="stat-title">Среднее время на заводе</div>
-                        <div class="stat-value" id="val-avg-stay-time"><?= format_duration_minutes($log['avg_stay_minutes']) ?></div>
+                        <div class="stat-title">Среднее время на заводе (<span id="active-cargo-label">Все</span>)</div>
+                        <div class="stat-value" id="val-avg-stay-time"><?= $log['avg_stay_text'] ?? format_duration_minutes($log['avg_stay_minutes']) ?></div>
                     </div>
                 </div>
                 <div>
-                    <span class="kpi-badge status-normal">Норма (до 2 ч)</span>
+                    <span class="kpi-badge status-normal" id="badge-stay-norm">Норма (до 2 ч)</span>
                 </div>
             </div>
 
@@ -297,12 +331,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Дневная смена (08:00 — 
                         <i data-lucide="map-pin" style="width: 20px; height: 20px;"></i>
                     </div>
                     <div>
-                        <div class="stat-title">Всего транспорта в обработке</div>
+                        <div class="stat-title">Транспорта в обработке (<span id="active-cargo-count-label">Все</span>)</div>
                         <div class="stat-value" id="val-total-active-trucks"><?= $log['total_active'] ?> машин</div>
                     </div>
                 </div>
                 <div>
-                    <span class="kpi-badge badge-blue">На территории: <?= $log['entered'] + $log['weighing'] ?></span>
+                    <span class="kpi-badge badge-blue" id="val-on-territory">На территории: <?= $log['entered'] + $log['weighing'] ?></span>
                 </div>
             </div>
         </div>

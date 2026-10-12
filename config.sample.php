@@ -23,19 +23,18 @@ return [
         'charset'  => 'utf8mb4',
     ],
 
-    // Подключение к внешней базе данных CRM (Электронная очередь транспорта)
+    // Подключение к базе данных CRM (Логистика и электронная очередь транспорта)
+    // ВНИМАНИЕ: База данных используется СТРОГО В РЕЖИМЕ ТОЛЬКО ЧТЕНИЕ (READ-ONLY)
     'crm_db' => [
-        'enabled'  => false, // true = прямое подключение к CRM БД
-        'driver'   => 'mysql', // mysql, pgsql, sqlsrv
-        'host'     => '192.168.1.50',
+        'enabled'  => true, // true = прямое чтение очередей транспорта
+        'driver'   => 'mysql',
+        'host'     => 'localhost',
         'port'     => 3306,
-        'database' => 'crm_transport',
-        'username' => 'crm_readonly',
-        'password' => 'crm_secret_pass',
+        'database' => 'apgk_api08',
+        'username' => 'apgk_api08',
+        'password' => 'orrz20054Q+',
         'charset'  => 'utf8mb4',
-        // Запрос к CRM для получения активной воронки грузовиков
-        'query_funnel' => "SELECT status, COUNT(*) as count FROM transport_queue WHERE DATE(created_at) = CURDATE() GROUP BY status",
-        'query_avg_time' => "SELECT AVG(TIMESTAMPDIFF(MINUTE, entry_time, exit_time)) as avg_minutes FROM transport_queue WHERE exit_time >= NOW() - INTERVAL 1 DAY",
+        'readonly' => true, // КАТЕГОРИЧЕСКИ ТОЛЬКО ЧТЕНИЕ
     ],
 
     // Интеграция с Zabbix API (Датчики, весы, расходомеры, энергетика)

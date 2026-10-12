@@ -446,11 +446,85 @@ body {
 /* ===================================================================
    БЛОК Б: ВОРОНКА ТРАНСПОРТА (ЭЛЕКТРОННАЯ ОЧЕРЕДЬ CRM)
    =================================================================== */
+.cargo-tabs {
+    display: flex;
+    background: #e2e8f0;
+    padding: 2px;
+    border-radius: var(--radius-sm);
+    gap: 2px;
+}
+
+.cargo-tab-btn {
+    border: none;
+    background: transparent;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.cargo-tab-btn:hover {
+    color: var(--text-primary);
+}
+
+.cargo-tab-btn.active {
+    background: white;
+    color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+}
+
+.cargo-stay-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+    .cargo-stay-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.cargo-stay-card {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: all 0.15s;
+}
+
+.cargo-stay-card:hover {
+    border-color: #cbd5e1;
+    background: #f1f5f9;
+}
+
+.cargo-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.cargo-stay-time {
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.cargo-truck-count {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
 .funnel-container {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
 }
 
 @media (max-width: 600px) {
