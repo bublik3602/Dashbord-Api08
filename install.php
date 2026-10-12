@@ -1,0 +1,401 @@
+<?php
+/**
+ * Веб-установщик в один клик для Hestia CP
+ * Файл: install.php
+ */
+
+$isInstalled = file_exists(__DIR__ . '/config.php');
+$error = null;
+$success = false;
+$serverPath = realpath(__DIR__);
+
+// Проверка системных требований
+$requirements = [
+    'php_version' => [
+        'title'  => 'Версия PHP (>= 7.4)',
+        'passed' => version_compare(PHP_VERSION, '7.4.0', '>='),
+        'detail' => PHP_VERSION
+    ],
+    'pdo_mysql' => [
+        'title'  => 'Расширение PDO MySQL',
+        'passed' => extension_loaded('pdo_mysql'),
+        'detail' => extension_loaded('pdo_mysql') ? 'Установлено' : 'Отсутствует'
+    ],
+    'curl' => [
+        'title'  => 'Расширение cURL (для Zabbix API)',
+        'passed' => extension_loaded('curl'),
+        'detail' => extension_loaded('curl') ? 'Установлено' : 'Отсутствует'
+    ],
+    'write_perm' => [
+        'title'  => 'Права на запись в директорию',
+        'passed' => is_writable(__DIR__),
+        'detail' => is_writable(__DIR__) ? 'Разрешено' : 'Запрещено'
+    ],
+];
+
+$allReqPassed = !in_array(false, array_column($requirements, 'passed'), true);
+
+// Обработка отправки формы установки
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'install') {
+    $dbHost = trim($_POST['db_host'] ?? 'localhost');
+    $dbPort = (int)($_POST['db_port'] ?? 3306);
+    $dbName = trim($_POST['db_name'] ?? '');
+    $dbUser = trim($_POST['db_user'] ?? '');
+    $dbPass = $_POST['db_pass'] ?? '';
+    $installDemo = isset($_POST['install_demo']);
+
+    if (empty($dbName) || empty($dbUser)) {
+        $error = "Пожалуйста, укажите имя базы данных и имя пользователя.";
+    } else {
+        try {
+            // 1. Подключение к MySQL
+            $dsn = "mysql:host={$dbHost};port={$dbPort};charset=utf8mb4";
+            $pdo = new PDO($dsn, $dbUser, $dbPass, [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                PDO::ATTR_TIMEOUT => 5
+            ]);
+
+            // 2. Создание базы данных (если не существует)
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo->exec("USE `{$dbName}`");
+
+            // 3. Выполнение схемы таблиц
+            $schemaFile = __DIR__ . '/database/schema.sql';
+            if (!file_exists($schemaFile)) {
+                throw new Exception("Файл database/schema.sql не найден.");
+            }
+            $schemaSql = file_get_contents($schemaFile);
+            $pdo->exec($schemaSql);
+
+            // 4. Загрузка демонстрационных данных при выборе
+            if ($installDemo) {
+                $seedFile = __DIR__ . '/database/seed_data.sql';
+                if (file_exists($seedFile)) {
+                    $seedSql = file_get_contents($seedFile);
+                    $pdo->exec($seedSql);
+                }
+            }
+
+            // 5. Создание рабочего config.php
+            $sampleConfigFile = __DIR__ . '/config.sample.php';
+            $sampleContent = file_exists($sampleConfigFile) ? file_get_contents($sampleConfigFile) : '';
+
+            $configCode = "<?php\n/**\n * Конфигурация дашборда завода (Сгенерировано установщиком)\n * Дата: " . date('Y-m-d H:i:s') . "\n */\n\nreturn [\n"
+                . "    'app_mode' => 'production',\n"
+                . "    'app_name' => 'Завод Маслоэкстракционный — Единый Мониторинг',\n"
+                . "    'timezone' => 'Europe/Moscow',\n\n"
+                . "    'db' => [\n"
+                . "        'host'     => " . var_export($dbHost, true) . ",\n"
+                . "        'port'     => " . $dbPort . ",\n"
+                . "        'database' => " . var_export($dbName, true) . ",\n"
+                . "        'username' => " . var_export($dbUser, true) . ",\n"
+                . "        'password' => " . var_export($dbPass, true) . ",\n"
+                . "        'charset'  => 'utf8mb4',\n"
+                . "    ],\n\n"
+                . "    'crm_db' => [\n"
+                . "        'enabled'  => false,\n"
+                . "        'driver'   => 'mysql',\n"
+                . "        'host'     => '127.0.0.1',\n"
+                . "        'port'     => 3306,\n"
+                . "        'database' => 'crm_transport',\n"
+                . "        'username' => 'crm_readonly',\n"
+                . "        'password' => '',\n"
+                . "        'charset'  => 'utf8mb4',\n"
+                . "    ],\n\n"
+                . "    'zabbix' => [\n"
+                . "        'enabled'  => false,\n"
+                . "        'url'      => 'http://127.0.0.1/zabbix/api_jsonrpc.php',\n"
+                . "        'token'    => '',\n"
+                . "        'user'     => 'Admin',\n"
+                . "        'password' => '',\n"
+                . "        'items'    => [\n"
+                . "            'seed_in_plant_tonnes'     => 'scale.seed.in.plant.total',\n"
+                . "            'seed_in_production_tonnes'=> 'scale.seed.in.prod.total',\n"
+                . "            'oil_out_tonnes'           => 'production.oil.yield.tonnes',\n"
+                . "            'meal_out_tonnes'          => 'production.meal.yield.tonnes',\n"
+                . "            'husk_out_tonnes'          => 'production.husk.yield.tonnes',\n"
+                . "            'power_kw_current'         => 'power.meter.main.kw',\n"
+                . "            'power_kwh_accumulated'    => 'power.meter.main.kwh.day',\n"
+                . "            'water_flow_m3_hour'       => 'water.meter.feed.flow.rate',\n"
+                . "            'water_m3_accumulated'     => 'water.meter.feed.total.day',\n"
+                . "            'status_cleaner'           => 'equipment.cleaner.status',\n"
+                . "            'status_dryer'             => 'equipment.dryer.status',\n"
+                . "            'status_dehuller'          => 'equipment.dehuller.status',\n"
+                . "            'status_press'             => 'equipment.press_line.status',\n"
+                . "            'status_extraction'        => 'equipment.extraction.status',\n"
+                . "            'status_boiler'            => 'equipment.boiler.status',\n"
+                . "        ],\n"
+                . "    ],\n\n"
+                . "    'thresholds' => [\n"
+                . "        'conditioning_loss_warning_pct' => 2.5,\n"
+                . "        'conditioning_loss_danger_pct'  => 3.5,\n"
+                . "        'production_loss_warning_pct'   => 1.2,\n"
+                . "        'production_loss_danger_pct'    => 1.8,\n"
+                . "        'truck_stay_target_minutes'     => 120,\n"
+                . "        'truck_stay_warning_minutes'    => 180,\n"
+                . "        'truck_stay_danger_minutes'     => 240,\n"
+                . "        'power_per_tonne_target_kwh'    => 65.0,\n"
+                . "        'power_per_tonne_danger_kwh'    => 80.0,\n"
+                . "    ],\n\n"
+                . "    'refresh_interval_seconds' => 30,\n"
+                . "];\n";
+
+            file_put_contents(__DIR__ . '/config.php', $configCode);
+            $success = true;
+
+        } catch (Throwable $e) {
+            $error = "Ошибка установки: " . $e->getMessage();
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Установка дашборда завода — Hestia CP</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --muted: #64748b;
+            --bg: #f8fafc;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            padding: 30px 16px;
+            display: flex;
+            justify-content: center;
+        }
+        .install-box {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 680px;
+            padding: 32px 36px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.06);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .header p {
+            font-size: 14px;
+            color: var(--muted);
+        }
+        .alert {
+            padding: 14px 18px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 24px;
+            line-height: 1.4;
+        }
+        .alert-success { background: #ecfdf5; border: 1px solid #a7f3d0; color: #065f46; }
+        .alert-error { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+        .alert-warning { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+
+        .req-list {
+            background: #f1f5f9;
+            border-radius: 8px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+        }
+        .req-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            padding: 5px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .req-item:last-child { border-bottom: none; }
+        .badge {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 999px;
+        }
+        .badge-ok { background: #dcfce7; color: #15803d; }
+        .badge-fail { background: #fee2e2; color: #b91c1c; }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border 0.15s;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 12px;
+        }
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.15s;
+            margin-top: 10px;
+        }
+        .btn:hover { background: var(--primary-hover); }
+        .btn-success { background: var(--success); }
+        .btn-success:hover { background: #059669; }
+
+        .cron-code {
+            background: #1e293b;
+            color: #38bdf8;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 6px 0 12px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+
+<div class="install-box">
+    <div class="header">
+        <h1>⚙️ Установка Дашборда Завода</h1>
+        <p>Автоматическая настройка базы данных MariaDB/MySQL и генерация config.php</p>
+    </div>
+
+    <?php if ($success): ?>
+        <div class="alert alert-success">
+            <strong>🎉 Установка успешно завершена!</strong><br>
+            Таблицы созданы, демо-данные записаны, файл <code>config.php</code> сохранен.
+        </div>
+
+        <h3 style="font-size: 15px; margin-bottom: 8px;">📋 Настройте CRON в панели Hestia CP:</h3>
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">1. Опрос Zabbix API (каждые 5 минут):</p>
+        <div class="cron-code">*/5 * * * * /usr/bin/php <?= htmlspecialchars($serverPath) ?>/cron/sync_zabbix.php > /dev/null 2>&1</div>
+
+        <p style="font-size: 12px; color: var(--muted); margin-bottom: 6px;">2. Синхронизация очереди транспорта (каждые 2 минуты):</p>
+        <div class="cron-code">*/2 * * * * /usr/bin/php <?= htmlspecialchars($serverPath) ?>/cron/sync_logistics.php > /dev/null 2>&1</div>
+
+        <div class="alert alert-warning" style="margin-top: 16px;">
+            ⚠️ <strong>Рекомендация по безопасности:</strong> После первой проверки удалите или переименуйте файл <code>install.php</code> на сервере.
+        </div>
+
+        <a href="index.php" style="text-decoration: none;">
+            <button type="button" class="btn btn-success">🚀 Открыть Дашборд</button>
+        </a>
+
+    <?php else: ?>
+
+        <?php if ($error): ?>
+            <div class="alert alert-error">
+                <strong>Ошибка:</strong> <?= htmlspecialchars($error) ?>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($isInstalled): ?>
+            <div class="alert alert-warning">
+                ℹ️ <strong>Файл config.php уже существует.</strong> Если вы повторите установку, база данных будет перезаписана новыми таблицами.
+            </div>
+        <?php endif; ?>
+
+        <!-- Системные требования -->
+        <div class="req-list">
+            <div style="font-weight: 700; font-size: 13px; margin-bottom: 6px;">Проверка сервера:</div>
+            <?php foreach ($requirements as $req): ?>
+                <div class="req-item">
+                    <span><?= $req['title'] ?>: <strong><?= $req['detail'] ?></strong></span>
+                    <span class="badge <?= $req['passed'] ? 'badge-ok' : 'badge-fail' ?>">
+                        <?= $req['passed'] ? 'OK' : 'ОШИБКА' ?>
+                    </span>
+                </div>
+            <?php endforeach; ?>
+        </div>
+
+        <form method="POST" action="install.php">
+            <input type="hidden" name="action" value="install">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Хост базы данных (MySQL / MariaDB):</label>
+                    <input type="text" name="db_host" class="form-control" value="localhost" required>
+                </div>
+                <div class="form-group">
+                    <label>Порт:</label>
+                    <input type="number" name="db_port" class="form-control" value="3306" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Имя базы данных:</label>
+                <input type="text" name="db_name" class="form-control" placeholder="например: admin_dashboard" value="dashboard_zavod" required>
+            </div>
+
+            <div class="form-group">
+                <label>Пользователь базы данных:</label>
+                <input type="text" name="db_user" class="form-control" placeholder="например: admin_user" value="root" required>
+            </div>
+
+            <div class="form-group">
+                <label>Пароль пользователя БД:</label>
+                <input type="password" name="db_pass" class="form-control" placeholder="Пароль">
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="install_demo" value="1" checked>
+                    <span>Загрузить тестовые данные (смены, баланс семян, очередь грузовиков, энергетика)</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn" <?= !$allReqPassed ? 'disabled style="opacity: 0.5;"' : '' ?>>
+                ⚡ Установить всё в 1 клик
+            </button>
+        </form>
+
+    <?php endif; ?>
+</div>
+
+</body>
+</html>

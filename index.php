@@ -4,6 +4,11 @@
  * Разрабатывался под окружение Hestia CP (PHP 8+, Nginx/Apache, MySQL/MariaDB)
  */
 
+if (!file_exists(__DIR__ . '/config.php') && file_exists(__DIR__ . '/install.php')) {
+    header("Location: install.php");
+    exit;
+}
+
 require_once __DIR__ . '/includes/helpers.php';
 require_once __DIR__ . '/includes/metrics_calculator.php';
 
@@ -12,7 +17,15 @@ try {
     $initialPeriod = 'day';
     $dashboardData = $calculator->getDashboardData($initialPeriod);
 } catch (Throwable $e) {
-    die("Ошибка загрузки данных дашборда: " . htmlspecialchars($e->getMessage()));
+    if (file_exists(__DIR__ . '/install.php')) {
+        header("Location: install.php");
+        exit;
+    }
+    die("<div style='font-family:sans-serif;padding:30px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:8px;max-width:600px;margin:40px auto;'>"
+        . "<h2 style='margin-bottom:10px;'>⚠️ Ошибка базы данных</h2>"
+        . "<p>" . htmlspecialchars($e->getMessage()) . "</p>"
+        . "<p style='margin-top:15px;'><a href='install.php' style='display:inline-block;padding:10px 16px;background:#0284c7;color:white;text-decoration:none;border-radius:6px;font-weight:bold;'>Запустить установку (install.php)</a></p>"
+        . "</div>");
 }
 
 $mb = $dashboardData['material_balance'];

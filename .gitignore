@@ -5,6 +5,7 @@ config.php
 
 # Logs and cache
 *.log
+*.zip
 logs/
 cache/
 tmp/
