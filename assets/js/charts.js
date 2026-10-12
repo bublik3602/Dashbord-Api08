@@ -18,6 +18,8 @@ window.FactoryCharts = {
         const el = document.querySelector("#production-donut-chart");
         if (!el) return;
 
+        this._currentDonutData = initialData || {};
+
         const options = {
             series: initialData.values || [205.9, 182.2, 80.0, 5.3],
             chart: {
@@ -41,7 +43,7 @@ window.FactoryCharts = {
                 enabled: false
             },
             legend: {
-                show: false // Відображаємо кастомну легінду
+                show: false // Відображаємо кастомну легенду
             },
             plotOptions: {
                 pie: {
@@ -80,10 +82,53 @@ window.FactoryCharts = {
                 }
             },
             tooltip: {
-                y: {
-                    formatter: function (value) {
-                        return value + ' т';
+                enabled: true,
+                custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                    const label = (w.globals.labels && w.globals.labels[seriesIndex]) ? w.globals.labels[seriesIndex] : 'Продукт';
+                    const val = Number(series[seriesIndex]) || 0;
+                    const total = series.reduce((a, b) => a + Number(b), 0);
+                    const shareOfTotal = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
+
+                    const donutMeta = window.FactoryCharts._currentDonutData || {};
+                    const seedProcessed = Number(donutMeta.seed_processed) || 0;
+
+                    let yieldPct = shareOfTotal;
+                    if (donutMeta.percentages && donutMeta.percentages[seriesIndex] !== undefined) {
+                        yieldPct = Number(donutMeta.percentages[seriesIndex]).toFixed(1);
+                    } else if (seedProcessed > 0) {
+                        yieldPct = ((val / seedProcessed) * 100).toFixed(1);
                     }
+
+                    const color = (w.globals.colors && w.globals.colors[seriesIndex]) ? w.globals.colors[seriesIndex] : '#f59e0b';
+                    const kgVal = Math.round(val * 1000).toLocaleString('uk-UA');
+                    const tonnesVal = val.toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+
+                    return `
+                        <div class="apex-rich-tooltip donut-tooltip-box">
+                            <div class="art-header" style="border-left: 4px solid ${color};">
+                                <span class="art-dot" style="background: ${color};"></span>
+                                <span class="art-title">${label}</span>
+                            </div>
+                            <div class="art-body">
+                                <div class="art-metric-row highlight">
+                                    <span class="art-lbl">Об'єм виходу:</span>
+                                    <span class="art-val bold">${tonnesVal} т <small>(${kgVal} кг)</small></span>
+                                </div>
+                                <div class="art-metric-row">
+                                    <span class="art-lbl">Вихід від переробки:</span>
+                                    <span class="art-val bold" style="color: ${color}; font-size: 15px;">${yieldPct}%</span>
+                                </div>
+                                <div class="art-metric-row">
+                                    <span class="art-lbl">Частка серед продуктів:</span>
+                                    <span class="art-val">${shareOfTotal}%</span>
+                                </div>
+                                ${seedProcessed > 0 ? `
+                                <div class="art-footer-calc">
+                                    <span>База: ${seedProcessed.toLocaleString('uk-UA', {minimumFractionDigits: 1})} т переробки насіння</span>
+                                </div>` : ''}
+                            </div>
+                        </div>
+                    `;
                 }
             }
         };
@@ -380,10 +425,69 @@ window.FactoryCharts = {
                 opacity: 0.95
             },
             tooltip: {
-                y: {
-                    formatter: function (val) {
-                        return parseFloat(val).toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' т';
-                    }
+                shared: true,
+                intersect: false,
+                custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                    const categories = (w.globals && (w.globals.categoryLabels || w.globals.labels)) ? (w.globals.categoryLabels || w.globals.labels) : [];
+                    const category = categories[dataPointIndex] || 'Місяць';
+
+                    const seedIn = Number(series[0] ? series[0][dataPointIndex] : 0) || 0;
+                    const seedProc = Number(series[1] ? series[1][dataPointIndex] : 0) || 0;
+                    const oil = Number(series[2] ? series[2][dataPointIndex] : 0) || 0;
+                    const meal = Number(series[3] ? series[3][dataPointIndex] : 0) || 0;
+
+                    const oilYield = (seedProc > 0) ? ((oil / seedProc) * 100).toFixed(2) : '0.00';
+                    const mealYield = (seedProc > 0) ? ((meal / seedProc) * 100).toFixed(2) : '0.00';
+                    const oilMealSum = (seedProc > 0) ? (((oil + meal) / seedProc) * 100).toFixed(2) : '0.00';
+                    const procRatio = (seedIn > 0) ? ((seedProc / seedIn) * 100).toFixed(1) : '0.0';
+
+                    const fmt = (v) => Number(v).toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+                    const kg = (v) => Math.round(Number(v) * 1000).toLocaleString('uk-UA');
+
+                    return `
+                        <div class="apex-rich-tooltip bar-tooltip-box">
+                            <div class="art-header bar-head">
+                                <span class="art-title">📅 ${category}</span>
+                                <span class="art-pill">${seedProc > 0 ? 'Виробничий період' : 'ППР / Міжсезоння'}</span>
+                            </div>
+                            <div class="art-body">
+                                <div class="art-row" style="border-left: 3px solid #0284c7;">
+                                    <div class="art-row-main">
+                                        <span class="art-lbl">🌻 Завіз насіння:</span>
+                                        <span class="art-val">${fmt(seedIn)} т <small>(${kg(seedIn)} кг)</small></span>
+                                    </div>
+                                </div>
+                                <div class="art-row" style="border-left: 3px solid #8b5cf6;">
+                                    <div class="art-row-main">
+                                        <span class="art-lbl">⚙️ Переробка сировини:</span>
+                                        <span class="art-val">${fmt(seedProc)} т <small>(${kg(seedProc)} кг)</small></span>
+                                    </div>
+                                    ${seedIn > 0 ? `<div class="art-sub-calc">${procRatio}% від надходження</div>` : ''}
+                                </div>
+                                <div class="art-row highlight-oil" style="border-left: 3px solid #f59e0b;">
+                                    <div class="art-row-main">
+                                        <span class="art-lbl">💧 Вихід Олії:</span>
+                                        <span class="art-val text-amber bold">${fmt(oil)} т</span>
+                                    </div>
+                                    <div class="art-badge-pct bg-amber">Вихід: ${oilYield}%</div>
+                                </div>
+                                <div class="art-row highlight-meal" style="border-left: 3px solid #10b981;">
+                                    <div class="art-row-main">
+                                        <span class="art-lbl">🌾 Вихід Шроту:</span>
+                                        <span class="art-val text-green bold">${fmt(meal)} т</span>
+                                    </div>
+                                    <div class="art-badge-pct bg-green">Вихід: ${mealYield}%</div>
+                                </div>
+                                ${seedProc > 0 ? `
+                                <div class="art-footer-summary">
+                                    <span>Сума Олія + Шрот: <strong style="color: #0f172a;">${oilMealSum}%</strong> (${fmt(oil + meal)} т)</span>
+                                </div>` : `
+                                <div class="art-footer-summary ppr">
+                                    <span>Регламентні роботи ППР заводу (переробка 0 т)</span>
+                                </div>`}
+                            </div>
+                        </div>
+                    `;
                 }
             },
             legend: {
@@ -406,6 +510,7 @@ window.FactoryCharts = {
      */
     updateCharts: function (data) {
         if (this.donutChart && data.material_balance && data.material_balance.yield_chart) {
+            this._currentDonutData = data.material_balance.yield_chart;
             this.donutChart.updateSeries(data.material_balance.yield_chart.values);
         }
 

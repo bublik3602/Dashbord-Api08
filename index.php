@@ -578,11 +578,15 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
          БЛОК Г: АНАЛІТИКА ТА ПОРІВНЯННЯ ПЕРІОДІВ (СЕРПЕНЬ — ВЕРЕСЕНЬ — ЖОВТЕНЬ 2026)
          ============================================================= -->
     <?php
-    $histMonths = $historical['months'] ?? [];
-    $mAug = $histMonths['aug'] ?? [];
-    $mSep = $histMonths['sep'] ?? [];
-    $mOct = $histMonths['oct'] ?? [];
-    $seasonTot = $historical['season_total'] ?? [];
+    $histMonths  = $historical['months'] ?? [];
+    $mAug        = $histMonths['aug'] ?? [];
+    $mSep        = $histMonths['sep'] ?? [];
+    $mOct        = $histMonths['oct'] ?? [];
+    $seasonTot   = $historical['season_total'] ?? [];
+    $season2025  = $historical['season_2025_comparison'] ?? [];
+    $early2025   = $season2025['early_season_sep_oct'] ?? [];
+    $full2025    = $season2025['full_season_total'] ?? [];
+    $months2025  = $season2025['months'] ?? [];
     ?>
     <div class="historical-analytics-section" id="historical-analytics-section">
         <div class="section-title">
@@ -779,70 +783,245 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div id="monthly-analytics-chart" style="min-height: 290px;"></div>
             </div>
 
-            <!-- Колонка 2: Сезонне зіставлення 2026 vs 2022 та складські залишки -->
+            <!-- Колонка 2: Сезонне зіставлення 2026 vs 2025 (Інфографіка та великі цифри) -->
             <div class="card-panel">
                 <div class="panel-header-simple">
                     <div class="panel-title-text">
                         <i data-lucide="scale" style="width: 16px; height: 16px; color: #10b981;"></i>
-                        <span>Порівняння з минулим сезоном 2022 (серпень — жовтень)</span>
+                        <span>Порівняння з сезоном 2025–2026 рр. (Офіційний звіт заводу)</span>
                     </div>
-                    <span class="section-badge badge-green">Історичний архів</span>
+                    <span class="section-badge badge-green">Еталон урожаю 2025</span>
                 </div>
 
-                <div class="seasonal-comparison-table-wrap">
+                <!-- БЛОК ВЕЛИКИХ ЦИФР ТА ІНФОГРАФІКИ (4 KPI КАРТКИ) -->
+                <div class="season-kpi-grid">
+                    
+                    <!-- 1. Переробка соняшнику -->
+                    <div class="season-kpi-card card-accent-seed" title="Перероблено у 2025: Вересень 4 435 т + Жовтень 16 682 т = 21 117 т; Всього за рік 61 893 т">
+                        <div class="season-kpi-header">
+                            <span class="season-kpi-title">⚙️ Переробка насіння</span>
+                            <span class="season-kpi-badge">Вер–Жов: 21,1 тис. т</span>
+                        </div>
+                        <div class="season-kpi-number-wrap">
+                            <span class="season-kpi-number"><?= number_format($full2025['seed_processed'] ?? 61892.86, 0, ',', ' ') ?></span>
+                            <span class="season-kpi-unit">т (рік)</span>
+                        </div>
+                        <div class="season-kpi-subtext">
+                            Сезон 2026: <strong><?= number_format($seasonTot['seed_processed'] ?? 13214.75, 1, ',', ' ') ?> т</strong> (запуск у вересні)
+                        </div>
+                        <div class="season-progress-track" title="Співвідношення поточного обсягу до річного обсягу 2025">
+                            <div class="season-progress-fill" style="width: 21.3%; background: #10b981;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Вихід Олії -->
+                    <div class="season-kpi-card card-accent-oil" title="Вихід олії 2025: Вер 42.06%, Жов 44.45%, Рік 44.30% (27 416.9 т) при олійності 45.13%">
+                        <div class="season-kpi-header">
+                            <span class="season-kpi-title" style="color: #b45309;">💧 Вихід Олії</span>
+                            <span class="season-kpi-badge" style="background: #fef3c7; color: #b45309;">27,4 тис. т</span>
+                        </div>
+                        <div class="season-kpi-number-wrap">
+                            <span class="season-kpi-number" style="color: #d97706;"><?= number_format($full2025['oil_pct'] ?? 44.30, 2, ',', '') ?>%</span>
+                            <span class="season-kpi-unit">еталон року</span>
+                        </div>
+                        <div class="season-kpi-subtext">
+                            Вер–Жов 2025: <strong>43,94%</strong> &bull; Сезон 2026: <strong><?= number_format($seasonTot['oil_yield_pct'] ?? 42.92, 1, ',', '') ?>%</strong>
+                        </div>
+                        <div class="season-progress-track">
+                            <div class="season-progress-fill" style="width: 44.3%; background: #f59e0b;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Вихід Шроту -->
+                    <div class="season-kpi-card card-accent-meal" title="Вихід шроту 2025: Вер 42.14%, Жов 41.76%, Рік 41.67% (25 790.4 т)">
+                        <div class="season-kpi-header">
+                            <span class="season-kpi-title" style="color: #1d4ed8;">🌾 Вихід Шроту</span>
+                            <span class="season-kpi-badge" style="background: #dbeafe; color: #1e40af;">25,8 тис. т</span>
+                        </div>
+                        <div class="season-kpi-number-wrap">
+                            <span class="season-kpi-number" style="color: #2563eb;"><?= number_format($full2025['meal_pct'] ?? 41.67, 2, ',', '') ?>%</span>
+                            <span class="season-kpi-unit">еталон року</span>
+                        </div>
+                        <div class="season-kpi-subtext">
+                            Вер–Жов 2025: <strong>41,84%</strong> &bull; Сезон 2026: <strong><?= number_format($seasonTot['meal_yield_pct'] ?? 41.33, 1, ',', '') ?>%</strong>
+                        </div>
+                        <div class="season-progress-track">
+                            <div class="season-progress-fill" style="width: 41.7%; background: #2563eb;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 4. Сума Олія + Шрот -->
+                    <div class="season-kpi-card card-accent-sum" title="Сума олія+шрот: 85.97% за рік (85.78% за Вер-Жов). Загальний вихід готової продукції з лузгою 98.85%">
+                        <div class="season-kpi-header">
+                            <span class="season-kpi-title" style="color: #6d28d9;">⚖️ Олія + Шрот</span>
+                            <span class="season-kpi-badge" style="background: #ede9fe; color: #6d28d9;">Вихід 98,85%</span>
+                        </div>
+                        <div class="season-kpi-number-wrap">
+                            <span class="season-kpi-number" style="color: #7c3aed;"><?= number_format($full2025['oil_meal_pct'] ?? 85.97, 2, ',', '') ?>%</span>
+                            <span class="season-kpi-unit">разом</span>
+                        </div>
+                        <div class="season-kpi-subtext">
+                            Втрати виробництва: лише <strong>1,15%</strong> (713,7 т за рік)
+                        </div>
+                        <div class="season-progress-track">
+                            <div class="season-progress-fill" style="width: 86.0%; background: #8b5cf6;"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- ДЕТАЛЬНА ПОРІВНЯЛЬНА ТАБЛИЦЯ ВИРОБНИЦТВА -->
+                <div class="seasonal-comparison-table-wrap" style="margin-top: 14px;">
                     <table class="data-table-clean">
                         <thead>
                             <tr>
-                                <th>Показник</th>
+                                <th>Показник виробництва</th>
                                 <th>Сезон 2026 (72 дн.)</th>
-                                <th>Сезон 2022 (92 дн.)</th>
+                                <th>Сезон 2025 (Вер–Жов)</th>
+                                <th>Рік 2025–26 (61,9 тис. т)</th>
                                 <th>Динаміка</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Завезено насіння</td>
+                                <td>Завезено насіння (авто/елеватор)</td>
                                 <td class="bold">25 353,9 т</td>
-                                <td>46 238,4 т</td>
-                                <td><span class="trend-badge trend-neutral">Активний завіз</span></td>
+                                <td>21 655,3 т</td>
+                                <td>62 403,3 т</td>
+                                <td><span class="trend-badge trend-good">+17.1% завіз</span></td>
                             </tr>
                             <tr>
-                                <td>Перероблено сировини</td>
+                                <td>Перероблено соняшнику</td>
                                 <td class="bold">13 214,8 т</td>
-                                <td>39 160,1 т</td>
+                                <td>21 117,1 т</td>
+                                <td>61 892,9 т</td>
                                 <td><span class="trend-badge trend-neutral">Запуск вересень</span></td>
                             </tr>
                             <tr>
-                                <td>Вихід олії</td>
+                                <td>Середня олійність сировини</td>
+                                <td class="bold">45,60%</td>
+                                <td>44,79%</td>
+                                <td>45,13%</td>
+                                <td><span class="trend-badge trend-good">+0,47% олійність</span></td>
+                            </tr>
+                            <tr>
+                                <td>Вихід олії (т / %)</td>
                                 <td class="bold" style="color: #d97706;">5 404,8 т (42,9%)</td>
-                                <td>17 154,2 т (43,8%)</td>
+                                <td>9 279,8 т (43,9%)</td>
+                                <td>27 416,9 т (44,3%)</td>
                                 <td><span class="trend-badge trend-good">Якість в нормі</span></td>
                             </tr>
                             <tr>
-                                <td>Вихід шроту</td>
+                                <td>Вихід шроту (т / %)</td>
                                 <td class="bold" style="color: #2563eb;">5 204,9 т (41,3%)</td>
-                                <td>14 957,2 т (38,2%)</td>
-                                <td><span class="trend-badge trend-good">+3,1% приріст шроту</span></td>
+                                <td>8 835,8 т (41,8%)</td>
+                                <td>25 790,4 т (41,7%)</td>
+                                <td><span class="trend-badge trend-good">Стабільний віджим</span></td>
                             </tr>
                             <tr>
-                                <td>Залишок насіння на складі</td>
-                                <td class="bold">13 326,4 т</td>
-                                <td>-</td>
+                                <td>Вихід лузги (т / %)</td>
+                                <td class="bold">1 822,0 т (13,8%)</td>
+                                <td>2 678,6 т (12,7%)</td>
+                                <td>7 971,8 т (12,9%)</td>
+                                <td><span class="trend-badge trend-neutral">Паливний баланс</span></td>
+                            </tr>
+                            <tr>
+                                <td>Технологічні втрати</td>
+                                <td class="bold">783,1 т (5,9%)</td>
+                                <td>322,9 т (1,53%)</td>
+                                <td>713,7 т (1,15%)</td>
+                                <td><span class="trend-badge trend-neutral">Еталон 1,15%</span></td>
+                            </tr>
+                            <tr>
+                                <td>Сума Олія + Шрот (%)</td>
+                                <td class="bold" style="color: #7c3aed;">84,25%</td>
+                                <td>85,78%</td>
+                                <td>85,97%</td>
+                                <td><span class="trend-badge trend-good">Ціль 85-86%</span></td>
+                            </tr>
+                            <tr>
+                                <td>Загальний вихід готової продукції</td>
+                                <td class="bold">94,1%</td>
+                                <td>98,47%</td>
+                                <td>98,85%</td>
+                                <td><span class="trend-badge trend-good">Еталон 98,85%</span></td>
+                            </tr>
+                            <tr>
+                                <td>Залишок насіння на складі заводу</td>
+                                <td class="bold" style="color: #059669;">13 326,4 т</td>
+                                <td>538,2 т</td>
+                                <td>510,4 т</td>
                                 <td><span class="trend-badge trend-good">22 доби автономії</span></td>
-                            </tr>
-                            <tr>
-                                <td>Залишок олії в резервуарах</td>
-                                <td class="bold">3 358,6 т</td>
-                                <td>-</td>
-                                <td><span class="trend-badge trend-good">Ємності заповнені</span></td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
-                <div class="seasonal-note-box">
-                    <i data-lucide="info" style="width: 14px; height: 14px; color: var(--color-primary); flex-shrink: 0;"></i>
-                    <span>У сезоні 2026 завод успішно провів міжсезонний ППР у серпні, стартував переробку у вересні та демонструє вихід шроту 41.3% проти 38.2% у 2022 році.</span>
+                <!-- РОЗГОРТАННЯ ОФІЦІЙНОГО ПОМІСЯЧНОГО ЗВІТУ 2025 (ВСІ 8 МІСЯЦІВ) -->
+                <?php if (!empty($months2025)): ?>
+                <details class="season-monthly-details">
+                    <summary>
+                        <span><i data-lucide="table" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Офіційний помісячний звіт сезону 2025–2026 рр. (Вересень — Червень, 8 місяців)</span>
+                        <span style="font-size: 11px; color: #64748b;">Натисніть для перегляду</span>
+                    </summary>
+                    <div class="season-monthly-table-wrap">
+                        <table class="data-table-clean" style="font-size: 11px;">
+                            <thead>
+                                <tr>
+                                    <th>Місяць</th>
+                                    <th>Надійшло (т)</th>
+                                    <th>Перероблено (т)</th>
+                                    <th>Олійність</th>
+                                    <th>Олія (т / %)</th>
+                                    <th>Шрот (т / %)</th>
+                                    <th>Лузга (т / %)</th>
+                                    <th>Втрати (%)</th>
+                                    <th>Олія+Шрот</th>
+                                    <th>Вихід</th>
+                                    <th>Залишок (т)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($months2025 as $m): ?>
+                                <tr>
+                                    <td class="bold"><?= htmlspecialchars($m['name']) ?></td>
+                                    <td><?= number_format($m['seed_in'], 1, ',', ' ') ?></td>
+                                    <td class="bold"><?= number_format($m['seed_processed'], 1, ',', ' ') ?></td>
+                                    <td><?= number_format($m['oil_content_pct'], 2, ',', '') ?>%</td>
+                                    <td style="color: #b45309;"><?= number_format($m['oil_out'], 1, ',', ' ') ?> (<?= number_format($m['oil_pct'], 2, ',', '') ?>%)</td>
+                                    <td style="color: #1d4ed8;"><?= number_format($m['meal_out'], 1, ',', ' ') ?> (<?= number_format($m['meal_pct'], 2, ',', '') ?>%)</td>
+                                    <td><?= number_format($m['husk_out'], 1, ',', ' ') ?> (<?= number_format($m['husk_pct'], 2, ',', '') ?>%)</td>
+                                    <td><?= number_format($m['losses_pct'], 2, ',', '') ?>%</td>
+                                    <td class="bold" style="color: #7c3aed;"><?= number_format($m['oil_meal_pct'], 2, ',', '') ?>%</td>
+                                    <td class="bold"><?= number_format($m['total_yield_pct'], 2, ',', '') ?>%</td>
+                                    <td><?= number_format($m['seed_stock_end'], 1, ',', ' ') ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <tr style="background: #f1f5f9; font-weight: 700;">
+                                    <td>ИТОГО 2025–26</td>
+                                    <td>62 403,3</td>
+                                    <td>61 892,9</td>
+                                    <td>45,13%</td>
+                                    <td style="color: #b45309;">27 416,9 (44,30%)</td>
+                                    <td style="color: #1d4ed8;">25 790,4 (41,67%)</td>
+                                    <td>7 971,8 (12,88%)</td>
+                                    <td>1,15%</td>
+                                    <td style="color: #7c3aed;">85,97%</td>
+                                    <td>98,85%</td>
+                                    <td>510,4</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+                <?php endif; ?>
+
+                <div class="seasonal-note-box" style="margin-top: 12px;">
+                    <i data-lucide="info" style="width: 14px; height: 14px; color: var(--color-primary); flex-shrink: 0; margin-top: 2px;"></i>
+                    <span>
+                        <strong>Еталонний звіт сезону 2025:</strong> за повний річний цикл перероблено 61 892,9 т при вхідній олійності 45.13%. 
+                        Вихід олії склав 44.30%, шроту 41.67%, сума основних продуктів 85.97%, а загальний вихід готової продукції досяг 98.85% (технологічні втрати лише 1.15%).
+                    </span>
                 </div>
             </div>
 
