@@ -5,6 +5,10 @@
 window.FactoryCharts = {
     donutChart: null,
     energyChart: null,
+    gaugeOilChart: null,
+    gaugeMoistureChart: null,
+    gaugeImpurityChart: null,
+    gaugeContractsChart: null,
 
     /**
      * Инициализация круговой диаграммы выхода готовой продукции
@@ -201,6 +205,94 @@ window.FactoryCharts = {
     },
 
     /**
+     * Ініціалізація 4 графічних радіальних діаграм (Лабораторія та Контракти)
+     */
+    initGauges: function (labData, contractsData) {
+        labData = labData || {};
+        contractsData = contractsData || {};
+
+        const oilVal = parseFloat(labData.oil_content_pct || 49.62);
+        const baseOil = parseFloat(labData.oil_content_base_pct || 48.0);
+        const moistVal = parseFloat(labData.moisture_pct || 7.15);
+        const impVal = parseFloat(labData.impurity_pct || 3.20);
+        const contractPct = parseFloat(contractsData.fulfillment_pct || 88.0);
+
+        const makeGaugeOptions = (seriesVal, minVal, maxVal, color, decimals = 2) => {
+            return {
+                series: [seriesVal],
+                chart: {
+                    type: 'radialBar',
+                    height: 180,
+                    sparkline: { enabled: true }
+                },
+                plotOptions: {
+                    radialBar: {
+                        startAngle: -105,
+                        endAngle: 105,
+                        hollow: { size: '65%' },
+                        track: {
+                            background: '#f1f5f9',
+                            strokeWidth: '95%'
+                        },
+                        dataLabels: {
+                            name: { show: false },
+                            value: {
+                                offsetY: -2,
+                                fontSize: '20px',
+                                fontWeight: '800',
+                                color: '#0f172a',
+                                formatter: function (val) {
+                                    return parseFloat(val).toFixed(decimals) + '%';
+                                }
+                            }
+                        }
+                    }
+                },
+                fill: {
+                    type: 'solid',
+                    colors: [color]
+                },
+                yaxis: {
+                    min: minVal,
+                    max: maxVal
+                }
+            };
+        };
+
+        // 1. Олійність
+        const elOil = document.querySelector("#chart-gauge-oil");
+        if (elOil) {
+            const oilColor = (oilVal >= baseOil) ? '#10b981' : '#ef4444';
+            this.gaugeOilChart = new ApexCharts(elOil, makeGaugeOptions(oilVal, 30, 60, oilColor, 2));
+            this.gaugeOilChart.render();
+        }
+
+        // 2. Вологість
+        const elMoist = document.querySelector("#chart-gauge-moisture");
+        if (elMoist) {
+            const moistColor = (moistVal <= 8.0) ? '#0284c7' : '#f59e0b';
+            this.gaugeMoistureChart = new ApexCharts(elMoist, makeGaugeOptions(moistVal, 0, 14, moistColor, 2));
+            this.gaugeMoistureChart.render();
+        }
+
+        // 3. Смітна домішка
+        const elImp = document.querySelector("#chart-gauge-impurity");
+        if (elImp) {
+            const impColor = (impVal <= 3.0) ? '#10b981' : '#f59e0b';
+            this.gaugeImpurityChart = new ApexCharts(elImp, makeGaugeOptions(impVal, 0, 8, impColor, 2));
+            this.gaugeImpurityChart.render();
+        }
+
+        // 4. Контрактація 1С
+        const elContr = document.querySelector("#chart-gauge-contracts");
+        if (elContr) {
+            const contrColor = '#6366f1';
+            this.gaugeContractsChart = new ApexCharts(elContr, makeGaugeOptions(contractPct, 0, 100, contrColor, 1));
+            this.gaugeContractsChart.render();
+        }
+    },
+
+    /**
      * Оновлення даних графіків
      */
     updateCharts: function (data) {
@@ -224,6 +316,38 @@ window.FactoryCharts = {
                     data: data.energy.timeline.water
                 }
             ]);
+        }
+
+        if (data.lab_quality) {
+            const lq = data.lab_quality;
+            const oilVal = parseFloat(lq.oil_content_pct || 49.62);
+            const baseOil = parseFloat(lq.oil_content_base_pct || 48.0);
+            const moistVal = parseFloat(lq.moisture_pct || 7.15);
+            const impVal = parseFloat(lq.impurity_pct || 3.20);
+
+            if (this.gaugeOilChart) {
+                this.gaugeOilChart.updateSeries([oilVal]);
+                this.gaugeOilChart.updateOptions({
+                    fill: { colors: [oilVal >= baseOil ? '#10b981' : '#ef4444'] }
+                });
+            }
+            if (this.gaugeMoistureChart) {
+                this.gaugeMoistureChart.updateSeries([moistVal]);
+                this.gaugeMoistureChart.updateOptions({
+                    fill: { colors: [moistVal <= 8.0 ? '#0284c7' : '#f59e0b'] }
+                });
+            }
+            if (this.gaugeImpurityChart) {
+                this.gaugeImpurityChart.updateSeries([impVal]);
+                this.gaugeImpurityChart.updateOptions({
+                    fill: { colors: [impVal <= 3.0 ? '#10b981' : '#f59e0b'] }
+                });
+            }
+        }
+
+        if (data.contracts_summary && this.gaugeContractsChart) {
+            const cs = data.contracts_summary;
+            this.gaugeContractsChart.updateSeries([parseFloat(cs.fulfillment_pct || 88.0)]);
         }
     }
 };

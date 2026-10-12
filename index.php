@@ -47,8 +47,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($config['app_name'] ?? 'Олійноекстракційний завод — Єдиний Моніторинг') ?></title>
     
-    <!-- Стилі дашборда -->
-    <link rel="stylesheet" href="assets/css/dashboard.css">
+    <!-- Стилі дашборда (з кеш-бастінгом для миттєвого оновлення у браузері) -->
+    <link rel="stylesheet" href="assets/css/dashboard.css?v=<?= file_exists(__DIR__ . '/assets/css/dashboard.css') ? filemtime(__DIR__ . '/assets/css/dashboard.css') : time() ?>">
     
     <!-- Бібліотека графіків ApexCharts (CDN) -->
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -194,70 +194,68 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     </div>
 
     <!-- =============================================================
-         ЛАБОРАТОРІЯ ТА КОНТРАКТАЦІЯ (ЛИСТ ПОГОДЖЕННЯ ПОСТАЧАННЯ)
+         ЛАБОРАТОРІЯ ТА КОНТРАКТАЦІЯ (ГРАФІЧНІ ДІАГРАМИ-СПІДОМЕТРИ)
          ============================================================= -->
-    <div class="lab-quality-bar">
-        <!-- 1. Олійність насіння -->
-        <div class="lab-quality-card">
-            <div class="lab-card-header">
-                <span class="lab-card-icon">🧪</span>
-                <span class="lab-card-title">Олійність насіння</span>
-            </div>
-            <div class="lab-card-body">
-                <div class="lab-main-val" id="val-lab-oil"><?= number_format($lab['oil_content_pct'] ?? 49.6, 2, ',', ' ') ?>%</div>
-                <span class="lab-badge <?= ($lab['oil_deviation_pct'] ?? 1.6) >= 0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-lab-oil-dev">
-                    <?= ($lab['oil_deviation_pct'] ?? 1.6) >= 0 ? '+' : '' ?><?= number_format($lab['oil_deviation_pct'] ?? 1.6, 2, ',', ' ') ?>% (Бонус)
-                </span>
-            </div>
-            <div class="lab-card-sub" id="val-lab-oil-sub">Базова норма: <?= number_format($lab['oil_content_base_pct'] ?? 48.0, 1, ',', ' ') ?>% (Лабораторія)</div>
+    <div class="card-panel quality-gauges-panel">
+        <div class="section-title">
+            <i data-lucide="gauge" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
+            <span>Лабораторія якості сировини та контрактація (1С)</span>
+            <span class="section-badge badge-blue">Графічний моніторинг показників</span>
         </div>
 
-        <!-- 2. Вологість насіння -->
-        <div class="lab-quality-card">
-            <div class="lab-card-header">
-                <span class="lab-card-icon">💧</span>
-                <span class="lab-card-title">Вологість сировини</span>
-            </div>
-            <div class="lab-card-body">
-                <div class="lab-main-val" id="val-lab-moisture"><?= number_format($lab['moisture_pct'] ?? 7.15, 2, ',', ' ') ?>%</div>
-                <span class="lab-badge <?= ($lab['moisture_pct'] ?? 7.15) <= 8.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-lab-moisture">
-                    <?= ($lab['moisture_pct'] ?? 7.15) <= 8.0 ? 'В нормі (< 8%)' : 'Перевищення' ?>
-                </span>
-            </div>
-            <div class="lab-card-sub">Базова норма: до 8.00% &bull; Сушіння не потрібне</div>
-        </div>
-
-        <!-- 3. Смітна домішка та знижка з ваги -->
-        <div class="lab-quality-card">
-            <div class="lab-card-header">
-                <span class="lab-card-icon">🌾</span>
-                <span class="lab-card-title">Смітна домішка</span>
-            </div>
-            <div class="lab-card-body">
-                <div class="lab-main-val" id="val-lab-impurity"><?= number_format($lab['impurity_pct'] ?? 3.20, 2, ',', ' ') ?>%</div>
-                <span class="lab-badge badge-normal" id="badge-lab-impurity">
-                    Знижка: <?= number_format($lab['weight_discount_tonnes'] ?? 12.45, 1, ',', ' ') ?> т
-                </span>
-            </div>
-            <div class="lab-card-sub">Базова норма: 3.00% &bull; Утримання з нетто</div>
-        </div>
-
-        <!-- 4. Виконання контрактів (1C) -->
-        <div class="lab-quality-card">
-            <div class="lab-card-header">
-                <span class="lab-card-icon">📋</span>
-                <span class="lab-card-title">Виконання контрактів (1C)</span>
-            </div>
-            <div class="lab-card-body">
-                <div class="lab-main-val" style="font-size: 15px;" id="val-contracts-delivered">
-                    <?= number_format($contracts['delivered_tonnes'] ?? 13328.7, 0, ',', ' ') ?> т / <?= number_format($contracts['contracted_tonnes'] ?? 15146.0, 0, ',', ' ') ?> т
+        <div class="gauges-grid">
+            <!-- 1. Графік: Олійність насіння -->
+            <div class="gauge-card">
+                <div class="gauge-header">
+                    <span class="gauge-title">🧪 Олійність насіння</span>
+                    <span class="gauge-badge badge-bonus" id="badge-lab-oil-dev">+<?= number_format($lab['oil_deviation_pct'] ?? 1.62, 2, ',', ' ') ?>% (Бонус)</span>
                 </div>
-                <span class="lab-badge badge-bonus" id="badge-contracts-pct">
-                    <?= number_format($contracts['fulfillment_pct'] ?? 88.0, 1, ',', ' ') ?>%
-                </span>
+                <div id="chart-gauge-oil" class="gauge-chart-container"></div>
+                <div class="gauge-footer">
+                    <div class="gauge-sub">Базова норма: <strong><?= number_format($lab['oil_content_base_pct'] ?? 48.0, 1, ',', ' ') ?>%</strong></div>
+                    <div class="gauge-note">Премія до розрахункової ціни</div>
+                </div>
             </div>
-            <div class="lab-card-sub" id="val-contracts-sub">
-                Залишок: <?= number_format($contracts['remaining_tonnes'] ?? 1817.3, 0, ',', ' ') ?> т (<?= $contracts['active_specs_count'] ?? 14 ?> у роботі, <?= $contracts['pending_specs_count'] ?? 3 ?> очікують)
+
+            <!-- 2. Графік: Вологість сировини -->
+            <div class="gauge-card">
+                <div class="gauge-header">
+                    <span class="gauge-title">💧 Вологість сировини</span>
+                    <span class="gauge-badge <?= ($lab['moisture_pct'] ?? 7.15) <= 8.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-lab-moisture">
+                        <?= ($lab['moisture_pct'] ?? 7.15) <= 8.0 ? 'В нормі (< 8%)' : 'Перевищення' ?>
+                    </span>
+                </div>
+                <div id="chart-gauge-moisture" class="gauge-chart-container"></div>
+                <div class="gauge-footer">
+                    <div class="gauge-sub">Базова норма: <strong>до 8.00%</strong></div>
+                    <div class="gauge-note">Сушіння не потрібне</div>
+                </div>
+            </div>
+
+            <!-- 3. Графік: Смітна домішка -->
+            <div class="gauge-card">
+                <div class="gauge-header">
+                    <span class="gauge-title">🌾 Смітна домішка (сор)</span>
+                    <span class="gauge-badge badge-normal" id="badge-lab-impurity">Знижка: <?= number_format($lab['weight_discount_tonnes'] ?? 12.45, 1, ',', ' ') ?> т</span>
+                </div>
+                <div id="chart-gauge-impurity" class="gauge-chart-container"></div>
+                <div class="gauge-footer">
+                    <div class="gauge-sub">Базова норма: <strong>3.00%</strong></div>
+                    <div class="gauge-note">Утримання з фізичної ваги</div>
+                </div>
+            </div>
+
+            <!-- 4. Графік: Виконання контрактів 1С -->
+            <div class="gauge-card">
+                <div class="gauge-header">
+                    <span class="gauge-title">📋 Виконання контрактів (1С)</span>
+                    <span class="gauge-badge badge-bonus" id="badge-contracts-pct"><?= number_format($contracts['fulfillment_pct'] ?? 88.0, 1, ',', ' ') ?>%</span>
+                </div>
+                <div id="chart-gauge-contracts" class="gauge-chart-container"></div>
+                <div class="gauge-footer">
+                    <div class="gauge-sub">Завезено: <strong id="val-contracts-delivered"><?= number_format($contracts['delivered_tonnes'] ?? 13328.7, 0, ',', ' ') ?> т</strong> / <?= number_format($contracts['contracted_tonnes'] ?? 15146.0, 0, ',', ' ') ?> т</div>
+                    <div class="gauge-note" id="val-contracts-sub">Залишок: <?= number_format($contracts['remaining_tonnes'] ?? 1817.3, 0, ',', ' ') ?> т (<?= $contracts['active_specs_count'] ?? 14 ?> у роботі, <?= $contracts['pending_specs_count'] ?? 3 ?> очікують)</div>
+                </div>
             </div>
         </div>
     </div>
@@ -330,21 +328,25 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="wh-stock-item">
                     <span class="wh-stock-title">💧 Олія сира (Резервуари)</span>
                     <span class="wh-stock-value" id="val-stock-oil"><?= number_format($stocks['oil_stock_tonnes'] ?? 3091.3, 1, ',', ' ') ?> т</span>
+                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-oil" style="width: <?= min(100, round((($stocks['oil_stock_tonnes'] ?? 3091.3) / 5000) * 100)) ?>%;"></div></div>
                     <span class="wh-stock-sub" id="val-shipped-oil">Відвантажено за добу: <?= number_format($stocks['oil_shipped_tonnes'] ?? 130.0, 1, ',', ' ') ?> т</span>
                 </div>
                 <div class="wh-stock-item">
                     <span class="wh-stock-title">🌾 Шрот тостований</span>
                     <span class="wh-stock-value" id="val-stock-meal"><?= number_format($stocks['meal_stock_tonnes'] ?? 757.1, 1, ',', ' ') ?> т</span>
+                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-meal" style="width: <?= min(100, round((($stocks['meal_stock_tonnes'] ?? 757.1) / 1500) * 100)) ?>%;"></div></div>
                     <span class="wh-stock-sub" id="val-shipped-meal">Відвантажено за добу: <?= number_format($stocks['meal_shipped_tonnes'] ?? 189.9, 1, ',', ' ') ?> т</span>
                 </div>
                 <div class="wh-stock-item">
                     <span class="wh-stock-title">🪵 Лузга на складі</span>
                     <span class="wh-stock-value" id="val-stock-husk"><?= number_format($stocks['husk_stock_tonnes'] ?? 116.8, 1, ',', ' ') ?> т</span>
+                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-husk" style="width: <?= min(100, round((($stocks['husk_stock_tonnes'] ?? 116.8) / 500) * 100)) ?>%;"></div></div>
                     <span class="wh-stock-sub" id="val-shipped-husk">Відвантажено за добу: <?= number_format($stocks['husk_shipped_tonnes'] ?? 48.8, 1, ',', ' ') ?> т</span>
                 </div>
                 <div class="wh-stock-item" style="background: #fffbeb; border-color: #fef3c7;">
                     <span class="wh-stock-title" style="color: #b45309;">🔥 Лузга на котельню</span>
                     <span class="wh-stock-value" style="color: #b45309;" id="val-boiler-husk"><?= number_format($stocks['husk_boiler_spent_tonnes'] ?? 37.6, 1, ',', ' ') ?> т</span>
+                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-boiler" style="width: <?= min(100, round((($stocks['husk_boiler_spent_tonnes'] ?? 37.6) / 60) * 100)) ?>%;"></div></div>
                     <span class="wh-stock-sub" style="color: #92400e;" id="val-boiler-husk-sub">Паливо на технологічну пару</span>
                 </div>
             </div>
@@ -373,21 +375,33 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="cargo-stay-card">
                     <span class="cargo-name">🌻 Насіння</span>
                     <span class="cargo-stay-time">Сер. час: <strong id="val-stay-seed"><?= $log['categories']['Насіння']['avg_stay_text'] ?? $log['categories']['Семена']['avg_stay_text'] ?? '1 год 30 хв' ?></strong></span>
+                    <div class="cargo-meter-bar">
+                        <div class="cargo-meter-fill <?= (($log['categories']['Насіння']['avg_stay_minutes'] ?? 84) > 120) ? 'meter-warn' : 'meter-good' ?>" id="bar-stay-seed" style="width: <?= min(100, round((($log['categories']['Насіння']['avg_stay_minutes'] ?? 84) / 120) * 100)) ?>%;"></div>
+                    </div>
                     <span class="cargo-truck-count" id="val-cnt-seed">Зараз на заводі: <?= $log['categories']['Насіння']['on_site'] ?? $log['categories']['Семена']['on_site'] ?? 0 ?> авто</span>
                 </div>
                 <div class="cargo-stay-card">
                     <span class="cargo-name">💧 Олія</span>
                     <span class="cargo-stay-time">Сер. час: <strong id="val-stay-oil"><?= $log['categories']['Олія']['avg_stay_text'] ?? $log['categories']['Масло']['avg_stay_text'] ?? '1 год 15 хв' ?></strong></span>
+                    <div class="cargo-meter-bar">
+                        <div class="cargo-meter-fill <?= (($log['categories']['Олія']['avg_stay_minutes'] ?? 75) > 120) ? 'meter-warn' : 'meter-good' ?>" id="bar-stay-oil" style="width: <?= min(100, round((($log['categories']['Олія']['avg_stay_minutes'] ?? 75) / 120) * 100)) ?>%;"></div>
+                    </div>
                     <span class="cargo-truck-count" id="val-cnt-oil">Зараз на заводі: <?= $log['categories']['Олія']['on_site'] ?? $log['categories']['Масло']['on_site'] ?? 0 ?> авто</span>
                 </div>
                 <div class="cargo-stay-card">
                     <span class="cargo-name">🌾 Шрот</span>
                     <span class="cargo-stay-time">Сер. час: <strong id="val-stay-meal"><?= $log['categories']['Шрот']['avg_stay_text'] ?? '1 год 30 хв' ?></strong></span>
+                    <div class="cargo-meter-bar">
+                        <div class="cargo-meter-fill <?= (($log['categories']['Шрот']['avg_stay_minutes'] ?? 90) > 120) ? 'meter-warn' : 'meter-good' ?>" id="bar-stay-meal" style="width: <?= min(100, round((($log['categories']['Шрот']['avg_stay_minutes'] ?? 90) / 120) * 100)) ?>%;"></div>
+                    </div>
                     <span class="cargo-truck-count" id="val-cnt-meal">Зараз на заводі: <?= $log['categories']['Шрот']['on_site'] ?? 0 ?> авто</span>
                 </div>
                 <div class="cargo-stay-card">
                     <span class="cargo-name">🪵 Лузга</span>
                     <span class="cargo-stay-time">Сер. час: <strong id="val-stay-husk"><?= $log['categories']['Лузга']['avg_stay_text'] ?? '45 хв' ?></strong></span>
+                    <div class="cargo-meter-bar">
+                        <div class="cargo-meter-fill <?= (($log['categories']['Лузга']['avg_stay_minutes'] ?? 45) > 120) ? 'meter-warn' : 'meter-good' ?>" id="bar-stay-husk" style="width: <?= min(100, round((($log['categories']['Лузга']['avg_stay_minutes'] ?? 45) / 120) * 100)) ?>%;"></div>
+                    </div>
                     <span class="cargo-truck-count" id="val-cnt-husk">Зараз на заводі: <?= $log['categories']['Лузга']['on_site'] ?? 0 ?> авто</span>
                 </div>
             </div>
@@ -613,8 +627,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     window.INITIAL_DASHBOARD_DATA = <?= json_encode($dashboardData, JSON_UNESCAPED_UNICODE) ?>;
 </script>
 
-<script src="assets/js/charts.js"></script>
-<script src="assets/js/dashboard.js"></script>
+<script src="assets/js/charts.js?v=<?= file_exists(__DIR__ . '/assets/js/charts.js') ? filemtime(__DIR__ . '/assets/js/charts.js') : time() ?>"></script>
+<script src="assets/js/dashboard.js?v=<?= file_exists(__DIR__ . '/assets/js/dashboard.js') ? filemtime(__DIR__ . '/assets/js/dashboard.js') : time() ?>"></script>
 <script>
     // Рендер иконок Lucide
     lucide.createIcons();

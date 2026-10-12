@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.INITIAL_DASHBOARD_DATA) {
         FactoryCharts.initDonutChart(window.INITIAL_DASHBOARD_DATA.material_balance.yield_chart);
         FactoryCharts.initEnergyChart(window.INITIAL_DASHBOARD_DATA.energy.timeline);
+        FactoryCharts.initGauges(window.INITIAL_DASHBOARD_DATA.lab_quality, window.INITIAL_DASHBOARD_DATA.contracts_summary);
     }
 
     // 2. Обробники кліку на фільтр періоду
@@ -221,29 +222,42 @@ document.addEventListener('DOMContentLoaded', function () {
         cachedLogisticsData = log;
         if (log && log.categories) {
             const cats = log.categories;
+            const updateCargoStayBar = (barId, minutes) => {
+                const bar = document.querySelector(barId);
+                if (bar && minutes !== undefined) {
+                    const pct = Math.min(100, Math.round((minutes / 120) * 100));
+                    bar.style.width = pct + '%';
+                    bar.className = 'cargo-meter-fill ' + (minutes > 120 ? 'meter-warn' : 'meter-good');
+                }
+            };
+
             const seedCat = cats['Насіння'] || cats['Семена'];
             if (seedCat) {
                 setElementText('#val-stay-seed', seedCat.avg_stay_text);
                 const cnt = seedCat.on_site !== undefined ? seedCat.on_site : (seedCat.total_active || 0);
                 setElementText('#val-cnt-seed', `Зараз на заводі: ${cnt} авто`);
+                updateCargoStayBar('#bar-stay-seed', seedCat.avg_stay_minutes);
             }
             const oilCat = cats['Олія'] || cats['Масло'];
             if (oilCat) {
                 setElementText('#val-stay-oil', oilCat.avg_stay_text);
                 const cnt = oilCat.on_site !== undefined ? oilCat.on_site : (oilCat.total_active || 0);
                 setElementText('#val-cnt-oil', `Зараз на заводі: ${cnt} авто`);
+                updateCargoStayBar('#bar-stay-oil', oilCat.avg_stay_minutes);
             }
             const mealCat = cats['Шрот'];
             if (mealCat) {
                 setElementText('#val-stay-meal', mealCat.avg_stay_text);
                 const cnt = mealCat.on_site !== undefined ? mealCat.on_site : (mealCat.total_active || 0);
                 setElementText('#val-cnt-meal', `Зараз на заводі: ${cnt} авто`);
+                updateCargoStayBar('#bar-stay-meal', mealCat.avg_stay_minutes);
             }
             const huskCat = cats['Лузга'];
             if (huskCat) {
                 setElementText('#val-stay-husk', huskCat.avg_stay_text);
                 const cnt = huskCat.on_site !== undefined ? huskCat.on_site : (huskCat.total_active || 0);
                 setElementText('#val-cnt-husk', `Зараз на заводі: ${cnt} авто`);
+                updateCargoStayBar('#bar-stay-husk', huskCat.avg_stay_minutes);
             }
         }
         renderLogisticsByCargo(currentCargo);
