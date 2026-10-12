@@ -10,6 +10,9 @@ TRUNCATE TABLE `material_balance_logs`;
 TRUNCATE TABLE `energy_readings`;
 TRUNCATE TABLE `transport_queue`;
 TRUNCATE TABLE `sync_logs`;
+TRUNCATE TABLE `warehouse_stocks`;
+TRUNCATE TABLE `lab_quality_logs`;
+TRUNCATE TABLE `contracts_summary`;
 
 -- 1. Оборудование и узлы завода
 INSERT INTO `equipment_nodes` (`code`, `name`, `section`, `status`, `load_pct`, `current_temperature_c`, `last_update`, `details`) VALUES
@@ -108,3 +111,15 @@ INSERT INTO `transport_queue` (`truck_number`, `driver_name`, `cargo_type`, `sta
 INSERT INTO `sync_logs` (`source`, `status`, `records_processed`, `message`) VALUES
 ('zabbix', 'success', 12, 'Синхронизация показателей датчиков и весов выполнена успешно'),
 ('crm',    'success', 18, 'Синхронизация статусов электронной очереди выполнена успешно');
+
+-- 6. Складські залишки готової продукції та насіння (реальні дані Агропроінвест 08)
+INSERT INTO `warehouse_stocks` (`recorded_at`, `seed_stock_tonnes`, `seed_stock_accounting_tonnes`, `oil_stock_tonnes`, `meal_stock_tonnes`, `husk_stock_tonnes`, `husk_boiler_spent_tonnes`, `days_seed_reserve`, `oil_shipped_tonnes`, `meal_shipped_tonnes`, `husk_shipped_tonnes`) VALUES
+(NOW(), 7284.327, 7268.882, 3091.323, 757.074, 116.844, 37.618, 12.1, 130.000, 189.960, 48.760);
+
+-- 7. Показники якості лабораторії (реальні середньозважені з Листа погодження)
+INSERT INTO `lab_quality_logs` (`recorded_at`, `oil_content_pct`, `oil_content_base_pct`, `moisture_pct`, `impurity_pct`, `weight_discount_tonnes`) VALUES
+(NOW(), 49.62, 48.00, 7.15, 3.20, 12.450);
+
+-- 8. Контрактація та виконання специфікацій (реальні дані з Реєстру)
+INSERT INTO `contracts_summary` (`recorded_at`, `contracted_tonnes`, `delivered_tonnes`, `remaining_tonnes`, `active_specs_count`, `pending_specs_count`) VALUES
+(NOW(), 15146.000, 13328.694, 1817.306, 14, 3);

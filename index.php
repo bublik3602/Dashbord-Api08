@@ -32,6 +32,9 @@ $mb = $dashboardData['material_balance'];
 $en = $dashboardData['energy'];
 $eq = $dashboardData['equipment'];
 $log = $dashboardData['logistics'];
+$stocks = $dashboardData['warehouse_stocks'] ?? [];
+$lab = $dashboardData['lab_quality'] ?? [];
+$contracts = $dashboardData['contracts_summary'] ?? [];
 $config = get_config();
 
 $hour = (int)date('H');
@@ -102,8 +105,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
          ============================================================= -->
     <div class="section-title">
         <i data-lucide="layers" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
-        <span>Блок А: Виробництво та матеріальний баланс</span>
-        <span class="section-badge badge-blue">Контроль сировини та втрат</span>
+        <span>Блок А: Виробництво, запаси та матеріальний баланс</span>
+        <span class="section-badge badge-blue">Контроль сировини, запасів та втрат</span>
     </div>
 
     <div class="kpi-grid">
@@ -123,37 +126,39 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             </div>
         </div>
 
-        <!-- 2. Зона приймання: Втрати підробки (усушка/сміття) -->
-        <div class="kpi-card accent-amber">
-            <div class="kpi-zone-tag">Зона приймання</div>
-            <div class="kpi-title">Втрати підробки (усушка / сміття)</div>
+        <!-- 2. Склад сировини: Запас насіння та автономність заводу -->
+        <div class="kpi-card accent-emerald">
+            <div class="kpi-zone-tag">Склад сировини</div>
+            <div class="kpi-title">Запас насіння на елеваторі</div>
             <div class="kpi-value-row">
-                <div class="kpi-main-number" id="val-cond-loss">
-                    <?= number_format($mb['receiving_zone']['conditioning_loss'], 1, ',', ' ') ?><span class="kpi-unit">т</span>
+                <div class="kpi-main-number" id="val-seed-stock">
+                    <?= number_format($stocks['seed_stock_tonnes'] ?? 7284.3, 1, ',', ' ') ?><span class="kpi-unit">т</span>
                 </div>
-                <span class="kpi-badge <?= $mb['receiving_zone']['status_class'] ?>" id="badge-cond-loss">
-                    <?= $mb['receiving_zone']['conditioning_loss_pct'] ?>%
+                <span class="kpi-badge badge-green" id="badge-days-reserve">
+                    <?= ($stocks['days_seed_reserve'] ?? 12.1) ?> дн. запасу
                 </span>
             </div>
             <div class="kpi-subtext">
-                <span>Насіння на завод &minus; у переробку</span>
-                <span>Норма: &lt; 2.5%</span>
+                <span id="val-seed-stock-sub">Облік: <?= number_format($stocks['seed_stock_accounting_tonnes'] ?? 7268.9, 1, ',', ' ') ?> т &bull; Потреба: 600 т/д</span>
+                <span>Автономність МЕЗ</span>
             </div>
         </div>
 
         <!-- 3. Зона виробництва: Подача в переробку -->
-        <div class="kpi-card accent-emerald">
+        <div class="kpi-card accent-amber">
             <div class="kpi-zone-tag">Зона виробництва</div>
             <div class="kpi-title">Насіння у переробку (очищене)</div>
             <div class="kpi-value-row">
                 <div class="kpi-main-number" id="val-seed-in-prod">
                     <?= number_format($mb['production_zone']['seed_processed'], 1, ',', ' ') ?><span class="kpi-unit">т</span>
                 </div>
-                <span class="kpi-badge badge-green">Після сушарки</span>
+                <span class="kpi-badge <?= $mb['receiving_zone']['status_class'] ?>" id="badge-cond-loss">
+                    Підробка: <?= $mb['receiving_zone']['conditioning_loss_pct'] ?>%
+                </span>
             </div>
             <div class="kpi-subtext">
-                <span>Подача в рушально-віяльний цех</span>
-                <span>Вологість 7.2%</span>
+                <span>Усушка/сміття: <?= number_format($mb['receiving_zone']['conditioning_loss'], 1, ',', ' ') ?> т</span>
+                <span>Подача в РВЦ</span>
             </div>
         </div>
 
@@ -172,6 +177,75 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="kpi-subtext">
                 <span>Сировина &minus; (Олія + Шрот + Лузга)</span>
                 <span>Норма: &lt; 1.2%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================================
+         ЛАБОРАТОРІЯ ТА КОНТРАКТАЦІЯ (ЛИСТ ПОГОДЖЕННЯ ПОСТАЧАННЯ)
+         ============================================================= -->
+    <div class="lab-quality-bar">
+        <!-- 1. Олійність насіння -->
+        <div class="lab-quality-card">
+            <div class="lab-card-header">
+                <span class="lab-card-icon">🧪</span>
+                <span class="lab-card-title">Олійність насіння</span>
+            </div>
+            <div class="lab-card-body">
+                <div class="lab-main-val" id="val-lab-oil"><?= number_format($lab['oil_content_pct'] ?? 49.6, 2, ',', ' ') ?>%</div>
+                <span class="lab-badge <?= ($lab['oil_deviation_pct'] ?? 1.6) >= 0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-lab-oil-dev">
+                    <?= ($lab['oil_deviation_pct'] ?? 1.6) >= 0 ? '+' : '' ?><?= number_format($lab['oil_deviation_pct'] ?? 1.6, 2, ',', ' ') ?>% (Бонус)
+                </span>
+            </div>
+            <div class="lab-card-sub" id="val-lab-oil-sub">Базова норма: <?= number_format($lab['oil_content_base_pct'] ?? 48.0, 1, ',', ' ') ?>% (Лабораторія)</div>
+        </div>
+
+        <!-- 2. Вологість насіння -->
+        <div class="lab-quality-card">
+            <div class="lab-card-header">
+                <span class="lab-card-icon">💧</span>
+                <span class="lab-card-title">Вологість сировини</span>
+            </div>
+            <div class="lab-card-body">
+                <div class="lab-main-val" id="val-lab-moisture"><?= number_format($lab['moisture_pct'] ?? 7.15, 2, ',', ' ') ?>%</div>
+                <span class="lab-badge <?= ($lab['moisture_pct'] ?? 7.15) <= 8.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-lab-moisture">
+                    <?= ($lab['moisture_pct'] ?? 7.15) <= 8.0 ? 'В нормі (< 8%)' : 'Перевищення' ?>
+                </span>
+            </div>
+            <div class="lab-card-sub">Базова норма: до 8.00% &bull; Сушіння не потрібне</div>
+        </div>
+
+        <!-- 3. Смітна домішка та знижка з ваги -->
+        <div class="lab-quality-card">
+            <div class="lab-card-header">
+                <span class="lab-card-icon">🌾</span>
+                <span class="lab-card-title">Смітна домішка</span>
+            </div>
+            <div class="lab-card-body">
+                <div class="lab-main-val" id="val-lab-impurity"><?= number_format($lab['impurity_pct'] ?? 3.20, 2, ',', ' ') ?>%</div>
+                <span class="lab-badge badge-normal" id="badge-lab-impurity">
+                    Знижка: <?= number_format($lab['weight_discount_tonnes'] ?? 12.45, 1, ',', ' ') ?> т
+                </span>
+            </div>
+            <div class="lab-card-sub">Базова норма: 3.00% &bull; Утримання з нетто</div>
+        </div>
+
+        <!-- 4. Виконання контрактів (1C) -->
+        <div class="lab-quality-card">
+            <div class="lab-card-header">
+                <span class="lab-card-icon">📋</span>
+                <span class="lab-card-title">Виконання контрактів (1C)</span>
+            </div>
+            <div class="lab-card-body">
+                <div class="lab-main-val" style="font-size: 15px;" id="val-contracts-delivered">
+                    <?= number_format($contracts['delivered_tonnes'] ?? 13328.7, 0, ',', ' ') ?> т / <?= number_format($contracts['contracted_tonnes'] ?? 15146.0, 0, ',', ' ') ?> т
+                </div>
+                <span class="lab-badge badge-bonus" id="badge-contracts-pct">
+                    <?= number_format($contracts['fulfillment_pct'] ?? 88.0, 1, ',', ' ') ?>%
+                </span>
+            </div>
+            <div class="lab-card-sub" id="val-contracts-sub">
+                Залишок: <?= number_format($contracts['remaining_tonnes'] ?? 1817.3, 0, ',', ' ') ?> т (<?= $contracts['active_specs_count'] ?? 14 ?> у роботі, <?= $contracts['pending_specs_count'] ?? 3 ?> очікують)
             </div>
         </div>
     </div>
@@ -236,6 +310,30 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <span class="legend-pct" id="legend-loss-pct"><?= $mb['yield_chart']['percentages'][3] ?>%</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- Складські залишки готової продукції та витрата лузги на котельню -->
+            <div class="warehouse-stocks-grid">
+                <div class="wh-stock-item">
+                    <span class="wh-stock-title">💧 Олія сира (Резервуари)</span>
+                    <span class="wh-stock-value" id="val-stock-oil"><?= number_format($stocks['oil_stock_tonnes'] ?? 3091.3, 1, ',', ' ') ?> т</span>
+                    <span class="wh-stock-sub" id="val-shipped-oil">Відвантажено за добу: <?= number_format($stocks['oil_shipped_tonnes'] ?? 130.0, 1, ',', ' ') ?> т</span>
+                </div>
+                <div class="wh-stock-item">
+                    <span class="wh-stock-title">🌾 Шрот тостований</span>
+                    <span class="wh-stock-value" id="val-stock-meal"><?= number_format($stocks['meal_stock_tonnes'] ?? 757.1, 1, ',', ' ') ?> т</span>
+                    <span class="wh-stock-sub" id="val-shipped-meal">Відвантажено за добу: <?= number_format($stocks['meal_shipped_tonnes'] ?? 189.9, 1, ',', ' ') ?> т</span>
+                </div>
+                <div class="wh-stock-item">
+                    <span class="wh-stock-title">🪵 Лузга на складі</span>
+                    <span class="wh-stock-value" id="val-stock-husk"><?= number_format($stocks['husk_stock_tonnes'] ?? 116.8, 1, ',', ' ') ?> т</span>
+                    <span class="wh-stock-sub" id="val-shipped-husk">Відвантажено за добу: <?= number_format($stocks['husk_shipped_tonnes'] ?? 48.8, 1, ',', ' ') ?> т</span>
+                </div>
+                <div class="wh-stock-item" style="background: #fffbeb; border-color: #fef3c7;">
+                    <span class="wh-stock-title" style="color: #b45309;">🔥 Лузга на котельню</span>
+                    <span class="wh-stock-value" style="color: #b45309;" id="val-boiler-husk"><?= number_format($stocks['husk_boiler_spent_tonnes'] ?? 37.6, 1, ',', ' ') ?> т</span>
+                    <span class="wh-stock-sub" style="color: #92400e;" id="val-boiler-husk-sub">Паливо на технологічну пару</span>
                 </div>
             </div>
         </div>

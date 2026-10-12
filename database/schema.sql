@@ -98,4 +98,48 @@ CREATE TABLE IF NOT EXISTS `sync_logs` (
     `executed_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 6. Складські залишки готової продукції та сировини
+CREATE TABLE IF NOT EXISTS `warehouse_stocks` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `recorded_at` DATETIME NOT NULL COMMENT 'Дата фіксації залишків',
+    `seed_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Залишок насіння на елеваторі (фіз. вага), т',
+    `seed_stock_accounting_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Залишок насіння заліковий (бух. облік), т',
+    `oil_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Олія в резервуарному парку, т',
+    `meal_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Шрот на складі готової продукції, т',
+    `husk_stock_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Лузга на складі СГП, т',
+    `husk_boiler_spent_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Лузга спалена в котельні за добу, т',
+    `days_seed_reserve` DECIMAL(5, 1) NOT NULL DEFAULT 12.0 COMMENT 'Кількість днів запасу роботи заводу (при 600 т/добу)',
+    `oil_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Відвантажено олії за добу, т',
+    `meal_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Відвантажено шроту за добу, т',
+    `husk_shipped_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 0.000 COMMENT 'Відвантажено лузги за добу, т',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_stock_date` (`recorded_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 7. Показники якості лабораторії (Лист погодження / Приймання)
+CREATE TABLE IF NOT EXISTS `lab_quality_logs` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `recorded_at` DATETIME NOT NULL,
+    `oil_content_pct` DECIMAL(5, 2) NOT NULL DEFAULT 49.50 COMMENT 'Фактична олійність на суху речовину, %',
+    `oil_content_base_pct` DECIMAL(5, 2) NOT NULL DEFAULT 48.00 COMMENT 'Базова договірна олійність, %',
+    `oil_deviation_pct` DECIMAL(5, 2) GENERATED ALWAYS AS (`oil_content_pct` - `oil_content_base_pct`) STORED COMMENT 'Відхилення олійності, %',
+    `moisture_pct` DECIMAL(5, 2) NOT NULL DEFAULT 7.20 COMMENT 'Вологість факт, % (база 8.0%)',
+    `impurity_pct` DECIMAL(5, 2) NOT NULL DEFAULT 3.20 COMMENT 'Смітна домішка (сор) факт, % (база 3.0%)',
+    `weight_discount_tonnes` DECIMAL(8, 3) NOT NULL DEFAULT 0.000 COMMENT 'Натуральна скидка ваги на смітті та волозі, т',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_lab_date` (`recorded_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 8. Контрактація та виконання специфікацій на довіз
+CREATE TABLE IF NOT EXISTS `contracts_summary` (
+    `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `recorded_at` DATETIME NOT NULL,
+    `contracted_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 15000.000 COMMENT 'Законтрактовано за договорами, т',
+    `delivered_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 13328.694 COMMENT 'Завезено фактично, т',
+    `remaining_tonnes` DECIMAL(10, 3) NOT NULL DEFAULT 1671.306 COMMENT 'Залишок довезти (на довозі), т',
+    `active_specs_count` INT UNSIGNED NOT NULL DEFAULT 14 COMMENT 'Специфікацій у стадії виконання',
+    `pending_specs_count` INT UNSIGNED NOT NULL DEFAULT 3 COMMENT 'Специфікацій, де ще не приїхало жодного авто',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

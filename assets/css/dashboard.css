@@ -785,3 +785,133 @@ body {
     opacity: 1;
     transform: translateY(0);
 }
+
+/* ===================================================================
+   ПАНЕЛЬ ЯКОСТІ ЛАБОРАТОРІЇ ТА КОНТРАКТАЦІЇ
+   =================================================================== */
+.lab-quality-bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 1024px) {
+    .lab-quality-bar { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+    .lab-quality-bar { grid-template-columns: 1fr; }
+}
+
+.lab-quality-card {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: all 0.15s;
+}
+
+.lab-quality-card:hover {
+    border-color: #94a3b8;
+    box-shadow: var(--shadow-sm);
+}
+
+.lab-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.lab-card-icon {
+    font-size: 14px;
+}
+
+.lab-card-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    letter-spacing: 0.3px;
+}
+
+.lab-card-body {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.lab-main-val {
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    line-height: 1.2;
+}
+
+.lab-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+}
+
+.badge-bonus { background: #dcfce7; color: #15803d; }
+.badge-discount { background: #fee2e2; color: #b91c1c; }
+.badge-normal { background: #f1f5f9; color: #475569; }
+
+.lab-card-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ===================================================================
+   СКЛАДСЬКІ ЗАЛИШКИ ГОТОВОЇ ПРОДУКЦІЇ
+   =================================================================== */
+.warehouse-stocks-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px dashed var(--border-color);
+}
+
+@media (max-width: 768px) {
+    .warehouse-stocks-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.wh-stock-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.wh-stock-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.wh-stock-value {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.wh-stock-sub {
+    font-size: 10px;
+    color: var(--text-muted);
+}

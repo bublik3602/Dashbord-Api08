@@ -125,16 +125,71 @@ document.addEventListener('DOMContentLoaded', function () {
         const log = data.logistics;
         const eq = data.equipment;
 
-        // --- Блок А: Зона приймання ---
+        // --- Блок А: Зона приймання та склад насіння ---
         const rz = mb.receiving_zone;
         setElementText('#val-seed-in-plant', formatNumber(rz.seed_in_plant) + ' т');
         setElementText('#val-seed-plan', 'План: ' + formatNumber(rz.seed_plan) + ' т (' + rz.plan_fulfillment_pct + '%)');
-        setElementText('#val-cond-loss', formatNumber(rz.conditioning_loss) + ' т');
         
+        if (data.warehouse_stocks) {
+            const ws = data.warehouse_stocks;
+            setElementText('#val-seed-stock', formatNumber(ws.seed_stock_tonnes) + ' т');
+            setElementText('#badge-days-reserve', (ws.days_seed_reserve || 12.1) + ' дн. запасу');
+            setElementText('#val-seed-stock-sub', `Облік: ${formatNumber(ws.seed_stock_accounting_tonnes)} т • Потреба: 600 т/д`);
+
+            // Залишки готової продукції на складах
+            setElementText('#val-stock-oil', formatNumber(ws.oil_stock_tonnes) + ' т');
+            setElementText('#val-shipped-oil', `Відвантажено за добу: ${formatNumber(ws.oil_shipped_tonnes)} т`);
+
+            setElementText('#val-stock-meal', formatNumber(ws.meal_stock_tonnes) + ' т');
+            setElementText('#val-shipped-meal', `Відвантажено за добу: ${formatNumber(ws.meal_shipped_tonnes)} т`);
+
+            setElementText('#val-stock-husk', formatNumber(ws.husk_stock_tonnes) + ' т');
+            setElementText('#val-shipped-husk', `Відвантажено за добу: ${formatNumber(ws.husk_shipped_tonnes)} т`);
+
+            setElementText('#val-boiler-husk', formatNumber(ws.husk_boiler_spent_tonnes) + ' т');
+        }
+
         const condLossBadge = document.querySelector('#badge-cond-loss');
         if (condLossBadge) {
-            condLossBadge.textContent = rz.conditioning_loss_pct + '%';
+            condLossBadge.textContent = 'Підробка: ' + rz.conditioning_loss_pct + '%';
             condLossBadge.className = 'kpi-badge ' + rz.status_class;
+        }
+
+        // --- Блок А: Лабораторія якості та виконання контрактів ---
+        if (data.lab_quality) {
+            const lq = data.lab_quality;
+            setElementText('#val-lab-oil', formatNumber(lq.oil_content_pct, 2) + '%');
+            const devSign = lq.oil_deviation_pct >= 0 ? '+' : '';
+            const devLabel = lq.oil_deviation_pct >= 0 ? '(Бонус)' : '(Дисконт)';
+            setElementText('#badge-lab-oil-dev', `${devSign}${formatNumber(lq.oil_deviation_pct, 2)}% ${devLabel}`);
+            
+            const oilDevBadge = document.querySelector('#badge-lab-oil-dev');
+            if (oilDevBadge) {
+                oilDevBadge.className = 'lab-badge ' + (lq.oil_deviation_pct >= 0 ? 'badge-bonus' : 'badge-discount');
+            }
+            setElementText('#val-lab-oil-sub', `Базова норма: ${formatNumber(lq.oil_content_base_pct, 1)}% (Лабораторія)`);
+
+            setElementText('#val-lab-moisture', formatNumber(lq.moisture_pct, 2) + '%');
+            const moistBadge = document.querySelector('#badge-lab-moisture');
+            if (moistBadge) {
+                if (lq.moisture_pct <= 8.0) {
+                    moistBadge.textContent = 'В нормі (< 8%)';
+                    moistBadge.className = 'lab-badge badge-bonus';
+                } else {
+                    moistBadge.textContent = 'Перевищення (> 8%)';
+                    moistBadge.className = 'lab-badge badge-discount';
+                }
+            }
+
+            setElementText('#val-lab-impurity', formatNumber(lq.impurity_pct, 2) + '%');
+            setElementText('#badge-lab-impurity', `Знижка: ${formatNumber(lq.weight_discount_tonnes, 1)} т`);
+        }
+
+        if (data.contracts_summary) {
+            const cs = data.contracts_summary;
+            setElementText('#val-contracts-delivered', `${formatNumber(cs.delivered_tonnes, 0)} т / ${formatNumber(cs.contracted_tonnes, 0)} т`);
+            setElementText('#badge-contracts-pct', `${formatNumber(cs.fulfillment_pct, 1)}%`);
+            setElementText('#val-contracts-sub', `Залишок: ${formatNumber(cs.remaining_tonnes, 0)} т (${cs.active_specs_count || 14} у роботі, ${cs.pending_specs_count || 3} очікують)`);
         }
 
         // --- Блок А: Зона виробництва ---
