@@ -280,18 +280,25 @@ document.addEventListener('DOMContentLoaded', function () {
         const pz = mb.production_zone;
         setElementText('#val-seed-in-prod', formatNumber(pz.seed_processed) + ' т');
         setElementText('#val-prod-loss', formatNumber(pz.production_loss) + ' т');
-        
-        const prodLossBadge = document.querySelector('#badge-prod-loss');
-        if (prodLossBadge) {
-            prodLossBadge.textContent = pz.production_loss_pct + '%';
-            prodLossBadge.className = 'kpi-badge ' + pz.status_class;
-        }
 
         // Великі цифри виходу продукції у відсотках (Олія + Шрот + Лузга)
-        const oilPctVal = (pz.oil_yield_pct !== undefined) ? pz.oil_yield_pct : (mb.yield_chart.percentages[0] || 0.0);
-        const mealPctVal = (pz.meal_yield_pct !== undefined) ? pz.meal_yield_pct : (mb.yield_chart.percentages[1] || 0.0);
-        const huskPctVal = (pz.husk_yield_pct !== undefined) ? pz.husk_yield_pct : (mb.yield_chart.percentages[2] || 0.0);
-        const totalPctVal = (pz.total_yield_pct !== undefined) ? pz.total_yield_pct : (Math.round((oilPctVal + mealPctVal + huskPctVal) * 10) / 10);
+        const oilPctVal = (pz.oil_yield_pct !== undefined) ? Number(pz.oil_yield_pct) : Number(mb.yield_chart.percentages[0] || 0.0);
+        const mealPctVal = (pz.meal_yield_pct !== undefined) ? Number(pz.meal_yield_pct) : Number(mb.yield_chart.percentages[1] || 0.0);
+        const huskPctVal = (pz.husk_yield_pct !== undefined) ? Number(pz.husk_yield_pct) : Number(mb.yield_chart.percentages[2] || 0.0);
+        const totalPctVal = (pz.total_yield_pct !== undefined) ? Number(pz.total_yield_pct) : (Math.round((oilPctVal + mealPctVal + huskPctVal) * 100) / 100);
+        const surplusPctVal = (pz.yield_surplus_pct !== undefined) ? Number(pz.yield_surplus_pct) : (totalPctVal > 100 ? Math.round((totalPctVal - 100) * 100) / 100 : 0.0);
+        const surplusTonnesVal = (pz.yield_surplus_tonnes !== undefined) ? Number(pz.yield_surplus_tonnes) : ((Number(pz.products_total) > Number(pz.seed_processed) && Number(pz.seed_processed) > 0) ? Math.round((Number(pz.products_total) - Number(pz.seed_processed)) * 100) / 100 : 0.0);
+
+        const prodLossBadge = document.querySelector('#badge-prod-loss');
+        if (prodLossBadge) {
+            if (surplusPctVal > 0) {
+                prodLossBadge.textContent = `+${surplusPctVal}% вихід`;
+                prodLossBadge.className = 'kpi-badge status-normal';
+            } else {
+                prodLossBadge.textContent = pz.production_loss_pct + '%';
+                prodLossBadge.className = 'kpi-badge ' + pz.status_class;
+            }
+        }
 
         setElementText('#big-yield-oil', oilPctVal + '%');
         setElementText('#sub-yield-oil', formatNumber(pz.oil_out) + ' т');
@@ -302,8 +309,15 @@ document.addEventListener('DOMContentLoaded', function () {
         setElementText('#big-yield-husk', huskPctVal + '%');
         setElementText('#sub-yield-husk', formatNumber(pz.husk_out) + ' т');
 
-        setElementText('#big-yield-total', totalPctVal + '%');
-        setElementText('#sub-yield-total', formatNumber(pz.products_total) + ' т');
+        const bigYieldTotalEl = document.querySelector('#big-yield-total');
+        if (bigYieldTotalEl) {
+            if (surplusPctVal > 0) {
+                bigYieldTotalEl.innerHTML = `${totalPctVal}% <span class="yield-plus-badge">+${surplusPctVal}%</span>`;
+            } else {
+                bigYieldTotalEl.textContent = totalPctVal + '%';
+            }
+        }
+        setElementText('#sub-yield-total', formatNumber(pz.products_total) + ' т' + (surplusTonnesVal > 0 ? ` (+${formatNumber(surplusTonnesVal)} т)` : ''));
 
         // Легенда виходу продукції
         setElementText('#legend-oil-val', formatNumber(pz.oil_out) + ' т');
@@ -315,8 +329,18 @@ document.addEventListener('DOMContentLoaded', function () {
         setElementText('#legend-husk-val', formatNumber(pz.husk_out) + ' т');
         setElementText('#legend-husk-pct', huskPctVal + '%');
 
-        setElementText('#legend-loss-val', formatNumber(pz.production_loss) + ' т');
-        setElementText('#legend-loss-pct', mb.yield_chart.percentages[3] + '%');
+        const lossDotEl = document.querySelector('#legend-loss-dot');
+        if (surplusPctVal > 0) {
+            if (lossDotEl) lossDotEl.style.background = '#10b981';
+            setElementText('#legend-loss-label', 'Перевищення виходу (баланс +)');
+            setElementText('#legend-loss-val', '+' + formatNumber(surplusTonnesVal) + ' т');
+            setElementText('#legend-loss-pct', '+' + surplusPctVal + '%');
+        } else {
+            if (lossDotEl) lossDotEl.style.background = 'var(--color-loss)';
+            setElementText('#legend-loss-label', 'Технологічні втрати');
+            setElementText('#legend-loss-val', formatNumber(pz.production_loss) + ' т');
+            setElementText('#legend-loss-pct', mb.yield_chart.percentages[3] + '%');
+        }
 
         // --- Блок Б: Логістика та воронка (Насіння, Олія, Шрот, Лузга) ---
         cachedLogisticsData = log;

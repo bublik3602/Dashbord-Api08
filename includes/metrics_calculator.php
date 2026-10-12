@@ -315,6 +315,8 @@ class MetricsCalculator {
             $huskPct             = 0.0;
             $lossPct             = 0.0;
             $totalYieldPct       = 0.0;
+            $surplusPct          = 0.0;
+            $surplusTonnes       = 0.0;
             $conditioningLoss    = 0.0;
             $conditioningLossPct = 0.0;
         } else {
@@ -330,7 +332,11 @@ class MetricsCalculator {
             $mealPct = round(($mealOut / $seedInProd) * 100, 2);
             $huskPct = round(($huskOut / $seedInProd) * 100, 2);
             $lossPct = round(($productionLoss / $seedInProd) * 100, 2);
-            $totalYieldPct = round(min(100.0, $oilPct + $mealPct + $huskPct), 2);
+
+            // Загальний вихід продукції (без штучного обмеження 100%, якщо вихід перевищує вхід — рахуємо в + відсоток)
+            $totalYieldPct = round($oilPct + $mealPct + $huskPct, 2);
+            $surplusPct    = ($totalYieldPct > 100.0) ? round($totalYieldPct - 100.0, 2) : 0.0;
+            $surplusTonnes = ($productsTotal > $seedInProd) ? round($productsTotal - $seedInProd, 2) : 0.0;
         }
 
         $oilPlan = ($seedPlan > 0) ? ($seedPlan * 0.440) : 0.0;
@@ -360,6 +366,8 @@ class MetricsCalculator {
                 'meal_yield_pct'       => $mealPct,
                 'husk_yield_pct'       => $huskPct,
                 'total_yield_pct'      => $totalYieldPct,
+                'yield_surplus_pct'    => $surplusPct,
+                'yield_surplus_tonnes' => $surplusTonnes,
                 'status_class'         => ($seedInProd <= 0) ? 'status-normal' : get_production_loss_class($productionLossPct, $this->thresholds),
             ],
             // Структура виходу для кругової діаграми (Donut Chart)
@@ -369,6 +377,9 @@ class MetricsCalculator {
                 'percentages' => [$oilPct, $mealPct, $huskPct, $lossPct],
                 'seed_processed' => $seedInProd,
                 'products_total' => $productsTotal,
+                'total_yield_pct' => $totalYieldPct,
+                'yield_surplus_pct' => $surplusPct,
+                'yield_surplus_tonnes' => $surplusTonnes,
                 'colors' => ['#f59e0b', '#3b82f6', '#10b981', '#ef4444'],
             ]
         ];

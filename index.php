@@ -235,7 +235,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <?= number_format($mb['production_zone']['production_loss'], 1, ',', ' ') ?><span class="kpi-unit">т</span>
                 </div>
                 <span class="kpi-badge <?= $mb['production_zone']['status_class'] ?>" id="badge-prod-loss">
-                    <?= $mb['production_zone']['production_loss_pct'] ?>%
+                    <?= (($mb['production_zone']['yield_surplus_pct'] ?? 0) > 0) ? ('+' . $mb['production_zone']['yield_surplus_pct'] . '% вихід') : ($mb['production_zone']['production_loss_pct'] . '%') ?>
                 </span>
             </div>
             <div class="kpi-subtext">
@@ -344,8 +344,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
                 <div class="yield-big-card yield-card-total">
                     <div class="yield-big-label">📦 Разом (Олія + Шрот + Лузга)</div>
-                    <div class="yield-big-pct" id="big-yield-total"><?= $mb['production_zone']['total_yield_pct'] ?>%</div>
-                    <div class="yield-big-val" id="sub-yield-total"><?= number_format($mb['production_zone']['products_total'], 1, ',', ' ') ?> т</div>
+                    <div class="yield-big-pct" id="big-yield-total">
+                        <?= $mb['production_zone']['total_yield_pct'] ?>%<?php if (($mb['production_zone']['yield_surplus_pct'] ?? 0) > 0): ?> <span class="yield-plus-badge">+<?= $mb['production_zone']['yield_surplus_pct'] ?>%</span><?php endif; ?>
+                    </div>
+                    <div class="yield-big-val" id="sub-yield-total">
+                        <?= number_format($mb['production_zone']['products_total'], 1, ',', ' ') ?> т<?= (($mb['production_zone']['yield_surplus_tonnes'] ?? 0) > 0) ? (' (+' . number_format($mb['production_zone']['yield_surplus_tonnes'], 1, ',', ' ') . ' т)') : '' ?>
+                    </div>
                 </div>
             </div>
 
@@ -388,12 +392,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
                     <div class="legend-item">
                         <span class="legend-name">
-                            <span class="legend-color-tag" style="background: var(--color-loss);"></span>
-                            Технологічні втрати
+                            <span class="legend-color-tag" id="legend-loss-dot" style="background: <?= (($mb['production_zone']['yield_surplus_pct'] ?? 0) > 0) ? '#10b981' : 'var(--color-loss)' ?>;"></span>
+                            <span id="legend-loss-label"><?= (($mb['production_zone']['yield_surplus_pct'] ?? 0) > 0) ? 'Перевищення виходу (баланс +)' : 'Технологічні втрати' ?></span>
                         </span>
                         <div>
-                            <span class="legend-values" id="legend-loss-val"><?= number_format($mb['production_zone']['production_loss'], 1, ',', ' ') ?> т</span>
-                            <span class="legend-pct" id="legend-loss-pct"><?= $mb['yield_chart']['percentages'][3] ?>%</span>
+                            <span class="legend-values" id="legend-loss-val"><?= (($mb['production_zone']['yield_surplus_tonnes'] ?? 0) > 0) ? ('+' . number_format($mb['production_zone']['yield_surplus_tonnes'], 1, ',', ' ') . ' т') : (number_format($mb['production_zone']['production_loss'], 1, ',', ' ') . ' т') ?></span>
+                            <span class="legend-pct" id="legend-loss-pct"><?= (($mb['production_zone']['yield_surplus_pct'] ?? 0) > 0) ? ('+' . $mb['production_zone']['yield_surplus_pct'] . '%') : ($mb['yield_chart']['percentages'][3] . '%') ?></span>
                         </div>
                     </div>
                 </div>
@@ -942,7 +946,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             </tr>
                             <tr>
                                 <td>Загальний вихід готової продукції</td>
-                                <td class="bold">99,23% (Вер) / 100%</td>
+                                <td class="bold">100,07% (+0,07%) / Жов 102,10% (+2,10%)</td>
                                 <td>98,47%</td>
                                 <td>98,85%</td>
                                 <td><span class="trend-badge trend-good">Вище еталону</span></td>

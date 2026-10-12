@@ -685,7 +685,26 @@ body {
 .yield-card-oil .yield-big-pct { color: #d97706; }
 .yield-card-meal .yield-big-pct { color: #2563eb; }
 .yield-card-husk .yield-big-pct { color: #059669; }
-.yield-card-total .yield-big-pct { color: #15803d; }
+.yield-card-total .yield-big-pct {
+    color: #15803d;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.yield-plus-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #86efac;
+    line-height: 1.1;
+}
 
 .yield-big-val {
     font-size: 11px;
