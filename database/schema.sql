@@ -37,11 +37,15 @@ CREATE TABLE IF NOT EXISTS `material_balance_logs` (
 CREATE TABLE IF NOT EXISTS `energy_readings` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `recorded_at` DATETIME NOT NULL,
-    `power_kw` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Текущая мощность, кВт',
-    `power_kwh_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Потребление за период, кВт*ч',
-    `water_flow_m3_hour` DECIMAL(8, 2) NOT NULL DEFAULT 0.00 COMMENT 'Мгновенный расход воды, м3/час',
-    `water_m3_delta` DECIMAL(8, 2) NOT NULL DEFAULT 0.00 COMMENT 'Расход воды за период, м3',
-    `steam_pressure_bar` DECIMAL(5, 2) DEFAULT 0.00 COMMENT 'Давление пара из котельной, бар',
+    `report_date` VARCHAR(50) DEFAULT NULL COMMENT 'Дата або період заміру (напр. 06.10.2026 або Жовтень 2026)',
+    `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00 COMMENT 'Поточна/середня потужність, кВт',
+    `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00 COMMENT 'Споживання активної ел.енергії за період, кВт*год',
+    `reactive_kvarh` DECIMAL(12, 2) NOT NULL DEFAULT 0.00 COMMENT 'Реактивна ел.енергія за період, кВАр*год',
+    `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Витрата води, м3/год',
+    `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Витрата води за період (вхідний лічильник), м3',
+    `sewage_m3` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Каналізація / стоки за період, м3',
+    `gas_m3` DECIMAL(10, 2) NOT NULL DEFAULT 0.00 COMMENT 'Природний газ за період, м3',
+    `steam_pressure_bar` DECIMAL(5, 2) DEFAULT 0.00 COMMENT 'Тиск пари з котельні, бар',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX `idx_energy_time` (`recorded_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

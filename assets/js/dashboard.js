@@ -399,13 +399,39 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         renderLogisticsByCargo(currentCargo);
 
-        // --- Блок В: Енергетика ---
-        setElementText('#val-current-power', formatNumber(en.current_power_kw, 0) + ' кВт');
-        setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт*год');
-        setElementText('#val-water-flow', formatNumber(en.current_water_m3_hour, 1) + ' м³/год');
-        setElementText('#val-water-total', formatNumber(en.total_water_m3, 0) + ' м³');
-        setElementText('#val-specific-kwh', en.specific_kwh_per_tonne + ' кВт*год / т');
-        setElementText('#val-steam-pressure', en.steam_pressure_bar + ' бар');
+        // --- Блок В: Енергетика та водопостачання ---
+        if (en) {
+            if (en.period_note) {
+                setElementText('#lbl-energy-period', en.period_note);
+            }
+            setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт·год');
+            setElementText('#val-current-power', `Потужність: ${formatNumber(en.current_power_kw, 1)} кВт • Реакт.: ${formatNumber(en.reactive_kvarh || 0, 0)} кВАр·год`);
+
+            setElementText('#val-water-total', formatNumber(en.total_water_m3, 1) + ' м³');
+            setElementText('#val-water-flow', `Потік: ${formatNumber(en.current_water_m3_hour, 2)} м³/год (${formatNumber(en.daily_water_m3 || en.total_water_m3, 1)} м³/добу)`);
+
+            setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 2) + ' кВт·год/т');
+            if (en.specific_subtext) {
+                setElementText('#val-specific-sub', en.specific_subtext);
+            }
+
+            setElementText('#val-sewage-total', `Стоки: ${formatNumber(en.sewage_m3 || 0, 1)} м³`);
+            setElementText('#val-boiler-water', `Котельня: ${formatNumber(en.boiler_water_m3 || 0, 0)} м³ • Екстракція: ${formatNumber(en.extraction_water_m3 || 0, 0)} м³`);
+
+            const deptTbody = document.querySelector('#energy-departments-tbody');
+            if (deptTbody && Array.isArray(en.departments)) {
+                deptTbody.innerHTML = en.departments.map(d => `
+                    <tr>
+                        <td class="bold">${d.name}</td>
+                        <td class="bold" style="color: #0284c7;">${formatNumber(d.active_kwh, 0)}</td>
+                        <td>${formatNumber(d.reactive_kvarh, 1)}</td>
+                        <td>${Number(d.specific_kwh) > 0 ? formatNumber(d.specific_kwh, 2) : '—'}</td>
+                        <td class="bold" style="color: #059669;">${formatNumber(d.water_m3, 0)}</td>
+                        <td>${formatNumber(d.sewage_m3, 0)}</td>
+                    </tr>
+                `).join('');
+            }
+        }
 
         // --- Блок В: Статуси обладнання ---
         if (eq && eq.nodes) {

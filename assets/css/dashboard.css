@@ -1050,8 +1050,18 @@ body {
     margin-bottom: 16px;
 }
 
+.energy-summary-cards.energy-cards-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+@media (max-width: 992px) {
+    .energy-summary-cards.energy-cards-4 { grid-template-columns: repeat(2, 1fr); }
+    .energy-details-grid { grid-template-columns: 1fr !important; }
+}
+
 @media (max-width: 600px) {
-    .energy-summary-cards { grid-template-columns: 1fr; }
+    .energy-summary-cards,
+    .energy-summary-cards.energy-cards-4 { grid-template-columns: 1fr; }
 }
 
 .energy-card-mini {
@@ -1059,6 +1069,9 @@ body {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
 }
 
 .mini-title {
@@ -1072,6 +1085,13 @@ body {
     font-size: 18px;
     font-weight: 700;
     color: var(--text-primary);
+}
+
+.mini-sub {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-top: 3px;
 }
 
 /* Карточки состояния оборудования */

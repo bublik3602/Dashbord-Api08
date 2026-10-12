@@ -558,36 +558,122 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     </div>
 
     <!-- =============================================================
-         БЛОК В: СОСТОЯНИЕ УЗЛОВ И ЭНЕРГОРЕСУРСЫ (ZABBIX API)
+         БЛОК В: ЕНЕРГОРЕСУРСИ ЗАВОДУ (ЕЛЕКТРОЕНЕРГІЯ, ВОДА, СТОКИ, ГАЗ)
          ============================================================= -->
     <div class="bottom-grid">
         
-        <!-- Графік енергетики та води -->
+        <!-- Графік енергетики та води + Звіт головного енергетика -->
         <div class="card-panel">
-            <div class="section-title">
-                <i data-lucide="zap" style="width: 18px; height: 18px; color: #f59e0b;"></i>
-                <span>Блок В: Енергоресурси заводу (Zabbix API)</span>
-                <span class="section-badge badge-green">Енергоефективність</span>
+            <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="zap" style="width: 18px; height: 18px; color: #f59e0b;"></i>
+                    <span>Блок В: Електроенергія та водопостачання заводу</span>
+                    <span class="section-badge badge-green" id="lbl-energy-period"><?= htmlspecialchars($en['period_note'] ?? 'Звіт гол. енергетика та лічильники') ?></span>
+                </div>
+                <span class="section-badge badge-blue">Лічильники ТП 2×1600 / ТП-2000 та водомірний вузол</span>
             </div>
 
-            <!-- Мікро-картки витрат -->
-            <div class="energy-summary-cards">
-                <div class="energy-card-mini">
-                    <div class="mini-title">Поточна потужність вводу</div>
-                    <div class="mini-number" id="val-current-power"><?= number_format($en['current_power_kw'], 0, ',', ' ') ?> кВт</div>
+            <!-- 4 картки витрат електроенергії та води -->
+            <div class="energy-summary-cards energy-cards-4">
+                <div class="energy-card-mini" style="border-top: 3px solid #0284c7;">
+                    <div class="mini-title">⚡ Активна електроенергія</div>
+                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= number_format($en['total_kwh'], 0, ',', ' ') ?> кВт·год</div>
+                    <div class="mini-sub" id="val-current-power">Потужність: <?= number_format($en['current_power_kw'], 1, ',', ' ') ?> кВт &bull; Реакт.: <?= number_format($en['reactive_kvarh'] ?? 1450, 0, ',', ' ') ?> кВАр·год</div>
                 </div>
-                <div class="energy-card-mini">
-                    <div class="mini-title">Витрата води (миттєва)</div>
-                    <div class="mini-number" id="val-water-flow"><?= number_format($en['current_water_m3_hour'], 1, ',', ' ') ?> м³/год</div>
+                <div class="energy-card-mini" style="border-top: 3px solid #10b981;">
+                    <div class="mini-title">💧 Споживання води (вхідний ліч.)</div>
+                    <div class="mini-number" id="val-water-total" style="color: #059669;"><?= number_format($en['total_water_m3'], 1, ',', ' ') ?> м³</div>
+                    <div class="mini-sub" id="val-water-flow">Потік: <?= number_format($en['current_water_m3_hour'], 2, ',', ' ') ?> м³/год (<?= number_format($en['daily_water_m3'] ?? 163.7, 1, ',', ' ') ?> м³/добу)</div>
                 </div>
-                <div class="energy-card-mini">
-                    <div class="mini-title">Питома витрата на тонну</div>
-                    <div class="mini-number" id="val-specific-kwh"><?= $en['specific_kwh_per_tonne'] ?> кВт*год/т</div>
+                <div class="energy-card-mini" style="border-top: 3px solid #f59e0b;">
+                    <div class="mini-title">⚙️ Питома витрата на 1 т насіння</div>
+                    <div class="mini-number" id="val-specific-kwh" style="color: #d97706;"><?= number_format($en['specific_kwh_per_tonne'], 2, ',', ' ') ?> кВт·год/т</div>
+                    <div class="mini-sub" id="val-specific-sub"><?= htmlspecialchars($en['specific_subtext'] ?? 'Прес: 27,92 + Екстр: 13,26 кВт·год/т') ?></div>
+                </div>
+                <div class="energy-card-mini" style="border-top: 3px solid #8b5cf6;">
+                    <div class="mini-title">🔥 Котельня, екстракція та стоки</div>
+                    <div class="mini-number" id="val-sewage-total" style="color: #6d28d9;">Стоки: <?= number_format($en['sewage_m3'] ?? 72.6, 1, ',', ' ') ?> м³</div>
+                    <div class="mini-sub" id="val-boiler-water">Котельня: <?= number_format($en['boiler_water_m3'] ?? 95, 0, ',', ' ') ?> м³ &bull; Екстракція: <?= number_format($en['extraction_water_m3'] ?? 32, 0, ',', ' ') ?> м³</div>
                 </div>
             </div>
 
-            <!-- Інтерактивний таймлайн-графік -->
+            <!-- Інтерактивний графік електроенергії та води -->
             <div id="energy-timeline-chart"></div>
+
+            <!-- Розподіл за структурними підрозділами та помісячний баланс року -->
+            <div class="energy-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px;">
+                <!-- Таблиця 1: Розподіл за структурними підрозділами -->
+                <details class="season-monthly-details" open>
+                    <summary>
+                        <span><i data-lucide="cpu" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Розподіл електроенергії та води за структурними підрозділами</span>
+                        <span style="font-size: 11px; color: #64748b;">Активний період</span>
+                    </summary>
+                    <div class="season-monthly-table-wrap">
+                        <table class="data-table-clean" style="font-size: 11px;">
+                            <thead>
+                                <tr>
+                                    <th>Підрозділ заводу</th>
+                                    <th>Активна (кВт·год)</th>
+                                    <th>Реактивна (кВАр·год)</th>
+                                    <th>Питома (кВт·год/т)</th>
+                                    <th>Вода (м³)</th>
+                                    <th>Каналізація (м³)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="energy-departments-tbody">
+                                <?php foreach (($en['departments'] ?? []) as $dept): ?>
+                                <tr>
+                                    <td class="bold"><?= htmlspecialchars($dept['name']) ?></td>
+                                    <td class="bold" style="color: #0284c7;"><?= number_format($dept['active_kwh'], 0, ',', ' ') ?></td>
+                                    <td><?= number_format($dept['reactive_kvarh'], 1, ',', ' ') ?></td>
+                                    <td><?= $dept['specific_kwh'] > 0 ? number_format($dept['specific_kwh'], 2, ',', '') : '—' ?></td>
+                                    <td class="bold" style="color: #059669;"><?= number_format($dept['water_m3'], 0, ',', ' ') ?></td>
+                                    <td><?= number_format($dept['sewage_m3'], 0, ',', ' ') ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+
+                <!-- Таблиця 2: Помісячне зведення енергоносіїв за 12 місяців -->
+                <details class="season-monthly-details" open>
+                    <summary>
+                        <span><i data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Річний баланс: Електроенергія, Вода, Газ та Каналізація (12 місяців)</span>
+                        <span style="font-size: 11px; color: #64748b;">Січень — Грудень</span>
+                    </summary>
+                    <div class="season-monthly-table-wrap">
+                        <table class="data-table-clean" style="font-size: 11px;">
+                            <thead>
+                                <tr>
+                                    <th>Місяць</th>
+                                    <th>Ел.енергія (кВт·год)</th>
+                                    <th>Реактивна</th>
+                                    <th>Прес + Екстр</th>
+                                    <th>Вода (м³)</th>
+                                    <th>Вода/добу</th>
+                                    <th>Стоки (м³)</th>
+                                    <th>Газ (м³)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach (($en['monthly_12'] ?? []) as $em): ?>
+                                <tr>
+                                    <td class="bold"><?= htmlspecialchars($em['month']) ?></td>
+                                    <td class="bold" style="color: #0284c7;"><?= number_format($em['active_kwh'], 0, ',', ' ') ?></td>
+                                    <td><?= number_format($em['reactive_kvarh'], 0, ',', ' ') ?></td>
+                                    <td><?= number_format($em['press_kwh'] + $em['extr_kwh'], 0, ',', ' ') ?></td>
+                                    <td class="bold" style="color: #059669;"><?= number_format($em['water_m3'], 0, ',', ' ') ?></td>
+                                    <td><?= number_format($em['daily_water_m3'], 1, ',', '') ?> м³</td>
+                                    <td><?= number_format($em['sewage_m3'], 0, ',', ' ') ?></td>
+                                    <td><?= $em['gas_m3'] > 0 ? number_format($em['gas_m3'], 0, ',', ' ') : '—' ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            </div>
         </div>
 
     </div>

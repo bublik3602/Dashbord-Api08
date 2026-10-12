@@ -106,6 +106,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $pdo->exec("ALTER TABLE `lab_quality_logs` MODIFY COLUMN `oil_deviation_pct` DECIMAL(5, 2) NOT NULL DEFAULT 1.50");
             } catch (Throwable $ignore) {}
 
+            try {
+                $pdo->exec("
+                    ALTER TABLE `energy_readings`
+                        MODIFY COLUMN `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                        MODIFY COLUMN `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                        MODIFY COLUMN `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+                        MODIFY COLUMN `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00
+                ");
+            } catch (Throwable $ignore) {}
+
             // 3. Загрузка демонстрационных данных при выборе
             if ($installDemo) {
                 $seedFile = __DIR__ . '/database/seed_data.sql';
