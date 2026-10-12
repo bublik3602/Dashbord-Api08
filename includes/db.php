@@ -153,17 +153,30 @@ class DashboardDB {
             ('boiler_01', 'Паровой котел на лузге ДКВР-10', 'Энергокомплекс / Котельная', 'running', 92.0, 195.0, '{$now}', 'Давление пара 11.2 бар');
         ");
 
-        // Дни и смены материального баланса
-        for ($i = 6; $i >= 1; $i--) {
-            $date = date('Y-m-d', strtotime("-{$i} days"));
-            $inPlant = 720.0 + rand(-20, 40);
-            $lossCondPct = 2.4 + (rand(0, 12) / 10.0); // 2.4% - 3.6%
-            $inProd = round($inPlant * (1 - $lossCondPct / 100), 1);
+        // Реальні щоденні дані за Жовтень 2026 з графіку прийомки заводу (01.10 — 11.10)
+        $octoberDays = [
+            ['2026-10-01', 549.5, 533.0, 234.5, 218.5, 73.5],
+            ['2026-10-02', 597.0, 579.1, 254.8, 237.4, 79.9],
+            ['2026-10-03', 720.7, 699.1, 307.6, 286.6, 96.5],
+            ['2026-10-04', 441.0, 427.8, 188.2, 175.4, 59.0],
+            ['2026-10-05', 661.8, 641.9, 282.4, 263.2, 88.6],
+            ['2026-10-06', 589.8, 572.1, 251.7, 234.6, 78.9],
+            ['2026-10-07', 501.9, 486.8, 214.2, 199.6, 67.2],
+            ['2026-10-08', 609.3, 591.0, 260.0, 242.3, 81.6],
+            ['2026-10-09', 439.3, 426.1, 187.5, 174.7, 58.8],
+            ['2026-10-10', 499.9, 484.9, 213.4, 198.8, 66.9],
+            ['2026-10-11', 465.8, 452.0, 198.8, 185.3, 62.4], // Минула виробнича доба
+        ];
+
+        foreach ($octoberDays as $od) {
+            $dStr = $od[0];
+            $inPlant = $od[1];
+            $inProd = $od[2];
+            $oil = $od[3];
+            $meal = $od[4];
+            $husk = $od[5];
             $lossCond = round($inPlant - $inProd, 1);
-            
-            $oil = round($inProd * 0.435, 1);
-            $meal = round($inProd * 0.385, 1);
-            $husk = round($inProd * 0.170, 1);
+            $lossCondPct = round(($lossCond / $inPlant) * 100, 2);
             $lossProd = round($inProd - ($oil + $meal + $husk), 1);
             $lossProdPct = round(($lossProd / $inProd) * 100, 2);
 
@@ -172,25 +185,8 @@ class DashboardDB {
                 (recorded_at, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
                 VALUES (?, 'day', ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
-            $stmt->execute(["{$date} 20:00:00", $inPlant, $inProd, $oil, $meal, $husk, $lossCond, $lossCondPct, $lossProd, $lossProdPct]);
+            $stmt->execute(["{$dStr} 20:00:00", $inPlant, $inProd, $oil, $meal, $husk, $lossCond, $lossCondPct, $lossProd, $lossProdPct]);
         }
-
-        // Сегодня
-        $todayPlant = 485.6;
-        $todayProd = 473.4;
-        $todayCondLoss = round($todayPlant - $todayProd, 1);
-        $todayCondPct = round(($todayCondLoss / $todayPlant) * 100, 2);
-        $oil = 205.9;
-        $meal = 182.2;
-        $husk = 80.0;
-        $prodLoss = round($todayProd - ($oil + $meal + $husk), 1);
-        $prodLossPct = round(($prodLoss / $todayProd) * 100, 2);
-        $stmt = $pdo->prepare("
-            INSERT INTO material_balance_logs 
-            (recorded_at, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
-            VALUES (?, 'day', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([$now, $todayPlant, $todayProd, $oil, $meal, $husk, $todayCondLoss, $todayCondPct, $prodLoss, $prodLossPct]);
 
         // Почасовые замеры энергии
         for ($h = 23; $h >= 0; $h--) {

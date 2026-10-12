@@ -131,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (data.period_info) {
             const pi = data.period_info;
             setElementText('#banner-period-title', pi.range_display || pi.period_label);
-            setElementText('#lbl-prod-period', 'Період: ' + (pi.operational_day || pi.range_display));
+            setElementText('#lbl-prod-period', 'Період: ' + (pi.period_label || pi.range_display));
             setElementText('#banner-sync-time', 'Оновлено: ' + (pi.generated_at || new Date().toLocaleTimeString()));
 
             const subElem = document.querySelector('#banner-period-sub');

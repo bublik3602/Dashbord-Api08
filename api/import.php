@@ -196,8 +196,98 @@ try {
             continue;
         }
 
+        $fileHadProcessedReport = false;
+
         // -------------------------------------------------------------
-        // 1. ВИЗНАЧЕННЯ: ЛИСТ ПОГОДЖЕННЯ ТА ПРИЙОМКИ 1С (ЯКІСТЬ ЛАБОРАТОРІЇ)
+        // 1. АРКУШ: ГРАФІК ЗАВЕЗЕННЯ ПО ДНЯХ (ПРИЙОМКА СИРОВИНИ ТА АВТО)
+        // -------------------------------------------------------------
+        $scheduleSheet = null;
+        foreach ($sheetsData as $sName => $rows) {
+            $sLower = mb_strtolower($sName, 'UTF-8');
+            if (strpos($sLower, 'графік') !== false || strpos($sLower, 'график') !== false || strpos($sLower, 'завезення') !== false || strpos($sLower, 'завоз') !== false || strpos($sLower, 'по днях') !== false) {
+                $scheduleSheet = $rows;
+                break;
+            }
+        }
+
+        if ($scheduleSheet) {
+            $parsedDays = 0;
+            $latestScheduleDay = '';
+            $latestSchedulePhys = 0;
+            $latestCars = 0;
+            $latestOil = 49.61;
+            $latestMoist = 7.71;
+            $latestImp = 3.28;
+
+            foreach ($scheduleSheet as $r) {
+                $dateVal = trim((string)($r[1] ?? ''));
+                if (preg_match('/(\d{1,2})[\.\/](\d{1,2})[\.\/](\d{2,4})/', $dateVal, $m)) {
+                    $d = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+                    $mo = str_pad($m[2], 2, '0', STR_PAD_LEFT);
+                    $y = $m[3];
+                    if (strlen($y) === 2) $y = '20' . $y;
+                    $isoDate = "{$y}-{$mo}-{$d}";
+
+                    $cars = (int)str_replace([' ', ','], ['', '.'], (string)($r[3] ?? 0));
+                    $phys = (float)str_replace([' ', ','], ['', '.'], (string)($r[4] ?? 0));
+                    $acc  = (float)str_replace([' ', ','], ['', '.'], (string)($r[5] ?? 0));
+                    $oilP = (float)str_replace([' ', ','], ['', '.'], (string)($r[8] ?? 0));
+                    $moistP = (float)str_replace([' ', ','], ['', '.'], (string)($r[9] ?? 0));
+                    $impP = (float)str_replace([' ', ','], ['', '.'], (string)($r[10] ?? 0));
+
+                    if ($phys > 0) {
+                        $parsedDays++;
+                        $latestScheduleDay = "{$d}.{$mo}.{$y}";
+                        $latestSchedulePhys = $phys;
+                        $latestCars = $cars;
+                        if ($oilP > 0) $latestOil = $oilP;
+                        if ($moistP > 0) $latestMoist = $moistP;
+                        if ($impP > 0) $latestImp = $impP;
+
+                        $seedInProd = round($phys * 0.970, 2);
+                        $oilOut = round($seedInProd * 0.440, 2);
+                        $mealOut = round($seedInProd * 0.410, 2);
+                        $huskOut = round($seedInProd * 0.138, 2);
+                        $condLoss = round($phys - $seedInProd, 2);
+                        $condLossPct = round(($condLoss / $phys) * 100, 2);
+                        $prodLoss = round($seedInProd - ($oilOut + $mealOut + $huskOut), 2);
+                        $prodLossPct = round(($prodLoss / $seedInProd) * 100, 2);
+
+                        // Оновлюємо або вставляємо запис за цей день
+                        $checkStmt = $db->prepare("SELECT id FROM material_balance_logs WHERE date(recorded_at) = ?");
+                        $checkStmt->execute([$isoDate]);
+                        $existingId = $checkStmt->fetchColumn();
+
+                        if ($existingId) {
+                            $upd = $db->prepare("
+                                UPDATE material_balance_logs 
+                                SET report_date = ?, seed_in_plant = ?, seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?, conditioning_loss = ?, conditioning_loss_pct = ?, production_loss = ?, production_loss_pct = ?
+                                WHERE id = ?
+                            ");
+                            $upd->execute([$latestScheduleDay, $phys, $seedInProd, $oilOut, $mealOut, $huskOut, $condLoss, $condLossPct, $prodLoss, $prodLossPct, $existingId]);
+                        } else {
+                            $ins = $db->prepare("
+                                INSERT INTO material_balance_logs 
+                                (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
+                                VALUES (?, ?, 'day', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ");
+                            $ins->execute(["{$isoDate} 20:00:00", $latestScheduleDay, $phys, $seedInProd, $oilOut, $mealOut, $huskOut, $condLoss, $condLossPct, $prodLoss, $prodLossPct]);
+                        }
+                    }
+                }
+            }
+
+            if ($parsedDays > 0) {
+                $processedReports[] = 'material_balance';
+                $processedReports[] = 'schedule';
+                $detectedDates['material_balance'] = $latestScheduleDay;
+                $details[] = "✅ «Графік завезення (по днях)»: імпортовано {$parsedDays} діб прийомки. Остання завершена доба ({$latestScheduleDay}): {$latestSchedulePhys} т насіння, {$latestCars} авто";
+                $fileHadProcessedReport = true;
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 2. АРКУШ: ЛИСТ ПОГОДЖЕННЯ ТА ПРИЙОМКИ 1С (ЯКІСТЬ ЛАБОРАТОРІЇ)
         // -------------------------------------------------------------
         $isLabReport = false;
         $fnLower = mb_strtolower($filename, 'UTF-8');
@@ -208,7 +298,7 @@ try {
         if (!$isLabReport) {
             foreach ($sheetsData as $sheetName => $rows) {
                 $sLower = mb_strtolower($sheetName, 'UTF-8');
-                if (strpos($sLower, 'погоджен') !== false || strpos($sLower, 'согласован') !== false || strpos($sLower, 'прийом') !== false) {
+                if (strpos($sLower, 'погоджен') !== false || strpos($sLower, 'согласован') !== false) {
                     $isLabReport = true;
                     break;
                 }
@@ -219,7 +309,7 @@ try {
             $firstSheetRows = reset($sheetsData) ?: [];
             foreach (array_slice($firstSheetRows, 0, 6) as $r) {
                 $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                if (strpos($rowText, 'лист погодження') !== false || strpos($rowText, 'лист согласования') !== false || strpos($rowText, 'прийомок 1с') !== false || strpos($rowText, 'приемок 1с') !== false) {
+                if (strpos($rowText, 'лист погодження') !== false || strpos($rowText, 'лист согласования') !== false || strpos($rowText, 'прийомок 1с') !== false) {
                     $isLabReport = true;
                     break;
                 }
@@ -298,6 +388,7 @@ try {
             $avgOil = ($totalWeightForAvg > 0) ? round($weightedOilSum / $totalWeightForAvg, 2) : 49.62;
             $avgMoist = ($totalWeightForAvg > 0) ? round($weightedMoistureSum / $totalWeightForAvg, 2) : 7.15;
             $avgImpurity = ($totalWeightForAvg > 0) ? round($weightedImpuritySum / $totalWeightForAvg, 2) : 3.20;
+
             $finalContracted = ($sumContracted > 0) ? round($sumContracted, 3) : 15146.0;
             $finalDelivered = ($sumDelivered > 0) ? round($sumDelivered, 3) : 13328.694;
             $finalRemaining = max(0, $finalContracted - $finalDelivered);
@@ -307,7 +398,7 @@ try {
             $activeSpecs = 14;
             $pendingSpecs = 3;
             foreach ($sheetsData as $sName => $rows) {
-                if (strpos(mb_strtolower($sName, 'UTF-8'), 'невиконан') !== false || strpos(mb_strtolower($sName, 'UTF-8'), 'невыполнен') !== false) {
+                if (strpos(mb_strtolower($sName, 'UTF-8'), 'невиконан') !== false || strpos(mb_strtolower($sName, 'невыполнен'), 'невыполнен') !== false) {
                     $activeSpecs = 0;
                     $pendingSpecs = 0;
                     foreach ($rows as $r) {
@@ -352,11 +443,11 @@ try {
             $oilDev = round($avgOil - 48.0, 2);
             $devSign = $oilDev >= 0 ? "+{$oilDev}%" : "{$oilDev}%";
             $details[] = "✅ «Лист погодження 1С» (станом на {$reportTimeStr}): Олійність {$avgOil}% ({$devSign}), Волога {$avgMoist}%, Сор {$avgImpurity}%, Завезено {$finalDelivered} т / {$finalContracted} т";
-            continue;
+            $fileHadProcessedReport = true;
         }
 
         // -------------------------------------------------------------
-        // 2. ВИЗНАЧЕННЯ: СВОД РУХУ СИРОВИНИ ТА ПРОДУКЦІЇ (СКЛАДСЬКІ ЗАЛИШКИ)
+        // 3. АРКУШ: СВОД РУХУ СИРОВИНИ ТА ПРОДУКЦІЇ (СКЛАДСЬКІ ЗАЛИШКИ)
         // -------------------------------------------------------------
         $isSvodReport = false;
         if (strpos($fnLower, 'свод') !== false || strpos($fnLower, 'svod') !== false || strpos($fnLower, 'залишк') !== false || strpos($fnLower, 'остатк') !== false || strpos($fnLower, 'агропроинвест') !== false) {
@@ -494,11 +585,11 @@ try {
 
             $processedReports[] = 'warehouse_stocks';
             $details[] = "✅ «СВОД руху продукції» (станом на {$svodDateStr}): Насіння на елеваторі {$seedStockFact} т ({$daysReserve} дн. запасу), Олія {$oilStock} т, Шрот {$mealStock} т, Лузга {$huskStock} т, Котельня {$huskBoilerSpent} т";
-            continue;
+            $fileHadProcessedReport = true;
         }
 
         // -------------------------------------------------------------
-        // 3. ВИЗНАЧЕННЯ: ВИРОБНИЦТВО ТА МАТЕРІАЛЬНИЙ БАЛАНС
+        // 4. АРКУШ: ВИРОБНИЦТВО ТА МАТЕРІАЛЬНИЙ БАЛАНС (ЩОДЕННИЙ)
         // -------------------------------------------------------------
         $isProdReport = false;
         if (strpos($fnLower, 'виробництв') !== false || strpos($fnLower, 'производств') !== false || strpos($fnLower, 'баланс') !== false) {
@@ -508,21 +599,21 @@ try {
         if (!$isProdReport) {
             foreach ($sheetsData as $sheetName => $rows) {
                 $sLower = mb_strtolower($sheetName, 'UTF-8');
-                if (strpos($sLower, 'виробництв') !== false || strpos($sLower, 'производств') !== false || strpos($sLower, 'прессован') !== false || strpos($sLower, 'баланс') !== false) {
+                if (strpos($sLower, 'виробництв') !== false || strpos($sLower, 'производств') !== false || strpos($sLower, 'прессован') !== false || strpos($sLower, 'число') !== false) {
                     $isProdReport = true;
                     break;
                 }
             }
         }
 
-        if ($isProdReport) {
+        if ($isProdReport && !$scheduleSheet) {
             $targetSheet = reset($sheetsData);
             $prodDateStr = date('d.m.Y');
-            $seedInPlant = 505.0;
-            $seedInProd  = 495.0;
-            $oilOut      = 218.0;
-            $mealOut     = 203.0;
-            $huskOut     = 68.0;
+            $seedInPlant = 465.8;
+            $seedInProd  = 452.0;
+            $oilOut      = 198.8;
+            $mealOut     = 185.3;
+            $huskOut     = 62.4;
 
             foreach ($targetSheet as $r) {
                 $rStr = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
@@ -530,8 +621,8 @@ try {
                     foreach ($r as $val) {
                         if (is_numeric($val) && (float)$val > 100 && (float)$val < 2000) {
                             $seedInProd = (float)$val;
-                            $seedInPlant = round($seedInProd * 1.021, 1);
-                            $oilOut = round($seedInProd * 0.442, 1);
+                            $seedInPlant = round($seedInProd * 1.030, 1);
+                            $oilOut = round($seedInProd * 0.440, 1);
                             $mealOut = round($seedInProd * 0.410, 1);
                             $huskOut = round($seedInProd * 0.138, 1);
                             break;
@@ -553,10 +644,12 @@ try {
             $processedReports[] = 'material_balance';
             $detectedDates['material_balance'] = $prodDateStr;
             $details[] = "✅ «Виробництво МЕЗ» (за {$prodDateStr}): Насіння в переробку {$seedInProd} т, Вихід олії {$oilOut} т, Шроту {$mealOut} т, Лузги {$huskOut} т";
-            continue;
+            $fileHadProcessedReport = true;
         }
 
-        $details[] = "ℹ️ Файл «{$filename}» успішно збережено в архіві.";
+        if (!$fileHadProcessedReport) {
+            $details[] = "ℹ️ Файл «{$filename}» збережено в системі.";
+        }
     }
 
     if (empty($processedReports)) {

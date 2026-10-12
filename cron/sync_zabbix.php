@@ -28,12 +28,12 @@ try {
     $hour = (int)date('H');
     $shiftType = ($hour >= 8 && $hour < 20) ? 'day' : 'night';
 
-    // 1. Фиксация замера материального баланса
-    $seedPlant = $metrics['scale.seed.in.plant.total']['value'] ?? 485.6;
-    $seedProd  = $metrics['scale.seed.in.prod.total']['value'] ?? 473.4;
-    $oilOut    = $metrics['production.oil.yield.tonnes']['value'] ?? 205.9;
-    $mealOut   = $metrics['production.meal.yield.tonnes']['value'] ?? 182.2;
-    $huskOut   = $metrics['production.husk.yield.tonnes']['value'] ?? 80.0;
+    // 1. Фіксація заміру матеріального балансу
+    $seedPlant = $metrics['scale.seed.in.plant.total']['value'] ?? 465.8;
+    $seedProd  = $metrics['scale.seed.in.prod.total']['value'] ?? 452.0;
+    $oilOut    = $metrics['production.oil.yield.tonnes']['value'] ?? 198.8;
+    $mealOut   = $metrics['production.meal.yield.tonnes']['value'] ?? 185.3;
+    $huskOut   = $metrics['production.husk.yield.tonnes']['value'] ?? 62.4;
 
     $stmt = $db->prepare("
         INSERT INTO material_balance_logs 

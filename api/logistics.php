@@ -11,8 +11,14 @@ require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/crm_client.php';
 
 try {
+    $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';
+    $validPeriods = ['shift', 'day', 'week', 'month'];
+    if (!in_array($period, $validPeriods, true)) {
+        $period = 'day';
+    }
+
     $crm = new CRMClient();
-    $funnel = $crm->getTransportFunnel();
+    $funnel = $crm->getTransportFunnel($period);
     $activeTrucks = $crm->getActiveTrucksList();
 
     echo json_encode([

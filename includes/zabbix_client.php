@@ -123,11 +123,11 @@ class ZabbixClient {
      */
     public function getSimulatedMetrics(): array {
         return [
-            'scale.seed.in.plant.total'   => ['value' => 485.60, 'name' => 'Весы приемки семян'],
-            'scale.seed.in.prod.total'    => ['value' => 473.40, 'name' => 'Весы подачи в производство'],
-            'production.oil.yield.tonnes' => ['value' => 205.90, 'name' => 'Выход масла сырого'],
-            'production.meal.yield.tonnes'=> ['value' => 182.20, 'name' => 'Выход шрота'],
-            'production.husk.yield.tonnes'=> ['value' => 80.00,  'name' => 'Выход лузги'],
+            'scale.seed.in.plant.total'   => ['value' => 465.80, 'name' => 'Ваги приймання насіння'],
+            'scale.seed.in.prod.total'    => ['value' => 452.00, 'name' => 'Ваги подачі у виробництво'],
+            'production.oil.yield.tonnes' => ['value' => 198.80, 'name' => 'Вихід олії сирої'],
+            'production.meal.yield.tonnes'=> ['value' => 185.30, 'name' => 'Вихід шроту тостованого'],
+            'production.husk.yield.tonnes'=> ['value' => 62.40,  'name' => 'Вихід лузги гранульованої'],
             'power.meter.main.kw'         => ['value' => 3940.0, 'name' => 'Общая мощность ввода'],
             'water.meter.feed.flow.rate'  => ['value' => 58.9,   'name' => 'Расход воды технической'],
             'equipment.cleaner.status'    => ['value' => 1,      'name' => 'Статус сепаратора'],

@@ -29,7 +29,7 @@ class XLSXParser {
         $sharedStrings = [];
         $sharedXmlContent = $zip->getFromName('xl/sharedStrings.xml');
         if ($sharedXmlContent !== false) {
-            $sxml = @simplexml_load_string($sharedXmlContent);
+            $sxml = self::loadCleanXml($sharedXmlContent);
             if ($sxml) {
                 foreach ($sxml->si as $si) {
                     if (isset($si->t)) {
@@ -55,7 +55,7 @@ class XLSXParser {
 
         $sheetMap = []; // rId => target filename
         if ($relsContent !== false) {
-            $relsXml = @simplexml_load_string($relsContent);
+            $relsXml = self::loadCleanXml($relsContent);
             if ($relsXml) {
                 foreach ($relsXml->Relationship as $rel) {
                     $sheetMap[(string)$rel['Id']] = (string)$rel['Target'];
@@ -64,12 +64,15 @@ class XLSXParser {
         }
 
         if ($wbContent !== false) {
-            $wbXml = @simplexml_load_string($wbContent);
+            $wbXml = self::loadCleanXml($wbContent);
             if ($wbXml && isset($wbXml->sheets)) {
                 $sheetIdx = 1;
                 foreach ($wbXml->sheets->sheet as $s) {
                     $sName = (string)$s['name'];
-                    $rId = (string)$s->attributes('http://schemas.openxmlformats.org/officeDocument/2006/relationships')['id'];
+                    $rId = (string)($s['id'] ?? $s->attributes('http://schemas.openxmlformats.org/officeDocument/2006/relationships')['id'] ?? '');
+                    if (empty($rId) && isset($s->attributes()['id'])) {
+                        $rId = (string)$s->attributes()['id'];
+                    }
                     $target = $sheetMap[$rId] ?? ("worksheets/sheet{$sheetIdx}.xml");
                     
                     // Нормалізуємо шлях у ZIP (наприклад, worksheets/sheet1.xml -> xl/worksheets/sheet1.xml)
@@ -98,7 +101,7 @@ class XLSXParser {
             $sheetContent = $zip->getFromName($xmlPath);
             if ($sheetContent === false) continue;
 
-            $sheetXml = @simplexml_load_string($sheetContent);
+            $sheetXml = self::loadCleanXml($sheetContent);
             if (!$sheetXml || !isset($sheetXml->sheetData)) continue;
 
             $rows = [];
@@ -113,7 +116,7 @@ class XLSXParser {
                     $colIdx = self::colLetterToIndex($colLetter);
                     $maxCol = max($maxCol, $colIdx);
 
-                    $type = (string)$cNode['t'];
+                    $type = (string)($cNode['t'] ?? '');
                     $val = null;
 
                     if ($type === 's') {
@@ -121,8 +124,18 @@ class XLSXParser {
                         $idx = (int)$cNode->v;
                         $val = $sharedStrings[$idx] ?? '';
                     } elseif ($type === 'inlineStr') {
-                        // Вбудований рядок
-                        $val = (string)($cNode->is->t ?? '');
+                        // Вбудований рядок (може бути <is><t> або <is><r><t>)
+                        if (isset($cNode->is->t)) {
+                            $val = (string)$cNode->is->t;
+                        } elseif (isset($cNode->is->r)) {
+                            $t = '';
+                            foreach ($cNode->is->r as $r) {
+                                $t .= (string)($r->t ?? '');
+                            }
+                            $val = $t;
+                        } else {
+                            $val = trim((string)($cNode->is ?? ''));
+                        }
                     } elseif ($type === 'str') {
                         // Рядок-результат формули
                         $val = (string)($cNode->v ?? '');
@@ -166,5 +179,15 @@ class XLSXParser {
             $idx = $idx * 26 + (ord($col[$i]) - 64);
         }
         return $idx;
+    }
+
+    /**
+     * Завантаження XML з очищенням просторів імен для прямого доступу в SimpleXML
+     */
+    private static function loadCleanXml(string $xmlContent) {
+        if (trim($xmlContent) === '') return false;
+        // Видаляємо всі атрибути xmlns="..." та xmlns:xxx="..."
+        $cleaned = preg_replace('/\sxmlns(?::\w+)?="[^"]*"/', '', $xmlContent);
+        return @simplexml_load_string($cleaned);
     }
 }
