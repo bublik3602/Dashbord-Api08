@@ -263,22 +263,22 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Дневная смена (08:00 — 
                 <div class="cargo-stay-card">
                     <span class="cargo-name">🌻 Семена</span>
                     <span class="cargo-stay-time" id="val-stay-seed"><?= $log['categories']['Семена']['avg_stay_text'] ?? '1 ч 30 мин' ?></span>
-                    <span class="cargo-truck-count" id="val-cnt-seed">На заводе: <?= $log['categories']['Семена']['total_active'] ?? 0 ?></span>
+                    <span class="cargo-truck-count" id="val-cnt-seed">На заводе: <?= $log['categories']['Семена']['on_site'] ?? 0 ?></span>
                 </div>
                 <div class="cargo-stay-card">
-                    <span class="cargo-name">🛢️ Масло</span>
+                    <span class="cargo-name">💧 Масло</span>
                     <span class="cargo-stay-time" id="val-stay-oil"><?= $log['categories']['Масло']['avg_stay_text'] ?? '1 ч 15 мин' ?></span>
-                    <span class="cargo-truck-count" id="val-cnt-oil">На заводе: <?= $log['categories']['Масло']['total_active'] ?? 0 ?></span>
+                    <span class="cargo-truck-count" id="val-cnt-oil">На заводе: <?= $log['categories']['Масло']['on_site'] ?? 0 ?></span>
                 </div>
                 <div class="cargo-stay-card">
                     <span class="cargo-name">🌾 Шрот</span>
                     <span class="cargo-stay-time" id="val-stay-meal"><?= $log['categories']['Шрот']['avg_stay_text'] ?? '1 ч 30 мин' ?></span>
-                    <span class="cargo-truck-count" id="val-cnt-meal">На заводе: <?= $log['categories']['Шрот']['total_active'] ?? 0 ?></span>
+                    <span class="cargo-truck-count" id="val-cnt-meal">На заводе: <?= $log['categories']['Шрот']['on_site'] ?? 0 ?></span>
                 </div>
                 <div class="cargo-stay-card">
                     <span class="cargo-name">🪵 Лузга</span>
                     <span class="cargo-stay-time" id="val-stay-husk"><?= $log['categories']['Лузга']['avg_stay_text'] ?? '50 мин' ?></span>
-                    <span class="cargo-truck-count" id="val-cnt-husk">На заводе: <?= $log['categories']['Лузга']['total_active'] ?? 0 ?></span>
+                    <span class="cargo-truck-count" id="val-cnt-husk">На заводе: <?= $log['categories']['Лузга']['on_site'] ?? 0 ?></span>
                 </div>
             </div>
 

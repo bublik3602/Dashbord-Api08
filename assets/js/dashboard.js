@@ -167,19 +167,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const cats = log.categories;
             if (cats['Семена']) {
                 setElementText('#val-stay-seed', cats['Семена'].avg_stay_text);
-                setElementText('#val-cnt-seed', 'На заводе: ' + cats['Семена'].total_active);
+                setElementText('#val-cnt-seed', 'На заводе: ' + (cats['Семена'].on_site !== undefined ? cats['Семена'].on_site : cats['Семена'].total_active));
             }
             if (cats['Масло']) {
                 setElementText('#val-stay-oil', cats['Масло'].avg_stay_text);
-                setElementText('#val-cnt-oil', 'На заводе: ' + cats['Масло'].total_active);
+                setElementText('#val-cnt-oil', 'На заводе: ' + (cats['Масло'].on_site !== undefined ? cats['Масло'].on_site : cats['Масло'].total_active));
             }
             if (cats['Шрот']) {
                 setElementText('#val-stay-meal', cats['Шрот'].avg_stay_text);
-                setElementText('#val-cnt-meal', 'На заводе: ' + cats['Шрот'].total_active);
+                setElementText('#val-cnt-meal', 'На заводе: ' + (cats['Шрот'].on_site !== undefined ? cats['Шрот'].on_site : cats['Шрот'].total_active));
             }
             if (cats['Лузга']) {
                 setElementText('#val-stay-husk', cats['Лузга'].avg_stay_text);
-                setElementText('#val-cnt-husk', 'На заводе: ' + cats['Лузга'].total_active);
+                setElementText('#val-cnt-husk', 'На заводе: ' + (cats['Лузга'].on_site !== undefined ? cats['Лузга'].on_site : cats['Лузга'].total_active));
             }
         }
         renderLogisticsByCargo(currentCargo);
@@ -220,8 +220,7 @@ document.addEventListener('DOMContentLoaded', function () {
         setElementText('#active-cargo-label', cargoKey);
         setElementText('#active-cargo-count-label', cargoKey);
         setElementText('#val-avg-stay-time', catData.avg_stay_text || formatMinutes(catData.avg_stay_minutes || 0));
-        setElementText('#val-total-active-trucks', (catData.total_active !== undefined ? catData.total_active : 0) + ' машин');
-        setElementText('#val-on-territory', 'На территории: ' + ((catData.entered || 0) + (catData.weighing || 0)));
+        setElementText('#val-on-territory', 'На территории: ' + (catData.on_site !== undefined ? catData.on_site : ((catData.entered || 0) + (catData.weighing || 0))));
     }
 
     // Вспомогательные функции

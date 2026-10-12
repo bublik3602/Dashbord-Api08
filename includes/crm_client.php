@@ -1,6 +1,6 @@
 <?php
 /**
- * Клиент интеграции с CRM базой данных (Логистика и электронная очередь транспорта)
+ * Клиент интеграции с CRM базой данных Агропроинвест 08 (Таблица vehicles)
  * 
  * ВНИМАНИЕ: КАТЕГОРИЧЕСКИ ТОЛЬКО ЧТЕНИЕ (STRICTLY READ-ONLY)!
  * Любые операции модификации (INSERT, UPDATE, DELETE, DROP, ALTER) заблокированы на уровне кода и сессии MySQL.
@@ -19,13 +19,9 @@ class CRMClient {
     }
 
     /**
-     * Безопасное подключение к внешней базе данных CRM в режиме ТОЛЬКО ЧТЕНИЕ
+     * Безопасное подключение к базе данных CRM в режиме ТОЛЬКО ЧТЕНИЕ
      */
     private function getCrmConnection(): ?PDO {
-        if (!($this->config['enabled'] ?? false)) {
-            return null;
-        }
-
         if ($this->crmPdo !== null) {
             return $this->crmPdo;
         }
@@ -34,12 +30,14 @@ class CRMClient {
             $driver = $this->config['driver'] ?? 'mysql';
             $host   = $this->config['host'] ?? 'localhost';
             $port   = $this->config['port'] ?? 3306;
-            $dbname = $this->config['database'] ?? 'apgk_api08';
+            $dbname = !empty($this->config['database']) ? $this->config['database'] : 'apgk_api08';
+            $dbuser = !empty($this->config['username']) ? $this->config['username'] : 'apgk_api08';
+            $dbpass = !empty($this->config['password']) ? $this->config['password'] : 'orrz20054Q+';
             $charset= $this->config['charset'] ?? 'utf8mb4';
 
             $dsn = "{$driver}:host={$host};port={$port};dbname={$dbname};charset={$charset}";
             
-            // Включаем режим только чтения на уровне сессии MySQL
+            // Включаем строгий режим только чтения на уровне сессии MySQL
             $options = [
                 PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
@@ -47,14 +45,9 @@ class CRMClient {
                 PDO::MYSQL_ATTR_INIT_COMMAND => 'SET SESSION TRANSACTION READ ONLY;'
             ];
 
-            $this->crmPdo = new PDO(
-                $dsn,
-                $this->config['username'] ?? 'apgk_api08',
-                $this->config['password'] ?? '',
-                $options
-            );
-
+            $this->crmPdo = new PDO($dsn, $dbuser, $dbpass, $options);
             return $this->crmPdo;
+
         } catch (Throwable $e) {
             error_log("CRM connection (Read-Only) notice: " . $e->getMessage());
             return null;
@@ -79,51 +72,158 @@ class CRMClient {
     }
 
     /**
-     * Получение сводной информации по автотранспорту с разделением на 4 категории:
-     * Семена, Масло, Шрот, Лузга
+     * Маппинг flow_type из CRM Агропроинвест 08 в названия категорий
+     */
+    private function mapFlowType(string $flow): string {
+        switch (strtolower(trim($flow))) {
+            case 'seed':
+            case 'насіння':
+            case 'семечка':
+            case 'семена':
+                return 'Семена';
+
+            case 'oil':
+            case 'масло':
+            case 'олія':
+                return 'Масло';
+
+            case 'meal':
+            case 'шрот':
+                return 'Шрот';
+
+            case 'husk':
+            case 'лузга':
+            case 'лушпиння':
+                return 'Лузга';
+
+            default:
+                return 'Семена';
+        }
+    }
+
+    /**
+     * Получение точной воронки транспорта и времени нахождения из CRM (таблица vehicles)
      */
     public function getTransportFunnel(): array {
-        $truckRows = $this->fetchRawTruckData();
+        $crm = $this->getCrmConnection();
 
-        // Инициализируем категории
+        if ($crm !== null) {
+            try {
+                // Проверяем наличие боевой таблицы vehicles
+                $checkStmt = $this->safeSelect($crm, "SHOW TABLES LIKE 'vehicles'");
+                if ($checkStmt->fetch()) {
+                    return $this->fetchFromVehiclesTable($crm);
+                }
+            } catch (Throwable $e) {
+                error_log("Ошибка опроса таблицы vehicles: " . $e->getMessage());
+            }
+        }
+
+        // Резервный фолбэк на локальный кэш
+        return $this->fetchFromFallbackCache();
+    }
+
+    /**
+     * Точный опрос таблицы vehicles (Агропроинвест 08)
+     */
+    private function fetchFromVehiclesTable(PDO $crm): array {
+        // Запрос всех активных машин + выехавших за сегодня
+        $sql = "
+            SELECT 
+                id,
+                plate_number,
+                trailer_number,
+                driver_name,
+                driver_phone,
+                flow_type,
+                supplier,
+                status,
+                created_at,
+                called_at,
+                arrived_at,
+                completed_at,
+                -- Расчет времени нахождения на заводе (в минутах)
+                CASE 
+                    WHEN status = 'completed' AND completed_at IS NOT NULL 
+                    THEN TIMESTAMPDIFF(MINUTE, COALESCE(arrived_at, called_at, created_at), completed_at)
+                    WHEN status IN ('in_transit', 'arrived', 'weighing_in', 'unloading', 'weighing_out')
+                    THEN TIMESTAMPDIFF(MINUTE, COALESCE(arrived_at, called_at, created_at), NOW())
+                    ELSE 0
+                END AS stay_duration_minutes
+            FROM vehicles
+            WHERE status NOT IN ('cancelled')
+              AND (
+                  status != 'completed' 
+                  OR DATE(COALESCE(completed_at, created_at)) >= CURDATE()
+              )
+            ORDER BY id DESC
+        ";
+
+        $stmt = $this->safeSelect($crm, $sql);
+        $rows = $stmt->fetchAll();
+
+        // Инициализируем структуры по 4 культурам
         $categories = [
-            'Все'    => ['name' => 'Все грузы', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'stay_minutes' => []],
-            'Семена' => ['name' => 'Семена (Семечка)', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'stay_minutes' => []],
-            'Масло'  => ['name' => 'Масло подсолнечное', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'stay_minutes' => []],
-            'Шрот'   => ['name' => 'Шрот тостированный', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'stay_minutes' => []],
-            'Лузга'  => ['name' => 'Лузга гранулированная', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'stay_minutes' => []],
+            'Все'    => ['name' => 'Все грузы', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+            'Семена' => ['name' => 'Семена (Насіння)', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+            'Масло'  => ['name' => 'Масло подсолнечное', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+            'Шрот'   => ['name' => 'Шрот тостированный', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+            'Лузга'  => ['name' => 'Лузга гранулированная', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
         ];
 
         $classifiedTrucks = [];
 
-        foreach ($truckRows as $truck) {
-            $cat = categorize_cargo($truck['cargo_type'] ?? '');
-            $status = $truck['status'] ?? 'entered';
-            $duration = (int)($truck['stay_duration_minutes'] ?? 0);
+        foreach ($rows as $r) {
+            $cat = $this->mapFlowType($r['flow_type'] ?? 'seed');
+            $status = $r['status'] ?? 'waiting';
+            $duration = (int)$r['stay_duration_minutes'];
 
-            // Добавляем в категорию "Все"
-            if (isset($categories['Все'][$status])) {
-                $categories['Все'][$status]++;
+            // Определение этапа воронки
+            $step = 'queued'; // 1. Записано (В черзі / Накопичувач)
+            $isOnSite = false;
+
+            if ($status === 'waiting') {
+                $step = 'queued';
+            } elseif ($status === 'weighing_in' || $status === 'weighing_out') {
+                $step = 'weighing'; // 3. На весах
+                $isOnSite = true;
+            } elseif (in_array($status, ['in_transit', 'arrived', 'unloading'], true)) {
+                $step = 'entered'; // 2. Заехало / В дорозі / На территории
+                $isOnSite = true;
+            } elseif ($status === 'completed') {
+                $step = 'exited'; // 4. Выехало сегодня
             }
-            if ($status === 'exited' && $duration > 0) {
+
+            // Учет для категории "Все"
+            if (isset($categories['Все'][$step])) {
+                $categories['Все'][$step]++;
+            }
+            if ($isOnSite) {
+                $categories['Все']['on_site']++;
+            }
+            if ($duration > 0 && ($isOnSite || $step === 'exited')) {
                 $categories['Все']['stay_minutes'][] = $duration;
             }
 
-            // Добавляем в профильную категорию
+            // Учет для конкретной культуры (Семена, Масло, Шрот, Лузга)
             if (isset($categories[$cat])) {
-                if (isset($categories[$cat][$status])) {
-                    $categories[$cat][$status]++;
+                if (isset($categories[$cat][$step])) {
+                    $categories[$cat][$step]++;
                 }
-                if ($status === 'exited' && $duration > 0) {
+                if ($isOnSite) {
+                    $categories[$cat]['on_site']++;
+                }
+                if ($duration > 0 && ($isOnSite || $step === 'exited')) {
                     $categories[$cat]['stay_minutes'][] = $duration;
                 }
             }
 
-            $truck['category'] = $cat;
-            $classifiedTrucks[] = $truck;
+            $r['category'] = $cat;
+            $r['step'] = $step;
+            $classifiedTrucks[] = $r;
         }
 
-        // Расчет средних времен нахождения
+        // Сводный расчет по каждой культуре
         $summary = [];
         foreach ($categories as $key => $data) {
             $avgMins = count($data['stay_minutes']) > 0 
@@ -132,11 +232,12 @@ class CRMClient {
 
             $summary[$key] = [
                 'name'             => $data['name'],
-                'queued'           => $data['queued'],
-                'entered'          => $data['entered'],
-                'weighing'         => $data['weighing'],
-                'exited'           => $data['exited'],
-                'total_active'     => $data['queued'] + $data['entered'] + $data['weighing'],
+                'queued'           => $data['queued'],   // 1. В черзі
+                'entered'          => $data['entered'],  // 2. Заехало / на погрузке
+                'weighing'         => $data['weighing'], // 3. На весах
+                'exited'           => $data['exited'],   // 4. Выехало
+                'on_site'          => $data['on_site'],  // Всего на заводе (как на табло Агропроинвест 08)
+                'total_active'     => $data['queued'] + $data['on_site'],
                 'avg_stay_minutes' => $avgMins,
                 'avg_stay_text'    => format_duration_minutes($avgMins),
             ];
@@ -149,79 +250,20 @@ class CRMClient {
             'entered'            => $allData['entered'],
             'weighing'           => $allData['weighing'],
             'exited'             => $allData['exited'],
+            'on_site'            => $allData['on_site'], // 9 машин на заводе!
             'total_active'       => $allData['total_active'],
             'avg_stay_minutes'   => $allData['avg_stay_minutes'],
             'avg_stay_text'      => $allData['avg_stay_text'],
             'categories'         => $summary,
-            'trucks_sample'      => array_slice($classifiedTrucks, 0, 20),
-            'source'             => ($this->crmPdo !== null) ? 'crm_api08_readonly' : 'local_cache',
+            'trucks_sample'      => array_slice($classifiedTrucks, 0, 25),
+            'source'             => 'crm_apgk_api08_vehicles',
         ];
     }
 
     /**
-     * Получение сырых записей транспорта из CRM БД или локального кэша
+     * Резервное чтение из локального кэша
      */
-    private function fetchRawTruckData(): array {
-        $crm = $this->getCrmConnection();
-
-        if ($crm !== null) {
-            try {
-                // Проверяем список таблиц в подключенной БД apgk_api08
-                $tablesStmt = $this->safeSelect($crm, "SHOW TABLES");
-                $tables = $tablesStmt->fetchAll(PDO::FETCH_COLUMN);
-
-                // 1. Если есть таблица transport_queue / queue / cars
-                foreach (['transport_queue', 'queue', 'cars', 'truck_queue', 'logistics_queue'] as $candidate) {
-                    if (in_array($candidate, $tables, true)) {
-                        $stmt = $this->safeSelect($crm, "
-                            SELECT truck_number, driver_name, cargo_type, status, recorded_at, entry_time, weighing_time, exit_time,
-                                   CASE 
-                                       WHEN exit_time IS NOT NULL AND entry_time IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, entry_time, exit_time)
-                                       WHEN entry_time IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, entry_time, NOW())
-                                       ELSE 0 
-                                   END AS stay_duration_minutes
-                            FROM `{$candidate}`
-                            WHERE recorded_at >= NOW() - INTERVAL 1 DAY
-                            ORDER BY id DESC
-                            LIMIT 150
-                        ");
-                        $rows = $stmt->fetchAll();
-                        if (!empty($rows)) return $rows;
-                    }
-                }
-
-                // 2. Если есть таблица requests / export_requests (как в trans-logistics-board)
-                if (in_array('requests', $tables, true) || in_array('export_requests', $tables, true)) {
-                    $sql = "
-                        SELECT 
-                            request_number AS truck_number,
-                            '' AS driver_name,
-                            cargo AS cargo_type,
-                            CASE WHEN status = 'closed' THEN 'exited' ELSE 'entered' END AS status,
-                            created_at AS recorded_at,
-                            created_at AS entry_time,
-                            NULL AS weighing_time,
-                            closed_at AS exit_time,
-                            CASE 
-                                WHEN closed_at IS NOT NULL THEN TIMESTAMPDIFF(MINUTE, created_at, closed_at)
-                                ELSE TIMESTAMPDIFF(MINUTE, created_at, NOW())
-                            END AS stay_duration_minutes
-                        FROM requests
-                        WHERE created_at >= NOW() - INTERVAL 7 DAY
-                        ORDER BY id DESC
-                        LIMIT 100
-                    ";
-                    $stmt = $this->safeSelect($crm, $sql);
-                    $rows = $stmt->fetchAll();
-                    if (!empty($rows)) return $rows;
-                }
-
-            } catch (Throwable $e) {
-                error_log("CRM safe read query error: " . $e->getMessage());
-            }
-        }
-
-        // Если подключение к внешней CRM отключено или таблица пуста — читаем из локальной БД
+    private function fetchFromFallbackCache(): array {
         try {
             $db = DashboardDB::getConnection();
             $stmt = $db->query("
@@ -230,7 +272,66 @@ class CRMClient {
                 ORDER BY id DESC
                 LIMIT 100
             ");
-            return $stmt->fetchAll();
+            $trucks = $stmt->fetchAll();
+
+            $categories = [
+                'Все'    => ['name' => 'Все грузы', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+                'Семена' => ['name' => 'Семена (Насіння)', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+                'Масло'  => ['name' => 'Масло подсолнечное', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+                'Шрот'   => ['name' => 'Шрот тостированный', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+                'Лузга'  => ['name' => 'Лузга гранулированная', 'queued' => 0, 'entered' => 0, 'weighing' => 0, 'exited' => 0, 'on_site' => 0, 'stay_minutes' => []],
+            ];
+
+            foreach ($trucks as $t) {
+                $cat = categorize_cargo($t['cargo_type'] ?? '');
+                $st = $t['status'] ?? 'entered';
+                $dur = (int)($t['stay_duration_minutes'] ?? 0);
+                $isOnSite = ($st === 'entered' || $st === 'weighing');
+
+                if (isset($categories['Все'][$st])) $categories['Все'][$st]++;
+                if ($isOnSite) $categories['Все']['on_site']++;
+                if ($dur > 0) $categories['Все']['stay_minutes'][] = $dur;
+
+                if (isset($categories[$cat])) {
+                    if (isset($categories[$cat][$st])) $categories[$cat][$st]++;
+                    if ($isOnSite) $categories[$cat]['on_site']++;
+                    if ($dur > 0) $categories[$cat]['stay_minutes'][] = $dur;
+                }
+            }
+
+            $summary = [];
+            foreach ($categories as $key => $data) {
+                $avgMins = count($data['stay_minutes']) > 0 
+                    ? (int)round(array_sum($data['stay_minutes']) / count($data['stay_minutes'])) 
+                    : 90;
+
+                $summary[$key] = [
+                    'name'             => $data['name'],
+                    'queued'           => $data['queued'],
+                    'entered'          => $data['entered'],
+                    'weighing'         => $data['weighing'],
+                    'exited'           => $data['exited'],
+                    'on_site'          => $data['on_site'],
+                    'total_active'     => $data['queued'] + $data['on_site'],
+                    'avg_stay_minutes' => $avgMins,
+                    'avg_stay_text'    => format_duration_minutes($avgMins),
+                ];
+            }
+
+            $allData = $summary['Все'];
+            return [
+                'queued'             => $allData['queued'],
+                'entered'            => $allData['entered'],
+                'weighing'           => $allData['weighing'],
+                'exited'             => $allData['exited'],
+                'on_site'            => $allData['on_site'],
+                'total_active'       => $allData['total_active'],
+                'avg_stay_minutes'   => $allData['avg_stay_minutes'],
+                'avg_stay_text'      => $allData['avg_stay_text'],
+                'categories'         => $summary,
+                'trucks_sample'      => array_slice($trucks, 0, 20),
+                'source'             => 'local_cache_demo',
+            ];
         } catch (Throwable $e) {
             return [];
         }
