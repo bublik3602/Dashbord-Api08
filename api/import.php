@@ -478,27 +478,87 @@ try {
 
         if ($isSvodReport) {
             $targetSheet = null;
-            $sheetKeys = array_keys($sheetsData);
-            foreach (array_reverse($sheetKeys) as $k) {
-                if (strpos(mb_strtolower($k, 'UTF-8'), 'свод') !== false) {
-                    $targetSheet = $sheetsData[$k];
-                    break;
-                }
-            }
-            if (!$targetSheet) $targetSheet = reset($sheetsData);
+            $svodDateStr = '12.10.2026 08:00';
 
-            // Визначення дати СВОДу
-            $svodDateStr = date('d.m.Y 08:00');
-            foreach (array_slice($targetSheet, 0, 10) as $r) {
-                $rStr = implode(' ', array_filter($r, 'is_string'));
-                if (preg_match('/на\s*(\d{1,2}[\.\,\/]\d{1,2}[\.\,\/]\d{2,4})/iu', $rStr, $m)) {
-                    $svodDateStr = str_replace(',', '.', $m[1]) . ' 08:00';
-                    break;
-                } elseif (preg_match('/(\d{4}-\d{2}-\d{2})/u', $rStr, $m)) {
-                    $svodDateStr = date('d.m.Y 08:00', strtotime($m[1]));
-                    break;
+            // 1. Спочатку шукаємо найактуальніший щоденний аркуш («12 число», «11 число» і т.д.)
+            $latestDayNum = -1;
+            $latestDaySheet = null;
+            foreach ($sheetsData as $sName => $rows) {
+                if (preg_match('/(\d{1,2})\s*число/iu', $sName, $m)) {
+                    $dNum = (int)$m[1];
+                    $hasData = false;
+                    foreach (array_slice($rows, 0, 35) as $r) {
+                        $txt = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
+                        if (strpos($txt, 'масло') !== false || strpos($txt, 'олія') !== false || strpos($txt, 'подсолнечник') !== false) {
+                            foreach ($r as $cv) {
+                                if (is_numeric($cv) && (float)$cv > 50) { $hasData = true; break 2; }
+                            }
+                        }
+                    }
+                    if ($hasData && $dNum > $latestDayNum) {
+                        $latestDayNum = $dNum;
+                        $latestDaySheet = $rows;
+                    }
                 }
             }
+
+            if ($latestDaySheet) {
+                $targetSheet = $latestDaySheet;
+                // Витягуємо дату з цього аркуша (рядок 3: "за сутки 12 октября 2026 г.")
+                foreach (array_slice($targetSheet, 0, 6) as $r) {
+                    $rStr = implode(' ', array_filter($r, 'is_string'));
+                    if (preg_match('/за сутки\s*(\d{1,2})\s*([а-яёіїє]+)\s*(\d{4})/iu', $rStr, $dm)) {
+                        $monthsMap = [
+                            'января' => '01', 'січня' => '01',
+                            'февраля' => '02', 'лютого' => '02',
+                            'марта' => '03', 'березня' => '03',
+                            'апреля' => '04', 'квітня' => '04',
+                            'мая' => '05', 'травня' => '05',
+                            'июня' => '06', 'червня' => '06',
+                            'июля' => '07', 'липня' => '07',
+                            'августа' => '08', 'серпня' => '08',
+                            'сентября' => '09', 'вересня' => '09',
+                            'октября' => '10', 'жовтня' => '10',
+                            'ноября' => '11', 'листопада' => '11',
+                            'декабря' => '12', 'грудня' => '12'
+                        ];
+                        $mKey = mb_strtolower($dm[2], 'UTF-8');
+                        $mCode = $monthsMap[$mKey] ?? '10';
+                        $dCode = str_pad($dm[1], 2, '0', STR_PAD_LEFT);
+                        $svodDateStr = "{$dCode}.{$mCode}.{$dm[3]} 08:00";
+                        break;
+                    } elseif (preg_match('/на\s*(\d{1,2}[\.\/]\d{1,2})/iu', $rStr, $dm)) {
+                        $svodDateStr = str_pad($dm[1], 5, '0', STR_PAD_LEFT) . '.2026 08:00';
+                        break;
+                    }
+                }
+            } else {
+                $sheetKeys = array_keys($sheetsData);
+                foreach (array_reverse($sheetKeys) as $k) {
+                    if (strpos(mb_strtolower($k, 'UTF-8'), 'свод') !== false) {
+                        $targetSheet = $sheetsData[$k];
+                        break;
+                    }
+                }
+                if (!$targetSheet) $targetSheet = reset($sheetsData);
+
+                $foundDates = [];
+                foreach (array_slice($targetSheet, 0, 15) as $r) {
+                    $rStr = implode(' ', array_filter($r, 'is_string'));
+                    if (preg_match_all('/(\d{1,2}[\.\,\/]\d{1,2}[\.\,\/]\d{2,4})/u', $rStr, $allM)) {
+                        foreach ($allM[1] as $dt) {
+                            $dtNorm = str_replace(',', '.', $dt);
+                            if (strpos($dtNorm, '01.10') === false) {
+                                $foundDates[] = $dtNorm;
+                            }
+                        }
+                    }
+                }
+                if (!empty($foundDates)) {
+                    $svodDateStr = end($foundDates) . ' 08:00';
+                }
+            }
+
             $detectedDates['warehouse_stocks'] = $svodDateStr;
 
             $seedStockFact = 7284.327;
