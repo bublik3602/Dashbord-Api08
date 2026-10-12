@@ -147,22 +147,22 @@ window.FactoryCharts = {
         timelineData = timelineData || {};
         this._currentEnergyTimeline = timelineData;
 
-        const powerName = timelineData.power_name || 'Електроенергія (кВт)';
-        const waterName = timelineData.water_name || 'Витрата води (м³/год)';
-        const powerUnit = timelineData.power_unit || 'кВт';
-        const waterUnit = timelineData.water_unit || 'м³/год';
+        const powerName = timelineData.power_name || 'Електроенергія за добу (кВт·год)';
+        const waterName = timelineData.water_name || 'Вода за добу по лічильнику (м³)';
+        const powerUnit = timelineData.power_unit || 'кВт·год';
+        const waterUnit = timelineData.water_unit || 'м³/д';
 
         const options = {
             series: [
                 {
                     name: powerName,
                     type: 'area',
-                    data: timelineData.power || [175, 210, 235, 245, 230, 215, 190, 170, 155, 145, 145, 160]
+                    data: timelineData.power || [29400, 31200, 31800, 30950, 31210, 31930, 11450, 4820, 4410, 4650, 4520, 4032]
                 },
                 {
                     name: waterName,
                     type: 'line',
-                    data: timelineData.water || [6.5, 7.2, 7.8, 7.6, 7.4, 7.1, 6.8, 6.5, 6.2, 6.0, 6.1, 6.4]
+                    data: timelineData.water || [211, 152, 235, 198, 206, 206, 141, 193, 151, 226, 164, 154]
                 }
             ],
             chart: {
@@ -203,7 +203,7 @@ window.FactoryCharts = {
                 enabled: false
             },
             xaxis: {
-                categories: timelineData.labels || ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00', '00:00', '02:00', '04:00', '06:00'],
+                categories: timelineData.labels || ['01.10', '02.10', '03.10', '04.10', '05.10', '06.10', '07.10', '08.10', '09.10', '10.10', '11.10', '12.10'],
                 axisBorder: {
                     show: false
                 },
@@ -269,8 +269,8 @@ window.FactoryCharts = {
                     const pointLabel = labels[dataPointIndex] || '';
                     const pVal = Number(series[0] ? series[0][dataPointIndex] : 0) || 0;
                     const wVal = Number(series[1] ? series[1][dataPointIndex] : 0) || 0;
-                    const pUnit = tl.power_unit || 'кВт';
-                    const wUnit = tl.water_unit || 'м³/год';
+                    const pUnit = tl.power_unit || 'кВт·год';
+                    const wUnit = tl.water_unit || 'м³/д';
 
                     const pSum = (series[0] || []).reduce((a, b) => a + (Number(b) || 0), 0);
                     const wSum = (series[1] || []).reduce((a, b) => a + (Number(b) || 0), 0);
@@ -283,7 +283,7 @@ window.FactoryCharts = {
                     return `
                         <div class="apex-rich-tooltip bar-tooltip-box">
                             <div class="art-header bar-head">
-                                <span class="art-title">⚡💧 Період / вузол: ${pointLabel}</span>
+                                <span class="art-title">⚡💧 Дата / період: ${pointLabel}</span>
                                 <span class="art-pill">Енергооблік</span>
                             </div>
                             <div class="art-body">
@@ -579,10 +579,10 @@ window.FactoryCharts = {
         if (this.energyChart && data.energy && data.energy.timeline) {
             const tl = data.energy.timeline;
             this._currentEnergyTimeline = tl;
-            const pName = tl.power_name || 'Електроенергія (кВт)';
-            const wName = tl.water_name || 'Витрата води (м³/год)';
-            const pUnit = tl.power_unit || 'кВт';
-            const wUnit = tl.water_unit || 'м³/год';
+            const pName = tl.power_name || 'Електроенергія за добу (кВт·год)';
+            const wName = tl.water_name || 'Вода за добу по лічильнику (м³)';
+            const pUnit = tl.power_unit || 'кВт·год';
+            const wUnit = tl.water_unit || 'м³/д';
 
             this.energyChart.updateOptions({
                 xaxis: {
