@@ -35,6 +35,7 @@ $log = $dashboardData['logistics'];
 $stocks = $dashboardData['warehouse_stocks'] ?? [];
 $lab = $dashboardData['lab_quality'] ?? [];
 $contracts = $dashboardData['contracts_summary'] ?? [];
+$historical = $dashboardData['historical_analytics'] ?? [];
 $config = get_config();
 
 $hour = (int)date('H');
@@ -86,7 +87,10 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <button type="button" class="period-btn" data-period="shift">Зміна</button>
                 <button type="button" class="period-btn active" data-period="day">Доба</button>
                 <button type="button" class="period-btn" data-period="week">Тиждень</button>
-                <button type="button" class="period-btn" data-period="month">Місяць</button>
+                <button type="button" class="period-btn" data-period="month_oct">Жовтень</button>
+                <button type="button" class="period-btn" data-period="month_sep">Вересень</button>
+                <button type="button" class="period-btn" data-period="month_aug">Серпень</button>
+                <button type="button" class="period-btn" data-period="season">Сезон '26</button>
             </div>
 
             <!-- Дії: Імпорт та Експорт звітів -->
@@ -535,6 +539,282 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
             <!-- Інтерактивний таймлайн-графік -->
             <div id="energy-timeline-chart"></div>
+        </div>
+
+    </div>
+
+    <!-- =============================================================
+         БЛОК Г: АНАЛІТИКА ТА ПОРІВНЯННЯ ПЕРІОДІВ (СЕРПЕНЬ — ВЕРЕСЕНЬ — ЖОВТЕНЬ 2026)
+         ============================================================= -->
+    <?php
+    $histMonths = $historical['months'] ?? [];
+    $mAug = $histMonths['aug'] ?? [];
+    $mSep = $histMonths['sep'] ?? [];
+    $mOct = $histMonths['oct'] ?? [];
+    $seasonTot = $historical['season_total'] ?? [];
+    ?>
+    <div class="historical-analytics-section" id="historical-analytics-section">
+        <div class="section-title">
+            <i data-lucide="line-chart" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
+            <span>Блок Г: Порівняльна аналітика періодів (Серпень — Вересень — Жовтень 2026)</span>
+            <span class="section-badge badge-blue">Виробничий сезон 2026 (72 доби)</span>
+        </div>
+
+        <!-- Картки-підсумки помісячно (Серпень, Вересень, Жовтень, Сезон) -->
+        <div class="historical-cards-grid">
+            
+            <!-- Серпень 2026 -->
+            <div class="history-month-card" data-period-trigger="month_aug">
+                <div class="month-card-header">
+                    <div class="month-card-title">
+                        <span class="month-name">Серпень 2026</span>
+                        <span class="month-badge badge-amber">31 доба &bull; ППР</span>
+                    </div>
+                    <button type="button" class="btn-quick-period" data-period="month_aug" title="Показати дашборд за серпень">
+                        <span>Детально</span> &rarr;
+                    </button>
+                </div>
+                <div class="month-metrics-list">
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌻 Завіз насіння:</span>
+                        <span class="metric-val bold"><?= number_format($mAug['seed_in'] ?? 207.96, 2, ',', ' ') ?> т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">⚙️ Переробка:</span>
+                        <span class="metric-val text-muted">0,00 т (Ремонт)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">💧 Вихід олії:</span>
+                        <span class="metric-val text-muted">0,00 т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌾 Вихід шроту:</span>
+                        <span class="metric-val text-muted">0,00 т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🚚 Автотранспорт:</span>
+                        <span class="metric-val"><?= $mAug['trucks_count'] ?? 8 ?> авто</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🏢 Залишок насіння:</span>
+                        <span class="metric-val"><?= number_format($mAug['seed_stock'] ?? 883.4, 2, ',', ' ') ?> т</span>
+                    </div>
+                </div>
+                <div class="month-card-footer">
+                    <span>Відвантажено: олія 76,6 т, шрот 1 390,5 т</span>
+                </div>
+            </div>
+
+            <!-- Вересень 2026 -->
+            <div class="history-month-card" data-period-trigger="month_sep">
+                <div class="month-card-header">
+                    <div class="month-card-title">
+                        <span class="month-name">Вересень 2026</span>
+                        <span class="month-badge badge-green">30 діб &bull; 100% запуск</span>
+                    </div>
+                    <button type="button" class="btn-quick-period" data-period="month_sep" title="Показати дашборд за вересень">
+                        <span>Детально</span> &rarr;
+                    </button>
+                </div>
+                <div class="month-metrics-list">
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌻 Завіз насіння:</span>
+                        <span class="metric-val bold text-primary"><?= number_format($mSep['seed_in'] ?? 19070.05, 2, ',', ' ') ?> т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">⚙️ Переробка:</span>
+                        <span class="metric-val bold"><?= number_format($mSep['seed_processed'] ?? 8918.40, 2, ',', ' ') ?> т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">💧 Вихід олії:</span>
+                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($mSep['oil_out'] ?? 3811.66, 2, ',', ' ') ?> т (<?= $mSep['oil_yield_pct'] ?? 42.74 ?>%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌾 Вихід шроту:</span>
+                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($mSep['meal_out'] ?? 3683.21, 2, ',', ' ') ?> т (<?= $mSep['meal_yield_pct'] ?? 41.30 ?>%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🚚 Автотранспорт:</span>
+                        <span class="metric-val bold"><?= $mSep['trucks_count'] ?? 580 ?> авто</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🏢 Залишок насіння:</span>
+                        <span class="metric-val"><?= number_format($mSep['seed_stock'] ?? 10966.28, 2, ',', ' ') ?> т</span>
+                    </div>
+                </div>
+                <div class="month-card-footer">
+                    <span>Лузга: 1 261,2 т &bull; Відвантажено: олія 1 090 т, шрот 2 332 т</span>
+                </div>
+            </div>
+
+            <!-- Жовтень 2026 -->
+            <div class="history-month-card" data-period-trigger="month_oct">
+                <div class="month-card-header">
+                    <div class="month-card-title">
+                        <span class="month-name">Жовтень 2026</span>
+                        <span class="month-badge badge-blue">11 діб (01.10 — 11.10)</span>
+                    </div>
+                    <button type="button" class="btn-quick-period" data-period="month_oct" title="Показати дашборд за жовтень">
+                        <span>Детально</span> &rarr;
+                    </button>
+                </div>
+                <div class="month-metrics-list">
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌻 Завіз насіння:</span>
+                        <span class="metric-val bold text-primary"><?= number_format($mOct['seed_in'] ?? 6075.91, 2, ',', ' ') ?> т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">⚙️ Переробка:</span>
+                        <span class="metric-val bold"><?= number_format($mOct['seed_processed'] ?? 4296.35, 2, ',', ' ') ?> т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">💧 Вихід олії:</span>
+                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($mOct['oil_out'] ?? 1593.13, 2, ',', ' ') ?> т (<?= $mOct['oil_yield_pct'] ?? 43.80 ?>%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌾 Вихід шроту:</span>
+                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($mOct['meal_out'] ?? 1521.68, 2, ',', ' ') ?> т (<?= $mOct['meal_yield_pct'] ?? 41.20 ?>%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🚚 Автотранспорт:</span>
+                        <span class="metric-val bold"><?= $mOct['trucks_count'] ?? 231 ?> авто</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🏢 Залишок насіння:</span>
+                        <span class="metric-val"><?= number_format($mOct['seed_stock'] ?? 13326.41, 2, ',', ' ') ?> т</span>
+                    </div>
+                </div>
+                <div class="month-card-footer">
+                    <span>Лузга: 554,9 т &bull; Відвантажено: олія 1 024 т, шрот 2 179 т</span>
+                </div>
+            </div>
+
+            <!-- Разом за сезон 2026 -->
+            <div class="history-month-card season-summary-card" data-period-trigger="season">
+                <div class="month-card-header">
+                    <div class="month-card-title">
+                        <span class="month-name">Сезон 2026 РАЗОМ</span>
+                        <span class="month-badge badge-green">72 доби моніторингу</span>
+                    </div>
+                    <button type="button" class="btn-quick-period" data-period="season" title="Показати дашборд за сезон">
+                        <span>Детально</span> &rarr;
+                    </button>
+                </div>
+                <div class="month-metrics-list">
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌻 Завіз насіння:</span>
+                        <span class="metric-val bold text-primary"><?= number_format($seasonTot['seed_in'] ?? 25353.92, 2, ',', ' ') ?> т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">⚙️ Переробка:</span>
+                        <span class="metric-val bold"><?= number_format($seasonTot['seed_processed'] ?? 13214.75, 2, ',', ' ') ?> т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">💧 Вихід олії:</span>
+                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($seasonTot['oil_out'] ?? 5404.79, 2, ',', ' ') ?> т (<?= $seasonTot['oil_yield_pct'] ?? 42.92 ?>%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌾 Вихід шроту:</span>
+                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($seasonTot['meal_out'] ?? 5204.89, 2, ',', ' ') ?> т (<?= $seasonTot['meal_yield_pct'] ?? 41.33 ?>%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🚚 Автотранспорт:</span>
+                        <span class="metric-val bold"><?= $seasonTot['trucks_count'] ?? 819 ?> авто</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🪵 Лузга всього:</span>
+                        <span class="metric-val"><?= number_format($seasonTot['husk_out'] ?? 1822.00, 2, ',', ' ') ?> т</span>
+                    </div>
+                </div>
+                <div class="month-card-footer">
+                    <span>Залишки зараз: Олія <?= number_format($seasonTot['oil_stock'] ?? 3358.63, 1, ',', ' ') ?> т • Шрот <?= number_format($seasonTot['meal_stock'] ?? 1056.13, 1, ',', ' ') ?> т</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Графіки та порівняльна таблиця (Двоколонковий блок) -->
+        <div class="historical-details-grid">
+            
+            <!-- Колонка 1: Графік помісячного порівняння виробництва -->
+            <div class="card-panel">
+                <div class="panel-header-simple">
+                    <div class="panel-title-text">
+                        <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; color: var(--color-primary);"></i>
+                        <span>Порівняння обсягів: Серпень vs Вересень vs Жовтень (тонн)</span>
+                    </div>
+                    <span class="section-badge badge-blue">Динаміка 2026</span>
+                </div>
+                <div id="monthly-analytics-chart" style="min-height: 290px;"></div>
+            </div>
+
+            <!-- Колонка 2: Сезонне зіставлення 2026 vs 2022 та складські залишки -->
+            <div class="card-panel">
+                <div class="panel-header-simple">
+                    <div class="panel-title-text">
+                        <i data-lucide="scale" style="width: 16px; height: 16px; color: #10b981;"></i>
+                        <span>Порівняння з минулим сезоном 2022 (серпень — жовтень)</span>
+                    </div>
+                    <span class="section-badge badge-green">Історичний архів</span>
+                </div>
+
+                <div class="seasonal-comparison-table-wrap">
+                    <table class="data-table-clean">
+                        <thead>
+                            <tr>
+                                <th>Показник</th>
+                                <th>Сезон 2026 (72 дн.)</th>
+                                <th>Сезон 2022 (92 дн.)</th>
+                                <th>Динаміка</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Завезено насіння</td>
+                                <td class="bold">25 353,9 т</td>
+                                <td>46 238,4 т</td>
+                                <td><span class="trend-badge trend-neutral">Активний завіз</span></td>
+                            </tr>
+                            <tr>
+                                <td>Перероблено сировини</td>
+                                <td class="bold">13 214,8 т</td>
+                                <td>39 160,1 т</td>
+                                <td><span class="trend-badge trend-neutral">Запуск вересень</span></td>
+                            </tr>
+                            <tr>
+                                <td>Вихід олії сирої</td>
+                                <td class="bold" style="color: #d97706;">5 404,8 т (42,9%)</td>
+                                <td>17 154,2 т (43,8%)</td>
+                                <td><span class="trend-badge trend-good">Якість в нормі</span></td>
+                            </tr>
+                            <tr>
+                                <td>Вихід шроту тостованого</td>
+                                <td class="bold" style="color: #2563eb;">5 204,9 т (41,3%)</td>
+                                <td>14 957,2 т (38,2%)</td>
+                                <td><span class="trend-badge trend-good">+3,1% приріст шроту</span></td>
+                            </tr>
+                            <tr>
+                                <td>Залишок насіння на складі</td>
+                                <td class="bold">13 326,4 т</td>
+                                <td>-</td>
+                                <td><span class="trend-badge trend-good">22 доби автономії</span></td>
+                            </tr>
+                            <tr>
+                                <td>Залишок олії в резервуарах</td>
+                                <td class="bold">3 358,6 т</td>
+                                <td>-</td>
+                                <td><span class="trend-badge trend-good">Ємності заповнені</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="seasonal-note-box">
+                    <i data-lucide="info" style="width: 14px; height: 14px; color: var(--color-primary); flex-shrink: 0;"></i>
+                    <span>У сезоні 2026 завод успішно провів міжсезонний ППР у серпні, стартував переробку у вересні та демонструє вихід шроту 41.3% проти 38.2% у 2022 році.</span>
+                </div>
+            </div>
+
         </div>
 
     </div>

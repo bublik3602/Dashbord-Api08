@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
         FactoryCharts.initDonutChart(window.INITIAL_DASHBOARD_DATA.material_balance.yield_chart);
         FactoryCharts.initEnergyChart(window.INITIAL_DASHBOARD_DATA.energy.timeline);
         FactoryCharts.initGauges(window.INITIAL_DASHBOARD_DATA.lab_quality, window.INITIAL_DASHBOARD_DATA.contracts_summary);
+        FactoryCharts.initMonthlyAnalyticsChart(window.INITIAL_DASHBOARD_DATA.historical_analytics);
     }
 
     // 2. Обробники кліку на фільтр періоду
@@ -34,6 +35,19 @@ document.addEventListener('DOMContentLoaded', function () {
             currentPeriod = period;
             if (typeof updateExportLink === 'function') updateExportLink();
             fetchDashboardData(true);
+        });
+    });
+
+    // 2.0 Обробники швидкого переходу на місяць з карток аналітики
+    document.querySelectorAll('.btn-quick-period, .history-month-card').forEach(elem => {
+        elem.addEventListener('click', function (e) {
+            const p = this.getAttribute('data-period') || this.getAttribute('data-period-trigger');
+            if (!p) return;
+            const targetBtn = document.querySelector(`.period-btn[data-period="${p}"]`);
+            if (targetBtn) {
+                targetBtn.click();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         });
     });
 

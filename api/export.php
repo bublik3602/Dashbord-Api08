@@ -9,7 +9,7 @@ require_once __DIR__ . '/../includes/metrics_calculator.php';
 
 try {
     $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';
-    $validPeriods = ['shift', 'day', 'week', 'month'];
+    $validPeriods = ['shift', 'day', 'week', 'month', 'month_oct', 'month_sep', 'month_aug', 'season'];
     if (!in_array($period, $validPeriods, true)) {
         $period = 'day';
     }
@@ -278,6 +278,47 @@ try {
             <td class="num">&le; 65.0 кВт*год / т</td>
         </tr>
     </table>
+
+    <!-- 6. АНАЛІТИКА ТА ПОРІВНЯННЯ ПЕРІОДІВ (СЕРПЕНЬ — ВЕРЕСЕНЬ — ЖОВТЕНЬ 2026) -->
+    <?php if (!empty($data['historical_analytics'])): 
+        $hist = $data['historical_analytics'];
+        $st = $hist['season_total'];
+    ?>
+    <table>
+        <tr>
+            <td colspan="7" class="section-title">6. АНАЛІТИКА ТА ПОРІВНЯННЯ ПЕРІОДІВ (СЕРПЕНЬ — ВЕРЕСЕНЬ — ЖОВТЕНЬ 2026)</td>
+        </tr>
+        <tr>
+            <th>Період / Місяць</th>
+            <th>Діб</th>
+            <th>Завіз насіння, т</th>
+            <th>Переробка, т</th>
+            <th>Олія вихід, т (%)</th>
+            <th>Шрот вихід, т (%)</th>
+            <th>Лузга, т</th>
+        </tr>
+        <?php foreach ($hist['months'] as $m): ?>
+        <tr>
+            <td class="bold"><?= htmlspecialchars($m['name']) ?></td>
+            <td class="num"><?= $m['days_count'] ?></td>
+            <td class="num"><?= number_format($m['seed_in'], 2, ',', ' ') ?></td>
+            <td class="num"><?= number_format($m['seed_processed'], 2, ',', ' ') ?></td>
+            <td class="num"><?= number_format($m['oil_out'], 2, ',', ' ') ?> (<?= $m['oil_yield_pct'] ?>%)</td>
+            <td class="num"><?= number_format($m['meal_out'], 2, ',', ' ') ?> (<?= $m['meal_yield_pct'] ?>%)</td>
+            <td class="num"><?= number_format($m['husk_out'], 2, ',', ' ') ?></td>
+        </tr>
+        <?php endforeach; ?>
+        <tr class="sub-header">
+            <td class="bold"><?= htmlspecialchars($st['name']) ?> (72 доби)</td>
+            <td class="num">72</td>
+            <td class="num bold"><?= number_format($st['seed_in'], 2, ',', ' ') ?></td>
+            <td class="num bold"><?= number_format($st['seed_processed'], 2, ',', ' ') ?></td>
+            <td class="num bold"><?= number_format($st['oil_out'], 2, ',', ' ') ?> (<?= $st['oil_yield_pct'] ?>%)</td>
+            <td class="num bold"><?= number_format($st['meal_out'], 2, ',', ' ') ?> (<?= $st['meal_yield_pct'] ?>%)</td>
+            <td class="num bold"><?= number_format($st['husk_out'], 2, ',', ' ') ?></td>
+        </tr>
+    </table>
+    <?php endif; ?>
 
 </body>
 </html>

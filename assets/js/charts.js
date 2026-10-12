@@ -9,6 +9,7 @@ window.FactoryCharts = {
     gaugeMoistureChart: null,
     gaugeImpurityChart: null,
     gaugeContractsChart: null,
+    monthlyChart: null,
 
     /**
      * Инициализация круговой диаграммы выхода готовой продукции
@@ -293,6 +294,114 @@ window.FactoryCharts = {
     },
 
     /**
+     * Ініціалізація графіка помісячного порівняння виробництва (Серпень, Вересень, Жовтень 2026)
+     */
+    initMonthlyAnalyticsChart: function (historicalData) {
+        const el = document.querySelector("#monthly-analytics-chart");
+        if (!el) return;
+
+        const hist = (historicalData && historicalData.chart_comparison) ? historicalData.chart_comparison : {
+            categories: ['Серпень 2026', 'Вересень 2026', 'Жовтень 2026 (1-11)'],
+            seed_in: [207.96, 19070.05, 6075.91],
+            seed_processed: [0.00, 8918.40, 4296.35],
+            oil_out: [0.00, 3811.66, 1593.13],
+            meal_out: [0.00, 3683.21, 1521.68]
+        };
+
+        const options = {
+            series: [
+                {
+                    name: 'Завіз насіння (т)',
+                    data: hist.seed_in || [208, 19070, 6076]
+                },
+                {
+                    name: 'Переробка сировини (т)',
+                    data: hist.seed_processed || [0, 8918, 4296]
+                },
+                {
+                    name: 'Олія сира (т)',
+                    data: hist.oil_out || [0, 3812, 1593]
+                },
+                {
+                    name: 'Шрот тостований (т)',
+                    data: hist.meal_out || [0, 3683, 1522]
+                }
+            ],
+            chart: {
+                type: 'bar',
+                height: 290,
+                fontFamily: 'inherit',
+                toolbar: {
+                    show: false
+                },
+                animations: {
+                    enabled: true,
+                    speed: 600
+                }
+            },
+            plotOptions: {
+                bar: {
+                    horizontal: false,
+                    columnWidth: '55%',
+                    borderRadius: 4
+                }
+            },
+            dataLabels: {
+                enabled: false
+            },
+            stroke: {
+                show: true,
+                width: 2,
+                colors: ['transparent']
+            },
+            colors: ['#0284c7', '#8b5cf6', '#f59e0b', '#10b981'],
+            xaxis: {
+                categories: hist.categories || ['Серпень', 'Вересень', 'Жовтень'],
+                labels: {
+                    style: {
+                        colors: '#64748b',
+                        fontSize: '12px',
+                        fontWeight: 600
+                    }
+                }
+            },
+            yaxis: {
+                labels: {
+                    formatter: function (val) {
+                        return (val >= 1000 ? (val / 1000).toFixed(1) + ' тис. т' : val.toFixed(0) + ' т');
+                    },
+                    style: {
+                        colors: '#94a3b8',
+                        fontSize: '11px'
+                    }
+                }
+            },
+            fill: {
+                opacity: 0.95
+            },
+            tooltip: {
+                y: {
+                    formatter: function (val) {
+                        return parseFloat(val).toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' т';
+                    }
+                }
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'center',
+                fontSize: '12px'
+            },
+            grid: {
+                borderColor: '#f1f5f9',
+                strokeDashArray: 3
+            }
+        };
+
+        this.monthlyChart = new ApexCharts(el, options);
+        this.monthlyChart.render();
+    },
+
+    /**
      * Оновлення даних графіків
      */
     updateCharts: function (data) {
@@ -348,6 +457,16 @@ window.FactoryCharts = {
         if (data.contracts_summary && this.gaugeContractsChart) {
             const cs = data.contracts_summary;
             this.gaugeContractsChart.updateSeries([parseFloat(cs.fulfillment_pct || 88.0)]);
+        }
+
+        if (this.monthlyChart && data.historical_analytics && data.historical_analytics.chart_comparison) {
+            const hc = data.historical_analytics.chart_comparison;
+            this.monthlyChart.updateSeries([
+                { name: 'Завіз насіння (т)', data: hc.seed_in },
+                { name: 'Переробка сировини (т)', data: hc.seed_processed },
+                { name: 'Олія сира (т)', data: hc.oil_out },
+                { name: 'Шрот тостований (т)', data: hc.meal_out }
+            ]);
         }
     }
 };

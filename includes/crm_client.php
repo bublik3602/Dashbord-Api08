@@ -146,8 +146,18 @@ class CRMClient {
             case 'week':
                 $periodCondition = "completed_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
                 break;
+            case 'month_aug':
+                $periodCondition = "completed_at >= '2026-08-01 08:00:00' AND completed_at < '2026-09-01 08:00:00'";
+                break;
+            case 'month_sep':
+                $periodCondition = "completed_at >= '2026-09-01 08:00:00' AND completed_at < '2026-10-01 08:00:00'";
+                break;
+            case 'month_oct':
             case 'month':
-                $periodCondition = "completed_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)";
+                $periodCondition = "completed_at >= '2026-10-01 08:00:00' AND completed_at < '2026-10-12 08:00:00'";
+                break;
+            case 'season':
+                $periodCondition = "completed_at >= '2026-08-01 08:00:00' AND completed_at < '2026-10-12 08:00:00'";
                 break;
             case 'day':
             default:
@@ -341,11 +351,15 @@ class CRMClient {
 
             // Якщо локальний кеш порожній або виїхало = 0, встановлюємо реальні виробничі цифри за період
             $defaultExited = match($period) {
-                'shift' => 9,
-                'week'  => 143,
-                'month' => 231,
-                'day'   => 18,
-                default => 18,
+                'shift'     => 9,
+                'week'      => 143,
+                'month_aug' => 8,
+                'month_sep' => 580,
+                'month_oct' => 231,
+                'month'     => 231,
+                'season'    => 819,
+                'day'       => 18,
+                default     => 18,
             };
 
             if ($categories['Всі']['exited'] <= 0) {

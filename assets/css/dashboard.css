@@ -1546,3 +1546,229 @@ body {
     cursor: not-allowed;
 }
 
+/* ===================================================================
+   БЛОК Г: РЕТРОСПЕКТИВНА АНАЛІТИКА ТА ПОРІВНЯННЯ ПЕРІОДІВ (СЕРПЕНЬ, ВЕРЕСЕНЬ, ЖОВТЕНЬ)
+   =================================================================== */
+.historical-analytics-section {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.historical-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 1200px) {
+    .historical-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .historical-cards-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.history-month-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    cursor: pointer;
+}
+
+.history-month-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+    border-color: #93c5fd;
+}
+
+.season-summary-card {
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+    border-color: #86efac;
+}
+
+.season-summary-card:hover {
+    border-color: #22c55e;
+}
+
+.month-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.month-card-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.month-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.month-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+}
+
+.btn-quick-period {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: var(--radius-sm);
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0284c7;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+
+.btn-quick-period:hover {
+    background: #0284c7;
+    color: white;
+    border-color: #0284c7;
+}
+
+.month-metrics-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 12px;
+}
+
+.metric-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.metric-lbl {
+    color: var(--text-secondary);
+}
+
+.metric-val {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.month-card-footer {
+    font-size: 11px;
+    color: var(--text-muted);
+    padding-top: 8px;
+    border-top: 1px dashed var(--border-color);
+    line-height: 1.4;
+}
+
+/* Двоколонковий блок деталей */
+.historical-details-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 20px;
+}
+
+@media (max-width: 992px) {
+    .historical-details-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.panel-header-simple {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.panel-title-text {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.seasonal-comparison-table-wrap {
+    overflow-x: auto;
+    margin-bottom: 12px;
+}
+
+.data-table-clean {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.data-table-clean th {
+    text-align: left;
+    padding: 8px 10px;
+    background: #f8fafc;
+    border-bottom: 2px solid var(--border-color);
+    color: var(--text-secondary);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.data-table-clean td {
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+}
+
+.trend-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: var(--radius-sm);
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.trend-good {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.trend-neutral {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.seasonal-note-box {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-md);
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.45;
+    color: var(--text-secondary);
+}
+
+

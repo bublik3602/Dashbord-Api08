@@ -31,7 +31,7 @@ class MetricsCalculator {
         $equipmentData   = $this->getEquipmentStatus();
         $crmClient       = new CRMClient();
         $logisticsData   = $crmClient->getTransportFunnel($period);
-        $stocksData      = $this->getWarehouseStocks();
+        $stocksData      = $this->getWarehouseStocks($period);
         $labData         = $this->getLabQuality();
         $contractsData   = $this->getContractsSummary();
 
@@ -46,11 +46,15 @@ class MetricsCalculator {
 
         $rangeDisplay = '';
         switch ($period) {
-            case 'shift': $rangeDisplay = "Поточна зміна ({$shiftBounds})"; break;
-            case 'week':  $rangeDisplay = "За тиждень (05.10.2026 — 11.10.2026, 7 завершених діб)"; break;
-            case 'month': $rangeDisplay = "За місяць (01.10.2026 — 11.10.2026, 11 діб переробки)"; break;
+            case 'shift':     $rangeDisplay = "Поточна зміна ({$shiftBounds})"; break;
+            case 'week':      $rangeDisplay = "За тиждень (05.10.2026 — 11.10.2026, 7 завершених діб)"; break;
+            case 'month_aug': $rangeDisplay = "Місяць Серпень 2026 (01.08.2026 — 31.08.2026, 31 доба)"; break;
+            case 'month_sep': $rangeDisplay = "Місяць Вересень 2026 (01.09.2026 — 30.09.2026, 30 діб)"; break;
+            case 'month_oct':
+            case 'month':     $rangeDisplay = "Місяць Жовтень 2026 (01.10.2026 — 11.10.2026, 11 діб)"; break;
+            case 'season':    $rangeDisplay = "Виробничий сезон 2026 (Серпень — Жовтень 2026)"; break;
             case 'day':
-            default:      $rangeDisplay = "Минула виробнича доба (11.10.2026, з 08:00 до 08:00 12.10.2026)"; break;
+            default:          $rangeDisplay = "Минула виробнича доба (11.10.2026, з 08:00 до 08:00 12.10.2026)"; break;
         }
 
         $periodInfo = [
@@ -68,18 +72,19 @@ class MetricsCalculator {
         ];
 
         return [
-            'period'             => $period,
-            'period_label'       => $this->getPeriodLabel($period),
-            'period_info'        => $periodInfo,
-            'generated_at'       => date('Y-m-d H:i:s'),
-            'material_balance'   => $materialBalance,
-            'energy'             => $energyData,
-            'equipment'          => $equipmentData,
-            'logistics'          => $logisticsData,
-            'warehouse_stocks'   => $stocksData,
-            'lab_quality'        => $labData,
-            'contracts_summary'  => $contractsData,
-            'thresholds'         => $this->thresholds,
+            'period'               => $period,
+            'period_label'         => $this->getPeriodLabel($period),
+            'period_info'          => $periodInfo,
+            'generated_at'         => date('Y-m-d H:i:s'),
+            'material_balance'     => $materialBalance,
+            'energy'               => $energyData,
+            'equipment'            => $equipmentData,
+            'logistics'            => $logisticsData,
+            'warehouse_stocks'     => $stocksData,
+            'lab_quality'          => $labData,
+            'contracts_summary'    => $contractsData,
+            'historical_analytics' => $this->getHistoricalAnalytics(),
+            'thresholds'           => $this->thresholds,
         ];
     }
 
@@ -89,28 +94,38 @@ class MetricsCalculator {
     private function getPeriodDateFilter(string $period): string {
         switch ($period) {
             case 'shift':
-                // Последние 12 часов (текущая смена)
+                // Останні 12 годин (поточна зміна)
                 return "recorded_at >= datetime('now', '-12 hours', 'localtime')";
             case 'week':
-                // Последние 7 дней
+                // Останні 7 днів
                 return "recorded_at >= datetime('now', '-7 days', 'localtime')";
+            case 'month_aug':
+                return "recorded_at >= '2026-08-01 08:00:00' AND recorded_at < '2026-09-01 08:00:00'";
+            case 'month_sep':
+                return "recorded_at >= '2026-09-01 08:00:00' AND recorded_at < '2026-10-01 08:00:00'";
+            case 'month_oct':
             case 'month':
-                // Последние 30 дней
-                return "recorded_at >= datetime('now', '-30 days', 'localtime')";
+                return "recorded_at >= '2026-10-01 08:00:00' AND recorded_at < '2026-10-12 08:00:00'";
+            case 'season':
+                return "recorded_at >= '2026-08-01 08:00:00' AND recorded_at < '2026-10-12 08:00:00'";
             case 'day':
             default:
-                // Текущие сутки (последние 24 часа)
+                // Минула виробнича доба (останні 24 години)
                 return "recorded_at >= datetime('now', '-24 hours', 'localtime')";
         }
     }
 
     private function getPeriodLabel(string $period): string {
         switch ($period) {
-            case 'shift': return 'Поточна зміна (12 год)';
-            case 'week':  return 'За тиждень (05.10 — 11.10, 7 днів)';
-            case 'month': return 'За місяць (Жовтень 2026, 11 днів)';
+            case 'shift':     return 'Поточна зміна (12 год)';
+            case 'week':      return 'За тиждень (05.10 — 11.10, 7 діб)';
+            case 'month_aug': return 'Серпень 2026 (31 доба)';
+            case 'month_sep': return 'Вересень 2026 (30 діб)';
+            case 'month_oct':
+            case 'month':     return 'Жовтень 2026 (01.10 — 11.10, 11 діб)';
+            case 'season':    return 'Сезон 2026 (Серпень — Жовтень)';
             case 'day':
-            default:      return 'Минула виробнича доба (11.10.2026)';
+            default:          return 'Минула виробнича доба (11.10.2026)';
         }
     }
 
@@ -132,20 +147,28 @@ class MetricsCalculator {
         // Адаптація умови фільтрації для MySQL / SQLite за наявними виробничими даними
         if (DashboardDB::isFallback()) {
             switch ($period) {
-                case 'shift': $cond = "recorded_at >= datetime((SELECT MAX(recorded_at) FROM material_balance_logs), '-12 hours')"; break;
-                case 'week':  $cond = "recorded_at >= datetime((SELECT MAX(recorded_at) FROM material_balance_logs), '-7 days')"; break;
-                case 'month': $cond = "strftime('%Y-%m', recorded_at) = (SELECT strftime('%Y-%m', MAX(recorded_at)) FROM material_balance_logs)"; break;
+                case 'shift':     $cond = "recorded_at >= datetime((SELECT MAX(recorded_at) FROM material_balance_logs), '-12 hours')"; break;
+                case 'week':      $cond = "recorded_at >= datetime((SELECT MAX(recorded_at) FROM material_balance_logs), '-7 days')"; break;
+                case 'month_aug': $cond = "date(recorded_at) >= '2026-08-01' AND date(recorded_at) <= '2026-08-31'"; break;
+                case 'month_sep': $cond = "date(recorded_at) >= '2026-09-01' AND date(recorded_at) <= '2026-09-30'"; break;
+                case 'month_oct': $cond = "date(recorded_at) >= '2026-10-01' AND date(recorded_at) <= '2026-10-31'"; break;
+                case 'season':    $cond = "date(recorded_at) >= '2026-08-01' AND date(recorded_at) <= '2026-10-31'"; break;
+                case 'month':     $cond = "strftime('%Y-%m', recorded_at) = (SELECT strftime('%Y-%m', MAX(recorded_at)) FROM material_balance_logs)"; break;
                 case 'day':
-                default:      $cond = "date(recorded_at) = (SELECT date(MAX(recorded_at)) FROM material_balance_logs)"; break;
+                default:          $cond = "date(recorded_at) = (SELECT date(MAX(recorded_at)) FROM material_balance_logs)"; break;
             }
             $query .= " WHERE " . $cond;
         } else {
             switch ($period) {
-                case 'shift': $cond = "recorded_at >= DATE_SUB((SELECT MAX(recorded_at) FROM material_balance_logs), INTERVAL 12 HOUR)"; break;
-                case 'week':  $cond = "recorded_at >= DATE_SUB((SELECT MAX(recorded_at) FROM material_balance_logs), INTERVAL 7 DAY)"; break;
-                case 'month': $cond = "DATE_FORMAT(recorded_at, '%Y-%m') = (SELECT DATE_FORMAT(MAX(recorded_at), '%Y-%m') FROM material_balance_logs)"; break;
+                case 'shift':     $cond = "recorded_at >= DATE_SUB((SELECT MAX(recorded_at) FROM material_balance_logs), INTERVAL 12 HOUR)"; break;
+                case 'week':      $cond = "recorded_at >= DATE_SUB((SELECT MAX(recorded_at) FROM material_balance_logs), INTERVAL 7 DAY)"; break;
+                case 'month_aug': $cond = "DATE(recorded_at) >= '2026-08-01' AND DATE(recorded_at) <= '2026-08-31'"; break;
+                case 'month_sep': $cond = "DATE(recorded_at) >= '2026-09-01' AND DATE(recorded_at) <= '2026-09-30'"; break;
+                case 'month_oct': $cond = "DATE(recorded_at) >= '2026-10-01' AND DATE(recorded_at) <= '2026-10-31'"; break;
+                case 'season':    $cond = "DATE(recorded_at) >= '2026-08-01' AND DATE(recorded_at) <= '2026-10-31'"; break;
+                case 'month':     $cond = "DATE_FORMAT(recorded_at, '%Y-%m') = (SELECT DATE_FORMAT(MAX(recorded_at), '%Y-%m') FROM material_balance_logs)"; break;
                 case 'day':
-                default:      $cond = "DATE(recorded_at) = (SELECT DATE(MAX(recorded_at)) FROM material_balance_logs)"; break;
+                default:          $cond = "DATE(recorded_at) = (SELECT DATE(MAX(recorded_at)) FROM material_balance_logs)"; break;
             }
             $query .= " WHERE " . $cond;
         }
@@ -164,7 +187,7 @@ class MetricsCalculator {
         $huskOut     = (float)($row['total_husk_out'] ?? 0);
 
         // Якщо в таблиці ще немає даних за запитуваний період або сума 0,
-        // підставляємо точні перевірені дані зі щоденних звітів заводу (Жовтень 2026)
+        // підставляємо точні перевірені дані зі щоденних звітів заводу
         if ($seedInPlant <= 0) {
             switch ($period) {
                 case 'shift':
@@ -185,14 +208,42 @@ class MetricsCalculator {
                     $huskOut     = 503.7;
                     $seedPlan    = 3500.0;
                     break;
+                case 'month_aug':
+                    // Серпень 2026 (міжсезоння, ППР обладнання, підробка насіння)
+                    $seedInPlant = 207.96;
+                    $seedInProd  = 0.00;
+                    $oilOut      = 0.00;
+                    $mealOut     = 0.00;
+                    $huskOut     = 5.91;
+                    $seedPlan    = 500.0;
+                    break;
+                case 'month_sep':
+                    // Вересень 2026 (повний виробничий місяць)
+                    $seedInPlant = 19070.05;
+                    $seedInProd  = 8918.40;
+                    $oilOut      = 3811.66;
+                    $mealOut     = 3683.21;
+                    $huskOut     = 1261.22;
+                    $seedPlan    = 18000.0;
+                    break;
+                case 'month_oct':
                 case 'month':
-                    // Місяць (Жовтень 1-11 за СВОДом руху сировини та графіком)
-                    $seedInPlant = 6075.9;
-                    $seedInProd  = 3701.4;
-                    $oilOut      = 1327.3;
-                    $mealOut     = 1288.3;
-                    $huskOut     = 554.9;
+                    // Жовтень 2026 (01.10 — 11.10 за СВОДом руху та переробкою МЕЗ)
+                    $seedInPlant = 6075.91;
+                    $seedInProd  = 4296.35;
+                    $oilOut      = 1593.13;
+                    $mealOut     = 1521.68;
+                    $huskOut     = 554.87;
                     $seedPlan    = 6000.0;
+                    break;
+                case 'season':
+                    // Виробничий сезон 2026 разом (Серпень — Жовтень, 72 доби)
+                    $seedInPlant = 25353.92;
+                    $seedInProd  = 13214.75;
+                    $oilOut      = 5404.79;
+                    $mealOut     = 5204.89;
+                    $huskOut     = 1822.00;
+                    $seedPlan    = 25000.0;
                     break;
                 case 'day':
                 default:
@@ -208,11 +259,15 @@ class MetricsCalculator {
         } else {
             // Планові нормативи відповідно до періоду
             switch ($period) {
-                case 'shift': $seedPlan = 250.0; break;
-                case 'week':  $seedPlan = 3500.0; break;
-                case 'month': $seedPlan = 6000.0; break;
+                case 'shift':     $seedPlan = 250.0; break;
+                case 'week':      $seedPlan = 3500.0; break;
+                case 'month_aug': $seedPlan = 500.0; break;
+                case 'month_sep': $seedPlan = 18000.0; break;
+                case 'month_oct':
+                case 'month':     $seedPlan = 6000.0; break;
+                case 'season':    $seedPlan = 25000.0; break;
                 case 'day':
-                default:      $seedPlan = 500.0; break;
+                default:          $seedPlan = 500.0; break;
             }
         }
 
@@ -363,7 +418,71 @@ class MetricsCalculator {
     /**
      * Складські залишки готової продукції та насіння (звіт Агропроінвест 08)
      */
-    public function getWarehouseStocks(): array {
+    public function getWarehouseStocks(string $period = 'day'): array {
+        if ($period === 'month_aug') {
+            return [
+                'seed_stock_tonnes'            => 883.40,
+                'seed_stock_accounting_tonnes' => 883.40,
+                'oil_stock_tonnes'             => 15.35,
+                'meal_stock_tonnes'            => 362.60,
+                'husk_stock_tonnes'            => 0.00,
+                'husk_boiler_spent_tonnes'     => 6.85,
+                'days_seed_reserve'            => 1.5,
+                'oil_shipped_tonnes'           => 76.64,
+                'meal_shipped_tonnes'          => 1390.54,
+                'husk_shipped_tonnes'          => 78.60,
+                'report_date'                  => '01.09.2026 08:00',
+            ];
+        }
+
+        if ($period === 'month_sep') {
+            return [
+                'seed_stock_tonnes'            => 10966.28,
+                'seed_stock_accounting_tonnes' => 7319.80,
+                'oil_stock_tonnes'             => 2736.71,
+                'meal_stock_tonnes'            => 1713.47,
+                'husk_stock_tonnes'            => 334.22,
+                'husk_boiler_spent_tonnes'     => 85.33,
+                'days_seed_reserve'            => 18.2,
+                'oil_shipped_tonnes'           => 1090.30,
+                'meal_shipped_tonnes'          => 2332.34,
+                'husk_shipped_tonnes'          => 490.66,
+                'report_date'                  => '01.10.2026 08:00',
+            ];
+        }
+
+        if ($period === 'month_oct' || $period === 'month') {
+            return [
+                'seed_stock_tonnes'            => 13326.41,
+                'seed_stock_accounting_tonnes' => 7268.88,
+                'oil_stock_tonnes'             => 3358.63,
+                'meal_stock_tonnes'            => 1056.13,
+                'husk_stock_tonnes'            => 116.84,
+                'husk_boiler_spent_tonnes'     => 379.51,
+                'days_seed_reserve'            => 22.2,
+                'oil_shipped_tonnes'           => 1024.10,
+                'meal_shipped_tonnes'          => 2179.02,
+                'husk_shipped_tonnes'          => 478.08,
+                'report_date'                  => '12.10.2026 08:00',
+            ];
+        }
+
+        if ($period === 'season') {
+            return [
+                'seed_stock_tonnes'            => 13326.41,
+                'seed_stock_accounting_tonnes' => 7268.88,
+                'oil_stock_tonnes'             => 3358.63,
+                'meal_stock_tonnes'            => 1056.13,
+                'husk_stock_tonnes'            => 116.84,
+                'husk_boiler_spent_tonnes'     => 471.69,
+                'days_seed_reserve'            => 22.2,
+                'oil_shipped_tonnes'           => 2191.04,
+                'meal_shipped_tonnes'          => 5901.90,
+                'husk_shipped_tonnes'          => 1047.34,
+                'report_date'                  => '12.10.2026 08:00',
+            ];
+        }
+
         try {
             $checkStmt = $this->db->query("SHOW TABLES LIKE 'warehouse_stocks'");
             if ($checkStmt && $checkStmt->fetch()) {
@@ -389,7 +508,7 @@ class MetricsCalculator {
             }
         } catch (Throwable $e) {}
 
-        // Реальні перевірені дані зі звітів Агропроінвест 08
+        // Реальні перевірені дані зі звітів Агропроінвест 08 (завершена доба 11.10)
         return [
             'seed_stock_tonnes'            => 7284.3,
             'seed_stock_accounting_tonnes' => 7268.9,
@@ -402,6 +521,127 @@ class MetricsCalculator {
             'meal_shipped_tonnes'          => 189.9,
             'husk_shipped_tonnes'          => 48.8,
             'report_date'                  => '12.10.2026 08:00',
+        ];
+    }
+
+    /**
+     * Повна ретроспективна аналітика та помісячне порівняння (Серпень, Вересень, Жовтень 2026 та 2022)
+     */
+    public function getHistoricalAnalytics(): array {
+        return [
+            'months' => [
+                'aug' => [
+                    'id'             => 'month_aug',
+                    'name'           => 'Серпень 2026',
+                    'short_name'     => 'Серпень',
+                    'days_count'     => 31,
+                    'status_note'    => 'Міжсезоння / ППР заводу',
+                    'seed_in'        => 207.96,
+                    'seed_processed' => 0.00,
+                    'oil_out'        => 0.00,
+                    'oil_yield_pct'  => 0.00,
+                    'meal_out'       => 0.00,
+                    'meal_yield_pct' => 0.00,
+                    'husk_out'       => 5.91,
+                    'oil_shipped'    => 76.64,
+                    'meal_shipped'   => 1390.54,
+                    'husk_shipped'   => 78.60,
+                    'trucks_count'   => 8,
+                    'seed_stock'     => 883.40,
+                    'oil_stock'      => 15.35,
+                    'meal_stock'     => 362.60,
+                    'husk_stock'     => 0.00,
+                    'boiler_husk'    => 6.85,
+                ],
+                'sep' => [
+                    'id'             => 'month_sep',
+                    'name'           => 'Вересень 2026',
+                    'short_name'     => 'Вересень',
+                    'days_count'     => 30,
+                    'status_note'    => 'Повний місяць переробки',
+                    'seed_in'        => 19070.05,
+                    'seed_processed' => 8918.40,
+                    'oil_out'        => 3811.66,
+                    'oil_yield_pct'  => 42.74,
+                    'meal_out'       => 3683.21,
+                    'meal_yield_pct' => 41.30,
+                    'husk_out'       => 1261.22,
+                    'oil_shipped'    => 1090.30,
+                    'meal_shipped'   => 2332.34,
+                    'husk_shipped'   => 490.66,
+                    'trucks_count'   => 580,
+                    'seed_stock'     => 10966.28,
+                    'oil_stock'      => 2736.71,
+                    'meal_stock'     => 1713.47,
+                    'husk_stock'     => 334.22,
+                    'boiler_husk'    => 85.33,
+                ],
+                'oct' => [
+                    'id'             => 'month_oct',
+                    'name'           => 'Жовтень 2026 (1-11)',
+                    'short_name'     => 'Жовтень',
+                    'days_count'     => 11,
+                    'status_note'    => 'Поточний місяць (11 діб)',
+                    'seed_in'        => 6075.91,
+                    'seed_processed' => 4296.35,
+                    'oil_out'        => 1593.13,
+                    'oil_yield_pct'  => 43.80,
+                    'meal_out'       => 1521.68,
+                    'meal_yield_pct' => 41.20,
+                    'husk_out'       => 554.87,
+                    'oil_shipped'    => 1024.10,
+                    'meal_shipped'   => 2179.02,
+                    'husk_shipped'   => 478.08,
+                    'trucks_count'   => 231,
+                    'seed_stock'     => 13326.41,
+                    'oil_stock'      => 3358.63,
+                    'meal_stock'     => 1056.13,
+                    'husk_stock'     => 116.84,
+                    'boiler_husk'    => 379.51,
+                ]
+            ],
+            'season_total' => [
+                'name'           => 'Разом за сезон 2026',
+                'period'         => 'Серпень — Жовтень 2026 (72 доби)',
+                'seed_in'        => 25353.92,
+                'seed_processed' => 13214.75,
+                'oil_out'        => 5404.79,
+                'oil_yield_pct'  => 42.92,
+                'meal_out'       => 5204.89,
+                'meal_yield_pct' => 41.33,
+                'husk_out'       => 1822.00,
+                'oil_shipped'    => 2191.04,
+                'meal_shipped'   => 5901.90,
+                'husk_shipped'   => 1047.34,
+                'trucks_count'   => 819,
+                'seed_stock'     => 13326.41,
+                'oil_stock'      => 3358.63,
+                'meal_stock'     => 1056.13,
+                'husk_stock'     => 116.84,
+                'boiler_husk'    => 471.69,
+            ],
+            'chart_comparison' => [
+                'categories'     => ['Серпень 2026', 'Вересень 2026', 'Жовтень 2026 (1-11)'],
+                'seed_in'        => [207.96, 19070.05, 6075.91],
+                'seed_processed' => [0.00, 8918.40, 4296.35],
+                'oil_out'        => [0.00, 3811.66, 1593.13],
+                'meal_out'       => [0.00, 3683.21, 1521.68],
+                'husk_out'       => [5.91, 1261.22, 554.87],
+                'trucks'         => [8, 580, 231],
+                'oil_stocks'     => [15.35, 2736.71, 3358.63],
+                'meal_stocks'    => [362.60, 1713.47, 1056.13],
+                'seed_stocks'    => [883.40, 10966.28, 13326.41],
+            ],
+            'season_2022_comparison' => [
+                'categories'     => ['Серпень 2022', 'Вересень 2022', 'Жовтень 2022', 'Сезон 2022'],
+                'seed_in'        => [10504.97, 17560.45, 18172.94, 46238.36],
+                'seed_processed' => [10261.10, 13190.77, 15708.25, 39160.12],
+                'oil_out'        => [4574.81, 5784.61, 6794.81, 17154.23],
+                'oil_yield_pct'  => [44.58, 43.85, 43.26, 43.81],
+                'meal_out'       => [3937.53, 5135.97, 5883.74, 14957.24],
+                'meal_yield_pct' => [38.37, 38.94, 37.46, 38.19],
+                'husk_out'       => [1056.32, 1340.39, 1487.09, 3883.80],
+            ]
         ];
     }
 
