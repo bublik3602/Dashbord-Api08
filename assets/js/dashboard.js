@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const targetBtn = document.querySelector(`.period-btn[data-period="${p}"]`);
             if (targetBtn) {
                 targetBtn.click();
-            } else if (monthDropdown) {
+            } else if (monthDropdown && ['month_sep', 'month_aug', 'month_oct'].includes(p)) {
                 monthDropdown.value = p;
                 monthDropdown.dispatchEvent(new Event('change'));
             } else {
@@ -492,7 +492,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.season-pill-btn').forEach(btn => {
             const btnP = btn.getAttribute('data-period');
             const isActive = (btnP === periodKey) ||
-                             (btnP === 'day' && ['day', 'day_today', 'day_prev', 'day_active', 'shift'].includes(periodKey)) ||
+                             (btnP === 'day' && ['day', 'day_today', 'day_prev', 'shift'].includes(periodKey)) ||
                              (btnP === 'month' && ['month', 'month_oct', 'month_sep', 'month_aug'].includes(periodKey));
             btn.classList.toggle('active', isActive);
         });

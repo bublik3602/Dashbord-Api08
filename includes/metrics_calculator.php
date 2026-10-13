@@ -1492,7 +1492,9 @@ class MetricsCalculator {
      */
     public function getPeriodComparison(string $period = 'day'): array {
         $p = strtolower(trim($period));
-        if (in_array($p, ['day', 'day_today', 'day_prev', 'day_active', 'shift'], true)) {
+        if (in_array($p, ['day_active', 'active_day', 'work_day'], true)) {
+            $norm = 'day_active';
+        } elseif (in_array($p, ['day', 'day_today', 'day_prev', 'shift'], true)) {
             $norm = 'day';
         } elseif ($p === 'week') {
             $norm = 'week';
@@ -1514,17 +1516,292 @@ class MetricsCalculator {
         $stats = $this->getSemenaPeriodStats($norm);
         $labOil = !empty($stats['oil_content_pct']) ? (float)$stats['oil_content_pct'] : 48.00;
 
+        // Перевіряємо чи є фактична переробка сьогодні в material_balance_logs
+        $todaySeedInProd = 0.0;
+        $todayOilOut = 0.0;
+        $todayMealOut = 0.0;
+        $todayHuskOut = 0.0;
+        try {
+            $stmt = $this->db->query("
+                SELECT seed_in_production, oil_out, meal_out, husk_out
+                FROM material_balance_logs
+                ORDER BY id DESC LIMIT 1
+            ");
+            $latestMb = $stmt ? $stmt->fetch() : null;
+            if ($latestMb && (float)($latestMb['seed_in_production'] ?? 0) > 0) {
+                $todaySeedInProd = (float)$latestMb['seed_in_production'];
+                $todayOilOut     = (float)$latestMb['oil_out'];
+                $todayMealOut    = (float)$latestMb['meal_out'];
+                $todayHuskOut    = (float)$latestMb['husk_out'];
+            }
+        } catch (Throwable $e) {}
+
         if ($norm === 'day') {
-            $seedIn = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 465.86;
+            $seedIn = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 471.85;
+
+            if ($todaySeedInProd > 0) {
+                // Якщо сьогодні була фактична переробка
+                $oilPct = round(($todayOilOut / $todaySeedInProd) * 100, 2);
+                $mealPct = round(($todayMealOut / $todaySeedInProd) * 100, 2);
+                $sumPct = round($oilPct + $mealPct, 2);
+                $oilDev = round($oilPct - 44.45, 2);
+                $mealDev = round($mealPct - 41.76, 2);
+                $sumDev = round($sumPct - 86.21, 2);
+                $seedDev = round($todaySeedInProd - 538.1, 1);
+                $seedDevPct = round(($seedDev / 538.1) * 100, 1);
+
+                return [
+                    'period'       => 'day',
+                    'badge_label'  => 'Порівняння доби: 2026 vs 2025',
+                    'kpis' => [
+                        'seed_processed' => [
+                            'title'        => '⚙️ Переробка насіння',
+                            'badge'        => 'Доба 2026 (план 600 т)',
+                            'number'       => number_format($todaySeedInProd, 1, ',', ' '),
+                            'unit'         => 'т (доба 2026)',
+                            'subtext'      => '2025 аналог: <strong>538,1 т/добу</strong> &bull; Відхилення: <strong>' . ($seedDev >= 0 ? '+' : '') . number_format($seedDev, 1, ',', ' ') . ' т (' . ($seedDevPct >= 0 ? '+' : '') . $seedDevPct . '%)</strong>',
+                            'progress_pct' => min(100.0, round(($todaySeedInProd / 600.0) * 100, 1)),
+                            'color'        => '#10b981',
+                        ],
+                        'oil_yield' => [
+                            'title'        => '💧 Вихід Олії',
+                            'badge'        => ($oilDev >= 0 ? '+' : '') . number_format($oilDev, 2, ',', '') . '% до 2025',
+                            'number'       => number_format($oilPct, 2, ',', '') . '%',
+                            'unit'         => 'доба 2026 (' . number_format($todayOilOut, 1, ',', ' ') . ' т)',
+                            'subtext'      => '2025 аналог: <strong>44,45% (239,2 т)</strong> &bull; Відхилення: <strong>' . ($oilDev >= 0 ? '+' : '') . number_format($oilDev, 2, ',', '') . '%</strong>',
+                            'progress_pct' => $oilPct,
+                            'color'        => '#f59e0b',
+                        ],
+                        'meal_yield' => [
+                            'title'        => '🌾 Вихід Шроту',
+                            'badge'        => ($mealDev >= 0 ? '+' : '') . number_format($mealDev, 2, ',', '') . '% до 2025',
+                            'number'       => number_format($mealPct, 2, ',', '') . '%',
+                            'unit'         => 'доба 2026 (' . number_format($todayMealOut, 1, ',', ' ') . ' т)',
+                            'subtext'      => '2025 аналог: <strong>41,76% (224,7 т)</strong> &bull; Відхилення: <strong>' . ($mealDev >= 0 ? '+' : '') . number_format($mealDev, 2, ',', '') . '%</strong>',
+                            'progress_pct' => $mealPct,
+                            'color'        => '#2563eb',
+                        ],
+                        'oil_meal_sum' => [
+                            'title'        => '⚖️ Олія + Шрот',
+                            'badge'        => ($sumDev >= 0 ? '+' : '') . number_format($sumDev, 2, ',', '') . '% до 2025',
+                            'number'       => number_format($sumPct, 2, ',', '') . '%',
+                            'unit'         => 'доба 2026 (' . number_format($todayOilOut + $todayMealOut, 1, ',', ' ') . ' т)',
+                            'subtext'      => '2025 аналог: <strong>86,21%</strong> &bull; Відхилення: <strong>' . ($sumDev >= 0 ? '+' : '') . number_format($sumDev, 2, ',', '') . '%</strong>',
+                            'progress_pct' => $sumPct,
+                            'color'        => '#8b5cf6',
+                        ],
+                    ],
+                    'headers' => [
+                        'col_indicator'   => 'Показник виробництва',
+                        'col_2026'        => 'Доба 2026 (сьогодні)',
+                        'col_2025_analog' => 'Аналогічна доба 2025 (Жовтень)',
+                        'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                        'col_trend'       => 'Динаміка',
+                    ],
+                    'rows' => [
+                        [
+                            'name'        => 'Завезено насіння (авто/елеватор)',
+                            'val_2026'    => number_format($seedIn, 1, ',', ' ') . ' т',
+                            'val_2025_an' => '543,8 т/добу',
+                            'val_2025_yr' => '62 403,3 т',
+                            'trend_text'  => 'Прийомка доби',
+                            'trend_class' => 'trend-good',
+                        ],
+                        [
+                            'name'        => 'Перероблено соняшнику (очищене)',
+                            'val_2026'    => number_format($todaySeedInProd, 1, ',', ' ') . ' т',
+                            'val_2025_an' => '538,1 т/добу',
+                            'val_2025_yr' => '61 892,9 т',
+                            'trend_text'  => ($seedDev >= 0 ? '+' : '') . $seedDevPct . '%',
+                            'trend_class' => ($seedDev >= 0) ? 'trend-good' : 'trend-neutral',
+                        ],
+                        [
+                            'name'        => 'Середня олійність сировини (вхід у цех)',
+                            'val_2026'    => number_format($labOil, 2, ',', '') . '% (лаб. якість)',
+                            'val_2025_an' => '45,29%',
+                            'val_2025_yr' => '45,13%',
+                            'trend_text'  => '+' . number_format($labOil - 45.29, 2, ',', '') . '% якість',
+                            'trend_class' => 'trend-good',
+                        ],
+                        [
+                            'name'        => 'Вихід олії (т / %)',
+                            'val_2026'    => number_format($todayOilOut, 1, ',', ' ') . ' т (' . number_format($oilPct, 2, ',', '') . '%)',
+                            'val_2025_an' => '239,2 т (44,45%)',
+                            'val_2025_yr' => '27 416,9 т (44,30%)',
+                            'trend_text'  => ($oilDev >= 0 ? '+' : '') . number_format($oilDev, 2, ',', '') . '% до 2025',
+                            'trend_class' => 'trend-good',
+                        ],
+                        [
+                            'name'        => 'Вихід шроту (т / %)',
+                            'val_2026'    => number_format($todayMealOut, 1, ',', ' ') . ' т (' . number_format($mealPct, 2, ',', '') . '%)',
+                            'val_2025_an' => '224,7 т (41,76%)',
+                            'val_2025_yr' => '25 790,4 т (41,67%)',
+                            'trend_text'  => number_format($mealDev, 2, ',', '') . '% в нормі',
+                            'trend_class' => 'trend-good',
+                        ],
+                        [
+                            'name'        => 'Сума Олія + Шрот (%)',
+                            'val_2026'    => number_format($sumPct, 2, ',', '') . '%',
+                            'val_2025_an' => '86,21%',
+                            'val_2025_yr' => '85,97%',
+                            'trend_text'  => ($sumDev >= 0 ? '+' : '') . number_format($sumDev, 2, ',', '') . '%',
+                            'trend_class' => 'trend-good',
+                        ],
+                        [
+                            'name'        => 'Залишок насіння на складі заводу',
+                            'val_2026'    => number_format($seedStock, 1, ',', ' ') . ' т',
+                            'val_2025_an' => '176,5 т',
+                            'val_2025_yr' => '510,4 т',
+                            'trend_text'  => '21.9 діб автономії',
+                            'trend_class' => 'trend-good',
+                        ],
+                    ]
+                ];
+            } else {
+                // СЬОГОДНІ НЕМАЄ ПЕРЕРОБКИ (ПРОСТІЙ ЗАВОДУ / 0 Т)
+                return [
+                    'period'       => 'day',
+                    'badge_label'  => 'Порівняння доби: 2026 (сьогодні немає переробки) vs 2025',
+                    'kpis' => [
+                        'seed_processed' => [
+                            'title'        => '⚙️ Переробка насіння',
+                            'badge'        => 'Сьогодні немає переробки',
+                            'number'       => '0,0',
+                            'unit'         => 'т (сьогодні немає переробки)',
+                            'subtext'      => '2025 аналог: <strong>538,1 т/добу</strong> &bull; Відхилення: <strong>-538,1 т (простій)</strong> &bull; На складі: <strong>' . number_format($seedStock, 1, ',', ' ') . ' т</strong>',
+                            'progress_pct' => 0.0,
+                            'color'        => '#94a3b8',
+                        ],
+                        'oil_yield' => [
+                            'title'        => '💧 Вихід Олії',
+                            'badge'        => 'Немає переробки',
+                            'number'       => '0,00%',
+                            'unit'         => 'доба 2026 (0,0 т)',
+                            'subtext'      => '2025 аналог: <strong>44,45% (239,2 т)</strong> &bull; Відхилення: <strong>виробництво зупинено</strong>',
+                            'progress_pct' => 0.0,
+                            'color'        => '#94a3b8',
+                        ],
+                        'meal_yield' => [
+                            'title'        => '🌾 Вихід Шроту',
+                            'badge'        => 'Немає переробки',
+                            'number'       => '0,00%',
+                            'unit'         => 'доба 2026 (0,0 т)',
+                            'subtext'      => '2025 аналог: <strong>41,76% (224,7 т)</strong> &bull; Відхилення: <strong>виробництво зупинено</strong>',
+                            'progress_pct' => 0.0,
+                            'color'        => '#94a3b8',
+                        ],
+                        'oil_meal_sum' => [
+                            'title'        => '⚖️ Олія + Шрот',
+                            'badge'        => 'Немає переробки',
+                            'number'       => '0,00%',
+                            'unit'         => 'доба 2026 (0,0 т)',
+                            'subtext'      => '2025 аналог: <strong>86,21%</strong> &bull; Відхилення: <strong>виробництво зупинено</strong>',
+                            'progress_pct' => 0.0,
+                            'color'        => '#94a3b8',
+                        ],
+                    ],
+                    'headers' => [
+                        'col_indicator'   => 'Показник виробництва',
+                        'col_2026'        => 'Доба 2026 (сьогодні)',
+                        'col_2025_analog' => 'Аналогічна доба 2025 (Жовтень)',
+                        'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                        'col_trend'       => 'Динаміка',
+                    ],
+                    'rows' => [
+                        [
+                            'name'        => 'Завезено насіння (авто/елеватор)',
+                            'val_2026'    => number_format($seedIn, 1, ',', ' ') . ' т',
+                            'val_2025_an' => '543,8 т/добу',
+                            'val_2025_yr' => '62 403,3 т',
+                            'trend_text'  => 'Прийомка йде',
+                            'trend_class' => 'trend-good',
+                        ],
+                        [
+                            'name'        => 'Перероблено соняшнику (очищене)',
+                            'val_2026'    => '0,0 т (сьогодні немає переробки)',
+                            'val_2025_an' => '538,1 т/добу',
+                            'val_2025_yr' => '61 892,9 т',
+                            'trend_text'  => 'Завод зупинено',
+                            'trend_class' => 'trend-bad',
+                        ],
+                        [
+                            'name'        => 'Середня олійність сировини (вхід у цех)',
+                            'val_2026'    => number_format($labOil, 2, ',', '') . '% (лаб. якість)',
+                            'val_2025_an' => '45,29%',
+                            'val_2025_yr' => '45,13%',
+                            'trend_text'  => '+' . number_format($labOil - 45.29, 2, ',', '') . '% якість',
+                            'trend_class' => 'trend-good',
+                        ],
+                        [
+                            'name'        => 'Вихід олії (т / %)',
+                            'val_2026'    => '0,0 т (0,00%)',
+                            'val_2025_an' => '239,2 т (44,45%)',
+                            'val_2025_yr' => '27 416,9 т (44,30%)',
+                            'trend_text'  => 'Немає переробки',
+                            'trend_class' => 'trend-neutral',
+                        ],
+                        [
+                            'name'        => 'Вихід шроту (т / %)',
+                            'val_2026'    => '0,0 т (0,00%)',
+                            'val_2025_an' => '224,7 т (41,76%)',
+                            'val_2025_yr' => '25 790,4 т (41,67%)',
+                            'trend_text'  => 'Немає переробки',
+                            'trend_class' => 'trend-neutral',
+                        ],
+                        [
+                            'name'        => 'Вихід лузги (т / %)',
+                            'val_2026'    => '0,0 т (0,00%)',
+                            'val_2025_an' => '66,4 т (12,34%)',
+                            'val_2025_yr' => '7 971,8 т (12,88%)',
+                            'trend_text'  => 'Немає переробки',
+                            'trend_class' => 'trend-neutral',
+                        ],
+                        [
+                            'name'        => 'Втрати з елеватора (підробка)',
+                            'val_2026'    => '0,0 т (0,00%)',
+                            'val_2025_an' => '7,8 т (1,45%)',
+                            'val_2025_yr' => '510,4 т (0,82%)',
+                            'trend_text'  => 'Немає переробки',
+                            'trend_class' => 'trend-neutral',
+                        ],
+                        [
+                            'name'        => 'Сума Олія + Шрот (%)',
+                            'val_2026'    => '0,00%',
+                            'val_2025_an' => '86,21%',
+                            'val_2025_yr' => '85,97%',
+                            'trend_text'  => 'Немає переробки',
+                            'trend_class' => 'trend-neutral',
+                        ],
+                        [
+                            'name'        => 'Загальний вихід готової продукції',
+                            'val_2026'    => '0,00%',
+                            'val_2025_an' => '98,55%',
+                            'val_2025_yr' => '98,85%',
+                            'trend_text'  => 'Немає переробки',
+                            'trend_class' => 'trend-neutral',
+                        ],
+                        [
+                            'name'        => 'Залишок насіння на складі заводу',
+                            'val_2026'    => number_format($seedStock, 1, ',', ' ') . ' т',
+                            'val_2025_an' => '176,5 т',
+                            'val_2025_yr' => '510,4 т',
+                            'trend_text'  => '21.9 діб автономії',
+                            'trend_class' => 'trend-good',
+                        ],
+                    ]
+                ];
+            }
+        } elseif ($norm === 'day_active') {
+            // РОБОЧА ДОБА 2026 (Остання активна доба з переробкою 600,3 т)
             return [
-                'period'       => 'day',
-                'badge_label'  => 'Порівняння доби: 2026 vs 2025',
+                'period'       => 'day_active',
+                'badge_label'  => 'Порівняння робочої доби: 2026 (робота) vs 2025',
                 'kpis' => [
                     'seed_processed' => [
                         'title'        => '⚙️ Переробка насіння',
-                        'badge'        => 'Доба 2026 (план 600 т)',
+                        'badge'        => 'Робоча доба (план 600 т)',
                         'number'       => '600,3',
-                        'unit'         => 'т (доба 2026)',
+                        'unit'         => 'т (активна доба 2026)',
                         'subtext'      => '2025 аналог: <strong>538,1 т/добу</strong> &bull; Відхилення: <strong>+62,2 т (+11,5%)</strong>',
                         'progress_pct' => 100.0,
                         'color'        => '#10b981',
@@ -1533,7 +1810,7 @@ class MetricsCalculator {
                         'title'        => '💧 Вихід Олії',
                         'badge'        => '+1,46% до 2025',
                         'number'       => '45,91%',
-                        'unit'         => 'доба 2026 (275,6 т)',
+                        'unit'         => 'активна доба (275,6 т)',
                         'subtext'      => '2025 аналог: <strong>44,45% (239,2 т)</strong> &bull; Відхилення: <strong>+1,46% (+8,8 т)</strong>',
                         'progress_pct' => 45.9,
                         'color'        => '#f59e0b',
@@ -1542,7 +1819,7 @@ class MetricsCalculator {
                         'title'        => '🌾 Вихід Шроту',
                         'badge'        => '-0,24% (в нормі)',
                         'number'       => '41,52%',
-                        'unit'         => 'доба 2026 (249,2 т)',
+                        'unit'         => 'активна доба (249,2 т)',
                         'subtext'      => '2025 аналог: <strong>41,76% (224,7 т)</strong> &bull; Відхилення: <strong>-0,24% (в нормі)</strong>',
                         'progress_pct' => 41.5,
                         'color'        => '#2563eb',
@@ -1551,7 +1828,7 @@ class MetricsCalculator {
                         'title'        => '⚖️ Олія + Шрот',
                         'badge'        => '+1,22% до 2025',
                         'number'       => '87,43%',
-                        'unit'         => 'доба 2026 (524,8 т)',
+                        'unit'         => 'активна доба (524,8 т)',
                         'subtext'      => '2025 аналог: <strong>86,21%</strong> &bull; Відхилення: <strong>+1,22% (рекорд якості)</strong>',
                         'progress_pct' => 87.4,
                         'color'        => '#8b5cf6',
@@ -1559,7 +1836,7 @@ class MetricsCalculator {
                 ],
                 'headers' => [
                     'col_indicator'   => 'Показник виробництва',
-                    'col_2026'        => 'Доба 2026 (11-12.10)',
+                    'col_2026'        => 'Робоча доба 2026 (06.10)',
                     'col_2025_analog' => 'Аналогічна доба 2025 (Жовтень)',
                     'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
                     'col_trend'       => 'Динаміка',
@@ -1567,7 +1844,7 @@ class MetricsCalculator {
                 'rows' => [
                     [
                         'name'        => 'Завезено насіння (авто/елеватор)',
-                        'val_2026'    => number_format($seedIn, 1, ',', ' ') . ' т',
+                        'val_2026'    => '589,8 т',
                         'val_2025_an' => '543,8 т/добу',
                         'val_2025_yr' => '62 403,3 т',
                         'trend_text'  => 'Прийомка доби',

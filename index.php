@@ -957,7 +957,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                     <!-- Міні-перемикач періоду порівняння (синхронізований з дашбордом) -->
                     <div class="season-compare-pills" id="season-compare-pills">
-                        <button type="button" class="season-pill-btn <?= ($initialPeriod === 'day') ? 'active' : '' ?>" data-period="day">Доба</button>
+                        <button type="button" class="season-pill-btn <?= ($initialPeriod === 'day') ? 'active' : '' ?>" data-period="day">Доба (сьогодні)</button>
+                        <button type="button" class="season-pill-btn" data-period="day_active">Робоча доба (600 т)</button>
                         <button type="button" class="season-pill-btn <?= ($initialPeriod === 'week') ? 'active' : '' ?>" data-period="week">Тиждень</button>
                         <button type="button" class="season-pill-btn <?= ($initialPeriod === 'month') ? 'active' : '' ?>" data-period="month">Місяць</button>
                         <button type="button" class="season-pill-btn <?= ($initialPeriod === 'season') ? 'active' : '' ?>" data-period="season">Сезон</button>
@@ -971,17 +972,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="season-kpi-card card-accent-seed" id="card-season-seed">
                         <div class="season-kpi-header">
                             <span class="season-kpi-title" id="kpi-season-seed-title"><?= htmlspecialchars($pcKpi['seed_processed']['title'] ?? '⚙️ Переробка насіння') ?></span>
-                            <span class="season-kpi-badge" id="kpi-season-seed-badge"><?= htmlspecialchars($pcKpi['seed_processed']['badge'] ?? 'Доба 2026 (план 600 т)') ?></span>
+                            <span class="season-kpi-badge" id="kpi-season-seed-badge"><?= htmlspecialchars($pcKpi['seed_processed']['badge'] ?? 'Сьогодні немає переробки') ?></span>
                         </div>
                         <div class="season-kpi-number-wrap">
-                            <span class="season-kpi-number" id="kpi-season-seed-num"><?= htmlspecialchars($pcKpi['seed_processed']['number'] ?? '600,3') ?></span>
-                            <span class="season-kpi-unit" id="kpi-season-seed-unit"><?= htmlspecialchars($pcKpi['seed_processed']['unit'] ?? 'т (доба 2026)') ?></span>
+                            <span class="season-kpi-number" id="kpi-season-seed-num"><?= htmlspecialchars($pcKpi['seed_processed']['number'] ?? '0,0') ?></span>
+                            <span class="season-kpi-unit" id="kpi-season-seed-unit"><?= htmlspecialchars($pcKpi['seed_processed']['unit'] ?? 'т (сьогодні немає переробки)') ?></span>
                         </div>
                         <div class="season-kpi-subtext" id="kpi-season-seed-sub">
-                            <?= $pcKpi['seed_processed']['subtext'] ?? '2025 аналог: <strong>538,1 т/добу</strong> &bull; Відхилення: <strong>+62,2 т (+11,5%)</strong>' ?>
+                            <?= $pcKpi['seed_processed']['subtext'] ?? '2025 аналог: <strong>538,1 т/добу</strong> &bull; Відхилення: <strong>-538,1 т (простій)</strong> &bull; На складі: 13 115,5 т' ?>
                         </div>
                         <div class="season-progress-track">
-                            <div class="season-progress-fill" id="kpi-season-seed-bar" style="width: <?= min(100, (float)($pcKpi['seed_processed']['progress_pct'] ?? 100)) ?>%; background: #10b981;"></div>
+                            <div class="season-progress-fill" id="kpi-season-seed-bar" style="width: <?= min(100, (float)($pcKpi['seed_processed']['progress_pct'] ?? 0)) ?>%; background: #94a3b8;"></div>
                         </div>
                     </div>
 
@@ -989,17 +990,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="season-kpi-card card-accent-oil" id="card-season-oil">
                         <div class="season-kpi-header">
                             <span class="season-kpi-title" style="color: #b45309;" id="kpi-season-oil-title"><?= htmlspecialchars($pcKpi['oil_yield']['title'] ?? '💧 Вихід Олії') ?></span>
-                            <span class="season-kpi-badge" style="background: #fef3c7; color: #b45309;" id="kpi-season-oil-badge"><?= htmlspecialchars($pcKpi['oil_yield']['badge'] ?? '+1,46% до 2025') ?></span>
+                            <span class="season-kpi-badge" style="background: #f1f5f9; color: #64748b;" id="kpi-season-oil-badge"><?= htmlspecialchars($pcKpi['oil_yield']['badge'] ?? 'Немає переробки') ?></span>
                         </div>
                         <div class="season-kpi-number-wrap">
-                            <span class="season-kpi-number" style="color: #d97706;" id="kpi-season-oil-num"><?= htmlspecialchars($pcKpi['oil_yield']['number'] ?? '45,91%') ?></span>
-                            <span class="season-kpi-unit" id="kpi-season-oil-unit"><?= htmlspecialchars($pcKpi['oil_yield']['unit'] ?? 'доба 2026 (275,6 т)') ?></span>
+                            <span class="season-kpi-number" style="color: #d97706;" id="kpi-season-oil-num"><?= htmlspecialchars($pcKpi['oil_yield']['number'] ?? '0,00%') ?></span>
+                            <span class="season-kpi-unit" id="kpi-season-oil-unit"><?= htmlspecialchars($pcKpi['oil_yield']['unit'] ?? 'доба 2026 (0,0 т)') ?></span>
                         </div>
                         <div class="season-kpi-subtext" id="kpi-season-oil-sub">
-                            <?= $pcKpi['oil_yield']['subtext'] ?? '2025 аналог: <strong>44,45% (239,2 т)</strong> &bull; Відхилення: <strong>+1,46% (+8,8 т)</strong>' ?>
+                            <?= $pcKpi['oil_yield']['subtext'] ?? '2025 аналог: <strong>44,45% (239,2 т)</strong> &bull; Відхилення: <strong>виробництво зупинено</strong>' ?>
                         </div>
                         <div class="season-progress-track">
-                            <div class="season-progress-fill" id="kpi-season-oil-bar" style="width: <?= min(100, (float)($pcKpi['oil_yield']['progress_pct'] ?? 45.9)) ?>%; background: #f59e0b;"></div>
+                            <div class="season-progress-fill" id="kpi-season-oil-bar" style="width: <?= min(100, (float)($pcKpi['oil_yield']['progress_pct'] ?? 0)) ?>%; background: #94a3b8;"></div>
                         </div>
                     </div>
 
@@ -1007,17 +1008,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="season-kpi-card card-accent-meal" id="card-season-meal">
                         <div class="season-kpi-header">
                             <span class="season-kpi-title" style="color: #1d4ed8;" id="kpi-season-meal-title"><?= htmlspecialchars($pcKpi['meal_yield']['title'] ?? '🌾 Вихід Шроту') ?></span>
-                            <span class="season-kpi-badge" style="background: #dbeafe; color: #1e40af;" id="kpi-season-meal-badge"><?= htmlspecialchars($pcKpi['meal_yield']['badge'] ?? '-0,24% (в нормі)') ?></span>
+                            <span class="season-kpi-badge" style="background: #f1f5f9; color: #64748b;" id="kpi-season-meal-badge"><?= htmlspecialchars($pcKpi['meal_yield']['badge'] ?? 'Немає переробки') ?></span>
                         </div>
                         <div class="season-kpi-number-wrap">
-                            <span class="season-kpi-number" style="color: #2563eb;" id="kpi-season-meal-num"><?= htmlspecialchars($pcKpi['meal_yield']['number'] ?? '41,52%') ?></span>
-                            <span class="season-kpi-unit" id="kpi-season-meal-unit"><?= htmlspecialchars($pcKpi['meal_yield']['unit'] ?? 'доба 2026 (249,2 т)') ?></span>
+                            <span class="season-kpi-number" style="color: #2563eb;" id="kpi-season-meal-num"><?= htmlspecialchars($pcKpi['meal_yield']['number'] ?? '0,00%') ?></span>
+                            <span class="season-kpi-unit" id="kpi-season-meal-unit"><?= htmlspecialchars($pcKpi['meal_yield']['unit'] ?? 'доба 2026 (0,0 т)') ?></span>
                         </div>
                         <div class="season-kpi-subtext" id="kpi-season-meal-sub">
-                            <?= $pcKpi['meal_yield']['subtext'] ?? '2025 аналог: <strong>41,76% (224,7 т)</strong> &bull; Відхилення: <strong>-0,24% (в нормі)</strong>' ?>
+                            <?= $pcKpi['meal_yield']['subtext'] ?? '2025 аналог: <strong>41,76% (224,7 т)</strong> &bull; Відхилення: <strong>виробництво зупинено</strong>' ?>
                         </div>
                         <div class="season-progress-track">
-                            <div class="season-progress-fill" id="kpi-season-meal-bar" style="width: <?= min(100, (float)($pcKpi['meal_yield']['progress_pct'] ?? 41.5)) ?>%; background: #2563eb;"></div>
+                            <div class="season-progress-fill" id="kpi-season-meal-bar" style="width: <?= min(100, (float)($pcKpi['meal_yield']['progress_pct'] ?? 0)) ?>%; background: #94a3b8;"></div>
                         </div>
                     </div>
 
@@ -1025,17 +1026,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div class="season-kpi-card card-accent-sum" id="card-season-sum">
                         <div class="season-kpi-header">
                             <span class="season-kpi-title" style="color: #6d28d9;" id="kpi-season-sum-title"><?= htmlspecialchars($pcKpi['oil_meal_sum']['title'] ?? '⚖️ Олія + Шрот') ?></span>
-                            <span class="season-kpi-badge" style="background: #ede9fe; color: #6d28d9;" id="kpi-season-sum-badge"><?= htmlspecialchars($pcKpi['oil_meal_sum']['badge'] ?? '+1,22% до 2025') ?></span>
+                            <span class="season-kpi-badge" style="background: #f1f5f9; color: #64748b;" id="kpi-season-sum-badge"><?= htmlspecialchars($pcKpi['oil_meal_sum']['badge'] ?? 'Немає переробки') ?></span>
                         </div>
                         <div class="season-kpi-number-wrap">
-                            <span class="season-kpi-number" style="color: #7c3aed;" id="kpi-season-sum-num"><?= htmlspecialchars($pcKpi['oil_meal_sum']['number'] ?? '87,43%') ?></span>
-                            <span class="season-kpi-unit" id="kpi-season-sum-unit"><?= htmlspecialchars($pcKpi['oil_meal_sum']['unit'] ?? 'доба 2026 (524,8 т)') ?></span>
+                            <span class="season-kpi-number" style="color: #7c3aed;" id="kpi-season-sum-num"><?= htmlspecialchars($pcKpi['oil_meal_sum']['number'] ?? '0,00%') ?></span>
+                            <span class="season-kpi-unit" id="kpi-season-sum-unit"><?= htmlspecialchars($pcKpi['oil_meal_sum']['unit'] ?? 'доба 2026 (0,0 т)') ?></span>
                         </div>
                         <div class="season-kpi-subtext" id="kpi-season-sum-sub">
-                            <?= $pcKpi['oil_meal_sum']['subtext'] ?? '2025 аналог: <strong>86,21%</strong> &bull; Відхилення: <strong>+1,22% (рекорд якості)</strong>' ?>
+                            <?= $pcKpi['oil_meal_sum']['subtext'] ?? '2025 аналог: <strong>86,21%</strong> &bull; Відхилення: <strong>виробництво зупинено</strong>' ?>
                         </div>
                         <div class="season-progress-track">
-                            <div class="season-progress-fill" id="kpi-season-sum-bar" style="width: <?= min(100, (float)($pcKpi['oil_meal_sum']['progress_pct'] ?? 87.4)) ?>%; background: #8b5cf6;"></div>
+                            <div class="season-progress-fill" id="kpi-season-sum-bar" style="width: <?= min(100, (float)($pcKpi['oil_meal_sum']['progress_pct'] ?? 0)) ?>%; background: #94a3b8;"></div>
                         </div>
                     </div>
 
