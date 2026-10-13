@@ -215,58 +215,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-submit:active {
             transform: translateY(0);
         }
-
-        .quick-roles-card {
-            margin-top: 24px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .quick-roles-title {
-            font-size: 12px;
-            text-transform: uppercase;
-            font-weight: 700;
-            color: var(--text-muted);
-            letter-spacing: 0.05em;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .roles-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .role-pill {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 12.5px;
-            cursor: pointer;
-            transition: background 0.15s ease;
-        }
-
-        .role-pill:hover {
-            background: rgba(245, 158, 11, 0.1);
-            border-color: rgba(245, 158, 11, 0.3);
-        }
-
-        .role-name {
-            font-weight: 600;
-            color: #e2e8f0;
-        }
-
-        .role-cred {
-            color: #94a3b8;
-            font-family: monospace;
-            font-size: 12px;
-        }
-
         .footer-note {
             text-align: center;
             margin-top: 20px;
@@ -300,7 +248,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="input-wrapper">
                     <span class="input-icon">👤</span>
                     <input type="text" id="input-username" name="username" class="form-input" 
-                           placeholder="semena або admin" required autofocus
+                           placeholder="Введіть логін" required autofocus
                            value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">
                 </div>
             </div>
@@ -318,38 +266,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 Увійти в кабінет &rarr;
             </button>
         </form>
-
-        <div class="quick-roles-card">
-            <div class="quick-roles-title">Швидкий вибір користувача:</div>
-            <div class="roles-list">
-                <div class="role-pill" onclick="fillCreds('admin', 'orrz20054Q+')">
-                    <span class="role-name">🏭 admin (Головний дашборд)</span>
-                    <span class="role-cred">пароль: orrz20054Q+</span>
-                </div>
-                <div class="role-pill" onclick="fillCreds('test', '12345')">
-                    <span class="role-name">🏭 test (Головний дашборд)</span>
-                    <span class="role-cred">пароль: 12345</span>
-                </div>
-                <div class="role-pill" onclick="fillCreds('semena', '12345')">
-                    <span class="role-name">🌻 semena (Тільки СЕМЕНА 1С)</span>
-                    <span class="role-cred">пароль: 12345</span>
-                </div>
-            </div>
-        </div>
     </div>
 
     <div class="footer-note">
         &copy; <?= date('Y') ?> Олійноекстракційний Завод. Всі права захищено.
     </div>
 </div>
-
-<script>
-function fillCreds(u, p) {
-    document.getElementById('input-username').value = u;
-    document.getElementById('input-password').value = p;
-    document.getElementById('input-password').focus();
-}
-</script>
 
 </body>
 </html>
