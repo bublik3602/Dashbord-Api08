@@ -293,8 +293,8 @@ try {
 
                         // Перевіряємо чи вже існує запис за цей день у material_balance_logs
                         try {
-                            $checkStmt = $db->prepare("SELECT id FROM material_balance_logs WHERE substr(recorded_at, 1, 10) = ?");
-                            $checkStmt->execute([$isoDate]);
+                            $checkStmt = $db->prepare("SELECT id FROM material_balance_logs WHERE recorded_at LIKE ?");
+                            $checkStmt->execute(["{$isoDate}%"]);
                             $existingRow = $checkStmt->fetch(PDO::FETCH_ASSOC);
 
                             if ($existingRow) {
@@ -319,8 +319,8 @@ try {
                             try {
                                 $dayDiscount = round(max(0.0, $phys - $acc), 3);
                                 $dayOilDev   = round($oilP - 48.0, 2);
-                                $chkLab = $db->prepare("SELECT id FROM lab_quality_logs WHERE substr(recorded_at, 1, 10) = ?");
-                                $chkLab->execute([$isoDate]);
+                                $chkLab = $db->prepare("SELECT id FROM lab_quality_logs WHERE recorded_at LIKE ?");
+                                $chkLab->execute(["{$isoDate}%"]);
                                 $exLab = $chkLab->fetch(PDO::FETCH_ASSOC);
                                 if ($exLab) {
                                     $updLab = $db->prepare("
@@ -465,7 +465,8 @@ try {
             $activeSpecs = 14;
             $pendingSpecs = 3;
             foreach ($sheetsData as $sName => $rows) {
-                if (strpos(mb_strtolower($sName, 'UTF-8'), 'невиконан') !== false || strpos(mb_strtolower($sName, 'невыполнен'), 'невыполнен') !== false) {
+                $sLowSpec = mb_strtolower($sName, 'UTF-8');
+                if (strpos($sLowSpec, 'невиконан') !== false || strpos($sLowSpec, 'невыполнен') !== false) {
                     $activeSpecs = 0;
                     $pendingSpecs = 0;
                     foreach ($rows as $r) {
@@ -801,8 +802,8 @@ try {
                         $prodLossPct = $seedCleaned > 0 ? round(($prodLossT / $seedCleaned) * 100, 2) : 0.0;
 
                         try {
-                            $chk = $db->prepare("SELECT id, seed_in_plant FROM material_balance_logs WHERE substr(recorded_at, 1, 10) = ?");
-                            $chk->execute([$isoDate]);
+                            $chk = $db->prepare("SELECT id, seed_in_plant FROM material_balance_logs WHERE recorded_at LIKE ?");
+                            $chk->execute(["{$isoDate}%"]);
                             $ex = $chk->fetch(PDO::FETCH_ASSOC);
                             if ($ex) {
                                 $upd = $db->prepare("
@@ -879,8 +880,8 @@ try {
                         if ($waterDelta > 0) {
                             $energyDaysCount++;
                             try {
-                                $chkE = $db->prepare("SELECT id FROM energy_readings WHERE date(recorded_at) = ?");
-                                $chkE->execute([$isoD]);
+                                $chkE = $db->prepare("SELECT id FROM energy_readings WHERE recorded_at LIKE ?");
+                                $chkE->execute(["{$isoD}%"]);
                                 $exE = $chkE->fetch(PDO::FETCH_ASSOC);
                                 if ($exE) {
                                     $updE = $db->prepare("UPDATE energy_readings SET report_date = ?, water_m3_delta = ?, water_flow_m3_hour = ?, sewage_m3 = ? WHERE id = ?");
