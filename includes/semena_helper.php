@@ -1086,7 +1086,9 @@ class SemenaHelper {
         ];
 
         file_put_contents(self::getJsonPath(), json_encode($finalData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-        return self::loadData();
+        $loaded = self::loadData();
+        self::generateExcelWorkbook($loaded);
+        return $loaded;
     }
 
     /**
@@ -1689,6 +1691,183 @@ class SemenaHelper {
         ];
 
         file_put_contents(self::getJsonPath(), json_encode($newData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-        return self::loadData();
+        $loaded = self::loadData();
+        self::generateExcelWorkbook($loaded);
+        return $loaded;
+    }
+
+    /**
+     * Автоматично формує повноцінний Excel-файл Лист_погодження.xlsx з усіма вкладками
+     */
+    public static function generateExcelWorkbook(array $data): bool {
+        $xlsxPath = self::getXlsxPath();
+        $dir = dirname($xlsxPath);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0775, true);
+        }
+
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $aggRows   = $data['agg_rows'] ?? [];
+        $unfRows   = $data['unfulfilled_rows'] ?? ($data['unf_rows'] ?? []);
+        $dailyRows = $data['daily_rows'] ?? [];
+        $discRows  = $data['discount_rows'] ?? ($data['disc_rows'] ?? []);
+        $truckRows = $data['truck_rows'] ?? [];
+        $repDt     = $data['report_datetime'] ?? ($data['updated_at'] ?? date('d.m.Y H:i'));
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'xlsx_');
+        $zip = new ZipArchive();
+        if ($zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            return false;
+        }
+
+        // 1. [Content_Types].xml
+        $contentTypes = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' .
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' .
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' .
+            '<Default Extension="xml" ContentType="application/xml"/>' .
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' .
+            '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' .
+            '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' .
+            '<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' .
+            '<Override PartName="/xl/worksheets/sheet3.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' .
+            '<Override PartName="/xl/worksheets/sheet4.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' .
+            '<Override PartName="/xl/worksheets/sheet5.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' .
+            '</Types>';
+        $zip->addFromString('[Content_Types].xml', $contentTypes);
+
+        // 2. _rels/.rels
+        $rootRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' .
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' .
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' .
+            '</Relationships>';
+        $zip->addFromString('_rels/.rels', $rootRels);
+
+        // 3. xl/_rels/workbook.xml.rels
+        $wbRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' .
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' .
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>' .
+            '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>' .
+            '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet3.xml"/>' .
+            '<Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet4.xml"/>' .
+            '<Relationship Id="rId5" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet5.xml"/>' .
+            '<Relationship Id="rId6" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>' .
+            '</Relationships>';
+        $zip->addFromString('xl/_rels/workbook.xml.rels', $wbRels);
+
+        // 4. xl/workbook.xml
+        $wbXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' .
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' .
+            '<sheets>' .
+            '<sheet name="Лист погодження" sheetId="1" r:id="rId1"/>' .
+            '<sheet name="Невиконані специфікації" sheetId="2" r:id="rId2"/>' .
+            '<sheet name="Графік завезення (по днях)" sheetId="3" r:id="rId3"/>' .
+            '<sheet name="Натуральна скидка" sheetId="4" r:id="rId4"/>' .
+            '<sheet name="Реєстр прийомок" sheetId="5" r:id="rId5"/>' .
+            '</sheets>' .
+            '</workbook>';
+        $zip->addFromString('xl/workbook.xml', $wbXml);
+
+        // 5. xl/styles.xml
+        $stylesXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' .
+            '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' .
+            '<fonts count="2"><font><name val="Calibri"/><sz val="11"/></font><font><b/><name val="Calibri"/><sz val="11"/></font></fonts>' .
+            '<fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>' .
+            '<borders count="1"><border><left/><right/><top/><bottom/></border></borders>' .
+            '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' .
+            '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0"/></cellXfs>' .
+            '</styleSheet>';
+        $zip->addFromString('xl/styles.xml', $stylesXml);
+
+        // Функція для генерації рядка XML листа
+        $buildSheetXml = function (array $headers, array $tableRows, ?string $titleStr = null): string {
+            $xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' .
+                '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' .
+                '<sheetData>';
+            $rNum = 1;
+            if ($titleStr !== null) {
+                $xml .= '<row r="' . $rNum . '"><c r="A' . $rNum . '" t="inlineStr" s="1"><is><t>' . htmlspecialchars($titleStr, ENT_XML1, 'UTF-8') . '</t></is></c></row>';
+                $rNum++;
+            }
+
+            // Headers
+            $xml .= '<row r="' . $rNum . '">';
+            $cCol = 'A';
+            foreach ($headers as $h) {
+                $xml .= '<c r="' . $cCol . $rNum . '" t="inlineStr" s="1"><is><t>' . htmlspecialchars((string)$h, ENT_XML1, 'UTF-8') . '</t></is></c>';
+                $cCol++;
+            }
+            $xml .= '</row>';
+            $rNum++;
+
+            // Data rows
+            foreach ($tableRows as $row) {
+                $xml .= '<row r="' . $rNum . '">';
+                $cCol = 'A';
+                foreach ($row as $cellVal) {
+                    $ref = $cCol . $rNum;
+                    if ($cellVal === null || $cellVal === '') {
+                        // порожня
+                    } elseif (is_numeric($cellVal)) {
+                        $xml .= '<c r="' . $ref . '"><v>' . (float)$cellVal . '</v></c>';
+                    } else {
+                        $xml .= '<c r="' . $ref . '" t="inlineStr"><is><t>' . htmlspecialchars((string)$cellVal, ENT_XML1, 'UTF-8') . '</t></is></c>';
+                    }
+                    $cCol++;
+                }
+                $xml .= '</row>';
+                $rNum++;
+            }
+
+            $xml .= '</sheetData></worksheet>';
+            return $xml;
+        };
+
+        // Аркуш 1: Лист погодження
+        $h1 = ['№', 'Контрагент', 'Специфікація', 'Дата', 'Менеджер', 'Умови', 'Договір (т)', 'Завезено (т)', 'Залікова (т)', 'Різниця (т)', 'Ціна з дост.', 'Ціна без дост.', 'Масло База', 'Волога, %', 'Сор, %', 'Факт олійність', 'Відхилення', 'Примітка (Аудит)'];
+        $d1 = [];
+        foreach ($aggRows as $i => $r) {
+            $d1[] = [$i + 1, $r['supplier'] ?? '', $r['spec'] ?? '', $r['date'] ?? '', $r['manager'] ?? '', $r['terms'] ?? '', $r['contract'] ?? 0, $r['delivered'] ?? 0, $r['credit_weight'] ?? 0, $r['weight_diff'] ?? 0, $r['price_delivered'] ?? '', $r['price_exw'] ?? '', $r['oil_base'] ?? 48.0, $r['moisture'] ?? 0, $r['trash'] ?? 0, $r['oil_fact'] ?? 0, $r['oil_diff'] ?? 0, $r['note'] ?? ''];
+        }
+        $zip->addFromString('xl/worksheets/sheet1.xml', $buildSheetXml($h1, $d1, "Лист погодження постачання соняшнику (1С станом на {$repDt})"));
+
+        // Аркуш 2: Невиконані специфікації
+        $h2 = ['№', 'Статус', 'Контрагент', 'Специфікація', 'Дата', 'Менеджер', 'Умови', 'Договір (т)', 'Завезено (т)', 'Залікова (т)', 'Залишок (т)', '% викон.', 'Ціна з дост.', 'Ціна без дост.', 'Примітка'];
+        $d2 = [];
+        foreach ($unfRows as $i => $r) {
+            $d2[] = [$i + 1, $r['status_raw'] ?? ($r['status'] ?? ''), $r['supplier'] ?? '', $r['spec'] ?? '', $r['date'] ?? '', $r['manager'] ?? '', $r['terms'] ?? '', $r['contract'] ?? 0, $r['delivered'] ?? 0, $r['credit_weight'] ?? 0, $r['remaining'] ?? 0, ($r['pct'] ?? 0) . '%', $r['price_delivered'] ?? '', $r['price_exw'] ?? '', $r['note'] ?? ''];
+        }
+        $zip->addFromString('xl/worksheets/sheet2.xml', $buildSheetXml($h2, $d2, "Невиконані договори та специфікації (станом на {$repDt})"));
+
+        // Аркуш 3: Графік завезення
+        $h3 = ['№', 'Дата прийомки', 'День тижня', 'Кількість авто', 'Фізичний завіз (т)', 'Залікова вага (т)', 'Скидка (т)', 'Скидка (%)', 'Олійність (%)', 'Вологість (%)', 'Сорність (%)'];
+        $d3 = [];
+        foreach ($dailyRows as $i => $r) {
+            $d3[] = [$i + 1, $r['date'] ?? '', $r['weekday'] ?? ($r['day_name'] ?? ''), $r['cars'] ?? ($r['trucks'] ?? 0), $r['delivered'] ?? 0, $r['credit_weight'] ?? 0, $r['discount'] ?? 0, ($r['discount_pct'] ?? 0) . '%', $r['oil'] ?? 0, $r['moisture'] ?? 0, $r['trash'] ?? 0];
+        }
+        $zip->addFromString('xl/worksheets/sheet3.xml', $buildSheetXml($h3, $d3, "Графік щоденного завезення соняшнику (станом на {$repDt})"));
+
+        // Аркуш 4: Натуральна скидка
+        $h4 = ['№', 'Постачальник', 'Кількість спец.', 'Кількість авто', 'Завезено (т)', 'Залікова (т)', 'Скидка (т)', 'Скидка (%)', 'Вологість (%)', 'Сорність (%)', 'Олійність (%)'];
+        $d4 = [];
+        foreach ($discRows as $i => $r) {
+            $d4[] = [$i + 1, $r['supplier'] ?? '', $r['specs_count'] ?? 1, $r['trucks'] ?? ($r['cars'] ?? 0), $r['delivered'] ?? 0, $r['credit_weight'] ?? 0, $r['discount'] ?? 0, ($r['discount_pct'] ?? 0) . '%', $r['moisture'] ?? 0, $r['trash'] ?? 0, $r['oil'] ?? 0];
+        }
+        $zip->addFromString('xl/worksheets/sheet4.xml', $buildSheetXml($h4, $d4, "Натуральна скидка за сором та вологою (станом на {$repDt})"));
+
+        // Аркуш 5: Реєстр прийомок (помашинно)
+        $h5 = ['№', 'Постачальник', 'Специфікація', '№ Авто', 'ТТН / Документ', 'Дата', 'Менеджер', 'Умови', 'Фіз. вага (т)', 'Залікова (т)', 'Різниця (т)', 'Ціна з дост.', 'Ціна без дост.', 'Масло База', 'Волога, %', 'Сор, %', 'Факт олійність', 'Відхилення'];
+        $d5 = [];
+        foreach ($truckRows as $i => $r) {
+            $d5[] = [$i + 1, $r['supplier'] ?? '', $r['spec'] ?? '', $r['car_num'] ?? '', $r['ttn'] ?? '', $r['date'] ?? '', $r['manager'] ?? '', $r['terms'] ?? '', $r['delivered_t'] ?? 0, $r['accounting_t'] ?? 0, $r['weight_diff'] ?? 0, $r['price_with_deliv'] ?? '', $r['price_no_deliv'] ?? '', $r['oil_base'] ?? 48.0, $r['moisture'] ?? '', $r['trash'] ?? '', $r['oil_fact'] ?? '', $r['oil_diff'] ?? ''];
+        }
+        $zip->addFromString('xl/worksheets/sheet5.xml', $buildSheetXml($h5, $d5, "Помашинний реєстр прийомок соняшнику 1С (станом на {$repDt})"));
+
+        $zip->close();
+        @copy($tmpFile, $xlsxPath);
+        @unlink($tmpFile);
+        return true;
     }
 }

@@ -105,15 +105,30 @@ class XLSXParser {
             if (!$sheetXml || !isset($sheetXml->sheetData)) continue;
 
             $rows = [];
+            $lastRowNum = 0;
             foreach ($sheetXml->sheetData->row as $rowNode) {
                 $rowNum = (int)$rowNode['r'];
+                if ($rowNum > 0 && $lastRowNum > 0 && $rowNum > $lastRowNum + 1) {
+                    // Додаємо пропущені порожні рядки для точного збереження індексів рядків Excel
+                    for ($emptyR = $lastRowNum + 1; $emptyR < $rowNum; $emptyR++) {
+                        $rows[] = [];
+                    }
+                } elseif ($rowNum > 1 && $lastRowNum === 0) {
+                    for ($emptyR = 1; $emptyR < $rowNum; $emptyR++) {
+                        $rows[] = [];
+                    }
+                }
+                if ($rowNum > 0) {
+                    $lastRowNum = $rowNum;
+                }
+
                 $rowData = [];
                 $maxCol = 0;
 
                 foreach ($rowNode->c as $cNode) {
                     $cellRef = (string)$cNode['r']; // наприклад, 'B5'
                     $colLetter = preg_replace('/[0-9]/', '', $cellRef);
-                    $colIdx = self::colLetterToIndex($colLetter);
+                    $colIdx = $colLetter !== '' ? self::colLetterToIndex($colLetter) : ($maxCol + 1);
                     $maxCol = max($maxCol, $colIdx);
 
                     $type = (string)($cNode['t'] ?? '');
@@ -156,9 +171,7 @@ class XLSXParser {
                     $denseRow[] = $rowData[$c] ?? null;
                 }
 
-                if (!empty($denseRow)) {
-                    $rows[] = $denseRow;
-                }
+                $rows[] = $denseRow;
             }
 
             $result[$sheetName] = $rows;
@@ -182,12 +195,22 @@ class XLSXParser {
     }
 
     /**
-     * Завантаження XML з очищенням просторів імен для прямого доступу в SimpleXML
+     * Завантаження XML з очищенням просторів імен та префіксів (xr:, mc:, x14ac:, r:) для безпомилкового читання SimpleXML
      */
     private static function loadCleanXml(string $xmlContent) {
+        // Видаляємо UTF-8 BOM, якщо він присутній (як у файлах вивантаження 1С)
+        $xmlContent = preg_replace('/^\xEF\xBB\xBF/', '', $xmlContent);
         if (trim($xmlContent) === '') return false;
-        // Видаляємо всі атрибути xmlns="..." та xmlns:xxx="..."
-        $cleaned = preg_replace('/\sxmlns(?::\w+)?="[^"]*"/', '', $xmlContent);
-        return @simplexml_load_string($cleaned);
+
+        // 1. Видаляємо всі оголошення xmlns="..." та xmlns:prefix="..."
+        $cleaned = preg_replace('/\sxmlns(?::[\w\-]+)?="[^"]*"/i', '', $xmlContent);
+
+        // 2. Видаляємо префікси просторів імен у тегах (<x:worksheet> -> <worksheet>, </x:worksheet> -> </worksheet>)
+        $cleaned = preg_replace('/<(\/?)[a-zA-Z0-9_\-]+:([a-zA-Z0-9_\-]+)/', '<$1$2', $cleaned);
+
+        // 3. Видаляємо префікси просторів імен в атрибутах (xr:uid="..." -> uid="...", r:id="..." -> id="...", mc:Ignorable="..." -> Ignorable="..."), окрім xml:*
+        $cleaned = preg_replace('/(\s)(?!xml:)[a-zA-Z0-9_\-]+:([a-zA-Z0-9_\-]+\s*=)/i', '$1$2', $cleaned);
+
+        return @simplexml_load_string($cleaned, 'SimpleXMLElement', LIBXML_NOCDATA | LIBXML_PARSEHUGE);
     }
 }

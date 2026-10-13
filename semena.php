@@ -1042,9 +1042,9 @@ $histRows   = $semenaData['history_rows'] ?? [];
                             📥 Файл 1 — Приход кормов и добавок 1С (Реєстр прийомок, напр. <code>prihod13-10.xlsx</code>):
                         </label>
                         <div style="font-size:11.5px; color:#64748B; margin-bottom:6px;">
-                            Містить помашинний реєстр прийомок на завод, фізичну/залікову вагу, вологу, сорність та фактичну олійність.
+                            Містить помашинний реєстр прийомок на завод, фізичну/залікову вагу, вологу, сорність та фактичну олійність (можна обрати одразу обидва файли).
                         </div>
-                        <input type="file" id="prihod-file-input" accept=".xlsx,.xls" style="width:100%; padding:7px; border:1px dashed #64748B; border-radius:5px; background:#ffffff; cursor:pointer; font-size:12px;">
+                        <input type="file" id="prihod-file-input" accept=".xlsx,.xls,.csv" multiple style="width:100%; padding:7px; border:1px dashed #64748B; border-radius:5px; background:#ffffff; cursor:pointer; font-size:12px;">
                     </div>
 
                     <!-- ФАЙЛ 2: СПЕЦИФІКАЦІЯ 1С -->
@@ -1055,7 +1055,7 @@ $histRows   = $semenaData['history_rows'] ?? [];
                         <div style="font-size:11.5px; color:#64748B; margin-bottom:6px;">
                             Містить договірний тоннаж, ціну з доставкою / без доставки (з місця), менеджера та базову олійність.
                         </div>
-                        <input type="file" id="spec-file-input" accept=".xlsx,.xls" style="width:100%; padding:7px; border:1px dashed #D97706; border-radius:5px; background:#ffffff; cursor:pointer; font-size:12px;">
+                        <input type="file" id="spec-file-input" accept=".xlsx,.xls,.csv" multiple style="width:100%; padding:7px; border:1px dashed #D97706; border-radius:5px; background:#ffffff; cursor:pointer; font-size:12px;">
                     </div>
                 </div>
 
@@ -1868,10 +1868,14 @@ $histRows   = $semenaData['history_rows'] ?? [];
 
             const fd = new FormData();
             if (hasPrihod) {
-                fd.append('prihod_file', prihodInp.files[0]);
+                for (let i = 0; i < prihodInp.files.length; i++) {
+                    fd.append('report_files[]', prihodInp.files[i]);
+                }
             }
             if (hasSpec) {
-                fd.append('spec_file', specInp.files[0]);
+                for (let i = 0; i < specInp.files.length; i++) {
+                    fd.append('report_files[]', specInp.files[i]);
+                }
             }
             if (hasReady) {
                 for (let i = 0; i < readyInp.files.length; i++) {

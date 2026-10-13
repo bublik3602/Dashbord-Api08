@@ -264,22 +264,25 @@ try {
         // -------------------------------------------------------------
         // 0. ПРЯМІ ФАЙЛИ 1С: ФАЙЛ 1 («ПРИХОД») ТА ФАЙЛ 2 («СПЕЦИФІКАЦІЯ»)
         // -------------------------------------------------------------
-        if (count($sheetsData) === 1 && SemenaHelper::isPrihodSheet($firstSheetRows)) {
-            $parsedPrihodData = SemenaHelper::parseReceiptsRows($firstSheetRows);
-            $prihodFilename = $filename;
-            $tCount = count($parsedPrihodData['truck_rows'] ?? []);
-            $sCount = count($parsedPrihodData['summary_by_code'] ?? []);
-            $dtStr  = $parsedPrihodData['receipts_datetime'] ?? '';
-            $details[] = "📥 Файл 1 «Приход 1С» ({$filename}): розпізнано {$tCount} прийомок авто по {$sCount} специфікаціях (станом на {$dtStr}).";
-            $fileHadProcessedReport = true;
-            continue;
+        $matchedRaw1CFile = false;
+        foreach ($sheetsData as $sName => $sRows) {
+            if (SemenaHelper::isPrihodSheet($sRows)) {
+                $parsedPrihodData = SemenaHelper::parseReceiptsRows($sRows);
+                $prihodFilename = $filename;
+                $tCount = count($parsedPrihodData['truck_rows'] ?? []);
+                $sCount = count($parsedPrihodData['summary_by_code'] ?? []);
+                $dtStr  = $parsedPrihodData['receipts_datetime'] ?? '';
+                $details[] = "📥 Файл 1 «Приход 1С» ({$filename}): розпізнано {$tCount} прийомок авто по {$sCount} специфікаціях (станом на {$dtStr}).";
+                $matchedRaw1CFile = true;
+            } elseif (SemenaHelper::isSpecSheet($sRows)) {
+                $parsedSpecsDb = SemenaHelper::parseSpecificationsRows($sRows);
+                $specFilename = $filename;
+                $spCount = count($parsedSpecsDb);
+                $details[] = "📥 Файл 2 «Специфікація 1С» ({$filename}): розпізнано {$spCount} договірних специфікацій (ціни з дост./без дост., менеджер, тоннаж).";
+                $matchedRaw1CFile = true;
+            }
         }
-
-        if (count($sheetsData) === 1 && SemenaHelper::isSpecSheet($firstSheetRows)) {
-            $parsedSpecsDb = SemenaHelper::parseSpecificationsRows($firstSheetRows);
-            $specFilename = $filename;
-            $spCount = count($parsedSpecsDb);
-            $details[] = "📥 Файл 2 «Специфікація 1С» ({$filename}): розпізнано {$spCount} договірних специфікацій (ціни з дост./без дост., менеджер, тоннаж).";
+        if ($matchedRaw1CFile) {
             $fileHadProcessedReport = true;
             continue;
         }
