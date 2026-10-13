@@ -234,7 +234,8 @@ class MetricsCalculator {
             'warehouse_stocks'     => $stocksData,
             'lab_quality'          => $labData,
             'contracts_summary'    => $contractsData,
-            'historical_analytics' => $this->getHistoricalAnalytics(),
+            'historical_analytics' => $this->getHistoricalAnalytics($period),
+            'period_comparison'    => $this->getHistoricalAnalytics($period)['period_comparison'] ?? [],
             'thresholds'           => $this->thresholds,
         ];
     }
@@ -1147,7 +1148,7 @@ class MetricsCalculator {
     /**
      * Повна ретроспективна аналітика та помісячне порівняння (Серпень, Вересень, Жовтень 2026 та Сезон 2025–2026)
      */
-    public function getHistoricalAnalytics(): array {
+    public function getHistoricalAnalytics(string $period = 'day'): array {
         $live = $this->loadLiveSvodStocks();
         $octStats = $this->getSemenaPeriodStats('month_oct');
         $seasonStats = $this->getSemenaPeriodStats('season');
@@ -1165,7 +1166,10 @@ class MetricsCalculator {
         $octMealShip = round((float)($live['month_meal_shipped_tonnes'] ?? 2461.42), 2);
         $octHuskShip = round((float)($live['month_husk_shipped_tonnes'] ?? 507.58), 2);
 
+        $periodComparison = $this->getPeriodComparison($period);
+
         return [
+            'period_comparison' => $periodComparison,
             'months' => [
                 'aug' => [
                     'id'                 => 'month_aug',
@@ -1480,6 +1484,702 @@ class MetricsCalculator {
                 'husk_out'       => [620.13, 2058.44, 2678.57, 7971.81],
             ]
         ];
+    }
+
+    /**
+     * Динамічне зіставлення обраного періоду 2026 (доба, тиждень, місяць, сезон)
+     * з аналогічним періодом сезону 2025 та еталоном повного року 2025–2026
+     */
+    public function getPeriodComparison(string $period = 'day'): array {
+        $p = strtolower(trim($period));
+        if (in_array($p, ['day', 'day_today', 'day_prev', 'day_active', 'shift'], true)) {
+            $norm = 'day';
+        } elseif ($p === 'week') {
+            $norm = 'week';
+        } elseif ($p === 'month_sep') {
+            $norm = 'month_sep';
+        } elseif ($p === 'month_aug') {
+            $norm = 'month_aug';
+        } elseif ($p === 'season') {
+            $norm = 'season';
+        } else {
+            // 'month', 'month_oct' etc.
+            $norm = 'month_oct';
+        }
+
+        $live = $this->loadLiveSvodStocks();
+        $seedStock = round((float)($live['seed_stock_tonnes'] ?? 13115.47), 2);
+
+        // Дані з Листа погодження поточної вибірки
+        $stats = $this->getSemenaPeriodStats($norm);
+        $labOil = !empty($stats['oil_content_pct']) ? (float)$stats['oil_content_pct'] : 48.00;
+
+        if ($norm === 'day') {
+            $seedIn = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 465.86;
+            return [
+                'period'       => 'day',
+                'badge_label'  => 'Порівняння доби: 2026 vs 2025',
+                'kpis' => [
+                    'seed_processed' => [
+                        'title'        => '⚙️ Переробка насіння',
+                        'badge'        => 'Аналог: 538 т/добу',
+                        'number'       => '538',
+                        'unit'         => 'т/д (2025)',
+                        'subtext'      => 'Сезон 2026: <strong>600,3 т</strong> (активна доба; план 600 т)',
+                        'progress_pct' => 100.0,
+                        'color'        => '#10b981',
+                    ],
+                    'oil_yield' => [
+                        'title'        => '💧 Вихід Олії',
+                        'badge'        => 'Аналог: 44,45%',
+                        'number'       => '44,45%',
+                        'unit'         => 'еталон доби',
+                        'subtext'      => 'Аналог 2025: <strong>44,45%</strong> &bull; Доба 2026: <strong>45,91% (+1,46%)</strong>',
+                        'progress_pct' => 45.9,
+                        'color'        => '#f59e0b',
+                    ],
+                    'meal_yield' => [
+                        'title'        => '🌾 Вихід Шроту',
+                        'badge'        => 'Аналог: 41,76%',
+                        'number'       => '41,76%',
+                        'unit'         => 'еталон доби',
+                        'subtext'      => 'Аналог 2025: <strong>41,76%</strong> &bull; Доба 2026: <strong>41,52% (-0,24%)</strong>',
+                        'progress_pct' => 41.5,
+                        'color'        => '#2563eb',
+                    ],
+                    'oil_meal_sum' => [
+                        'title'        => '⚖️ Олія + Шрот',
+                        'badge'        => 'Доба 26: 87,43%',
+                        'number'       => '86,21%',
+                        'unit'         => 'еталон доби',
+                        'subtext'      => 'Аналог 2025: <strong>86,21%</strong> &bull; Доба 2026: <strong>87,43% (+1,22%)</strong>',
+                        'progress_pct' => 87.4,
+                        'color'        => '#8b5cf6',
+                    ],
+                ],
+                'headers' => [
+                    'col_indicator'   => 'Показник виробництва',
+                    'col_2026'        => 'Доба 2026 (11-12.10)',
+                    'col_2025_analog' => 'Аналогічна доба 2025 (Жовтень)',
+                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_trend'       => 'Динаміка',
+                ],
+                'rows' => [
+                    [
+                        'name'        => 'Завезено насіння (авто/елеватор)',
+                        'val_2026'    => number_format($seedIn, 1, ',', ' ') . ' т',
+                        'val_2025_an' => '543,8 т/добу',
+                        'val_2025_yr' => '62 403,3 т',
+                        'trend_text'  => 'Прийомка доби',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Перероблено соняшнику (очищене)',
+                        'val_2026'    => '600,3 т (активна доба)',
+                        'val_2025_an' => '538,1 т/добу',
+                        'val_2025_yr' => '61 892,9 т',
+                        'trend_text'  => '+11.5% при роботі',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Середня олійність сировини (вхід у цех)',
+                        'val_2026'    => number_format($labOil, 2, ',', '') . '% (лаб. якість)',
+                        'val_2025_an' => '45,29%',
+                        'val_2025_yr' => '45,13%',
+                        'trend_text'  => '+' . number_format($labOil - 45.29, 2, ',', '') . '% якість',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід олії (т / %)',
+                        'val_2026'    => '275,6 т (45,91%)',
+                        'val_2025_an' => '239,2 т (44,45%)',
+                        'val_2025_yr' => '27 416,9 т (44,30%)',
+                        'trend_text'  => '+1.46% до 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід шроту (т / %)',
+                        'val_2026'    => '249,2 т (41,52%)',
+                        'val_2025_an' => '224,7 т (41,76%)',
+                        'val_2025_yr' => '25 790,4 т (41,67%)',
+                        'trend_text'  => '-0.24% в нормі',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід лузги (т / %)',
+                        'val_2026'    => '87,1 т (14,51%)',
+                        'val_2025_an' => '66,4 т (12,34%)',
+                        'val_2025_yr' => '7 971,8 т (12,88%)',
+                        'trend_text'  => 'Паливний надлишок',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Втрати з елеватора (підробка)',
+                        'val_2026'    => '7,3 т (1,20%)',
+                        'val_2025_an' => '7,8 т (1,45%)',
+                        'val_2025_yr' => '510,4 т (0,82%)',
+                        'trend_text'  => 'Краще на 0.25%',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Сума Олія + Шрот (%)',
+                        'val_2026'    => '87,43%',
+                        'val_2025_an' => '86,21%',
+                        'val_2025_yr' => '85,97%',
+                        'trend_text'  => '+1.22% до 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Загальний вихід готової продукції',
+                        'val_2026'    => '101,94% (+1,94%)',
+                        'val_2025_an' => '98,55%',
+                        'val_2025_yr' => '98,85%',
+                        'trend_text'  => '+3.39% вище еталону',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Залишок насіння на складі заводу',
+                        'val_2026'    => number_format($seedStock, 1, ',', ' ') . ' т',
+                        'val_2025_an' => '176,5 т',
+                        'val_2025_yr' => '510,4 т',
+                        'trend_text'  => '21.9 діб автономії',
+                        'trend_class' => 'trend-good',
+                    ],
+                ]
+            ];
+        } elseif ($norm === 'week') {
+            $seedIn = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 3767.78;
+            return [
+                'period'       => 'week',
+                'badge_label'  => 'Порівняння тижня: 2026 vs 2025',
+                'kpis' => [
+                    'seed_processed' => [
+                        'title'        => '⚙️ Переробка насіння',
+                        'badge'        => 'Аналог: 3,77 тис. т',
+                        'number'       => '3 767',
+                        'unit'         => 'т (тиждень 2025)',
+                        'subtext'      => 'Тиждень 2026: <strong>1 310,3 т</strong> (активні доби; завіз 3 768 т)',
+                        'progress_pct' => 34.8,
+                        'color'        => '#10b981',
+                    ],
+                    'oil_yield' => [
+                        'title'        => '💧 Вихід Олії',
+                        'badge'        => 'Аналог: 44,45%',
+                        'number'       => '44,45%',
+                        'unit'         => 'еталон тижня',
+                        'subtext'      => 'Аналог 2025: <strong>44,45%</strong> &bull; Тиждень 2026: <strong>45,71% (+1,26%)</strong>',
+                        'progress_pct' => 45.7,
+                        'color'        => '#f59e0b',
+                    ],
+                    'meal_yield' => [
+                        'title'        => '🌾 Вихід Шроту',
+                        'badge'        => 'Аналог: 41,76%',
+                        'number'       => '41,76%',
+                        'unit'         => 'еталон тижня',
+                        'subtext'      => 'Аналог 2025: <strong>41,76%</strong> &bull; Тиждень 2026: <strong>43,95% (+2,19%)</strong>',
+                        'progress_pct' => 43.9,
+                        'color'        => '#2563eb',
+                    ],
+                    'oil_meal_sum' => [
+                        'title'        => '⚖️ Олія + Шрот',
+                        'badge'        => 'Тиждень 26: 89,66%',
+                        'number'       => '86,21%',
+                        'unit'         => 'еталон тижня',
+                        'subtext'      => 'Аналог 2025: <strong>86,21%</strong> &bull; Тиждень 2026: <strong>89,66% (+3,45%)</strong>',
+                        'progress_pct' => 89.7,
+                        'color'        => '#8b5cf6',
+                    ],
+                ],
+                'headers' => [
+                    'col_indicator'   => 'Показник виробництва',
+                    'col_2026'        => 'Тиждень 2026 (7 діб)',
+                    'col_2025_analog' => 'Аналогічний тиждень 2025 (7 діб)',
+                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_trend'       => 'Динаміка',
+                ],
+                'rows' => [
+                    [
+                        'name'        => 'Завезено насіння (авто/елеватор)',
+                        'val_2026'    => number_format($seedIn, 1, ',', ' ') . ' т',
+                        'val_2025_an' => '3 806,7 т',
+                        'val_2025_yr' => '62 403,3 т',
+                        'trend_text'  => '-1.0% на рівні 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Перероблено соняшнику (очищене)',
+                        'val_2026'    => '1 310,3 т (активні доби)',
+                        'val_2025_an' => '3 766,8 т',
+                        'val_2025_yr' => '61 892,9 т',
+                        'trend_text'  => 'Технологічна пауза',
+                        'trend_class' => 'trend-neutral',
+                    ],
+                    [
+                        'name'        => 'Середня олійність сировини (вхід у цех)',
+                        'val_2026'    => number_format($labOil, 2, ',', '') . '% (лаб.)',
+                        'val_2025_an' => '45,29%',
+                        'val_2025_yr' => '45,13%',
+                        'trend_text'  => '+2.71% якість',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід олії (т / %)',
+                        'val_2026'    => '599,0 т (45,71%)',
+                        'val_2025_an' => '1 674,2 т (44,45%)',
+                        'val_2025_yr' => '27 416,9 т (44,30%)',
+                        'trend_text'  => '+1.26% до 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід шроту (т / %)',
+                        'val_2026'    => '575,9 т (43,95%)',
+                        'val_2025_an' => '1 573,1 т (41,76%)',
+                        'val_2025_yr' => '25 790,4 т (41,67%)',
+                        'trend_text'  => '+2.19% вище норми',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід лузги (т / %)',
+                        'val_2026'    => '194,3 т (14,83%)',
+                        'val_2025_an' => '464,8 т (12,34%)',
+                        'val_2025_yr' => '7 971,8 т (12,88%)',
+                        'trend_text'  => 'Запас котельні',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Втрати з елеватора (підробка)',
+                        'val_2026'    => '17,9 т (1,35%)',
+                        'val_2025_an' => '54,7 т (1,45%)',
+                        'val_2025_yr' => '510,4 т (0,82%)',
+                        'trend_text'  => '-0.10% втрат',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Сума Олія + Шрот (%)',
+                        'val_2026'    => '89,66%',
+                        'val_2025_an' => '86,21%',
+                        'val_2025_yr' => '85,97%',
+                        'trend_text'  => '+3.45% рекорд',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Загальний вихід готової продукції',
+                        'val_2026'    => '104,49% (+4,49%)',
+                        'val_2025_an' => '98,55%',
+                        'val_2025_yr' => '98,85%',
+                        'trend_text'  => '+5.94% баланс +',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Залишок насіння на складі заводу',
+                        'val_2026'    => number_format($seedStock, 1, ',', ' ') . ' т',
+                        'val_2025_an' => '176,5 т',
+                        'val_2025_yr' => '510,4 т',
+                        'trend_text'  => 'Повний склад',
+                        'trend_class' => 'trend-good',
+                    ],
+                ]
+            ];
+        } elseif ($norm === 'month_sep') {
+            return [
+                'period'       => 'month_sep',
+                'badge_label'  => 'Вересень 2026 vs Вересень 2025',
+                'kpis' => [
+                    'seed_processed' => [
+                        'title'        => '⚙️ Переробка насіння',
+                        'badge'        => 'Вересень 25: 4,4 тис. т',
+                        'number'       => '4 435',
+                        'unit'         => 'т (Вер. 2025)',
+                        'subtext'      => 'Вересень 2026: <strong>8 823,7 т</strong> (+98,9% до 2025!)',
+                        'progress_pct' => 198.9,
+                        'color'        => '#10b981',
+                    ],
+                    'oil_yield' => [
+                        'title'        => '💧 Вихід Олії',
+                        'badge'        => 'Вересень 25: 42,06%',
+                        'number'       => '42,06%',
+                        'unit'         => 'еталон місяця',
+                        'subtext'      => 'Вересень 2025: <strong>42,06%</strong> &bull; Вересень 2026: <strong>43,20% (+1,14%)</strong>',
+                        'progress_pct' => 43.2,
+                        'color'        => '#f59e0b',
+                    ],
+                    'meal_yield' => [
+                        'title'        => '🌾 Вихід Шроту',
+                        'badge'        => 'Вересень 25: 42,14%',
+                        'number'       => '42,14%',
+                        'unit'         => 'еталон місяця',
+                        'subtext'      => 'Вересень 2025: <strong>42,14%</strong> &bull; Вересень 2026: <strong>41,74% (-0,40%)</strong>',
+                        'progress_pct' => 41.7,
+                        'color'        => '#2563eb',
+                    ],
+                    'oil_meal_sum' => [
+                        'title'        => '⚖️ Олія + Шрот',
+                        'badge'        => 'Вересень 26: 84,94%',
+                        'number'       => '84,20%',
+                        'unit'         => 'еталон місяця',
+                        'subtext'      => 'Вересень 2025: <strong>84,20%</strong> &bull; Вересень 2026: <strong>84,94% (+0,74%)</strong>',
+                        'progress_pct' => 84.9,
+                        'color'        => '#8b5cf6',
+                    ],
+                ],
+                'headers' => [
+                    'col_indicator'   => 'Показник виробництва',
+                    'col_2026'        => 'Вересень 2026 (16 діб)',
+                    'col_2025_analog' => 'Вересень 2025 (старт)',
+                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_trend'       => 'Динаміка',
+                ],
+                'rows' => [
+                    [
+                        'name'        => 'Завезено насіння (авто/елеватор)',
+                        'val_2026'    => '19 077,5 т',
+                        'val_2025_an' => '4 470,8 т',
+                        'val_2025_yr' => '62 403,3 т',
+                        'trend_text'  => '+326.7% до вер. 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Перероблено соняшнику (очищене)',
+                        'val_2026'    => '8 823,7 т (16 діб)',
+                        'val_2025_an' => '4 435,4 т (10 діб)',
+                        'val_2025_yr' => '61 892,9 т',
+                        'trend_text'  => '+98.9% до вер. 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Середня олійність сировини (вхід у цех)',
+                        'val_2026'    => '42,93%',
+                        'val_2025_an' => '42,93%',
+                        'val_2025_yr' => '45,13%',
+                        'trend_text'  => 'Точний збіг',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід олії (т / %)',
+                        'val_2026'    => '3 811,7 т (43,20%)',
+                        'val_2025_an' => '1 865,6 т (42,06%)',
+                        'val_2025_yr' => '27 416,9 т (44,30%)',
+                        'trend_text'  => '+1.14% до 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід шроту (т / %)',
+                        'val_2026'    => '3 683,2 т (41,74%)',
+                        'val_2025_an' => '1 869,2 т (42,14%)',
+                        'val_2025_yr' => '25 790,4 т (41,67%)',
+                        'trend_text'  => '-0.40% в нормі',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід лузги (т / %)',
+                        'val_2026'    => '1 261,2 т (14,29%)',
+                        'val_2025_an' => '620,1 т (13,98%)',
+                        'val_2025_yr' => '7 971,8 т (12,88%)',
+                        'trend_text'  => '+0.31% баланс',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Втрати з елеватора (підробка)',
+                        'val_2026'    => '94,7 т (1,06%)',
+                        'val_2025_an' => '80,5 т (1,81%)',
+                        'val_2025_yr' => '510,4 т (0,82%)',
+                        'trend_text'  => '-0.75% менше втрат',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Сума Олія + Шрот (%)',
+                        'val_2026'    => '84,94%',
+                        'val_2025_an' => '84,20%',
+                        'val_2025_yr' => '85,97%',
+                        'trend_text'  => '+0.74% до 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Загальний вихід готової продукції',
+                        'val_2026'    => '99,23%',
+                        'val_2025_an' => '98,19%',
+                        'val_2025_yr' => '98,85%',
+                        'trend_text'  => '+1.04% до 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Залишок насіння на складі заводу',
+                        'val_2026'    => '10 966,3 т',
+                        'val_2025_an' => '35,4 т',
+                        'val_2025_yr' => '510,4 т',
+                        'trend_text'  => 'Склад заповнений',
+                        'trend_class' => 'trend-good',
+                    ],
+                ]
+            ];
+        } elseif ($norm === 'season') {
+            $seasonSeed = !empty($this->getSemenaPeriodStats('season')['seed_in_plant']) ? (float)$this->getSemenaPeriodStats('season')['seed_in_plant'] : 25353.92;
+            return [
+                'period'       => 'season',
+                'badge_label'  => 'Сезон 2026 vs 2025 (Вер–Жов)',
+                'kpis' => [
+                    'seed_processed' => [
+                        'title'        => '⚙️ Переробка насіння',
+                        'badge'        => 'Вер–Жов: 21,1 тис. т',
+                        'number'       => '61 893',
+                        'unit'         => 'т (рік 2025)',
+                        'subtext'      => 'Сезон 2026: <strong>12 470,0 т</strong> (запуск у вересні)',
+                        'progress_pct' => 20.1,
+                        'color'        => '#10b981',
+                    ],
+                    'oil_yield' => [
+                        'title'        => '💧 Вихід Олії',
+                        'badge'        => '27,4 тис. т',
+                        'number'       => '44,30%',
+                        'unit'         => 'еталон року',
+                        'subtext'      => 'Вер–Жов 2025: <strong>43,94%</strong> &bull; Сезон 2026: <strong>43,77%</strong>',
+                        'progress_pct' => 44.3,
+                        'color'        => '#f59e0b',
+                    ],
+                    'meal_yield' => [
+                        'title'        => '🌾 Вихід Шроту',
+                        'badge'        => '25,8 тис. т',
+                        'number'       => '41,67%',
+                        'unit'         => 'еталон року',
+                        'subtext'      => 'Вер–Жов 2025: <strong>41,84%</strong> &bull; Сезон 2026: <strong>41,74%</strong>',
+                        'progress_pct' => 41.7,
+                        'color'        => '#2563eb',
+                    ],
+                    'oil_meal_sum' => [
+                        'title'        => '⚖️ Олія + Шрот',
+                        'badge'        => 'Сезон 26: 85,51%',
+                        'number'       => '85,97%',
+                        'unit'         => 'еталон року',
+                        'subtext'      => 'Втрати виробництва 2025: <strong>1,15%</strong> &bull; Сезон 2026: <strong>85,51% (олія+шрот)</strong>',
+                        'progress_pct' => 86.0,
+                        'color'        => '#8b5cf6',
+                    ],
+                ],
+                'headers' => [
+                    'col_indicator'   => 'Показник виробництва',
+                    'col_2026'        => 'Сезон 2026 (72 дн.)',
+                    'col_2025_analog' => 'Сезон 2025 (Вер–Жов)',
+                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_trend'       => 'Динаміка',
+                ],
+                'rows' => [
+                    [
+                        'name'        => 'Завезено насіння (авто/елеватор)',
+                        'val_2026'    => number_format($seasonSeed, 1, ',', ' ') . ' т',
+                        'val_2025_an' => '21 329,0 т',
+                        'val_2025_yr' => '62 403,3 т',
+                        'trend_text'  => '+18.9% завіз',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Перероблено соняшнику (очищене)',
+                        'val_2026'    => '12 470,0 т',
+                        'val_2025_an' => '21 117,1 т',
+                        'val_2025_yr' => '61 892,9 т',
+                        'trend_text'  => 'Запуск вересень',
+                        'trend_class' => 'trend-neutral',
+                    ],
+                    [
+                        'name'        => 'Середня олійність сировини (вхід у цех)',
+                        'val_2026'    => '44,69% (лаб. 49,19%)',
+                        'val_2025_an' => '44,79%',
+                        'val_2025_yr' => '45,13%',
+                        'trend_text'  => 'В межах норми',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід олії (т / %)',
+                        'val_2026'    => '5 457,8 т (43,77%)',
+                        'val_2025_an' => '9 279,8 т (43,94%)',
+                        'val_2025_yr' => '27 416,9 т (44,30%)',
+                        'trend_text'  => 'Жовтень 45,15%',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід шроту (т / %)',
+                        'val_2026'    => '5 204,9 т (41,74%)',
+                        'val_2025_an' => '8 835,8 т (41,84%)',
+                        'val_2025_yr' => '25 790,4 т (41,67%)',
+                        'trend_text'  => '+0,07% до року',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід лузги (т / %)',
+                        'val_2026'    => '1 816,1 т (14,56%)',
+                        'val_2025_an' => '2 678,6 т (12,68%)',
+                        'val_2025_yr' => '7 971,8 т (12,88%)',
+                        'trend_text'  => 'Паливний баланс',
+                        'trend_class' => 'trend-neutral',
+                    ],
+                    [
+                        'name'        => 'Втрати з елеватора (підробка)',
+                        'val_2026'    => '148,3 т (1,18%)',
+                        'val_2025_an' => '322,9 т (1,53%)',
+                        'val_2025_yr' => '510,4 т (0,82%)',
+                        'trend_text'  => 'Норма < 2,5%',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Сума Олія + Шрот (%)',
+                        'val_2026'    => '85,51%',
+                        'val_2025_an' => '85,78%',
+                        'val_2025_yr' => '85,97%',
+                        'trend_text'  => 'Ціль 85–86%',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Загальний вихід готової продукції',
+                        'val_2026'    => '100,07% (+0,07%)',
+                        'val_2025_an' => '98,47%',
+                        'val_2025_yr' => '98,85%',
+                        'trend_text'  => 'Вище еталону',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Залишок насіння на складі заводу',
+                        'val_2026'    => number_format($seedStock, 1, ',', ' ') . ' т',
+                        'val_2025_an' => '211,9 т',
+                        'val_2025_yr' => '510,4 т',
+                        'trend_text'  => '22,2 доби автономії',
+                        'trend_class' => 'trend-good',
+                    ],
+                ]
+            ];
+        } else {
+            // Жовтень 2026 vs Жовтень 2025
+            $octSeed = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 6075.91;
+            return [
+                'period'       => 'month_oct',
+                'badge_label'  => 'Жовтень 2026 vs Жовтень 2025',
+                'kpis' => [
+                    'seed_processed' => [
+                        'title'        => '⚙️ Переробка насіння',
+                        'badge'        => 'Жовтень 25: 16,7 тис. т',
+                        'number'       => '16 682',
+                        'unit'         => 'т (Жовтень 2025)',
+                        'subtext'      => 'Жовтень 2026: <strong>3 646,4 т</strong> (за 7 діб переробки з 12)',
+                        'progress_pct' => 21.9,
+                        'color'        => '#10b981',
+                    ],
+                    'oil_yield' => [
+                        'title'        => '💧 Вихід Олії',
+                        'badge'        => 'Жовтень 25: 44,45%',
+                        'number'       => '44,45%',
+                        'unit'         => 'еталон місяця',
+                        'subtext'      => 'Жовтень 2025: <strong>44,45%</strong> &bull; Жовтень 2026: <strong>45,15% (+0,70%)</strong>',
+                        'progress_pct' => 45.2,
+                        'color'        => '#f59e0b',
+                    ],
+                    'meal_yield' => [
+                        'title'        => '🌾 Вихід Шроту',
+                        'badge'        => 'Жовтень 25: 41,76%',
+                        'number'       => '41,76%',
+                        'unit'         => 'еталон місяця',
+                        'subtext'      => 'Жовтень 2025: <strong>41,76%</strong> &bull; Жовтень 2026: <strong>41,73% (-0,03%)</strong>',
+                        'progress_pct' => 41.7,
+                        'color'        => '#2563eb',
+                    ],
+                    'oil_meal_sum' => [
+                        'title'        => '⚖️ Олія + Шрот',
+                        'badge'        => 'Жовтень 26: 86,88%',
+                        'number'       => '86,21%',
+                        'unit'         => 'еталон місяця',
+                        'subtext'      => 'Жовтень 2025: <strong>86,21%</strong> &bull; Жовтень 2026: <strong>86,88% (+0,67%)</strong>',
+                        'progress_pct' => 86.9,
+                        'color'        => '#8b5cf6',
+                    ],
+                ],
+                'headers' => [
+                    'col_indicator'   => 'Показник виробництва',
+                    'col_2026'        => 'Жовтень 2026 (01–12.10)',
+                    'col_2025_analog' => 'Жовтень 2025 (повний місяць)',
+                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_trend'       => 'Динаміка',
+                ],
+                'rows' => [
+                    [
+                        'name'        => 'Завезено насіння (авто/елеватор)',
+                        'val_2026'    => number_format($octSeed, 1, ',', ' ') . ' т',
+                        'val_2025_an' => '16 858,2 т',
+                        'val_2025_yr' => '62 403,3 т',
+                        'trend_text'  => '506,3 т/добу прийомка',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Перероблено соняшнику (очищене)',
+                        'val_2026'    => '3 646,4 т (7 діб)',
+                        'val_2025_an' => '16 681,7 т (31 день)',
+                        'val_2025_yr' => '61 892,9 т',
+                        'trend_text'  => '520,9 т/добу роботи',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Середня олійність сировини (вхід у цех)',
+                        'val_2026'    => '44,69% (лаб. 49,19%)',
+                        'val_2025_an' => '45,29%',
+                        'val_2025_yr' => '45,13%',
+                        'trend_text'  => 'В межах норми',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід олії (т / %)',
+                        'val_2026'    => '1 646,2 т (45,15%)',
+                        'val_2025_an' => '7 414,2 т (44,45%)',
+                        'val_2025_yr' => '27 416,9 т (44,30%)',
+                        'trend_text'  => '+0.70% до 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід шроту (т / %)',
+                        'val_2026'    => '1 521,7 т (41,73%)',
+                        'val_2025_an' => '6 966,6 т (41,76%)',
+                        'val_2025_yr' => '25 790,4 т (41,67%)',
+                        'trend_text'  => '-0.03% стабільність',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід лузги (т / %)',
+                        'val_2026'    => '554,9 т (15,22%)',
+                        'val_2025_an' => '2 058,4 т (12,34%)',
+                        'val_2025_yr' => '7 971,8 т (12,88%)',
+                        'trend_text'  => 'Паливна безпека',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Втрати з елеватора (підробка)',
+                        'val_2026'    => '53,6 т (1,45%)',
+                        'val_2025_an' => '242,4 т (1,45%)',
+                        'val_2025_yr' => '510,4 т (0,82%)',
+                        'trend_text'  => '1 в 1 з 2025 (1.45%)',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Сума Олія + Шрот (%)',
+                        'val_2026'    => '86,88%',
+                        'val_2025_an' => '86,21%',
+                        'val_2025_yr' => '85,97%',
+                        'trend_text'  => '+0.67% до 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Загальний вихід готової продукції',
+                        'val_2026'    => '102,10% (+2,10%)',
+                        'val_2025_an' => '98,55%',
+                        'val_2025_yr' => '98,85%',
+                        'trend_text'  => '+3.55% надлишок',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Залишок насіння на складі заводу',
+                        'val_2026'    => number_format($seedStock, 1, ',', ' ') . ' т',
+                        'val_2025_an' => '176,5 т',
+                        'val_2025_yr' => '510,4 т',
+                        'trend_text'  => '22,2 доби автономії',
+                        'trend_class' => 'trend-good',
+                    ],
+                ]
+            ];
+        }
     }
 
     /**

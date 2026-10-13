@@ -731,6 +731,10 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     $early2025   = $season2025['early_season_sep_oct'] ?? [];
     $full2025    = $season2025['full_season_total'] ?? [];
     $months2025  = $season2025['months'] ?? [];
+    $periodComp  = $historical['period_comparison'] ?? [];
+    $pcKpi       = $periodComp['kpis'] ?? [];
+    $pcHeaders   = $periodComp['headers'] ?? [];
+    $pcRows      = $periodComp['rows'] ?? [];
     ?>
     <div class="historical-analytics-section" id="historical-analytics-section">
         <div class="section-title">
@@ -945,86 +949,93 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
             <!-- Колонка 2: Сезонне зіставлення 2026 vs 2025 (Інфографіка та великі цифри) -->
             <div class="card-panel">
-                <div class="panel-header-simple">
-                    <div class="panel-title-text">
+                <div class="panel-header-simple" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <div class="panel-title-text" style="display: flex; align-items: center; gap: 8px;">
                         <i data-lucide="scale" style="width: 16px; height: 16px; color: #10b981;"></i>
                         <span>Порівняння з сезоном 2025–2026 рр. (Офіційний звіт заводу)</span>
+                        <span class="section-badge badge-green" id="badge-season-compare-period"><?= htmlspecialchars($periodComp['badge_label'] ?? 'Порівняння доби: 2026 vs 2025') ?></span>
                     </div>
-                    <span class="section-badge badge-green">Еталон урожаю 2025</span>
+                    <!-- Міні-перемикач періоду порівняння (синхронізований з дашбордом) -->
+                    <div class="season-compare-pills" id="season-compare-pills">
+                        <button type="button" class="season-pill-btn <?= ($initialPeriod === 'day') ? 'active' : '' ?>" data-period="day">Доба</button>
+                        <button type="button" class="season-pill-btn <?= ($initialPeriod === 'week') ? 'active' : '' ?>" data-period="week">Тиждень</button>
+                        <button type="button" class="season-pill-btn <?= ($initialPeriod === 'month') ? 'active' : '' ?>" data-period="month">Місяць</button>
+                        <button type="button" class="season-pill-btn <?= ($initialPeriod === 'season') ? 'active' : '' ?>" data-period="season">Сезон</button>
+                    </div>
                 </div>
 
                 <!-- БЛОК ВЕЛИКИХ ЦИФР ТА ІНФОГРАФІКИ (4 KPI КАРТКИ) -->
                 <div class="season-kpi-grid">
                     
                     <!-- 1. Переробка соняшнику -->
-                    <div class="season-kpi-card card-accent-seed" title="Перероблено у 2025: Вересень 4 435 т + Жовтень 16 682 т = 21 117 т; Всього за рік 61 893 т">
+                    <div class="season-kpi-card card-accent-seed" id="card-season-seed">
                         <div class="season-kpi-header">
-                            <span class="season-kpi-title">⚙️ Переробка насіння</span>
-                            <span class="season-kpi-badge">Вер–Жов: 21,1 тис. т</span>
+                            <span class="season-kpi-title" id="kpi-season-seed-title"><?= htmlspecialchars($pcKpi['seed_processed']['title'] ?? '⚙️ Переробка насіння') ?></span>
+                            <span class="season-kpi-badge" id="kpi-season-seed-badge"><?= htmlspecialchars($pcKpi['seed_processed']['badge'] ?? 'Аналог: 538 т/добу') ?></span>
                         </div>
                         <div class="season-kpi-number-wrap">
-                            <span class="season-kpi-number"><?= number_format($full2025['seed_processed'] ?? 61892.86, 0, ',', ' ') ?></span>
-                            <span class="season-kpi-unit">т (рік)</span>
+                            <span class="season-kpi-number" id="kpi-season-seed-num"><?= htmlspecialchars($pcKpi['seed_processed']['number'] ?? '538') ?></span>
+                            <span class="season-kpi-unit" id="kpi-season-seed-unit"><?= htmlspecialchars($pcKpi['seed_processed']['unit'] ?? 'т/д (2025)') ?></span>
                         </div>
-                        <div class="season-kpi-subtext">
-                            Сезон 2026: <strong><?= number_format($seasonTot['seed_processed'] ?? 12470.01, 1, ',', ' ') ?> т</strong> (запуск у вересні)
+                        <div class="season-kpi-subtext" id="kpi-season-seed-sub">
+                            <?= $pcKpi['seed_processed']['subtext'] ?? 'Сезон 2026: <strong>600,3 т</strong> (активна доба; план 600 т)' ?>
                         </div>
-                        <div class="season-progress-track" title="Співвідношення поточного обсягу до річного обсягу 2025">
-                            <div class="season-progress-fill" style="width: 20.1%; background: #10b981;"></div>
+                        <div class="season-progress-track">
+                            <div class="season-progress-fill" id="kpi-season-seed-bar" style="width: <?= min(100, (float)($pcKpi['seed_processed']['progress_pct'] ?? 100)) ?>%; background: #10b981;"></div>
                         </div>
                     </div>
 
                     <!-- 2. Вихід Олії -->
-                    <div class="season-kpi-card card-accent-oil" title="Вихід олії 2025: Вер 42.06%, Жов 44.45%, Рік 44.30% (27 416.9 т) при олійності 45.13%">
+                    <div class="season-kpi-card card-accent-oil" id="card-season-oil">
                         <div class="season-kpi-header">
-                            <span class="season-kpi-title" style="color: #b45309;">💧 Вихід Олії</span>
-                            <span class="season-kpi-badge" style="background: #fef3c7; color: #b45309;">27,4 тис. т</span>
+                            <span class="season-kpi-title" style="color: #b45309;" id="kpi-season-oil-title"><?= htmlspecialchars($pcKpi['oil_yield']['title'] ?? '💧 Вихід Олії') ?></span>
+                            <span class="season-kpi-badge" style="background: #fef3c7; color: #b45309;" id="kpi-season-oil-badge"><?= htmlspecialchars($pcKpi['oil_yield']['badge'] ?? 'Аналог: 44,45%') ?></span>
                         </div>
                         <div class="season-kpi-number-wrap">
-                            <span class="season-kpi-number" style="color: #d97706;"><?= number_format($full2025['oil_pct'] ?? 44.30, 2, ',', '') ?>%</span>
-                            <span class="season-kpi-unit">еталон року</span>
+                            <span class="season-kpi-number" style="color: #d97706;" id="kpi-season-oil-num"><?= htmlspecialchars($pcKpi['oil_yield']['number'] ?? '44,45%') ?></span>
+                            <span class="season-kpi-unit" id="kpi-season-oil-unit"><?= htmlspecialchars($pcKpi['oil_yield']['unit'] ?? 'еталон доби') ?></span>
                         </div>
-                        <div class="season-kpi-subtext">
-                            Вер–Жов 2025: <strong>43,94%</strong> &bull; Сезон 2026: <strong><?= number_format($seasonTot['oil_yield_pct'] ?? 43.77, 2, ',', '') ?>%</strong>
+                        <div class="season-kpi-subtext" id="kpi-season-oil-sub">
+                            <?= $pcKpi['oil_yield']['subtext'] ?? 'Аналог 2025: <strong>44,45%</strong> &bull; Доба 2026: <strong>45,91% (+1,46%)</strong>' ?>
                         </div>
                         <div class="season-progress-track">
-                            <div class="season-progress-fill" style="width: 44.3%; background: #f59e0b;"></div>
+                            <div class="season-progress-fill" id="kpi-season-oil-bar" style="width: <?= min(100, (float)($pcKpi['oil_yield']['progress_pct'] ?? 45.9)) ?>%; background: #f59e0b;"></div>
                         </div>
                     </div>
 
                     <!-- 3. Вихід Шроту -->
-                    <div class="season-kpi-card card-accent-meal" title="Вихід шроту 2025: Вер 42.14%, Жов 41.76%, Рік 41.67% (25 790.4 т)">
+                    <div class="season-kpi-card card-accent-meal" id="card-season-meal">
                         <div class="season-kpi-header">
-                            <span class="season-kpi-title" style="color: #1d4ed8;">🌾 Вихід Шроту</span>
-                            <span class="season-kpi-badge" style="background: #dbeafe; color: #1e40af;">25,8 тис. т</span>
+                            <span class="season-kpi-title" style="color: #1d4ed8;" id="kpi-season-meal-title"><?= htmlspecialchars($pcKpi['meal_yield']['title'] ?? '🌾 Вихід Шроту') ?></span>
+                            <span class="season-kpi-badge" style="background: #dbeafe; color: #1e40af;" id="kpi-season-meal-badge"><?= htmlspecialchars($pcKpi['meal_yield']['badge'] ?? 'Аналог: 41,76%') ?></span>
                         </div>
                         <div class="season-kpi-number-wrap">
-                            <span class="season-kpi-number" style="color: #2563eb;"><?= number_format($full2025['meal_pct'] ?? 41.67, 2, ',', '') ?>%</span>
-                            <span class="season-kpi-unit">еталон року</span>
+                            <span class="season-kpi-number" style="color: #2563eb;" id="kpi-season-meal-num"><?= htmlspecialchars($pcKpi['meal_yield']['number'] ?? '41,76%') ?></span>
+                            <span class="season-kpi-unit" id="kpi-season-meal-unit"><?= htmlspecialchars($pcKpi['meal_yield']['unit'] ?? 'еталон доби') ?></span>
                         </div>
-                        <div class="season-kpi-subtext">
-                            Вер–Жов 2025: <strong>41,84%</strong> &bull; Сезон 2026: <strong><?= number_format($seasonTot['meal_yield_pct'] ?? 41.74, 2, ',', '') ?>%</strong>
+                        <div class="season-kpi-subtext" id="kpi-season-meal-sub">
+                            <?= $pcKpi['meal_yield']['subtext'] ?? 'Аналог 2025: <strong>41,76%</strong> &bull; Доба 2026: <strong>41,52% (-0,24%)</strong>' ?>
                         </div>
                         <div class="season-progress-track">
-                            <div class="season-progress-fill" style="width: 41.7%; background: #2563eb;"></div>
+                            <div class="season-progress-fill" id="kpi-season-meal-bar" style="width: <?= min(100, (float)($pcKpi['meal_yield']['progress_pct'] ?? 41.5)) ?>%; background: #2563eb;"></div>
                         </div>
                     </div>
 
                     <!-- 4. Сума Олія + Шрот -->
-                    <div class="season-kpi-card card-accent-sum" title="Сума олія+шрот: 85.97% за рік (85.78% за Вер-Жов 2025; 85.51% за Сезон 2026). Загальний вихід готової продукції з лузгою 98.85%">
+                    <div class="season-kpi-card card-accent-sum" id="card-season-sum">
                         <div class="season-kpi-header">
-                            <span class="season-kpi-title" style="color: #6d28d9;">⚖️ Олія + Шрот</span>
-                            <span class="season-kpi-badge" style="background: #ede9fe; color: #6d28d9;">Сезон 26: 85,51%</span>
+                            <span class="season-kpi-title" style="color: #6d28d9;" id="kpi-season-sum-title"><?= htmlspecialchars($pcKpi['oil_meal_sum']['title'] ?? '⚖️ Олія + Шрот') ?></span>
+                            <span class="season-kpi-badge" style="background: #ede9fe; color: #6d28d9;" id="kpi-season-sum-badge"><?= htmlspecialchars($pcKpi['oil_meal_sum']['badge'] ?? 'Доба 26: 87,43%') ?></span>
                         </div>
                         <div class="season-kpi-number-wrap">
-                            <span class="season-kpi-number" style="color: #7c3aed;"><?= number_format($full2025['oil_meal_pct'] ?? 85.97, 2, ',', '') ?>%</span>
-                            <span class="season-kpi-unit">еталон року</span>
+                            <span class="season-kpi-number" style="color: #7c3aed;" id="kpi-season-sum-num"><?= htmlspecialchars($pcKpi['oil_meal_sum']['number'] ?? '86,21%') ?></span>
+                            <span class="season-kpi-unit" id="kpi-season-sum-unit"><?= htmlspecialchars($pcKpi['oil_meal_sum']['unit'] ?? 'еталон доби') ?></span>
                         </div>
-                        <div class="season-kpi-subtext">
-                            Втрати виробництва 2025: <strong>1,15%</strong> &bull; Сезон 2026: <strong>85,51% (олія+шрот)</strong>
+                        <div class="season-kpi-subtext" id="kpi-season-sum-sub">
+                            <?= $pcKpi['oil_meal_sum']['subtext'] ?? 'Аналог 2025: <strong>86,21%</strong> &bull; Доба 2026: <strong>87,43% (+1,22%)</strong>' ?>
                         </div>
                         <div class="season-progress-track">
-                            <div class="season-progress-fill" style="width: 86.0%; background: #8b5cf6;"></div>
+                            <div class="season-progress-fill" id="kpi-season-sum-bar" style="width: <?= min(100, (float)($pcKpi['oil_meal_sum']['progress_pct'] ?? 87.4)) ?>%; background: #8b5cf6;"></div>
                         </div>
                     </div>
 
@@ -1036,83 +1047,22 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <thead>
                             <tr>
                                 <th>Показник виробництва</th>
-                                <th>Сезон 2026 (72 дн.)</th>
-                                <th>Сезон 2025 (Вер–Жов)</th>
-                                <th>Рік 2025–26 (61,9 тис. т)</th>
-                                <th>Динаміка</th>
+                                <th id="th-season-compare-2026"><?= htmlspecialchars($pcHeaders['col_2026'] ?? 'Доба 2026 (11-12.10)') ?></th>
+                                <th id="th-season-compare-2025-analog"><?= htmlspecialchars($pcHeaders['col_2025_analog'] ?? 'Аналогічна доба 2025 (Жовтень)') ?></th>
+                                <th id="th-season-compare-2025-year"><?= htmlspecialchars($pcHeaders['col_2025_year'] ?? 'Рік 2025–26 (61,9 тис. т)') ?></th>
+                                <th id="th-season-compare-trend"><?= htmlspecialchars($pcHeaders['col_trend'] ?? 'Динаміка') ?></th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="tbody-season-comparison">
+                            <?php foreach (($pcRows ?: []) as $row): ?>
                             <tr>
-                                <td>Завезено насіння (авто/елеватор)</td>
-                                <td class="bold">25 353,9 т</td>
-                                <td>21 329,0 т</td>
-                                <td>62 403,3 т</td>
-                                <td><span class="trend-badge trend-good">+18.9% завіз</span></td>
+                                <td><?= htmlspecialchars($row['name']) ?></td>
+                                <td class="bold"><?= htmlspecialchars($row['val_2026']) ?></td>
+                                <td><?= htmlspecialchars($row['val_2025_an']) ?></td>
+                                <td><?= htmlspecialchars($row['val_2025_yr']) ?></td>
+                                <td><span class="trend-badge <?= htmlspecialchars($row['trend_class']) ?>"><?= htmlspecialchars($row['trend_text']) ?></span></td>
                             </tr>
-                            <tr>
-                                <td>Перероблено соняшнику (очищене)</td>
-                                <td class="bold">12 470,0 т</td>
-                                <td>21 117,1 т</td>
-                                <td>61 892,9 т</td>
-                                <td><span class="trend-badge trend-neutral">Запуск вересень</span></td>
-                            </tr>
-                            <tr>
-                                <td>Середня олійність сировини (вхід у цех)</td>
-                                <td class="bold">44,69% (лаб. 49,19%)</td>
-                                <td>44,79%</td>
-                                <td>45,13%</td>
-                                <td><span class="trend-badge trend-good">В межах норми</span></td>
-                            </tr>
-                            <tr>
-                                <td>Вихід олії (т / %)</td>
-                                <td class="bold" style="color: #d97706;">5 457,8 т (43,77%)</td>
-                                <td>9 279,8 т (43,94%)</td>
-                                <td>27 416,9 т (44,30%)</td>
-                                <td><span class="trend-badge trend-good">Жовтень 45,15%</span></td>
-                            </tr>
-                            <tr>
-                                <td>Вихід шроту (т / %)</td>
-                                <td class="bold" style="color: #2563eb;">5 204,9 т (41,74%)</td>
-                                <td>8 835,8 т (41,84%)</td>
-                                <td>25 790,4 т (41,67%)</td>
-                                <td><span class="trend-badge trend-good">+0,07% до року</span></td>
-                            </tr>
-                            <tr>
-                                <td>Вихід лузги (т / %)</td>
-                                <td class="bold">1 816,1 т (14,56%)</td>
-                                <td>2 678,6 т (12,68%)</td>
-                                <td>7 971,8 т (12,88%)</td>
-                                <td><span class="trend-badge trend-neutral">Паливний баланс</span></td>
-                            </tr>
-                            <tr>
-                                <td>Втрати з елеватора (підробка)</td>
-                                <td class="bold">148,3 т (1,18%)</td>
-                                <td>211,9 т (1,00%)</td>
-                                <td>510,4 т (0,82%)</td>
-                                <td><span class="trend-badge trend-good">Норма &lt; 2,5%</span></td>
-                            </tr>
-                            <tr>
-                                <td>Сума Олія + Шрот (%)</td>
-                                <td class="bold" style="color: #7c3aed;">85,51%</td>
-                                <td>85,78%</td>
-                                <td>85,97%</td>
-                                <td><span class="trend-badge trend-good">Ціль 85–86%</span></td>
-                            </tr>
-                            <tr>
-                                <td>Загальний вихід готової продукції</td>
-                                <td class="bold">100,07% (+0,07%) / Жов 102,10% (+2,10%)</td>
-                                <td>98,47%</td>
-                                <td>98,85%</td>
-                                <td><span class="trend-badge trend-good">Вище еталону</span></td>
-                            </tr>
-                            <tr>
-                                <td>Залишок насіння на складі заводу</td>
-                                <td class="bold" style="color: #059669;">13 326,4 т</td>
-                                <td>211,9 т</td>
-                                <td>510,4 т</td>
-                                <td><span class="trend-badge trend-good">22,2 доби автономії</span></td>
-                            </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>

@@ -1987,6 +1987,38 @@ body {
 /* ==========================================================================
    ІНФОГРАФІКА СЕЗОНУ 2025 ТА ВЕЛИКІ ЦИФРИ (KPI КАРТКИ)
    ========================================================================== */
+.season-compare-pills {
+    display: inline-flex;
+    align-items: center;
+    background: #f1f5f9;
+    border-radius: 6px;
+    padding: 2px;
+    gap: 2px;
+}
+
+.season-pill-btn {
+    border: none;
+    background: transparent;
+    font-size: 11px;
+    font-weight: 600;
+    color: #475569;
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.season-pill-btn:hover {
+    color: #0f172a;
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.season-pill-btn.active {
+    background: #ffffff;
+    color: var(--color-primary, #0284c7);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
 .season-infographics-block {
     display: flex;
     flex-direction: column;

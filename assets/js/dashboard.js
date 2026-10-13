@@ -78,6 +78,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // 2.02 Обробники міні-перемикача періоду в блоці «Порівняння з сезоном 2025–2026 рр.»
+    document.querySelectorAll('.season-pill-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const p = this.getAttribute('data-period');
+            if (!p || isFetching) return;
+            const targetBtn = document.querySelector(`.period-btn[data-period="${p}"]`);
+            if (targetBtn) {
+                targetBtn.click();
+            } else if (monthDropdown) {
+                monthDropdown.value = p;
+                monthDropdown.dispatchEvent(new Event('change'));
+            } else {
+                periodButtons.forEach(b => b.classList.remove('active'));
+                currentPeriod = p;
+                updateExportLink();
+                fetchDashboardData(true);
+            }
+        });
+    });
+
     // 2.1 Обробники перемикання вкладок вантажу (Всі, Насіння, Олія, Шрот, Лузга)
     cargoButtons.forEach(btn => {
         btn.addEventListener('click', function () {
@@ -438,6 +458,14 @@ document.addEventListener('DOMContentLoaded', function () {
             setElementText('#equip-health-summary', `${eq.running_count}/${eq.total_count} вузлів у роботі`);
         }
 
+        // --- Блок Г: Порівняння сезонів 2026 vs 2025 (День / Тиждень / Місяць / Сезон) ---
+        const periodComp = (data.historical_analytics && data.historical_analytics.period_comparison) 
+                            ? data.historical_analytics.period_comparison 
+                            : (data.period_comparison || null);
+        if (periodComp) {
+            updateSeasonComparisonUI(periodComp);
+        }
+
         // Оновлення графіків
         FactoryCharts.updateCharts(data);
 
@@ -446,6 +474,106 @@ document.addEventListener('DOMContentLoaded', function () {
             showToast(`Увага! Втрати підробки перевищили норму: ${rz.conditioning_loss_pct}%`, true);
         } else if (pz.status_class === 'status-danger') {
             showToast(`Увага! Виробничі втрати перевищили норму: ${pz.production_loss_pct}%`, true);
+        }
+    }
+
+    /**
+     * Оновлення блоку «Порівняння з сезоном 2025–2026 рр.» (4 KPI-картки та таблиця зіставлення)
+     */
+    function updateSeasonComparisonUI(comp) {
+        if (!comp) return;
+
+        // 0. Оновлюємо бейдж та активні пігулки вибору періоду
+        if (comp.badge_label) {
+            setElementText('#badge-season-compare-period', comp.badge_label);
+        }
+
+        const periodKey = comp.period || currentPeriod;
+        document.querySelectorAll('.season-pill-btn').forEach(btn => {
+            const btnP = btn.getAttribute('data-period');
+            const isActive = (btnP === periodKey) ||
+                             (btnP === 'day' && ['day', 'day_today', 'day_prev', 'day_active', 'shift'].includes(periodKey)) ||
+                             (btnP === 'month' && ['month', 'month_oct', 'month_sep', 'month_aug'].includes(periodKey));
+            btn.classList.toggle('active', isActive);
+        });
+
+        // 1. Оновлюємо 4 KPI картки
+        const kpis = comp.kpis;
+        if (kpis) {
+            // Переробка насіння
+            if (kpis.seed_processed) {
+                const sp = kpis.seed_processed;
+                setElementText('#kpi-season-seed-title', sp.title);
+                setElementText('#kpi-season-seed-badge', sp.badge);
+                setElementText('#kpi-season-seed-num', sp.number);
+                setElementText('#kpi-season-seed-unit', sp.unit);
+                const subEl = document.querySelector('#kpi-season-seed-sub');
+                if (subEl) subEl.innerHTML = sp.subtext;
+                const barEl = document.querySelector('#kpi-season-seed-bar');
+                if (barEl) barEl.style.width = Math.min(100, Math.max(0, sp.progress_pct || 100)) + '%';
+            }
+
+            // Вихід Олії
+            if (kpis.oil_yield) {
+                const oy = kpis.oil_yield;
+                setElementText('#kpi-season-oil-title', oy.title);
+                setElementText('#kpi-season-oil-badge', oy.badge);
+                setElementText('#kpi-season-oil-num', oy.number);
+                setElementText('#kpi-season-oil-unit', oy.unit);
+                const subEl = document.querySelector('#kpi-season-oil-sub');
+                if (subEl) subEl.innerHTML = oy.subtext;
+                const barEl = document.querySelector('#kpi-season-oil-bar');
+                if (barEl) barEl.style.width = Math.min(100, Math.max(0, oy.progress_pct || 45)) + '%';
+            }
+
+            // Вихід Шроту
+            if (kpis.meal_yield) {
+                const my = kpis.meal_yield;
+                setElementText('#kpi-season-meal-title', my.title);
+                setElementText('#kpi-season-meal-badge', my.badge);
+                setElementText('#kpi-season-meal-num', my.number);
+                setElementText('#kpi-season-meal-unit', my.unit);
+                const subEl = document.querySelector('#kpi-season-meal-sub');
+                if (subEl) subEl.innerHTML = my.subtext;
+                const barEl = document.querySelector('#kpi-season-meal-bar');
+                if (barEl) barEl.style.width = Math.min(100, Math.max(0, my.progress_pct || 41)) + '%';
+            }
+
+            // Сума Олія + Шрот
+            if (kpis.oil_meal_sum) {
+                const oms = kpis.oil_meal_sum;
+                setElementText('#kpi-season-sum-title', oms.title);
+                setElementText('#kpi-season-sum-badge', oms.badge);
+                setElementText('#kpi-season-sum-num', oms.number);
+                setElementText('#kpi-season-sum-unit', oms.unit);
+                const subEl = document.querySelector('#kpi-season-sum-sub');
+                if (subEl) subEl.innerHTML = oms.subtext;
+                const barEl = document.querySelector('#kpi-season-sum-bar');
+                if (barEl) barEl.style.width = Math.min(100, Math.max(0, oms.progress_pct || 86)) + '%';
+            }
+        }
+
+        // 2. Шапка порівняльної таблиці
+        const headers = comp.headers;
+        if (headers) {
+            setElementText('#th-season-compare-2026', headers.col_2026);
+            setElementText('#th-season-compare-2025-analog', headers.col_2025_analog);
+            setElementText('#th-season-compare-2025-year', headers.col_2025_year);
+            setElementText('#th-season-compare-trend', headers.col_trend);
+        }
+
+        // 3. Рядки таблиці
+        const tbody = document.querySelector('#tbody-season-comparison');
+        if (tbody && Array.isArray(comp.rows)) {
+            tbody.innerHTML = comp.rows.map(r => `
+                <tr>
+                    <td>${escapeHtml(r.name)}</td>
+                    <td class="bold">${escapeHtml(r.val_2026)}</td>
+                    <td>${escapeHtml(r.val_2025_an)}</td>
+                    <td>${escapeHtml(r.val_2025_yr)}</td>
+                    <td><span class="trend-badge ${escapeHtml(r.trend_class)}">${escapeHtml(r.trend_text)}</span></td>
+                </tr>
+            `).join('');
         }
     }
 
