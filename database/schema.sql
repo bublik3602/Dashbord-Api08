@@ -141,4 +141,17 @@ CREATE TABLE IF NOT EXISTS `contracts_summary` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 9. Користувачі та ролі дашборду (RBAC)
+CREATE TABLE IF NOT EXISTS `dashboard_users` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(50) NOT NULL UNIQUE COMMENT 'Логін користувача',
+    `password_hash` VARCHAR(255) NOT NULL COMMENT 'Bcrypt хеш пароля',
+    `display_name` VARCHAR(100) NOT NULL DEFAULT '',
+    `role` VARCHAR(50) NOT NULL DEFAULT 'semena' COMMENT 'Роль: admin, semena, viewer тощо',
+    `allowed_pages` VARCHAR(255) NOT NULL DEFAULT 'semena' COMMENT 'Дозволені розділи (all або semena)',
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `last_login_at` DATETIME DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 SET FOREIGN_KEY_CHECKS = 1;

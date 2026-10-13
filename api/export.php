@@ -5,7 +5,10 @@
  */
 
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/metrics_calculator.php';
+
+Auth::requireAuth('dashboard');
 
 try {
     $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';

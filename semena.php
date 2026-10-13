@@ -11,7 +11,11 @@
  */
 
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/semena_helper.php';
+
+// Авторизація та контроль доступу
+$currentUser = Auth::requireAuth('semena');
 
 // Завантаження оригінального або сформованого Excel-файлу Лист_погодження.xlsx
 if (isset($_GET['download']) && $_GET['download'] === '1') {
@@ -630,9 +634,11 @@ $histRows   = $semenaData['history_rows'] ?? [];
             </div>
         </div>
         <div class="header-actions">
+            <?php if (Auth::hasAccess('dashboard')): ?>
             <a href="index.php" class="btn-top btn-dashboard" title="Повернутися на головний дашборд заводу">
                 🏭 На головний дашборд
             </a>
+            <?php endif; ?>
             <button type="button" class="btn-top btn-upload" onclick="openUploadModal()" title="Завантажити 2 файли з 1С: Приход (prihod.xlsx) + Специфікація (spec.xlsx) для автоматичного формування Листа погодження">
                 ⚡ Завантажити Приход + Специфікацію (1С)
             </button>
@@ -642,6 +648,12 @@ $histRows   = $semenaData['history_rows'] ?? [];
             <button type="button" class="btn-top btn-history" onclick="switchTab('tab-history')">
                 📜 Історія змін (<?= count($histRows) ?>)
             </button>
+            <span class="btn-top" style="background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; cursor: default; font-weight: 600;">
+                👤 <?= htmlspecialchars($currentUser['username'] ?? 'semena') ?>
+            </span>
+            <a href="logout.php" class="btn-top" style="background: #ef4444; color: #fff; text-decoration: none; border: 1px solid #dc2626;" title="Вийти з облікового запису">
+                🚪 Вийти
+            </a>
         </div>
     </header>
 

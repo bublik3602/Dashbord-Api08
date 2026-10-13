@@ -10,7 +10,18 @@ header('Cache-Control: no-cache, must-revalidate');
 header('Access-Control-Allow-Origin: *');
 
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/metrics_calculator.php';
+
+Auth::init();
+if (!Auth::check() || !Auth::hasAccess('dashboard')) {
+    http_response_code(403);
+    echo json_encode([
+        'status'  => 'error',
+        'message' => 'Доступ обмежено. Необхідна авторизація адміністратора.',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 try {
     $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';

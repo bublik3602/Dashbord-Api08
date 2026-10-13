@@ -10,7 +10,12 @@ if (!file_exists(__DIR__ . '/config.php') && file_exists(__DIR__ . '/install.php
 }
 
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/metrics_calculator.php';
+
+// Обов'язкова авторизація: головний дашборд доступний тільки для дозволених ролей (admin)
+// Користувач 'semena' автоматично перенаправляється на semena.php
+$currentUser = Auth::requireAuth('dashboard');
 
 try {
     $calculator = new MetricsCalculator();
@@ -121,6 +126,16 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <span>Оновити</span>
                 </button>
                 <span class="refresh-timer" id="refresh-timer-count" title="Наступне автооновлення через">30с</span>
+            </div>
+
+            <!-- Користувач та вихід із системи -->
+            <div class="user-session-control" style="display: flex; align-items: center; gap: 6px; margin-left: 6px;">
+                <span class="btn-action" style="background: rgba(31, 78, 120, 0.08); border: 1px solid rgba(31, 78, 120, 0.2); color: #1e40af; cursor: default; font-weight: 700; padding: 6px 10px; font-size: 13px;" title="Поточний користувач">
+                    👤 <?= htmlspecialchars($currentUser['username'] ?? 'admin') ?>
+                </span>
+                <a href="logout.php" class="btn-action" style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; text-decoration: none; padding: 6px 10px; font-size: 13px; font-weight: 700;" title="Вийти з системи">
+                    🚪 Вийти
+                </a>
             </div>
         </div>
     </header>

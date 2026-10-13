@@ -8,9 +8,20 @@ header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache, must-revalidate');
 
 require_once __DIR__ . '/../includes/helpers.php';
+require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/xlsx_parser.php';
 require_once __DIR__ . '/../includes/semena_helper.php';
+
+Auth::init();
+if (!Auth::check()) {
+    http_response_code(401);
+    echo json_encode([
+        'status'  => 'error',
+        'message' => 'Необхідна авторизація для завантаження файлів.',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 /**
  * Автоматична перевірка та створення відсутніх таблиць і колонок
