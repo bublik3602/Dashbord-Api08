@@ -92,7 +92,11 @@ class MetricsCalculator {
                 }
                 break;
             case 'day_today':
+                $filtered = [end($dailyRows)];
+                break;
             case 'day_prev':
+                $filtered = (count($dailyRows) >= 2) ? [$dailyRows[count($dailyRows) - 2]] : [end($dailyRows)];
+                break;
             case 'day':
             default:
                 $filtered = [end($dailyRows)];
@@ -187,8 +191,11 @@ class MetricsCalculator {
                 : date('d.m.Y 20:00') . ' — ' . date('d.m.Y 08:00', strtotime('+1 day')));
 
         $semenaStats = $this->getSemenaPeriodStats($period);
-        $lastDateLabel = $semenaStats['last_date'] ?? '11.10.2026';
-        $seedInFormatted = number_format($materialBalance['seed_in_plant'] ?? 465.86, 2, ',', ' ');
+        $lastDateLabel = $semenaStats['last_date'] ?? '12.10.2026';
+        $seedInVal = $materialBalance['receiving_zone']['seed_in_plant']
+            ?? $materialBalance['seed_in_plant']
+            ?? ($semenaStats['seed_in_plant'] ?? 471.85);
+        $seedInFormatted = number_format($seedInVal, 2, ',', ' ');
 
         $rangeDisplay = '';
         switch ($period) {
@@ -272,8 +279,8 @@ class MetricsCalculator {
 
     private function getPeriodLabel(string $period): string {
         $semenaStats = $this->getSemenaPeriodStats($period);
-        $lastDate = $semenaStats['last_date'] ?? '11.10.2026';
-        $seedIn = isset($semenaStats['seed_in_plant']) ? number_format($semenaStats['seed_in_plant'], 2, ',', ' ') : '465,86';
+        $lastDate = $semenaStats['last_date'] ?? '12.10.2026';
+        $seedIn = isset($semenaStats['seed_in_plant']) ? number_format($semenaStats['seed_in_plant'], 2, ',', ' ') : '471,85';
 
         switch ($period) {
             case 'day_today':  return "Сьогодні ({$lastDate} — {$seedIn} т за Листом погодження)";
@@ -498,6 +505,7 @@ class MetricsCalculator {
         $oilPlan = ($seedPlan > 0) ? ($seedPlan * 0.440) : 0.0;
 
         return [
+            'seed_in_plant'        => $seedInPlant,
             // Зона приймання
             'receiving_zone' => [
                 'seed_in_plant'        => $seedInPlant,
@@ -1601,7 +1609,7 @@ class MetricsCalculator {
                     'rows' => [
                         [
                             'name'        => 'Завезено насіння (авто/елеватор)',
-                            'val_2026'    => number_format($seedIn, 1, ',', ' ') . ' т',
+                            'val_2026'    => number_format($seedIn, 2, ',', ' ') . ' т',
                             'val_2025_an' => '543,8 т/добу',
                             'val_2025_yr' => '62 403,3 т',
                             'trend_text'  => 'Прийомка доби',
@@ -1710,7 +1718,7 @@ class MetricsCalculator {
                     'rows' => [
                         [
                             'name'        => 'Завезено насіння (авто/елеватор)',
-                            'val_2026'    => number_format($seedIn, 1, ',', ' ') . ' т',
+                            'val_2026'    => number_format($seedIn, 2, ',', ' ') . ' т',
                             'val_2025_an' => '543,8 т/добу',
                             'val_2025_yr' => '62 403,3 т',
                             'trend_text'  => 'Прийомка йде',
