@@ -96,7 +96,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <option value="month_oct">Жовтень 2026 (працював 7 діб з 11)</option>
                         <option value="month_sep">Вересень 2026 (працював 16 діб з 30)</option>
                         <option value="month_aug">Серпень 2026 (0 діб переробки, ППР)</option>
-                        <option value="season">Сезон 2026 (працював 23 доби з 72)</option>
+                        <option value="season">Сезон 2026–2027 (01.08.2026 — 01.08.2027 • 23 доби переробки)</option>
                         <option value="day_prev">Минула доба (11.10 — прийомка 465,9 т, переробка 0 т)</option>
                         <option value="day_active">Остання доба переробки (06.10 — перероблено 600,3 т)</option>
                         <option value="day_today">Сьогодні (12.10, без переробки)</option>
@@ -886,7 +886,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         <div class="section-title">
             <i data-lucide="line-chart" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
             <span>Блок Г: Порівняльна аналітика періодів (Серпень — Вересень — Жовтень 2026)</span>
-            <span class="section-badge badge-blue">Виробничий сезон 2026 (23 доби переробки з 72)</span>
+            <span class="section-badge badge-blue">Виробничий сезон 2026–2027 (01.08.2026 — 01.08.2027 • 23 доби переробки)</span>
         </div>
 
         <!-- Картки-підсумки помісячно (Серпень, Вересень, Жовтень, Сезон) -->
@@ -1030,12 +1030,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
             </div>
 
-            <!-- Разом за сезон 2026 -->
+            <!-- Разом за сезон 2026–2027 -->
             <div class="history-month-card season-summary-card" data-period-trigger="season">
                 <div class="month-card-header">
                     <div class="month-card-title">
-                        <span class="month-name">Сезон 2026 РАЗОМ</span>
-                        <span class="month-badge badge-green">Працював: 23 доби з 72</span>
+                        <span class="month-name">Сезон 2026–2027 РАЗОМ</span>
+                        <span class="month-badge badge-green">01.08.2026 — 01.08.2027</span>
                     </div>
                     <button type="button" class="btn-quick-period" data-period="season" title="Показати дашборд за сезон">
                         <span>Детально</span> &rarr;
@@ -1044,7 +1044,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-metrics-list">
                     <div class="metric-row">
                         <span class="metric-lbl">🗓️ Днів роботи (переробка):</span>
-                        <span class="metric-val bold" style="color: #059669;">23 доби переробки (з 72 діб)</span>
+                        <span class="metric-val bold" style="color: #059669;">23 доби переробки (з 74 діб сезону)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌻 Завіз насіння:</span>
@@ -1196,7 +1196,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 <th>Показник виробництва</th>
                                 <th id="th-season-compare-2026"><?= htmlspecialchars($pcHeaders['col_2026'] ?? 'Доба 2026 (11-12.10)') ?></th>
                                 <th id="th-season-compare-2025-analog"><?= htmlspecialchars($pcHeaders['col_2025_analog'] ?? 'Аналогічна доба 2025 (Жовтень)') ?></th>
-                                <th id="th-season-compare-2025-year"><?= htmlspecialchars($pcHeaders['col_2025_year'] ?? 'Рік 2025–26 (61,9 тис. т)') ?></th>
+                                <th id="th-season-compare-2025-year"><?= htmlspecialchars($pcHeaders['col_2025_year'] ?? 'Сезон 2025–2026 (61,9 тис. т)') ?></th>
                                 <th id="th-season-compare-trend"><?= htmlspecialchars($pcHeaders['col_trend'] ?? 'Динаміка') ?></th>
                             </tr>
                         </thead>
@@ -1214,11 +1214,11 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </table>
                 </div>
 
-                <!-- РОЗГОРТАННЯ ОФІЦІЙНОГО ПОМІСЯЧНОГО ЗВІТУ 2025 (ВСІ 8 МІСЯЦІВ) -->
+                <!-- РОЗГОРТАННЯ ОФІЦІЙНОГО ПОМІСЯЧНОГО ЗВІТУ 2025–2026 (01.08.2025 — 01.08.2026) -->
                 <?php if (!empty($months2025)): ?>
                 <details class="season-monthly-details">
                     <summary>
-                        <span><i data-lucide="table" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Офіційний помісячний звіт сезону 2025–2026 рр. (Вересень — Червень, 8 місяців)</span>
+                        <span><i data-lucide="table" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Офіційний помісячний звіт сезону 2025–2026 рр. (01.08.2025 — 01.08.2026)</span>
                         <span style="font-size: 11px; color: #64748b;">Натисніть для перегляду</span>
                     </summary>
                     <div class="season-monthly-table-wrap">
@@ -1255,7 +1255,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr style="background: #f1f5f9; font-weight: 700;">
-                                    <td>ИТОГО 2025–26</td>
+                                    <td>РАЗОМ СЕЗОН 2025–2026</td>
                                     <td>62 403,3</td>
                                     <td>61 892,9</td>
                                     <td>45,13%</td>
@@ -1276,7 +1276,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="seasonal-note-box" style="margin-top: 12px;">
                     <i data-lucide="info" style="width: 14px; height: 14px; color: var(--color-primary); flex-shrink: 0; margin-top: 2px;"></i>
                     <span>
-                        <strong>Еталонний звіт сезону 2025:</strong> за повний річний цикл перероблено 61 892,9 т при вхідній олійності 45.13%. 
+                        <strong>Еталонний звіт сезону 2025–2026 (01.08.2025 — 01.08.2026):</strong> за повний річний виробничий сезон перероблено 61 892,9 т при вхідній олійності 45.13%. 
                         Вихід олії склав 44.30%, шроту 41.67%, сума основних продуктів 85.97%, а загальний вихід готової продукції досяг 98.85% (технологічні втрати лише 1.15%).
                     </span>
                 </div>

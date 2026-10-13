@@ -208,7 +208,7 @@ class MetricsCalculator {
             case 'month_sep':  $rangeDisplay = "Місяць Вересень 2026 (працював 16 діб переробки: 15.09–30.09 з 30 діб • перероблено 8 823,7 т)"; break;
             case 'month_oct':
             case 'month':      $rangeDisplay = "Місяць Жовтень 2026 (працював 7 діб переробки: 01.10–07.10 • прийнято {$seedInFormatted} т, перероблено 3 646,4 т)"; break;
-            case 'season':     $rangeDisplay = "Виробничий сезон 2026 (працював 23 доби переробки • прийнято {$seedInFormatted} т, перероблено 12 470,0 т)"; break;
+            case 'season':     $rangeDisplay = "Виробничий сезон 2026–2027 (01.08.2026 — 01.08.2027 • 23 доби переробки • прийнято {$seedInFormatted} т, перероблено 12 470,0 т)"; break;
             case 'day':
             default:
                 $rangeDisplay = "Доба ({$lastDateLabel} — прийнято за Листом погодження: {$seedInFormatted} т з плану 600 т, без очистки та сушки)";
@@ -271,7 +271,7 @@ class MetricsCalculator {
             case 'month':
                 return "recorded_at >= '2026-10-01 08:00:00' AND recorded_at < '2026-10-13 08:00:00'";
             case 'season':
-                return "recorded_at >= '2026-08-01 08:00:00' AND recorded_at < '2026-10-13 08:00:00'";
+                return "recorded_at >= '2026-08-01 08:00:00' AND recorded_at < '2027-08-01 08:00:00'";
             default:
                 return "date(recorded_at) = '2026-10-11'";
         }
@@ -292,7 +292,7 @@ class MetricsCalculator {
             case 'month_sep':  return 'Вересень 2026 (працював 16 діб: 15.09–30.09 з 30)';
             case 'month_oct':
             case 'month':      return 'Жовтень 2026 (працював 7 діб: 01.10–07.10)';
-            case 'season':     return 'Сезон 2026 (працював 23 доби переробки)';
+            case 'season':     return 'Сезон 2026–2027 (01.08.2026 — 01.08.2027 • 23 доби переробки)';
             case 'day':
             default:           return "За добу ({$lastDate} — {$seedIn} т прийомка без очистки та сушки)";
         }
@@ -413,7 +413,7 @@ class MetricsCalculator {
                 'seed_plan'     => 6600.0,
             ],
             'season' => [
-                // Сезон 2026-27 разом (Серпень — Жовтень з «СВОДНАЯ 2026-27»): працював 23 доби переробки
+                // Сезон 2026–2027 разом (01.08.2026 — 01.08.2027 з «СВОДНАЯ 2026-27»): працював 23 доби переробки
                 'seed_in_plant' => 25361.41,
                 'seed_in_prod'  => 12470.01,
                 'cond_loss'     => 148.35,
@@ -1192,10 +1192,10 @@ class MetricsCalculator {
                 ]
             ],
             'season_total' => [
-                'name'               => 'Разом за сезон 2026',
-                'period'             => 'Серпень — Жовтень 2026 (73 доби)',
+                'name'               => 'Разом за сезон 2026–2027 рр. (01.08.2026 — 01.08.2027)',
+                'period'             => '01.08.2026 — 01.08.2027 (поточний стан: 23 доби переробки)',
                 'working_days'       => 23,
-                'working_days_label' => 'Працював: 23 доби переробки (з 73 діб)',
+                'working_days_label' => 'Працював: 23 доби переробки (з 74 діб сезону)',
                 'seed_in'            => $seasonSeedIn,
                 'seed_processed'     => 12470.01,
                 'oil_out'            => 5457.81,
@@ -1226,8 +1226,8 @@ class MetricsCalculator {
                 'seed_stocks'    => [883.40, 10966.28, $seedStock],
             ],
             'season_2025_comparison' => [
-                'name' => 'Сезон 2025–2026 рр. (Офіційний виробничий звіт «СВОДНАЯ 2025-26»)',
-                'period_label' => 'Вересень 2025 — Червень 2026 (повний виробничий цикл)',
+                'name' => 'Сезон 2025–2026 рр. (01.08.2025 — 01.08.2026 • Офіційний звіт заводу)',
+                'period_label' => '01.08.2025 — 01.08.2026 (повний виробничий цикл попереднього сезону)',
                 'months' => [
                     [
                         'name'            => 'Вересень 2025',
@@ -1392,7 +1392,7 @@ class MetricsCalculator {
                     'seed_stock_end'  => 211.92,
                 ],
                 'full_season_total' => [
-                    'label'           => 'РАЗОМ за сезон 2025–2026 рр. (Повний цикл)',
+                    'label'           => 'РАЗОМ за сезон 2025–2026 рр. (01.08.2025 — 01.08.2026)',
                     'seed_in'         => 62403.27,
                     'seed_processed'  => 61892.86,
                     'oil_content_pct' => 45.13,
@@ -1539,7 +1539,7 @@ class MetricsCalculator {
                         'col_indicator'   => 'Показник виробництва',
                         'col_2026'        => 'Доба 2026 (сьогодні)',
                         'col_2025_analog' => 'Аналогічна доба 2025 (Жовтень)',
-                        'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                        'col_2025_year'   => 'Сезон 2025–2026 (61,9 тис. т)',
                         'col_trend'       => 'Динаміка',
                     ],
                     'rows' => [
@@ -1648,7 +1648,7 @@ class MetricsCalculator {
                         'col_indicator'   => 'Показник виробництва',
                         'col_2026'        => 'Доба 2026 (сьогодні)',
                         'col_2025_analog' => 'Аналогічна доба 2025 (Жовтень)',
-                        'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                        'col_2025_year'   => 'Сезон 2025–2026 (61,9 тис. т)',
                         'col_trend'       => 'Динаміка',
                     ],
                     'rows' => [
@@ -1782,7 +1782,7 @@ class MetricsCalculator {
                     'col_indicator'   => 'Показник виробництва',
                     'col_2026'        => 'Робоча доба 2026 (06.10)',
                     'col_2025_analog' => 'Аналогічна доба 2025 (Жовтень)',
-                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_2025_year'   => 'Сезон 2025–2026 (61,9 тис. т)',
                     'col_trend'       => 'Динаміка',
                 ],
                 'rows' => [
@@ -1915,7 +1915,7 @@ class MetricsCalculator {
                     'col_indicator'   => 'Показник виробництва',
                     'col_2026'        => 'Тиждень 2026 (7 діб)',
                     'col_2025_analog' => 'Аналогічний тиждень 2025 (7 діб)',
-                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_2025_year'   => 'Сезон 2025–2026 (61,9 тис. т)',
                     'col_trend'       => 'Динаміка',
                 ],
                 'rows' => [
@@ -2047,7 +2047,7 @@ class MetricsCalculator {
                     'col_indicator'   => 'Показник виробництва',
                     'col_2026'        => 'Вересень 2026 (16 діб)',
                     'col_2025_analog' => 'Вересень 2025 (старт)',
-                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_2025_year'   => 'Сезон 2025–2026 (61,9 тис. т)',
                     'col_trend'       => 'Динаміка',
                 ],
                 'rows' => [
@@ -2137,32 +2137,32 @@ class MetricsCalculator {
             $seasonSeed = !empty($this->getSemenaPeriodStats('season')['seed_in_plant']) ? (float)$this->getSemenaPeriodStats('season')['seed_in_plant'] : 25353.92;
             return [
                 'period'       => 'season',
-                'badge_label'  => 'Сезон 2026 vs 2025 (Вер–Жов)',
+                'badge_label'  => 'Сезон 2026–2027 vs Сезон 2025–2026',
                 'kpis' => [
                     'seed_processed' => [
                         'title'        => '⚙️ Переробка насіння',
-                        'badge'        => 'Сезон 2026 (23 доби)',
+                        'badge'        => 'Сезон 2026–2027 (23 доби)',
                         'number'       => '12 470,0',
-                        'unit'         => 'т (Сезон 2026)',
-                        'subtext'      => '2025 (Вер–Жов): <strong>21 117,1 т</strong> &bull; Рік 2025: <strong>61 892,9 т</strong> (20,1% року)',
+                        'unit'         => 'т (Сезон 2026–2027)',
+                        'subtext'      => '2025–2026 (Вер–Жов): <strong>21 117,1 т</strong> &bull; Сезон 2025–2026: <strong>61 892,9 т</strong> (20,1%)',
                         'progress_pct' => 100.0,
                         'color'        => '#10b981',
                     ],
                     'oil_yield' => [
                         'title'        => '💧 Вихід Олії',
-                        'badge'        => '-0,17% до старту 25',
+                        'badge'        => '-0,17% до старту 25/26',
                         'number'       => '43,77%',
-                        'unit'         => 'Сезон 2026 (5 457,8 т)',
-                        'subtext'      => '2025 (Вер–Жов): <strong>43,94%</strong> (рік 44,30%) &bull; Жовтень 2026: <strong>45,15%</strong>',
+                        'unit'         => 'Сезон 2026–2027 (5 457,8 т)',
+                        'subtext'      => '2025–2026 (Вер–Жов): <strong>43,94%</strong> (сезон 44,30%) &bull; Жовтень 2026: <strong>45,15%</strong>',
                         'progress_pct' => 43.8,
                         'color'        => '#f59e0b',
                     ],
                     'meal_yield' => [
                         'title'        => '🌾 Вихід Шроту',
-                        'badge'        => '+0,07% до року 25',
+                        'badge'        => '+0,07% до сезону 25/26',
                         'number'       => '41,74%',
-                        'unit'         => 'Сезон 2026 (5 204,9 т)',
-                        'subtext'      => '2025 (Вер–Жов): <strong>41,84%</strong> (рік 41,67%) &bull; Відхилення: <strong>+0,07%</strong>',
+                        'unit'         => 'Сезон 2026–2027 (5 204,9 т)',
+                        'subtext'      => '2025–2026 (Вер–Жов): <strong>41,84%</strong> (сезон 41,67%) &bull; Відхилення: <strong>+0,07%</strong>',
                         'progress_pct' => 41.7,
                         'color'        => '#2563eb',
                     ],
@@ -2170,17 +2170,17 @@ class MetricsCalculator {
                         'title'        => '⚖️ Олія + Шрот',
                         'badge'        => 'Ціль 85–86%',
                         'number'       => '85,51%',
-                        'unit'         => 'Сезон 2026 (10 662,7 т)',
-                        'subtext'      => '2025 (Вер–Жов): <strong>85,78%</strong> (рік 85,97%) &bull; Готова прод.: <strong>100,07%</strong>',
+                        'unit'         => 'Сезон 2026–2027 (10 662,7 т)',
+                        'subtext'      => '2025–2026 (Вер–Жов): <strong>85,78%</strong> (сезон 85,97%) &bull; Готова прод.: <strong>100,07%</strong>',
                         'progress_pct' => 85.5,
                         'color'        => '#8b5cf6',
                     ],
                 ],
                 'headers' => [
                     'col_indicator'   => 'Показник виробництва',
-                    'col_2026'        => 'Сезон 2026 (72 дн.)',
-                    'col_2025_analog' => 'Сезон 2025 (Вер–Жов)',
-                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_2026'        => 'Сезон 2026–2027 (01.08–01.08)',
+                    'col_2025_analog' => 'Сезон 2025–2026 (Вер–Жов)',
+                    'col_2025_year'   => 'Весь сезон 2025–2026 (61,9 тис. т)',
                     'col_trend'       => 'Динаміка',
                 ],
                 'rows' => [
@@ -2314,7 +2314,7 @@ class MetricsCalculator {
                     'col_indicator'   => 'Показник виробництва',
                     'col_2026'        => 'Жовтень 2026 (01–12.10)',
                     'col_2025_analog' => 'Жовтень 2025 (повний місяць)',
-                    'col_2025_year'   => 'Рік 2025–26 (61,9 тис. т)',
+                    'col_2025_year'   => 'Сезон 2025–2026 (61,9 тис. т)',
                     'col_trend'       => 'Динаміка',
                 ],
                 'rows' => [
@@ -2520,7 +2520,7 @@ class MetricsCalculator {
                     'fulfillment_pct'     => $contr > 0 ? round(($deliv / $contr) * 100, 1) : 93.9,
                     'active_specs_count'  => $activeSpecs,
                     'pending_specs_count' => $pendingSpecs,
-                    'report_date'         => 'Сезон 2026 (Лист погодження)',
+                    'report_date'         => 'Сезон 2026–2027 (Лист погодження)',
                 ];
             case 'day_prev':
                 $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 465.86;
