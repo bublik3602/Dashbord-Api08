@@ -7,16 +7,158 @@ require_once __DIR__ . '/helpers.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/crm_client.php';
 require_once __DIR__ . '/zabbix_client.php';
+require_once __DIR__ . '/semena_helper.php';
 
 class MetricsCalculator {
     private PDO $db;
     private array $config;
     private array $thresholds;
+    private ?array $semenaCache = null;
 
     public function __construct() {
         $this->db = DashboardDB::getConnection();
         $this->config = get_config();
         $this->thresholds = $this->config['thresholds'] ?? [];
+    }
+
+    /**
+     * Завантажити дані з Листа погодження (кешовано в межах запиту)
+     */
+    private function getSemenaData(): array {
+        if ($this->semenaCache === null) {
+            $this->semenaCache = SemenaHelper::loadData();
+        }
+        return $this->semenaCache;
+    }
+
+    /**
+     * Динамічний розрахунок фізичного завезення (без очистки та сушки) та якості лабораторії з Листа погодження
+     */
+    private function getSemenaPeriodStats(string $period): array {
+        $semena = $this->getSemenaData();
+        $dailyRows = $semena['daily_rows'] ?? [];
+        if (empty($dailyRows)) {
+            return [];
+        }
+
+        $filtered = [];
+        switch ($period) {
+            case 'day_active':
+                foreach ($dailyRows as $r) {
+                    if (($r['date'] ?? '') === '06.10.2026') {
+                        $filtered[] = $r;
+                    }
+                }
+                if (empty($filtered)) {
+                    $filtered = [end($dailyRows)];
+                }
+                break;
+            case 'week':
+                $filtered = array_slice($dailyRows, -7);
+                break;
+            case 'month_aug':
+                foreach ($dailyRows as $r) {
+                    if (strpos($r['date'] ?? '', '.08.') !== false) {
+                        $filtered[] = $r;
+                    }
+                }
+                break;
+            case 'month_sep':
+                foreach ($dailyRows as $r) {
+                    if (strpos($r['date'] ?? '', '.09.') !== false) {
+                        $filtered[] = $r;
+                    }
+                }
+                break;
+            case 'month_oct':
+            case 'month':
+                foreach ($dailyRows as $r) {
+                    if (strpos($r['date'] ?? '', '.10.') !== false) {
+                        $filtered[] = $r;
+                    }
+                }
+                break;
+            case 'season':
+                $filtered = $dailyRows;
+                break;
+            case 'shift':
+                $last = end($dailyRows);
+                if ($last) {
+                    $half = $last;
+                    $half['delivered'] = round(((float)($last['delivered'] ?? 0)) / 2, 3);
+                    $half['credit_weight'] = round(((float)($last['credit_weight'] ?? 0)) / 2, 3);
+                    $half['discount'] = round(((float)($last['discount'] ?? 0)) / 2, 3);
+                    $filtered = [$half];
+                }
+                break;
+            case 'day_today':
+            case 'day_prev':
+            case 'day':
+            default:
+                $filtered = [end($dailyRows)];
+                break;
+        }
+
+        if (empty($filtered)) {
+            return [];
+        }
+
+        $sumDelivered = 0.0;
+        $sumCredit    = 0.0;
+        $sumDiscount  = 0.0;
+        $sumTrucks    = 0;
+        $wOil         = 0.0;
+        $wOilWeight   = 0.0;
+        $wMoist       = 0.0;
+        $wMoistWeight = 0.0;
+        $wTrash       = 0.0;
+        $wTrashWeight = 0.0;
+
+        foreach ($filtered as $r) {
+            $deliv  = (float)($r['delivered'] ?? 0);
+            $cred   = (float)($r['credit_weight'] ?? $deliv);
+            $disc   = (float)($r['discount'] ?? ($deliv - $cred));
+            $trucks = (int)($r['cars'] ?? 0);
+            $oil    = (float)($r['oil'] ?? 0);
+            $moist  = (float)($r['moisture'] ?? 0);
+            $trash  = (float)($r['trash'] ?? 0);
+
+            $sumDelivered += $deliv;
+            $sumCredit    += $cred;
+            $sumDiscount  += $disc;
+            $sumTrucks    += $trucks;
+
+            if ($deliv > 0) {
+                if ($oil > 0) {
+                    $wOil += $deliv * $oil;
+                    $wOilWeight += $deliv;
+                }
+                if ($moist > 0) {
+                    $wMoist += $deliv * $moist;
+                    $wMoistWeight += $deliv;
+                }
+                if ($trash > 0) {
+                    $wTrash += $deliv * $trash;
+                    $wTrashWeight += $deliv;
+                }
+            }
+        }
+
+        $firstDate = $filtered[0]['date'] ?? '';
+        $lastDate  = end($filtered)['date'] ?? '';
+
+        return [
+            'seed_in_plant'          => round($sumDelivered, 2), // Фізична вага з Листа погодження (без очистки та сушки)
+            'credit_weight'          => round($sumCredit, 2),
+            'weight_discount_tonnes' => round(abs($sumDiscount), 2),
+            'trucks_count'           => $sumTrucks,
+            'days_count'             => count($filtered),
+            'oil_content_pct'        => $wOilWeight > 0 ? round($wOil / $wOilWeight, 2) : 48.0,
+            'moisture_pct'           => $wMoistWeight > 0 ? round($wMoist / $wMoistWeight, 2) : 7.0,
+            'impurity_pct'           => $wTrashWeight > 0 ? round($wTrash / $wTrashWeight, 2) : 3.0,
+            'first_date'             => $firstDate,
+            'last_date'              => $lastDate,
+        ];
     }
 
     /**
@@ -44,21 +186,25 @@ class MetricsCalculator {
                 ? date('d.m.Y 20:00', strtotime('-1 day')) . ' — ' . date('d.m.Y 08:00')
                 : date('d.m.Y 20:00') . ' — ' . date('d.m.Y 08:00', strtotime('+1 day')));
 
+        $semenaStats = $this->getSemenaPeriodStats($period);
+        $lastDateLabel = $semenaStats['last_date'] ?? '11.10.2026';
+        $seedInFormatted = number_format($materialBalance['seed_in_plant'] ?? 465.86, 2, ',', ' ');
+
         $rangeDisplay = '';
         switch ($period) {
-            case 'day_today':  $rangeDisplay = "Поточна доба (12.10.2026 — приймання: 0 т, переробка МЕЗ: 0 т)"; break;
-            case 'day_prev':   $rangeDisplay = "Минула виробнича доба (11.10.2026 — прийнято 465,9 т з плану 600 т, переробка МЕЗ: 0 т)"; break;
-            case 'day_active': $rangeDisplay = "Остання доба активної переробки (06.10.2026 — прийнято 589,8 т, перероблено 600,3 т)"; break;
+            case 'day_today':  $rangeDisplay = "Поточна доба ({$lastDateLabel} — прийнято за Листом погодження: {$seedInFormatted} т без очистки та сушки)"; break;
+            case 'day_prev':   $rangeDisplay = "Минула виробнича доба ({$lastDateLabel} — прийнято {$seedInFormatted} т з плану 600 т, переробка МЕЗ: 0 т)"; break;
+            case 'day_active': $rangeDisplay = "Остання доба активної переробки (06.10.2026 — прийнято {$seedInFormatted} т, перероблено 600,3 т)"; break;
             case 'shift':      $rangeDisplay = "Поточна зміна ({$shiftBounds})"; break;
-            case 'week':       $rangeDisplay = "За тиждень (05.10 — 11.10.2026, 7 діб приймання / 3 доби переробки: прийнято 3 767,8 т, перероблено 1 310,3 т)"; break;
-            case 'month_aug':  $rangeDisplay = "Місяць Серпень 2026 (0 діб переробки з 31 доби • ППР заводу, прийнято 208,0 т)"; break;
+            case 'week':       $rangeDisplay = "За тиждень ({$semenaStats['first_date']} — {$lastDateLabel}, 7 діб приймання / 3 доби переробки: прийнято {$seedInFormatted} т, перероблено 1 310,3 т)"; break;
+            case 'month_aug':  $rangeDisplay = "Місяць Серпень 2026 (0 діб переробки з 31 доби • ППР заводу, прийнято {$seedInFormatted} т)"; break;
             case 'month_sep':  $rangeDisplay = "Місяць Вересень 2026 (працював 16 діб переробки: 15.09–30.09 з 30 діб • перероблено 8 823,7 т)"; break;
             case 'month_oct':
-            case 'month':      $rangeDisplay = "Місяць Жовтень 2026 (працював 7 діб переробки: 01.10–07.10 з 11 діб • перероблено 3 646,4 т)"; break;
-            case 'season':     $rangeDisplay = "Виробничий сезон 2026 (працював 23 доби переробки з 72 діб • перероблено 12 470,0 т)"; break;
+            case 'month':      $rangeDisplay = "Місяць Жовтень 2026 (працював 7 діб переробки: 01.10–07.10 • прийнято {$seedInFormatted} т, перероблено 3 646,4 т)"; break;
+            case 'season':     $rangeDisplay = "Виробничий сезон 2026 (працював 23 доби переробки • прийнято {$seedInFormatted} т, перероблено 12 470,0 т)"; break;
             case 'day':
             default:
-                $rangeDisplay = "Минула виробнича доба (11.10.2026 — прийнято 465,9 т з плану 600 т, переробка МЕЗ: 0 т, вихід: 0 т)";
+                $rangeDisplay = "Доба ({$lastDateLabel} — прийнято за Листом погодження: {$seedInFormatted} т з плану 600 т, без очистки та сушки)";
                 break;
         }
 
@@ -124,19 +270,23 @@ class MetricsCalculator {
     }
 
     private function getPeriodLabel(string $period): string {
+        $semenaStats = $this->getSemenaPeriodStats($period);
+        $lastDate = $semenaStats['last_date'] ?? '11.10.2026';
+        $seedIn = isset($semenaStats['seed_in_plant']) ? number_format($semenaStats['seed_in_plant'], 2, ',', ' ') : '465,86';
+
         switch ($period) {
-            case 'day_today':  return 'Сьогодні (12.10.2026, без переробки)';
-            case 'day_prev':   return 'Минула доба (11.10.2026 — 465,9 т прийомка, 0 т переробка)';
+            case 'day_today':  return "Сьогодні ({$lastDate} — {$seedIn} т за Листом погодження)";
+            case 'day_prev':   return "Минула доба ({$lastDate} — {$seedIn} т прийомка, 0 т переробка)";
             case 'day_active': return 'Остання доба переробки (06.10.2026 — 600,3 т)';
             case 'shift':      return 'Поточна зміна (12 год)';
-            case 'week':       return 'За тиждень (05.10 — 11.10, 7 діб прийомки / 3 доби переробки)';
+            case 'week':       return 'За тиждень (7 діб прийомки / 3 доби переробки)';
             case 'month_aug':  return 'Серпень 2026 (0 діб переробки з 31 • ППР)';
             case 'month_sep':  return 'Вересень 2026 (працював 16 діб: 15.09–30.09 з 30)';
             case 'month_oct':
-            case 'month':      return 'Жовтень 2026 (працював 7 діб: 01.10–07.10 з 11)';
-            case 'season':     return 'Сезон 2026 (працював 23 доби переробки з 72)';
+            case 'month':      return 'Жовтень 2026 (працював 7 діб: 01.10–07.10)';
+            case 'season':     return 'Сезон 2026 (працював 23 доби переробки)';
             case 'day':
-            default:           return 'Минула виробнича доба (11.10.2026)';
+            default:           return "За добу ({$lastDate} — {$seedIn} т прийомка без очистки та сушки)";
         }
     }
 
@@ -148,7 +298,7 @@ class MetricsCalculator {
         // План приймання на добу = 600,0 т
         $verifiedPeriods = [
             'day_today' => [
-                'seed_in_plant' => 0.00,
+                'seed_in_plant' => 465.86,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
                 'cond_loss_pct' => 0.00,
@@ -169,7 +319,7 @@ class MetricsCalculator {
                 'seed_plan'     => 600.0,
             ],
             'day' => [
-                // Остання завершена доба 11.10.2026: прийомка 465,86 т з плану 600,0 т (77,6%), переробка 0,00 т
+                // Остання завершена доба з Листа погодження: прийомка 465,86 т з плану 600,0 т (без очистки та сушки), переробка 0,00 т
                 'seed_in_plant' => 465.86,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
@@ -224,7 +374,7 @@ class MetricsCalculator {
             ],
             'month_sep' => [
                 // Вересень 2026 (з «Сент.26» та «СВОДНАЯ 2026-27»): працював 16 діб переробки (15.09-30.09)
-                'seed_in_plant' => 19070.05,
+                'seed_in_plant' => 19077.54,
                 'seed_in_prod'  => 8823.66,
                 'cond_loss'     => 94.74,
                 'cond_loss_pct' => 1.06,
@@ -256,7 +406,7 @@ class MetricsCalculator {
             ],
             'season' => [
                 // Сезон 2026-27 разом (Серпень — Жовтень з «СВОДНАЯ 2026-27»): працював 23 доби переробки
-                'seed_in_plant' => 25353.92,
+                'seed_in_plant' => 25361.41,
                 'seed_in_prod'  => 12470.01,
                 'cond_loss'     => 148.35,
                 'cond_loss_pct' => 1.18,
@@ -277,17 +427,25 @@ class MetricsCalculator {
         $huskOut             = $vp['husk_out'];
         $seedPlan            = $vp['seed_plan'];
 
-        // Якщо в БД були імпортовані свіжіші записи після 12.10.2026, враховуємо їх для поточного дня
-        if ($period === 'day') {
+        // Зона приймання: ЗАВЖДИ беремо фізичне завезення (без очистки та сушки) з Листа погодження («Графік завезення (по днях)»)
+        $semenaStats = $this->getSemenaPeriodStats($period);
+        if (!empty($semenaStats) && isset($semenaStats['seed_in_plant']) && $semenaStats['seed_in_plant'] > 0) {
+            $seedInPlant = (float)$semenaStats['seed_in_plant'];
+            if (in_array($period, ['month_oct', 'month'], true) && !empty($semenaStats['days_count'])) {
+                $seedPlan = (float)($semenaStats['days_count'] * 600.0);
+            }
+        }
+
+        // Якщо в БД були імпортовані свіжіші записи виробничого звіту, враховуємо їх для поточного дня
+        if (in_array($period, ['day', 'day_prev', 'day_today'], true)) {
             try {
                 $stmt = $this->db->query("
                     SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
                     FROM material_balance_logs
-                    WHERE recorded_at > '2026-10-12 23:59:59'
-                    ORDER BY recorded_at DESC LIMIT 1
+                    ORDER BY id DESC LIMIT 1
                 ");
                 $latestRow = $stmt ? $stmt->fetch() : null;
-                if ($latestRow) {
+                if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0 && empty($semenaStats)) {
                     $seedInPlant         = (float)$latestRow['seed_in_plant'];
                     $seedInProd          = (float)$latestRow['seed_in_production'];
                     $oilOut              = (float)$latestRow['oil_out'];
@@ -807,24 +965,91 @@ class MetricsCalculator {
     }
 
     /**
-     * Складські залишки готової продукції та насіння (звіти «ежедн.отчёт 1» та «ежедн.отчёт 2» Агропроінвест 08)
+     * Завантажити актуальні складські залишки з database/svod_stocks.json та таблиці warehouse_stocks
+     */
+    private function loadLiveSvodStocks(): array {
+        $defaults = [
+            'seed_stock_tonnes'            => 13115.47,
+            'seed_stock_accounting_tonnes' => 13794.46,
+            'seed_received_tonnes'         => 465.77,
+            'oil_stock_tonnes'             => 3332.32,
+            'oil_shipped_tonnes'           => 26.44,
+            'meal_stock_tonnes'            => 773.73,
+            'meal_shipped_tonnes'          => 282.40,
+            'husk_stock_tonnes'            => 87.64,
+            'husk_shipped_tonnes'          => 29.50,
+            'month_oil_shipped_tonnes'     => 1050.54,
+            'month_meal_shipped_tonnes'    => 2461.42,
+            'month_husk_shipped_tonnes'    => 507.58,
+            'sheet_title'                  => '12 число',
+            'updated_at'                   => '12.10.2026',
+        ];
+
+        $svodJsonPath = __DIR__ . '/../database/svod_stocks.json';
+        if (file_exists($svodJsonPath)) {
+            $decoded = json_decode((string)file_get_contents($svodJsonPath), true);
+            if (is_array($decoded)) {
+                $defaults = array_merge($defaults, $decoded);
+            }
+        }
+
+        // Також перевіряємо останній запис у БД warehouse_stocks (якщо імпортовано через БД)
+        try {
+            $stmt = $this->db->query("
+                SELECT seed_stock_tonnes, seed_stock_accounting_tonnes, oil_stock_tonnes, meal_stock_tonnes, husk_stock_tonnes,
+                       oil_shipped_tonnes, meal_shipped_tonnes, husk_shipped_tonnes, recorded_at
+                FROM warehouse_stocks
+                ORDER BY id DESC LIMIT 1
+            ");
+            $row = $stmt ? $stmt->fetch() : null;
+            // Якщо в БД не застарілий дефолт 13326.41 або немає JSON-файлу
+            if ($row && (!file_exists($svodJsonPath) || abs((float)$row['seed_stock_tonnes'] - 13326.41) > 0.05)) {
+                $defaults['seed_stock_tonnes']            = round((float)$row['seed_stock_tonnes'], 2);
+                $defaults['seed_stock_accounting_tonnes'] = round((float)$row['seed_stock_accounting_tonnes'], 2);
+                $defaults['oil_stock_tonnes']             = round((float)$row['oil_stock_tonnes'], 2);
+                $defaults['meal_stock_tonnes']            = round((float)$row['meal_stock_tonnes'], 2);
+                $defaults['husk_stock_tonnes']            = round((float)$row['husk_stock_tonnes'], 2);
+                if ((float)$row['oil_shipped_tonnes'] > 0 || (float)$row['meal_shipped_tonnes'] > 0 || (float)$row['husk_shipped_tonnes'] > 0) {
+                    $defaults['oil_shipped_tonnes']  = round((float)$row['oil_shipped_tonnes'], 2);
+                    $defaults['meal_shipped_tonnes'] = round((float)$row['meal_shipped_tonnes'], 2);
+                    $defaults['husk_shipped_tonnes'] = round((float)$row['husk_shipped_tonnes'], 2);
+                }
+            }
+        } catch (Throwable $e) {}
+
+        return $defaults;
+    }
+
+    /**
+     * Складські залишки готової продукції та насіння (звіти «ежедн.отчёт 1» та «Ежедн.отчет2» Агропроінвест 08)
      */
     public function getWarehouseStocks(string $period = 'day'): array {
+        $live = $this->loadLiveSvodStocks();
+        $seedStock     = round((float)$live['seed_stock_tonnes'], 2);
+        $seedAcct      = round((float)$live['seed_stock_accounting_tonnes'], 2);
+        $oilStock      = round((float)$live['oil_stock_tonnes'], 2);
+        $mealStock     = round((float)$live['meal_stock_tonnes'], 2);
+        $huskStock     = round((float)$live['husk_stock_tonnes'], 2);
+        $daysReserve   = round($seedStock / 600.0, 1);
+        $sheetTitle    = $live['sheet_title'] ?? '12 число';
+        $monthOilShip  = round((float)($live['month_oil_shipped_tonnes'] ?? 1050.54), 2);
+        $monthMealShip = round((float)($live['month_meal_shipped_tonnes'] ?? 2461.42), 2);
+        $monthHuskShip = round((float)($live['month_husk_shipped_tonnes'] ?? 507.58), 2);
+
         switch ($period) {
             case 'week':
-                // За тиждень (05.10 — 11.10, 7 діб): залишки на 12.10 08:00, відвантаження сумарно за 5..11 число
                 return [
-                    'seed_stock_tonnes'            => 13326.41,
-                    'seed_stock_accounting_tonnes' => 7268.88,
-                    'oil_stock_tonnes'             => 3358.63,
-                    'meal_stock_tonnes'            => 1056.13,
-                    'husk_stock_tonnes'            => 116.84,
+                    'seed_stock_tonnes'            => $seedStock,
+                    'seed_stock_accounting_tonnes' => $seedAcct,
+                    'oil_stock_tonnes'             => $oilStock,
+                    'meal_stock_tonnes'            => $mealStock,
+                    'husk_stock_tonnes'            => $huskStock,
                     'husk_boiler_spent_tonnes'     => 102.05,
-                    'days_seed_reserve'            => 22.2,
-                    'oil_shipped_tonnes'           => 702.36,
-                    'meal_shipped_tonnes'          => 1343.90,
-                    'husk_shipped_tonnes'          => 292.26,
-                    'report_date'                  => '12.10.2026 08:00 (тиждень 05.10–11.10)',
+                    'days_seed_reserve'            => $daysReserve,
+                    'oil_shipped_tonnes'           => 728.80,
+                    'meal_shipped_tonnes'          => 1626.30,
+                    'husk_shipped_tonnes'          => 321.76,
+                    'report_date'                  => "Ежедн.отчет2 ({$sheetTitle}, тиждень)",
                 ];
             case 'day_active':
                 // За останню повну добу переробки (06.10.2026 — аркуш «6 число»)
@@ -872,64 +1097,49 @@ class MetricsCalculator {
             case 'month_oct':
             case 'month':
                 return [
-                    'seed_stock_tonnes'            => 13326.41,
-                    'seed_stock_accounting_tonnes' => 7268.88,
-                    'oil_stock_tonnes'             => 3358.63,
-                    'meal_stock_tonnes'            => 1056.13,
-                    'husk_stock_tonnes'            => 116.84,
+                    'seed_stock_tonnes'            => $seedStock,
+                    'seed_stock_accounting_tonnes' => $seedAcct,
+                    'oil_stock_tonnes'             => $oilStock,
+                    'meal_stock_tonnes'            => $mealStock,
+                    'husk_stock_tonnes'            => $huskStock,
                     'husk_boiler_spent_tonnes'     => 294.17,
-                    'days_seed_reserve'            => 22.2,
-                    'oil_shipped_tonnes'           => 1024.10,
-                    'meal_shipped_tonnes'          => 2179.02,
-                    'husk_shipped_tonnes'          => 478.08,
-                    'report_date'                  => '12.10.2026 08:00',
+                    'days_seed_reserve'            => $daysReserve,
+                    'oil_shipped_tonnes'           => $monthOilShip,
+                    'meal_shipped_tonnes'          => $monthMealShip,
+                    'husk_shipped_tonnes'          => $monthHuskShip,
+                    'report_date'                  => "Ежедн.отчет2 ({$sheetTitle}, СВОД_ОКТЯБРЬ 26)",
                 ];
             case 'season':
                 return [
-                    'seed_stock_tonnes'            => 13326.41,
-                    'seed_stock_accounting_tonnes' => 7268.88,
-                    'oil_stock_tonnes'             => 3358.63,
-                    'meal_stock_tonnes'            => 1056.13,
-                    'husk_stock_tonnes'            => 116.84,
+                    'seed_stock_tonnes'            => $seedStock,
+                    'seed_stock_accounting_tonnes' => $seedAcct,
+                    'oil_stock_tonnes'             => $oilStock,
+                    'meal_stock_tonnes'            => $mealStock,
+                    'husk_stock_tonnes'            => $huskStock,
                     'husk_boiler_spent_tonnes'     => 710.19,
-                    'days_seed_reserve'            => 22.2,
-                    'oil_shipped_tonnes'           => 2191.04,
-                    'meal_shipped_tonnes'          => 5901.90,
-                    'husk_shipped_tonnes'          => 1047.34,
-                    'report_date'                  => '12.10.2026 08:00',
+                    'days_seed_reserve'            => $daysReserve,
+                    'oil_shipped_tonnes'           => round(76.64 + 1090.30 + $monthOilShip, 2),
+                    'meal_shipped_tonnes'          => round(1390.54 + 2332.34 + $monthMealShip, 2),
+                    'husk_shipped_tonnes'          => round(78.60 + 490.66 + $monthHuskShip, 2),
+                    'report_date'                  => "Ежедн.отчет2 ({$sheetTitle})",
                 ];
             case 'day_today':
-                // Сьогодні 12.10.2026 (аркуш «12 число» — рух за поточну добу ще 0, вхідні залишки на 08:00)
-                return [
-                    'seed_stock_tonnes'            => 13326.41,
-                    'seed_stock_accounting_tonnes' => 7268.88,
-                    'oil_stock_tonnes'             => 3358.63,
-                    'meal_stock_tonnes'            => 1056.13,
-                    'husk_stock_tonnes'            => 116.84,
-                    'husk_boiler_spent_tonnes'     => 0.00,
-                    'days_seed_reserve'            => 22.2,
-                    'oil_shipped_tonnes'           => 0.00,
-                    'meal_shipped_tonnes'          => 0.00,
-                    'husk_shipped_tonnes'          => 0.00,
-                    'report_date'                  => '12.10.2026 08:00',
-                ];
             case 'day_prev':
             case 'day':
             default:
-                // Минула завершена доба 11.10.2026 (аркуш «11 число» та «12 число» на 08:00 ранку):
-                // За 11.10 відвантажено: олія 145,20 т (АПІ 127,26 т + Алтрейд 17,94 т), шрот 0,00 т, лузга 18,60 т
+                // Фактичні складські залишки з файлу «Ежедн.отчет2» (наприклад, на «12 число»: насіння 13 115,47 т, бух.облік 13 794,46 т)
                 return [
-                    'seed_stock_tonnes'            => 13326.41,
-                    'seed_stock_accounting_tonnes' => 7268.88,
-                    'oil_stock_tonnes'             => 3358.63,
-                    'meal_stock_tonnes'            => 1056.13,
-                    'husk_stock_tonnes'            => 116.84,
+                    'seed_stock_tonnes'            => $seedStock,
+                    'seed_stock_accounting_tonnes' => $seedAcct,
+                    'oil_stock_tonnes'             => $oilStock,
+                    'meal_stock_tonnes'            => $mealStock,
+                    'husk_stock_tonnes'            => $huskStock,
                     'husk_boiler_spent_tonnes'     => 0.00,
-                    'days_seed_reserve'            => 22.2,
-                    'oil_shipped_tonnes'           => 145.20,
-                    'meal_shipped_tonnes'          => 0.00,
-                    'husk_shipped_tonnes'          => 18.60,
-                    'report_date'                  => '12.10.2026 08:00',
+                    'days_seed_reserve'            => $daysReserve,
+                    'oil_shipped_tonnes'           => round((float)$live['oil_shipped_tonnes'], 2),
+                    'meal_shipped_tonnes'          => round((float)$live['meal_shipped_tonnes'], 2),
+                    'husk_shipped_tonnes'          => round((float)$live['husk_shipped_tonnes'], 2),
+                    'report_date'                  => "Ежедн.отчет2 ({$sheetTitle})",
                 ];
         }
     }
@@ -938,6 +1148,23 @@ class MetricsCalculator {
      * Повна ретроспективна аналітика та помісячне порівняння (Серпень, Вересень, Жовтень 2026 та Сезон 2025–2026)
      */
     public function getHistoricalAnalytics(): array {
+        $live = $this->loadLiveSvodStocks();
+        $octStats = $this->getSemenaPeriodStats('month_oct');
+        $seasonStats = $this->getSemenaPeriodStats('season');
+
+        $octSeedIn = !empty($octStats['seed_in_plant']) ? (float)$octStats['seed_in_plant'] : 6075.91;
+        $octTrucks = !empty($octStats['trucks_count']) ? (int)$octStats['trucks_count'] : 231;
+        $seasonSeedIn = !empty($seasonStats['seed_in_plant']) ? (float)$seasonStats['seed_in_plant'] : 25361.41;
+        $seasonTrucks = !empty($seasonStats['trucks_count']) ? (int)$seasonStats['trucks_count'] : 977;
+
+        $seedStock = round((float)$live['seed_stock_tonnes'], 2);
+        $oilStock  = round((float)$live['oil_stock_tonnes'], 2);
+        $mealStock = round((float)$live['meal_stock_tonnes'], 2);
+        $huskStock = round((float)$live['husk_stock_tonnes'], 2);
+        $octOilShip = round((float)($live['month_oil_shipped_tonnes'] ?? 1050.54), 2);
+        $octMealShip = round((float)($live['month_meal_shipped_tonnes'] ?? 2461.42), 2);
+        $octHuskShip = round((float)($live['month_husk_shipped_tonnes'] ?? 507.58), 2);
+
         return [
             'months' => [
                 'aug' => [
@@ -973,7 +1200,7 @@ class MetricsCalculator {
                     'working_days'       => 16,
                     'working_days_label' => 'Працював: 16 діб (15.09–30.09) з 30',
                     'status_note'        => 'Працював 16 діб переробки (15.09–30.09) з 30',
-                    'seed_in'            => 19070.05,
+                    'seed_in'            => 19077.54,
                     'seed_processed'     => 8823.66,
                     'oil_out'            => 3811.66,
                     'oil_yield_pct'      => 43.20,
@@ -992,68 +1219,67 @@ class MetricsCalculator {
                 ],
                 'oct' => [
                     'id'                 => 'month_oct',
-                    'name'               => 'Жовтень 2026 (1-11)',
+                    'name'               => 'Жовтень 2026 (1-12)',
                     'short_name'         => 'Жовтень',
-                    'days_count'         => 11,
+                    'days_count'         => 12,
                     'working_days'       => 7,
-                    'working_days_label' => 'Працював: 7 діб (01.10–07.10) з 11',
-                    'status_note'        => 'Працював 7 діб переробки (01.10–07.10) з 11',
-                    'seed_in'            => 6075.91,
+                    'working_days_label' => 'Працював: 7 діб (01.10–07.10) з 12',
+                    'status_note'        => 'Працював 7 діб переробки (01.10–07.10) з 12',
+                    'seed_in'            => $octSeedIn,
                     'seed_processed'     => 3646.35,
                     'oil_out'            => 1646.15,
                     'oil_yield_pct'      => 45.15,
                     'meal_out'           => 1521.68,
                     'meal_yield_pct'     => 41.73,
                     'husk_out'           => 554.87,
-                    'oil_shipped'        => 1024.10,
-                    'meal_shipped'       => 2179.02,
-                    'husk_shipped'       => 478.08,
-                    'trucks_count'       => 231,
-                    'seed_stock'         => 13326.41,
-                    'oil_stock'          => 3358.63,
-                    'meal_stock'         => 1056.13,
-                    'husk_stock'         => 116.84,
+                    'oil_shipped'        => $octOilShip,
+                    'meal_shipped'       => $octMealShip,
+                    'husk_shipped'       => $octHuskShip,
+                    'trucks_count'       => $octTrucks,
+                    'seed_stock'         => $seedStock,
+                    'oil_stock'          => $oilStock,
+                    'meal_stock'         => $mealStock,
+                    'husk_stock'         => $huskStock,
                     'boiler_husk'        => 294.17,
                 ]
             ],
             'season_total' => [
                 'name'               => 'Разом за сезон 2026',
-                'period'             => 'Серпень — Жовтень 2026 (72 доби)',
+                'period'             => 'Серпень — Жовтень 2026 (73 доби)',
                 'working_days'       => 23,
-                'working_days_label' => 'Працював: 23 доби переробки (з 72 діб)',
-                'seed_in'            => 25353.92,
+                'working_days_label' => 'Працював: 23 доби переробки (з 73 діб)',
+                'seed_in'            => $seasonSeedIn,
                 'seed_processed'     => 12470.01,
                 'oil_out'            => 5457.81,
                 'oil_yield_pct'      => 43.77,
                 'meal_out'           => 5204.89,
                 'meal_yield_pct'     => 41.74,
                 'husk_out'           => 1822.01,
-                'oil_shipped'        => 2191.04,
-                'meal_shipped'       => 5901.90,
-                'husk_shipped'       => 1047.34,
-                'trucks_count'       => 977,
-                'seed_stock'         => 13326.41,
-                'oil_stock'          => 3358.63,
-                'meal_stock'         => 1056.13,
-                'husk_stock'         => 116.84,
+                'oil_shipped'        => round(76.64 + 1090.30 + $octOilShip, 2),
+                'meal_shipped'       => round(1390.54 + 2332.34 + $octMealShip, 2),
+                'husk_shipped'       => round(78.60 + 490.66 + $octHuskShip, 2),
+                'trucks_count'       => $seasonTrucks,
+                'seed_stock'         => $seedStock,
+                'oil_stock'          => $oilStock,
+                'meal_stock'         => $mealStock,
+                'husk_stock'         => $huskStock,
                 'boiler_husk'        => 710.19,
             ],
             'chart_comparison' => [
-                'categories'     => ['Серпень 2026', 'Вересень 2026', 'Жовтень 2026 (1-11)'],
-                'seed_in'        => [207.96, 19070.05, 6075.91],
+                'categories'     => ['Серпень 2026', 'Вересень 2026', 'Жовтень 2026 (1-12)'],
+                'seed_in'        => [207.96, 19077.54, $octSeedIn],
                 'seed_processed' => [0.00, 8823.66, 3646.35],
                 'oil_out'        => [0.00, 3811.66, 1646.15],
                 'meal_out'       => [0.00, 3683.21, 1521.68],
                 'husk_out'       => [5.91, 1261.23, 554.87],
-                'trucks'         => [8, 738, 231],
-                'oil_stocks'     => [15.35, 2736.71, 3358.63],
-                'meal_stocks'    => [362.60, 1713.47, 1056.13],
-                'seed_stocks'    => [883.40, 10966.28, 13326.41],
+                'trucks'         => [8, 738, $octTrucks],
+                'oil_stocks'     => [15.35, 2736.71, $oilStock],
+                'meal_stocks'    => [362.60, 1713.47, $mealStock],
+                'seed_stocks'    => [883.40, 10966.28, $seedStock],
             ],
             'season_2025_comparison' => [
                 'name' => 'Сезон 2025–2026 рр. (Офіційний виробничий звіт «СВОДНАЯ 2025-26»)',
                 'period_label' => 'Вересень 2025 — Червень 2026 (повний виробничий цикл)',
-                // Точні помісячні дані з вкладки «СВОДНАЯ 2025-26» (media_1791813393453_60c5527a.xlsx)
                 'months' => [
                     [
                         'name'            => 'Вересень 2025',
@@ -1200,7 +1426,6 @@ class MetricsCalculator {
                         'seed_stock_end'  => 0.00,
                     ],
                 ],
-                // Початок сезону для прямого зіставлення з аналогічним поточним періодом 2026 року
                 'early_season_sep_oct' => [
                     'label'           => 'Вересень — Жовтень 2025 (Старт)',
                     'seed_in'         => 21329.04,
@@ -1218,7 +1443,6 @@ class MetricsCalculator {
                     'total_yield_pct' => 98.47,
                     'seed_stock_end'  => 211.92,
                 ],
-                // Повний річний цикл 2025–2026 рр. (ИТОГО з «СВОДНАЯ 2025-26»)
                 'full_season_total' => [
                     'label'           => 'РАЗОМ за сезон 2025–2026 рр. (Повний цикл)',
                     'seed_in'         => 62403.27,
@@ -1236,7 +1460,6 @@ class MetricsCalculator {
                     'total_yield_pct' => 98.85,
                     'seed_stock_end'  => 510.41,
                 ],
-                // Збережено сумісність ключів для рендерингу
                 'categories'     => ['Вересень 2025', 'Жовтень 2025', 'Вер-Жов 2025', 'Весь сезон 2025-26'],
                 'seed_in'        => [4470.82, 16858.22, 21329.04, 62403.27],
                 'seed_processed' => [4435.44, 16681.68, 21117.12, 61892.86],
@@ -1246,7 +1469,6 @@ class MetricsCalculator {
                 'meal_yield_pct' => [42.14, 41.76, 41.84, 41.67],
                 'husk_out'       => [620.13, 2058.44, 2678.57, 7971.81],
             ],
-            // Псевдонім для зворотньої сумісності
             'season_2022_comparison' => [
                 'categories'     => ['Вересень 2025', 'Жовтень 2025', 'Вер-Жов 2025', 'Весь сезон 2025-26'],
                 'seed_in'        => [4470.82, 16858.22, 21329.04, 62403.27],
@@ -1264,194 +1486,149 @@ class MetricsCalculator {
      * Показники якості лабораторії (з файлу «Лист_погодження.xlsx» -> вкладка «Графік завезення (по днях)» з розрахунком за день, тиждень, місяць і сезон)
      */
     public function getLabQuality(string $period = 'day'): array {
-        // Подобові показники з вкладки «Графік завезення (по днях)» файлу «Лист_погодження.xlsx»:
-        // Кожен запис: фіз. вага (т), залік. вага (т), скидка (т), олійність (%), вологість (%), смітна домішка (%)
-        switch ($period) {
-            case 'week':
-                // Тиждень 05.10 — 11.10.2026 (7 діб завезення, 143 авто, фіз. 3 767,780 т, залік. 3 758,060 т):
-                // Середньозважена за фіз. вагою з «Графік завезення (по днях)»: Олійність 48,88%, Вологість 7,13%, Смітна домішка 3,28%, Скидка 9,72 т
-                return [
-                    'oil_content_pct'        => 48.88,
-                    'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => 0.88,
-                    'moisture_pct'           => 7.13,
-                    'impurity_pct'           => 3.28,
-                    'weight_discount_tonnes' => 9.72,
-                    'report_date'            => '05.10 — 11.10.2026 (7 діб, Лист погодження)',
-                ];
-            case 'day_active':
-                // Доба 06.10.2026 з «Графік завезення (по днях)»: 22 авто, фіз. 589,760 т, залік. 588,792 т, скидка 0,97 т, олійність 48,47%, волога 7,24%, сор 3,14%
-                return [
-                    'oil_content_pct'        => 48.47,
-                    'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => 0.47,
-                    'moisture_pct'           => 7.24,
-                    'impurity_pct'           => 3.14,
-                    'weight_discount_tonnes' => 0.97,
-                    'report_date'            => '06.10.2026 (Лист погодження — по днях)',
-                ];
-            case 'month_aug':
-                // Серпень 2026 (28.08 та 31.08 — 2 доби приймання, 8 авто, 207,960 т): олійність 44,46%, волога 7,32%, сор 4,66%, скидка 0,00 т
-                return [
-                    'oil_content_pct'        => 44.46,
-                    'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => -3.54,
-                    'moisture_pct'           => 7.32,
-                    'impurity_pct'           => 4.66,
-                    'weight_discount_tonnes' => 0.00,
-                    'report_date'            => 'Серпень 2026 (Лист погодження — по днях)',
-                ];
-            case 'month_sep':
-                // Вересень 2026 (26 діб приймання 02.09–30.09, 738 авто, фіз. 19 077,540 т, залік. 19 019,274 т): олійність 49,30%, волога 6,90%, сор 3,25%, скидка 58,27 т
-                return [
-                    'oil_content_pct'        => 49.30,
-                    'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => 1.30,
-                    'moisture_pct'           => 6.90,
-                    'impurity_pct'           => 3.25,
-                    'weight_discount_tonnes' => 58.27,
-                    'report_date'            => 'Вересень 2026 (Лист погодження — по днях)',
-                ];
-            case 'month_oct':
-            case 'month':
-                // Жовтень 2026 (11 діб приймання 01.10–11.10, 231 авто, фіз. 6 075,910 т, залік. 6 059,980 т): олійність 48,99%, волога 7,25%, сор 3,21%, скидка 15,93 т
-                return [
-                    'oil_content_pct'        => 48.99,
-                    'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => 0.99,
-                    'moisture_pct'           => 7.25,
-                    'impurity_pct'           => 3.21,
-                    'weight_discount_tonnes' => 15.93,
-                    'report_date'            => 'Жовтень 2026 (01.10–11.10, Лист погодження)',
-                ];
-            case 'season':
-                // Разом за сезон 2026 (39 діб приймання, 977 авто, фіз. 25 361,410 т, залік. 25 287,214 т): олійність 49,19%, волога 6,98%, сор 3,25%, скидка 74,20 т
-                return [
-                    'oil_content_pct'        => 49.19,
-                    'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => 1.19,
-                    'moisture_pct'           => 6.98,
-                    'impurity_pct'           => 3.25,
-                    'weight_discount_tonnes' => 74.20,
-                    'report_date'            => 'Сезон 2026 (39 діб завезення, Лист погодження)',
-                ];
-            case 'day_prev':
-            case 'day':
-            default:
-                // За 11.10.2026 з «Графік завезення (по днях)» (Лист погодження): 18 авто, фіз. 465,860 т, залік. 463,213 т, скидка 2,65 т, олійність 49,61%, волога 7,71%, сор 3,28%
-                return [
-                    'oil_content_pct'        => 49.61,
-                    'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => 1.61,
-                    'moisture_pct'           => 7.71,
-                    'impurity_pct'           => 3.28,
-                    'weight_discount_tonnes' => 2.65,
-                    'report_date'            => '11.10.2026 (Лист погодження — по днях)',
-                ];
-            case 'day_today':
-                // Сьогодні 12.10.2026 (станом на 09:34 ранку завезення ще триває — відображаються показники останньої доби приймання 11.10 з Листа погодження)
-                return [
-                    'oil_content_pct'        => 49.61,
-                    'oil_content_base_pct'   => 48.00,
-                    'oil_deviation_pct'      => 1.61,
-                    'moisture_pct'           => 7.71,
-                    'impurity_pct'           => 3.28,
-                    'weight_discount_tonnes' => 2.65,
-                    'report_date'            => '12.10.2026 09:34 (Лист погодження)',
-                ];
+        $stats = $this->getSemenaPeriodStats($period);
+        if (!empty($stats) && isset($stats['oil_content_pct'])) {
+            $oilPct = (float)$stats['oil_content_pct'];
+            $basePct = 48.00;
+            $firstDate = $stats['first_date'] ?? '';
+            $lastDate  = $stats['last_date'] ?? '';
+            $dateLabel = ($firstDate === $lastDate || empty($firstDate))
+                ? "{$lastDate} (Лист погодження — по днях)"
+                : "{$firstDate} — {$lastDate} ({$stats['days_count']} діб, Лист погодження)";
+
+            return [
+                'oil_content_pct'        => $oilPct,
+                'oil_content_base_pct'   => $basePct,
+                'oil_deviation_pct'      => round($oilPct - $basePct, 2),
+                'moisture_pct'           => (float)$stats['moisture_pct'],
+                'impurity_pct'           => (float)$stats['impurity_pct'],
+                'weight_discount_tonnes' => (float)$stats['weight_discount_tonnes'],
+                'report_date'            => $dateLabel,
+            ];
         }
+
+        return [
+            'oil_content_pct'        => 49.61,
+            'oil_content_base_pct'   => 48.00,
+            'oil_deviation_pct'      => 1.61,
+            'moisture_pct'           => 7.71,
+            'impurity_pct'           => 3.28,
+            'weight_discount_tonnes' => 2.65,
+            'report_date'            => '11.10.2026 (Лист погодження — по днях)',
+        ];
     }
 
     /**
      * Контрактація та виконання специфікацій (Реєстр договорів та довіз з «Листа погодження» 1С)
      */
     public function getContractsSummary(string $period = 'day'): array {
+        $semena = $this->getSemenaData();
+        $summary = $semena['summary'] ?? [];
+        $stats = $this->getSemenaPeriodStats($period);
+
+        $activeSpecs = (int)($summary['active_specs'] ?? 11);
+        $pendingSpecs = (int)($summary['pending_specs'] ?? 3);
+
         switch ($period) {
             case 'week':
+                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 3767.78;
+                $plan  = 4200.0;
                 return [
-                    'contracted_tonnes'   => 4200.0,
-                    'delivered_tonnes'    => 3767.8,
-                    'remaining_tonnes'    => 432.2,
-                    'fulfillment_pct'     => 89.7,
-                    'active_specs_count'  => 11,
-                    'pending_specs_count' => 3,
-                    'report_date'         => '05.10 — 11.10.2026 (Тиждень)',
+                    'contracted_tonnes'   => $plan,
+                    'delivered_tonnes'    => round($deliv, 2),
+                    'remaining_tonnes'    => round(max(0.0, $plan - $deliv), 2),
+                    'fulfillment_pct'     => round(($deliv / $plan) * 100, 1),
+                    'active_specs_count'  => $activeSpecs,
+                    'pending_specs_count' => $pendingSpecs,
+                    'report_date'         => ($stats['first_date'] ?? '05.10') . ' — ' . ($stats['last_date'] ?? '11.10.2026') . ' (Тиждень)',
                 ];
             case 'day_active':
+                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 589.76;
+                $plan  = 600.0;
                 return [
-                    'contracted_tonnes'   => 600.0,
-                    'delivered_tonnes'    => 589.8,
-                    'remaining_tonnes'    => 10.2,
-                    'fulfillment_pct'     => 98.3,
-                    'active_specs_count'  => 11,
-                    'pending_specs_count' => 3,
+                    'contracted_tonnes'   => $plan,
+                    'delivered_tonnes'    => round($deliv, 2),
+                    'remaining_tonnes'    => round(max(0.0, $plan - $deliv), 2),
+                    'fulfillment_pct'     => round(($deliv / $plan) * 100, 1),
+                    'active_specs_count'  => $activeSpecs,
+                    'pending_specs_count' => $pendingSpecs,
                     'report_date'         => '06.10.2026 (Доба переробки)',
                 ];
             case 'month_aug':
+                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 207.96;
                 return [
                     'contracted_tonnes'   => 5000.0,
-                    'delivered_tonnes'    => 207.96,
-                    'remaining_tonnes'    => 4792.04,
-                    'fulfillment_pct'     => 4.2,
+                    'delivered_tonnes'    => round($deliv, 2),
+                    'remaining_tonnes'    => round(max(0.0, 5000.0 - $deliv), 2),
+                    'fulfillment_pct'     => round(($deliv / 5000.0) * 100, 1),
                     'active_specs_count'  => 4,
                     'pending_specs_count' => 12,
                     'report_date'         => 'Серпень 2026',
                 ];
             case 'month_sep':
+                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 19077.54;
                 return [
                     'contracted_tonnes'   => 20000.0,
-                    'delivered_tonnes'    => 19070.05,
-                    'remaining_tonnes'    => 929.95,
-                    'fulfillment_pct'     => 95.4,
+                    'delivered_tonnes'    => round($deliv, 2),
+                    'remaining_tonnes'    => round(max(0.0, 20000.0 - $deliv), 2),
+                    'fulfillment_pct'     => round(($deliv / 20000.0) * 100, 1),
                     'active_specs_count'  => 18,
                     'pending_specs_count' => 1,
                     'report_date'         => 'Вересень 2026',
                 ];
             case 'month_oct':
             case 'month':
+                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 6075.91;
                 return [
                     'contracted_tonnes'   => 8000.0,
-                    'delivered_tonnes'    => 6075.91,
-                    'remaining_tonnes'    => 1924.09,
-                    'fulfillment_pct'     => 75.9,
-                    'active_specs_count'  => 11,
-                    'pending_specs_count' => 3,
+                    'delivered_tonnes'    => round($deliv, 2),
+                    'remaining_tonnes'    => round(max(0.0, 8000.0 - $deliv), 2),
+                    'fulfillment_pct'     => round(($deliv / 8000.0) * 100, 1),
+                    'active_specs_count'  => $activeSpecs,
+                    'pending_specs_count' => $pendingSpecs,
                     'report_date'         => 'Жовтень 2026',
                 ];
             case 'season':
-                // З вкладки «Лист погодження» (121 специфікація: договір 18 711,0 т, завезено 17 642,9 т, або з давальцями 25 353,9 т)
+                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 25361.41;
+                $rem   = (float)($summary['unfulfilled_rem'] ?? 1647.93);
+                $contr = round($deliv + $rem, 2);
                 return [
-                    'contracted_tonnes'   => 27000.0,
-                    'delivered_tonnes'    => 25353.92,
-                    'remaining_tonnes'    => 1647.93,
-                    'fulfillment_pct'     => 93.9,
-                    'active_specs_count'  => 11,
-                    'pending_specs_count' => 3,
-                    'report_date'         => 'Сезон 2026 (72 доби)',
+                    'contracted_tonnes'   => $contr,
+                    'delivered_tonnes'    => round($deliv, 2),
+                    'remaining_tonnes'    => round($rem, 2),
+                    'fulfillment_pct'     => $contr > 0 ? round(($deliv / $contr) * 100, 1) : 93.9,
+                    'active_specs_count'  => $activeSpecs,
+                    'pending_specs_count' => $pendingSpecs,
+                    'report_date'         => 'Сезон 2026 (Лист погодження)',
                 ];
             case 'day_prev':
+                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 465.86;
                 return [
                     'contracted_tonnes'   => 600.0,
-                    'delivered_tonnes'    => 465.86,
-                    'remaining_tonnes'    => 134.14,
-                    'fulfillment_pct'     => 77.6,
-                    'active_specs_count'  => 11,
-                    'pending_specs_count' => 3,
-                    'report_date'         => '11.10.2026 20:00',
+                    'delivered_tonnes'    => round($deliv, 2),
+                    'remaining_tonnes'    => round(max(0.0, 600.0 - $deliv), 2),
+                    'fulfillment_pct'     => round(($deliv / 600.0) * 100, 1),
+                    'active_specs_count'  => $activeSpecs,
+                    'pending_specs_count' => $pendingSpecs,
+                    'report_date'         => ($stats['last_date'] ?? '11.10.2026') . ' 20:00',
                 ];
             case 'day_today':
             case 'day':
             default:
-                // З вкладки «Лист погодження» (121 специфікація: договір 18 711,0 т, завезено 17 642,9 т = 94,3%, залишок у «Невиконані специфікації» 1 647,9 т: 11 у роботі + 3 очікують)
+                $contr = (float)($summary['total_contract'] ?? 18711.0);
+                $deliv = (float)($summary['total_delivered'] ?? 17642.9);
+                $rem   = (float)($summary['unfulfilled_rem'] ?? 1647.9);
+                $pct   = (float)($summary['fulfillment_pct'] ?? ($contr > 0 ? round(($deliv / $contr) * 100, 1) : 94.3));
                 return [
-                    'contracted_tonnes'   => 18711.0,
-                    'delivered_tonnes'    => 17642.9,
-                    'remaining_tonnes'    => 1647.9,
-                    'fulfillment_pct'     => 94.3,
-                    'active_specs_count'  => 11,
-                    'pending_specs_count' => 3,
-                    'report_date'         => '12.10.2026 09:34',
+                    'contracted_tonnes'   => round($contr, 1),
+                    'delivered_tonnes'    => round($deliv, 1),
+                    'remaining_tonnes'    => round($rem, 1),
+                    'fulfillment_pct'     => $pct,
+                    'active_specs_count'  => $activeSpecs,
+                    'pending_specs_count' => $pendingSpecs,
+                    'report_date'         => ($semena['updated_at'] ?? '12.10.2026') . ' (Лист погодження)',
                 ];
         }
     }
 }
+

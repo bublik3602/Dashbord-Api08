@@ -199,29 +199,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // --- Блок А: Зона приймання та склад насіння ---
         const rz = mb.receiving_zone;
-        setElementText('#val-seed-in-plant', formatNumber(rz.seed_in_plant) + ' т');
-        setElementText('#val-seed-plan', 'План: ' + formatNumber(rz.seed_plan) + ' т (' + rz.plan_fulfillment_pct + '%)');
+        setElementText('#val-seed-in-plant', formatNumber(rz.seed_in_plant, 2) + ' т');
+        setElementText('#val-seed-plan', 'План: ' + formatNumber(rz.seed_plan, 1) + ' т (' + rz.plan_fulfillment_pct + '%)');
         
         if (data.warehouse_stocks) {
             const ws = data.warehouse_stocks;
-            setElementText('#val-seed-stock', formatNumber(ws.seed_stock_tonnes) + ' т');
-            setElementText('#badge-days-reserve', (ws.days_seed_reserve || 12.1) + ' дн. запасу');
-            setElementText('#val-seed-stock-sub', `Облік: ${formatNumber(ws.seed_stock_accounting_tonnes)} т • Потреба: 600 т/д`);
+            setElementText('#val-seed-stock', formatNumber(ws.seed_stock_tonnes, 2) + ' т');
+            setElementText('#badge-days-reserve', (ws.days_seed_reserve || 21.9) + ' дн. запасу');
+            setElementText('#val-seed-stock-sub', `Облік: ${formatNumber(ws.seed_stock_accounting_tonnes, 2)} т • Потреба: 600 т/д`);
 
             // Залишки готової продукції на складах та відвантаження за обраний період
-            setElementText('#val-stock-oil', formatNumber(ws.oil_stock_tonnes) + ' т');
+            setElementText('#val-stock-oil', formatNumber(ws.oil_stock_tonnes, 2) + ' т');
             const shippedPrefix = (currentPeriod === 'week') 
                 ? 'Відвантажено за тиждень: ' 
                 : ((currentPeriod.indexOf('month') !== -1) 
                     ? 'Відвантажено за місяць: ' 
                     : (currentPeriod === 'season' ? 'Відвантажено за сезон: ' : 'Відвантажено за добу: '));
 
-            setElementText('#val-shipped-oil', `${shippedPrefix}${formatNumber(ws.oil_shipped_tonnes)} т`);
-            setElementText('#val-stock-meal', formatNumber(ws.meal_stock_tonnes) + ' т');
-            setElementText('#val-shipped-meal', `${shippedPrefix}${formatNumber(ws.meal_shipped_tonnes)} т`);
-            setElementText('#val-stock-husk', formatNumber(ws.husk_stock_tonnes) + ' т');
-            setElementText('#val-shipped-husk', `${shippedPrefix}${formatNumber(ws.husk_shipped_tonnes)} т`);
-            setElementText('#val-boiler-husk', formatNumber(ws.husk_boiler_spent_tonnes) + ' т');
+            setElementText('#val-shipped-oil', `${shippedPrefix}${formatNumber(ws.oil_shipped_tonnes, 2)} т`);
+            setElementText('#val-stock-meal', formatNumber(ws.meal_stock_tonnes, 2) + ' т');
+            setElementText('#val-shipped-meal', `${shippedPrefix}${formatNumber(ws.meal_shipped_tonnes, 2)} т`);
+            setElementText('#val-stock-husk', formatNumber(ws.husk_stock_tonnes, 2) + ' т');
+            setElementText('#val-shipped-husk', `${shippedPrefix}${formatNumber(ws.husk_shipped_tonnes, 2)} т`);
+            setElementText('#val-boiler-husk', formatNumber(ws.husk_boiler_spent_tonnes, 2) + ' т');
 
             // Оновлення прогрес-барів залишків
             const fillOil = document.querySelector('.wh-fill-oil');

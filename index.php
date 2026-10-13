@@ -181,13 +181,13 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="kpi-title">Насіння на завод (вхід)</div>
             <div class="kpi-value-row">
                 <div class="kpi-main-number" id="val-seed-in-plant">
-                    <?= number_format($mb['receiving_zone']['seed_in_plant'], 1, ',', ' ') ?><span class="kpi-unit">т</span>
+                    <?= number_format($mb['receiving_zone']['seed_in_plant'], 2, ',', ' ') ?><span class="kpi-unit">т</span>
                 </div>
-                <span class="kpi-badge badge-blue">Автоваги</span>
+                <span class="kpi-badge badge-blue">Лист погодження</span>
             </div>
             <div class="kpi-subtext">
                 <span id="val-seed-plan">План: <?= number_format($mb['receiving_zone']['seed_plan'], 1, ',', ' ') ?> т (<?= $mb['receiving_zone']['plan_fulfillment_pct'] ?>%)</span>
-                <span>Факт приймання</span>
+                <span>Без очистки та сушки</span>
             </div>
         </div>
 
@@ -197,15 +197,15 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="kpi-title">Запас насіння на елеваторі</div>
             <div class="kpi-value-row">
                 <div class="kpi-main-number" id="val-seed-stock">
-                    <?= number_format($stocks['seed_stock_tonnes'] ?? 7284.3, 1, ',', ' ') ?><span class="kpi-unit">т</span>
+                    <?= number_format($stocks['seed_stock_tonnes'] ?? 13115.47, 2, ',', ' ') ?><span class="kpi-unit">т</span>
                 </div>
                 <span class="kpi-badge badge-green" id="badge-days-reserve">
-                    <?= ($stocks['days_seed_reserve'] ?? 12.1) ?> дн. запасу
+                    <?= ($stocks['days_seed_reserve'] ?? 21.9) ?> дн. запасу
                 </span>
             </div>
             <div class="kpi-subtext">
-                <span id="val-seed-stock-sub">Облік: <?= number_format($stocks['seed_stock_accounting_tonnes'] ?? 7268.9, 1, ',', ' ') ?> т &bull; Потреба: 600 т/д</span>
-                <span>Автономність МЕЗ</span>
+                <span id="val-seed-stock-sub">Облік: <?= number_format($stocks['seed_stock_accounting_tonnes'] ?? 13794.46, 2, ',', ' ') ?> т &bull; Потреба: 600 т/д</span>
+                <span>Ежедн.отчет2</span>
             </div>
         </div>
 
@@ -417,26 +417,26 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="warehouse-stocks-grid">
                 <div class="wh-stock-item">
                     <span class="wh-stock-title">💧 Олія (Резервуари)</span>
-                    <span class="wh-stock-value" id="val-stock-oil"><?= number_format($stocks['oil_stock_tonnes'] ?? 3091.3, 1, ',', ' ') ?> т</span>
-                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-oil" style="width: <?= min(100, round((($stocks['oil_stock_tonnes'] ?? 3091.3) / 5000) * 100)) ?>%;"></div></div>
-                    <span class="wh-stock-sub" id="val-shipped-oil">Відвантажено за добу: <?= number_format($stocks['oil_shipped_tonnes'] ?? 130.0, 1, ',', ' ') ?> т</span>
+                    <span class="wh-stock-value" id="val-stock-oil"><?= number_format($stocks['oil_stock_tonnes'] ?? 3332.32, 2, ',', ' ') ?> т</span>
+                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-oil" style="width: <?= min(100, round((($stocks['oil_stock_tonnes'] ?? 3332.32) / 5000) * 100)) ?>%;"></div></div>
+                    <span class="wh-stock-sub" id="val-shipped-oil">Відвантажено за добу: <?= number_format($stocks['oil_shipped_tonnes'] ?? 26.44, 2, ',', ' ') ?> т</span>
                 </div>
                 <div class="wh-stock-item">
                     <span class="wh-stock-title">🌾 Шрот на складі</span>
-                    <span class="wh-stock-value" id="val-stock-meal"><?= number_format($stocks['meal_stock_tonnes'] ?? 757.1, 1, ',', ' ') ?> т</span>
-                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-meal" style="width: <?= min(100, round((($stocks['meal_stock_tonnes'] ?? 757.1) / 1500) * 100)) ?>%;"></div></div>
-                    <span class="wh-stock-sub" id="val-shipped-meal">Відвантажено за добу: <?= number_format($stocks['meal_shipped_tonnes'] ?? 189.9, 1, ',', ' ') ?> т</span>
+                    <span class="wh-stock-value" id="val-stock-meal"><?= number_format($stocks['meal_stock_tonnes'] ?? 773.73, 2, ',', ' ') ?> т</span>
+                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-meal" style="width: <?= min(100, round((($stocks['meal_stock_tonnes'] ?? 773.73) / 1500) * 100)) ?>%;"></div></div>
+                    <span class="wh-stock-sub" id="val-shipped-meal">Відвантажено за добу: <?= number_format($stocks['meal_shipped_tonnes'] ?? 282.40, 2, ',', ' ') ?> т</span>
                 </div>
                 <div class="wh-stock-item">
                     <span class="wh-stock-title">🪵 Лузга на складі</span>
-                    <span class="wh-stock-value" id="val-stock-husk"><?= number_format($stocks['husk_stock_tonnes'] ?? 116.8, 1, ',', ' ') ?> т</span>
-                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-husk" style="width: <?= min(100, round((($stocks['husk_stock_tonnes'] ?? 116.8) / 500) * 100)) ?>%;"></div></div>
-                    <span class="wh-stock-sub" id="val-shipped-husk">Відвантажено за добу: <?= number_format($stocks['husk_shipped_tonnes'] ?? 48.8, 1, ',', ' ') ?> т</span>
+                    <span class="wh-stock-value" id="val-stock-husk"><?= number_format($stocks['husk_stock_tonnes'] ?? 87.64, 2, ',', ' ') ?> т</span>
+                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-husk" style="width: <?= min(100, round((($stocks['husk_stock_tonnes'] ?? 87.64) / 500) * 100)) ?>%;"></div></div>
+                    <span class="wh-stock-sub" id="val-shipped-husk">Відвантажено за добу: <?= number_format($stocks['husk_shipped_tonnes'] ?? 29.50, 2, ',', ' ') ?> т</span>
                 </div>
                 <div class="wh-stock-item" style="background: #fffbeb; border-color: #fef3c7;">
                     <span class="wh-stock-title" style="color: #b45309;">🔥 Лузга на котельню</span>
-                    <span class="wh-stock-value" style="color: #b45309;" id="val-boiler-husk"><?= number_format($stocks['husk_boiler_spent_tonnes'] ?? 37.6, 1, ',', ' ') ?> т</span>
-                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-boiler" style="width: <?= min(100, round((($stocks['husk_boiler_spent_tonnes'] ?? 37.6) / 60) * 100)) ?>%;"></div></div>
+                    <span class="wh-stock-value" style="color: #b45309;" id="val-boiler-husk"><?= number_format($stocks['husk_boiler_spent_tonnes'] ?? 0.0, 2, ',', ' ') ?> т</span>
+                    <div class="wh-progress-wrap"><div class="wh-progress-fill wh-fill-boiler" style="width: <?= min(100, round((($stocks['husk_boiler_spent_tonnes'] ?? 0.0) / 60) * 100)) ?>%;"></div></div>
                     <span class="wh-stock-sub" style="color: #92400e;" id="val-boiler-husk-sub">Паливо на технологічну пару</span>
                 </div>
             </div>

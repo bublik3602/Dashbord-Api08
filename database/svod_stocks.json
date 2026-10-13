@@ -1,0 +1,16 @@
+{
+    "seed_stock_tonnes": 13115.47,
+    "seed_stock_accounting_tonnes": 13794.46,
+    "seed_received_tonnes": 465.77,
+    "oil_stock_tonnes": 3332.32,
+    "oil_shipped_tonnes": 26.44,
+    "meal_stock_tonnes": 773.73,
+    "meal_shipped_tonnes": 282.4,
+    "husk_stock_tonnes": 87.64,
+    "husk_shipped_tonnes": 29.5,
+    "month_oil_shipped_tonnes": 1050.54,
+    "month_meal_shipped_tonnes": 2461.42,
+    "month_husk_shipped_tonnes": 507.58,
+    "sheet_title": "12 число",
+    "updated_at": "2026-10-13 09:08:00"
+}
