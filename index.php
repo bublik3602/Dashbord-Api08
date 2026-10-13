@@ -99,8 +99,11 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
             </div>
 
-            <!-- Дії: Імпорт та Експорт звітів -->
+            <!-- Дії: Вкладка СЕМЕНА, Імпорт та Експорт звітів -->
             <div class="action-buttons-group">
+                <a href="semena.php" class="btn-action" id="btn-open-semena" title="Відкрити детальний звіт з постачання соняшнику (Лист погодження, Невиконані, Графік, Реєстр прийомок)" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #ffffff; border: 1px solid #b45309; font-weight: 800; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35); text-decoration: none;">
+                    <span>🌻 СЕМЕНА</span>
+                </a>
                 <button type="button" class="btn-action btn-import" id="btn-open-import" title="Імпортувати щоденні звіти завода (Лист погодження, СВОД, Баланс)">
                     <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
                     <span>Імпорт Excel</span>
@@ -305,6 +308,11 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="gauge-footer">
                     <div class="gauge-sub">Завезено: <strong id="val-contracts-delivered"><?= number_format($contracts['delivered_tonnes'] ?? 17642.9, 0, ',', ' ') ?> т / <?= number_format($contracts['contracted_tonnes'] ?? 18711.0, 0, ',', ' ') ?> т</strong></div>
                     <div class="gauge-note" id="val-contracts-sub">Залишок: <?= number_format($contracts['remaining_tonnes'] ?? 1647.9, 0, ',', ' ') ?> т (<?= $contracts['active_specs_count'] ?? 11 ?> у роботі, <?= $contracts['pending_specs_count'] ?? 3 ?> очікують)</div>
+                    <div style="margin-top: 6px;">
+                        <a href="semena.php" style="display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: #b45309; background: #fef3c7; border: 1px solid #fcd34d; padding: 3px 10px; border-radius: 6px; text-decoration: none;">
+                            🌻 Відкрити звіт «СЕМЕНА» (всі вкладки) &rarr;
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>

@@ -10,6 +10,7 @@ header('Cache-Control: no-cache, must-revalidate');
 require_once __DIR__ . '/../includes/helpers.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/xlsx_parser.php';
+require_once __DIR__ . '/../includes/semena_helper.php';
 
 /**
  * Автоматична перевірка та створення відсутніх таблиць і колонок
@@ -484,34 +485,41 @@ try {
                 }
             }
 
-            // Збереження якості в БД
-            try {
-                $nowStr = date('Y-m-d H:i:s');
-                $stmt = $db->prepare("
-                    INSERT INTO lab_quality_logs 
-                    (recorded_at, report_date, oil_content_pct, oil_content_base_pct, oil_deviation_pct, moisture_pct, impurity_pct, weight_discount_tonnes)
-                    VALUES (?, ?, ?, 48.00, ?, ?, ?, ?)
-                ");
-                $stmt->execute([$nowStr, $reportTimeStr, $avgOil, round($avgOil - 48.0, 2), $avgMoist, $avgImpurity, $finalDiscount]);
-            } catch (Throwable $e) {}
+            // Оновлення повного звіту вкладки «СЕМЕНА» (всі 6 вкладок + захист від застарілих даних 1С)
+            $semenaRes = SemenaHelper::updateFromSheets($sheetsData, $tmpPath, true);
+            if (!empty($semenaRes['is_stale'])) {
+                $errors[] = $semenaRes['error'];
+            } else {
+                // Збереження якості в БД
+                try {
+                    $nowStr = date('Y-m-d H:i:s');
+                    $stmt = $db->prepare("
+                        INSERT INTO lab_quality_logs 
+                        (recorded_at, report_date, oil_content_pct, oil_content_base_pct, oil_deviation_pct, moisture_pct, impurity_pct, weight_discount_tonnes)
+                        VALUES (?, ?, ?, 48.00, ?, ?, ?, ?)
+                    ");
+                    $stmt->execute([$nowStr, $reportTimeStr, $avgOil, round($avgOil - 48.0, 2), $avgMoist, $avgImpurity, $finalDiscount]);
+                } catch (Throwable $e) {}
 
-            // Збереження виконання контрактів у БД
-            try {
-                $nowStr = date('Y-m-d H:i:s');
-                $stmt2 = $db->prepare("
-                    INSERT INTO contracts_summary 
-                    (recorded_at, report_date, contracted_tonnes, delivered_tonnes, remaining_tonnes, active_specs_count, pending_specs_count)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ");
-                $stmt2->execute([$nowStr, $reportTimeStr, $finalContracted, $finalDelivered, $finalRemaining, $activeSpecs, $pendingSpecs]);
-            } catch (Throwable $e) {}
+                // Збереження виконання контрактів у БД
+                try {
+                    $nowStr = date('Y-m-d H:i:s');
+                    $stmt2 = $db->prepare("
+                        INSERT INTO contracts_summary 
+                        (recorded_at, report_date, contracted_tonnes, delivered_tonnes, remaining_tonnes, active_specs_count, pending_specs_count)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    ");
+                    $stmt2->execute([$nowStr, $reportTimeStr, $finalContracted, $finalDelivered, $finalRemaining, $activeSpecs, $pendingSpecs]);
+                } catch (Throwable $e) {}
 
-            $processedReports[] = 'lab_quality';
-            $processedReports[] = 'contracts_summary';
-            $oilDev = round($avgOil - 48.0, 2);
-            $devSign = $oilDev >= 0 ? "+{$oilDev}%" : "{$oilDev}%";
-            $details[] = "✅ «Лист погодження 1С» (станом на {$reportTimeStr}): Олійність {$avgOil}% ({$devSign}), Волога {$avgMoist}%, Сор {$avgImpurity}%, Завезено {$finalDelivered} т / {$finalContracted} т";
-            $fileHadProcessedReport = true;
+                $processedReports[] = 'lab_quality';
+                $processedReports[] = 'contracts_summary';
+                $processedReports[] = 'semena_full';
+                $oilDev = round($avgOil - 48.0, 2);
+                $devSign = $oilDev >= 0 ? "+{$oilDev}%" : "{$oilDev}%";
+                $details[] = "✅ «Лист погодження 1С» та вкладка «СЕМЕНА» (станом на {$reportTimeStr}): Олійність {$avgOil}% ({$devSign}), Волога {$avgMoist}%, Сор {$avgImpurity}%, Завезено {$finalDelivered} т / {$finalContracted} т";
+                $fileHadProcessedReport = true;
+            }
         }
 
         // -------------------------------------------------------------
