@@ -322,13 +322,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="quick-roles-card">
             <div class="quick-roles-title">Швидкий вибір користувача:</div>
             <div class="roles-list">
+                <div class="role-pill" onclick="fillCreds('admin', 'orrz20054Q+')">
+                    <span class="role-name">🏭 admin (Головний дашборд)</span>
+                    <span class="role-cred">пароль: orrz20054Q+</span>
+                </div>
+                <div class="role-pill" onclick="fillCreds('test', '12345')">
+                    <span class="role-name">🏭 test (Головний дашборд)</span>
+                    <span class="role-cred">пароль: 12345</span>
+                </div>
                 <div class="role-pill" onclick="fillCreds('semena', '12345')">
                     <span class="role-name">🌻 semena (Тільки СЕМЕНА 1С)</span>
                     <span class="role-cred">пароль: 12345</span>
-                </div>
-                <div class="role-pill" onclick="fillCreds('admin', 'admin')">
-                    <span class="role-name">🏭 admin (Повний дашборд)</span>
-                    <span class="role-cred">пароль: admin</span>
                 </div>
             </div>
         </div>

@@ -35,8 +35,18 @@ class Auth {
         $defaultUsers = [
             'admin' => [
                 'username'      => 'admin',
-                'password_hash' => password_hash('admin', PASSWORD_DEFAULT),
+                'password_hash' => password_hash('orrz20054Q+', PASSWORD_DEFAULT),
+                'password'      => 'orrz20054Q+',
                 'display_name'  => 'Головний адміністратор',
+                'role'          => 'admin',
+                'allowed_pages' => ['all'],
+                'is_active'     => true,
+            ],
+            'test' => [
+                'username'      => 'test',
+                'password_hash' => password_hash('12345', PASSWORD_DEFAULT),
+                'password'      => '12345',
+                'display_name'  => 'Тестовий користувач (Дашборд)',
                 'role'          => 'admin',
                 'allowed_pages' => ['all'],
                 'is_active'     => true,
@@ -44,6 +54,7 @@ class Auth {
             'semena' => [
                 'username'      => 'semena',
                 'password_hash' => password_hash('12345', PASSWORD_DEFAULT),
+                'password'      => '12345',
                 'display_name'  => 'Менеджер з постачання соняшнику',
                 'role'          => 'semena',
                 'allowed_pages' => ['semena'],
@@ -57,13 +68,14 @@ class Auth {
             if ($json) {
                 $decoded = json_decode($json, true);
                 if (is_array($decoded) && !empty($decoded)) {
-                    // Переконуємось що користувач semena з паролем 12345 завжди наявний
-                    if (!isset($decoded['semena'])) {
-                        $decoded['semena'] = $defaultUsers['semena'];
-                        self::saveUsers($decoded);
+                    $needSave = false;
+                    foreach ($defaultUsers as $k => $defU) {
+                        if (!isset($decoded[$k])) {
+                            $decoded[$k] = $defU;
+                            $needSave = true;
+                        }
                     }
-                    if (!isset($decoded['admin'])) {
-                        $decoded['admin'] = $defaultUsers['admin'];
+                    if ($needSave) {
                         self::saveUsers($decoded);
                     }
                     return $decoded;

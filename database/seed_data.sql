@@ -139,8 +139,9 @@ INSERT INTO `lab_quality_logs` (`recorded_at`, `report_date`, `oil_content_pct`,
 INSERT INTO `contracts_summary` (`recorded_at`, `report_date`, `contracted_tonnes`, `delivered_tonnes`, `remaining_tonnes`, `active_specs_count`, `pending_specs_count`) VALUES
 (NOW(), '12.10.2026 09:34', 18711.000, 17642.900, 1647.930, 11, 3);
 
--- 9. Облікові записи користувачів (admin / admin та semena / 12345)
+-- 9. Облікові записи користувачів (admin / orrz20054Q+, test / 12345 та semena / 12345)
 INSERT INTO `dashboard_users` (`username`, `password_hash`, `display_name`, `role`, `allowed_pages`, `is_active`) VALUES
 ('admin',  '$2y$10$wK2VvV7v46s61m/wZg9G0O5bV88lZg6hZ/K7M7a4c7hG9yV2O/9e6', 'Головний адміністратор', 'admin', 'all', 1),
+('test',   '$2y$10$nQZJc7ZtZq5XyYcR6f8jve0c5hY.V1wQ7pE9fK8d6Z4bN0lA3j2sW', 'Тестовий користувач (Дашборд)', 'admin', 'all', 1),
 ('semena', '$2y$10$nQZJc7ZtZq5XyYcR6f8jve0c5hY.V1wQ7pE9fK8d6Z4bN0lA3j2sW', 'Менеджер з постачання соняшнику', 'semena', 'semena', 1)
 ON DUPLICATE KEY UPDATE `display_name` = VALUES(`display_name`);

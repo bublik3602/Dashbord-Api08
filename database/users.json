@@ -1,8 +1,7 @@
 {
     "admin": {
         "username": "admin",
-        "password_hash": "$2y$10$wK2VvV7v46s61m/wZg9G0O5bV88lZg6hZ/K7M7a4c7hG9yV2O/9e6",
-        "password": "admin",
+        "password": "orrz20054Q+",
         "display_name": "Головний адміністратор",
         "role": "admin",
         "allowed_pages": [
@@ -11,9 +10,19 @@
         "is_active": true,
         "created_at": "2026-10-13 16:00:00"
     },
+    "test": {
+        "username": "test",
+        "password": "12345",
+        "display_name": "Тестовий користувач (Дашборд)",
+        "role": "admin",
+        "allowed_pages": [
+            "all"
+        ],
+        "is_active": true,
+        "created_at": "2026-10-13 16:25:00"
+    },
     "semena": {
         "username": "semena",
-        "password_hash": "$2y$10$nQZJc7ZtZq5XyYcR6f8jve0c5hY.V1wQ7pE9fK8d6Z4bN0lA3j2sW",
         "password": "12345",
         "display_name": "Менеджер з постачання соняшнику",
         "role": "semena",
