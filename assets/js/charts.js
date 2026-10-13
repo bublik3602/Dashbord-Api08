@@ -333,6 +333,30 @@ window.FactoryCharts = {
 
         this.energyChart = new ApexCharts(el, options);
         this.energyChart.render();
+
+        const hasLabels = Array.isArray(timelineData.labels) && timelineData.labels.length > 0;
+        let noticeEl = document.querySelector("#energy-chart-no-data");
+        if (!hasLabels) {
+            if (!noticeEl) {
+                noticeEl = document.createElement("div");
+                noticeEl.id = "energy-chart-no-data";
+                noticeEl.innerHTML = `
+                    <div style="padding: 32px 20px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin: 10px 0;">
+                        <div style="font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 6px;">Жовтень 2026: дані графіків відсутні (звіт енергетика та котельні очікується)</div>
+                        <div style="font-size: 12px; color: #64748b; margin-bottom: 14px;">Поточний місяць триває. Фактичні добові дані споживання електроенергії, води та пари доступні за Вересень 2026.</div>
+                        <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #ffffff; border: none; padding: 7px 16px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
+                            📅 Переглянути графіки за Вересень 2026 (факт)
+                        </button>
+                    </div>
+                `;
+                el.parentNode.insertBefore(noticeEl, el.nextSibling);
+            }
+            noticeEl.style.display = "block";
+            el.style.display = "none";
+        } else {
+            if (noticeEl) noticeEl.style.display = "none";
+            el.style.display = "block";
+        }
     },
 
     /**
@@ -603,68 +627,97 @@ window.FactoryCharts = {
             const tl = data.energy.timeline;
             this._currentEnergyTimeline = tl;
             const pName = tl.power_name || 'Електроенергія за добу (кВт·год)';
+            const wName = tl.water_name || 'Вода за добу по лічильнику (м³)';
             const sName = tl.steam_name || 'Технологічна пара за добу (т)';
+            const pUnit = tl.power_unit || 'кВт·год';
+            const wUnit = tl.water_unit || 'м³/д';
             const sUnit = tl.steam_unit || 'т/д';
             const hasSteam = Array.isArray(tl.steam) && tl.steam.length > 0;
+            const hasLabels = Array.isArray(tl.labels) && tl.labels.length > 0;
 
-            const seriesList = [
-                {
-                    name: pName,
-                    type: 'area',
-                    data: tl.power || []
-                },
-                {
-                    name: wName,
-                    type: 'line',
-                    data: tl.water || []
+            const chartEl = document.querySelector("#energy-timeline-chart");
+            let noticeEl = document.querySelector("#energy-chart-no-data");
+
+            if (!hasLabels) {
+                if (!noticeEl && chartEl) {
+                    noticeEl = document.createElement("div");
+                    noticeEl.id = "energy-chart-no-data";
+                    noticeEl.innerHTML = `
+                        <div style="padding: 32px 20px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin: 10px 0;">
+                            <div style="font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 6px;">Жовтень 2026: дані графіків відсутні (звіт енергетика та котельні очікується)</div>
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 14px;">Поточний місяць триває. Фактичні добові дані споживання електроенергії, води та пари доступні за Вересень 2026.</div>
+                            <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #ffffff; border: none; padding: 7px 16px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
+                                📅 Переглянути графіки за Вересень 2026 (факт)
+                            </button>
+                        </div>
+                    `;
+                    chartEl.parentNode.insertBefore(noticeEl, chartEl.nextSibling);
                 }
-            ];
-            if (hasSteam) {
-                seriesList.push({
-                    name: sName,
-                    type: 'line',
-                    data: tl.steam
-                });
-            }
+                if (noticeEl) noticeEl.style.display = "block";
+                if (chartEl) chartEl.style.display = "none";
+            } else {
+                if (noticeEl) noticeEl.style.display = "none";
+                if (chartEl) chartEl.style.display = "block";
 
-            this.energyChart.updateOptions({
-                colors: hasSteam ? ['#0284c7', '#10b981', '#f59e0b'] : ['#0284c7', '#10b981'],
-                stroke: { width: hasSteam ? [2.5, 2.5, 3] : [2.5, 3], curve: 'smooth' },
-                fill: { type: hasSteam ? ['gradient', 'solid', 'solid'] : ['gradient', 'solid'] },
-                xaxis: {
-                    categories: tl.labels || []
-                },
-                yaxis: [
+                const seriesList = [
                     {
-                        title: {
-                            text: pUnit,
-                            style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
-                        },
-                        labels: {
-                            style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
-                            formatter: function (v) {
-                                if (v === undefined || v === null || isNaN(v)) return '0';
-                                return v >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
-                            }
-                        }
+                        name: pName,
+                        type: 'area',
+                        data: tl.power || []
                     },
                     {
-                        opposite: true,
-                        title: {
-                            text: hasSteam ? `${wUnit} / ${sUnit}` : wUnit,
-                            style: { color: '#10b981', fontSize: '11px', fontWeight: 700 }
+                        name: wName,
+                        type: 'line',
+                        data: tl.water || []
+                    }
+                ];
+                if (hasSteam) {
+                    seriesList.push({
+                        name: sName,
+                        type: 'line',
+                        data: tl.steam
+                    });
+                }
+
+                this.energyChart.updateOptions({
+                    colors: hasSteam ? ['#0284c7', '#10b981', '#f59e0b'] : ['#0284c7', '#10b981'],
+                    stroke: { width: hasSteam ? [2.5, 2.5, 3] : [2.5, 3], curve: 'smooth' },
+                    fill: { type: hasSteam ? ['gradient', 'solid', 'solid'] : ['gradient', 'solid'] },
+                    xaxis: {
+                        categories: tl.labels || []
+                    },
+                    yaxis: [
+                        {
+                            title: {
+                                text: pUnit,
+                                style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
+                            },
+                            labels: {
+                                style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
+                                formatter: function (v) {
+                                    if (v === undefined || v === null || isNaN(v)) return '0';
+                                    return v >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
+                                }
+                            }
                         },
-                        labels: {
-                            style: { colors: '#10b981', fontSize: '11px', fontWeight: 600 },
-                            formatter: function (v) {
-                                if (v === undefined || v === null || isNaN(v)) return '0';
-                                return v < 20 ? Number(v).toFixed(1) : Math.round(v).toLocaleString('uk-UA');
+                        {
+                            opposite: true,
+                            title: {
+                                text: hasSteam ? `${wUnit} / ${sUnit}` : wUnit,
+                                style: { color: '#10b981', fontSize: '11px', fontWeight: 700 }
+                            },
+                            labels: {
+                                style: { colors: '#10b981', fontSize: '11px', fontWeight: 600 },
+                                formatter: function (v) {
+                                    if (v === undefined || v === null || isNaN(v)) return '0';
+                                    return v < 20 ? Number(v).toFixed(1) : Math.round(v).toLocaleString('uk-UA');
+                                }
                             }
                         }
-                    }
-                ],
-                series: seriesList
-            }, true, true);
+                    ],
+                    series: seriesList
+                }, true, true);
+            }
         }
 
         if (data.lab_quality) {

@@ -62,20 +62,20 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // 2.01 Обробники швидкого переходу на місяць з карток аналітики
-    document.querySelectorAll('.btn-quick-period, .history-month-card').forEach(elem => {
-        elem.addEventListener('click', function (e) {
-            const p = this.getAttribute('data-period') || this.getAttribute('data-period-trigger');
-            if (!p) return;
-            const targetBtn = document.querySelector(`.period-btn[data-period="${p}"]`);
-            if (targetBtn) {
-                targetBtn.click();
-            } else if (monthDropdown) {
-                monthDropdown.value = p;
-                monthDropdown.dispatchEvent(new Event('change'));
-            }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
+    // 2.01 Делегований обробник швидкого переходу на місяць/період (працює і для динамічних кнопок у таблицях)
+    document.addEventListener('click', function (e) {
+        const elem = e.target.closest('.btn-quick-period, .history-month-card');
+        if (!elem) return;
+        const p = elem.getAttribute('data-period') || elem.getAttribute('data-period-trigger');
+        if (!p || isFetching) return;
+        const targetBtn = document.querySelector(`.period-btn[data-period="${p}"]`);
+        if (targetBtn) {
+            targetBtn.click();
+        } else if (monthDropdown) {
+            monthDropdown.value = p;
+            monthDropdown.dispatchEvent(new Event('change'));
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     });
 
     // 2.02 Обробники міні-перемикача періоду в блоці «Порівняння з сезоном 2025–2026 рр.»
@@ -421,62 +421,90 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // --- Блок В: Енергетика та водопостачання ---
         if (en) {
+            const hasData = Boolean(en.has_data);
             if (en.period_note) {
                 setElementText('#lbl-energy-period', en.period_note);
             }
-            setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт·год');
-            setElementText('#val-current-power', `Потужність: ${formatNumber(en.current_power_kw, 1)} кВт • Реакт.: ${formatNumber(en.reactive_kvarh || 0, 0)} кВАр·год`);
-
-            setElementText('#val-water-total', formatNumber(en.total_water_m3, 1) + ' м³');
-            setElementText('#val-water-flow', `Потік: ${formatNumber(en.current_water_m3_hour, 2)} м³/год (${formatNumber(en.daily_water_m3 || en.total_water_m3, 1)} м³/добу)`);
-
-            setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 2) + ' кВт·год/т');
-            if (en.specific_subtext) {
-                setElementText('#val-specific-sub', en.specific_subtext);
+            const lblPeriod = document.querySelector('#lbl-energy-period');
+            if (lblPeriod) {
+                lblPeriod.className = 'section-badge ' + (hasData ? 'badge-green' : 'badge-blue');
             }
 
-            setElementText('#val-sewage-total', `Стоки: ${formatNumber(en.sewage_m3 || 0, 1)} м³`);
-            setElementText('#val-boiler-water', `Котельня: ${formatNumber(en.boiler_water_m3 || 0, 0)} м³ • Екстракція: ${formatNumber(en.extraction_water_m3 || 0, 0)} м³`);
+            if (hasData) {
+                setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт·год');
+                setElementText('#val-current-power', `Потужність: ${formatNumber(en.current_power_kw, 1)} кВт • Реакт.: ${formatNumber(en.reactive_kvarh || 0, 0)} кВАр·год`);
 
-            // Пара котельні та розподіл
-            setElementText('#val-steam-total', formatNumber(en.steam_boiler_tonnes || 0, 1) + ' т');
-            if (en.steam_subtext) {
-                setElementText('#val-steam-sub', en.steam_subtext);
-            }
-            const specificSteam = Number(en.steam_specific_kg_per_tonne || 0);
-            setElementText('#val-steam-specific', specificSteam > 0 ? (formatNumber(specificSteam, 1) + ' кг/т') : 'Немає переробки');
-            if (en.steam_distrib_subtext) {
-                setElementText('#val-steam-distrib', en.steam_distrib_subtext);
+                setElementText('#val-water-total', formatNumber(en.total_water_m3, 1) + ' м³');
+                setElementText('#val-water-flow', `Потік: ${formatNumber(en.current_water_m3_hour, 2)} м³/год (${formatNumber(en.daily_water_m3 || en.total_water_m3, 1)} м³/добу)`);
+
+                setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 2) + ' кВт·год/т');
+                setElementText('#val-specific-sub', en.specific_subtext || 'Прес: 60,93 + Екстр: 23,90 кВт·год/т');
+
+                setElementText('#val-sewage-total', `Стоки: ${formatNumber(en.sewage_m3 || 0, 1)} м³`);
+                setElementText('#val-boiler-water', `Котельня: ${formatNumber(en.boiler_water_m3 || 0, 0)} м³ • Екстракція: ${formatNumber(en.extraction_water_m3 || 0, 0)} м³`);
+
+                // Пара котельні та розподіл
+                setElementText('#val-steam-total', formatNumber(en.steam_boiler_tonnes || 0, 1) + ' т');
+                setElementText('#val-steam-sub', en.steam_subtext || 'Котельня на лушпинні');
+                const specificSteam = Number(en.steam_specific_kg_per_tonne || 0);
+                setElementText('#val-steam-specific', specificSteam > 0 ? (formatNumber(specificSteam, 1) + ' кг/т') : '—');
+                setElementText('#val-steam-distrib', en.steam_distrib_subtext || '');
+            } else {
+                setElementText('#val-total-kwh', 'Жовтень: немає даних');
+                setElementText('#val-current-power', 'Звіт головного енергетика очікується');
+
+                setElementText('#val-water-total', 'Жовтень: немає даних');
+                setElementText('#val-water-flow', 'Журнал лічильника води очікується');
+
+                setElementText('#val-steam-total', 'Жовтень: немає даних');
+                setElementText('#val-steam-sub', 'Журнал котельні за жовтень очікується');
+
+                setElementText('#val-steam-specific', 'Жовтень: немає даних');
+                setElementText('#val-steam-distrib', 'Оберіть «Вересень» для перегляду факту');
+
+                setElementText('#val-specific-kwh', 'Жовтень: немає даних');
+                setElementText('#val-specific-sub', 'Звіт енергетика очікується');
+
+                setElementText('#val-sewage-total', 'Жовтень: немає даних');
+                setElementText('#val-boiler-water', 'Оберіть «Вересень» для перегляду');
             }
 
             const steamTbody = document.querySelector('#steam-daily-tbody');
-            if (steamTbody && Array.isArray(en.steam_daily_table)) {
-                steamTbody.innerHTML = en.steam_daily_table.map(r => `
-                    <tr>
-                        <td class="bold">${r.date || (r.day + '.09.2026')}</td>
-                        <td class="bold" style="color: #d97706;">${formatNumber(r.boiler_t, 2)}</td>
-                        <td class="bold" style="color: #0284c7;">${formatNumber(r.prod_t, 2)}</td>
-                        <td>${formatNumber(r.sn_t, 2)}</td>
-                        <td style="color: #2563eb;">${formatNumber(r.extr_t, 2)}</td>
-                        <td style="color: #10b981;">${formatNumber(r.prep_t, 2)}</td>
-                        <td>${formatNumber(r.elev_t, 2)}</td>
-                        <td>${formatNumber(r.heating_t, 2)}</td>
-                    </tr>
-                `).join('');
+            if (steamTbody) {
+                if (hasData && Array.isArray(en.steam_daily_table) && en.steam_daily_table.length > 0) {
+                    steamTbody.innerHTML = en.steam_daily_table.map(r => `
+                        <tr>
+                            <td class="bold">${r.date || (r.day + '.09.2026')}</td>
+                            <td class="bold" style="color: #d97706;">${formatNumber(r.boiler_t, 2)}</td>
+                            <td class="bold" style="color: #0284c7;">${formatNumber(r.prod_t, 2)}</td>
+                            <td>${formatNumber(r.sn_t, 2)}</td>
+                            <td style="color: #2563eb;">${formatNumber(r.extr_t, 2)}</td>
+                            <td style="color: #10b981;">${formatNumber(r.prep_t, 2)}</td>
+                            <td>${formatNumber(r.elev_t, 2)}</td>
+                            <td>${formatNumber(r.heating_t, 2)}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    steamTbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">Жовтень 2026: добовий журнал обліку пари очікується. <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; cursor: pointer; font-weight: 700;">Обрати Вересень 2026</button></td></tr>`;
+                }
             }
 
             const deptTbody = document.querySelector('#energy-departments-tbody');
-            if (deptTbody && Array.isArray(en.departments)) {
-                deptTbody.innerHTML = en.departments.map(d => `
-                    <tr>
-                        <td class="bold">${d.name}</td>
-                        <td class="bold" style="color: #0284c7;">${formatNumber(d.active_kwh, 0)}</td>
-                        <td>${formatNumber(d.reactive_kvarh, 1)}</td>
-                        <td>${Number(d.specific_kwh) > 0 ? formatNumber(d.specific_kwh, 2) : '—'}</td>
-                        <td class="bold" style="color: #059669;">${formatNumber(d.water_m3, 0)}</td>
-                        <td>${formatNumber(d.sewage_m3, 0)}</td>
-                    </tr>
-                `).join('');
+            if (deptTbody) {
+                if (hasData && Array.isArray(en.departments) && en.departments.length > 0) {
+                    deptTbody.innerHTML = en.departments.map(d => `
+                        <tr>
+                            <td class="bold">${d.name}</td>
+                            <td class="bold" style="color: #0284c7;">${formatNumber(d.active_kwh, 0)}</td>
+                            <td>${formatNumber(d.reactive_kvarh, 1)}</td>
+                            <td>${Number(d.specific_kwh) > 0 ? formatNumber(d.specific_kwh, 2) : '—'}</td>
+                            <td class="bold" style="color: #059669;">${formatNumber(d.water_m3, 0)}</td>
+                            <td>${formatNumber(d.sewage_m3, 0)}</td>
+                        </tr>
+                    `).join('');
+                } else {
+                    deptTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">Жовтень 2026: дані відсутні (звіт енергетика очікується). <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; cursor: pointer; font-weight: 700;">Обрати Вересень 2026</button></td></tr>`;
+                }
             }
         }
 

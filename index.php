@@ -589,9 +589,15 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <i data-lucide="zap" style="width: 18px; height: 18px; color: #f59e0b;"></i>
                     <span>Блок В: Електроенергія, водопостачання та технологічна пара заводу</span>
-                    <span class="section-badge badge-green" id="lbl-energy-period"><?= htmlspecialchars($en['period_note'] ?? 'Звіт гол. енергетика, облік пари та лічильники') ?></span>
+                    <span class="section-badge <?= !empty($en['has_data']) ? 'badge-green' : 'badge-blue' ?>" id="lbl-energy-period"><?= htmlspecialchars($en['period_note'] ?? 'Жовтень 2026: немає даних') ?></span>
                 </div>
-                <span class="section-badge badge-blue">ТП 2×1600 / ТП-2000 &bull; Водомірний вузол &bull; Лузгова котельня (пара)</span>
+                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span class="section-badge badge-blue">ТП 2×1600 / ТП-2000 &bull; Водомірний вузол &bull; Лузгова котельня (пара)</span>
+                    <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #ffffff; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
+                        <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
+                        <span>📅 Переглянути Вересень 2026 (факт)</span>
+                    </button>
+                </div>
             </div>
 
             <!-- 6 карток витрат енергоносіїв (Електроенергія, Вода, Пара) -->
@@ -599,43 +605,43 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <!-- 1. Активна електроенергія -->
                 <div class="energy-card-mini" style="border-top: 3px solid #0284c7;">
                     <div class="mini-title">⚡ Активна електроенергія</div>
-                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= number_format($en['total_kwh'], 0, ',', ' ') ?> кВт·год</div>
-                    <div class="mini-sub" id="val-current-power">Потужність: <?= number_format($en['current_power_kw'], 1, ',', ' ') ?> кВт &bull; Реакт.: <?= number_format($en['reactive_kvarh'] ?? 1450, 0, ',', ' ') ?> кВАр·год</div>
+                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= !empty($en['has_data']) ? (number_format($en['total_kwh'], 0, ',', ' ') . ' кВт·год') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-sub" id="val-current-power"><?= !empty($en['has_data']) ? ('Потужність: ' . number_format($en['current_power_kw'], 1, ',', ' ') . ' кВт &bull; Реакт.: ' . number_format($en['reactive_kvarh'] ?? 0, 0, ',', ' ') . ' кВАр·год') : 'Звіт головного енергетика очікується' ?></div>
                 </div>
 
                 <!-- 2. Споживання води -->
                 <div class="energy-card-mini" style="border-top: 3px solid #10b981;">
                     <div class="mini-title">💧 Споживання води (вхідний ліч.)</div>
-                    <div class="mini-number" id="val-water-total" style="color: #059669;"><?= number_format($en['total_water_m3'], 1, ',', ' ') ?> м³</div>
-                    <div class="mini-sub" id="val-water-flow">Потік: <?= number_format($en['current_water_m3_hour'], 2, ',', ' ') ?> м³/год (<?= number_format($en['daily_water_m3'] ?? 163.7, 1, ',', ' ') ?> м³/добу)</div>
+                    <div class="mini-number" id="val-water-total" style="color: #059669;"><?= !empty($en['has_data']) ? (number_format($en['total_water_m3'], 1, ',', ' ') . ' м³') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-sub" id="val-water-flow"><?= !empty($en['has_data']) ? ('Потік: ' . number_format($en['current_water_m3_hour'], 2, ',', ' ') . ' м³/год (' . number_format($en['daily_water_m3'] ?? 0, 1, ',', ' ') . ' м³/добу)') : 'Журнал лічильника очікується' ?></div>
                 </div>
 
                 <!-- 3. Технологічна пара котельні -->
                 <div class="energy-card-mini" style="border-top: 3px solid #f59e0b;">
                     <div class="mini-title">💨 Технологічна пара котельні</div>
-                    <div class="mini-number" id="val-steam-total" style="color: #d97706;"><?= number_format($en['steam_boiler_tonnes'] ?? 0, 1, ',', ' ') ?> т</div>
-                    <div class="mini-sub" id="val-steam-sub"><?= htmlspecialchars($en['steam_subtext'] ?? 'Котельня на лушпинні • Тиск: 11,2 бар') ?></div>
+                    <div class="mini-number" id="val-steam-total" style="color: #d97706;"><?= !empty($en['has_data']) ? (number_format($en['steam_boiler_tonnes'] ?? 0, 1, ',', ' ') . ' т') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-sub" id="val-steam-sub"><?= htmlspecialchars($en['steam_subtext'] ?? 'Жовтень: немає даних') ?></div>
                 </div>
 
                 <!-- 4. Розподіл пари по цехах & питома норма -->
                 <div class="energy-card-mini" style="border-top: 3px solid #ea580c;">
                     <div class="mini-title">⚖️ Питома пара на 1 т насіння</div>
-                    <div class="mini-number" id="val-steam-specific" style="color: #c2410c;"><?= ($en['steam_specific_kg_per_tonne'] ?? 0) > 0 ? (number_format($en['steam_specific_kg_per_tonne'], 1, ',', ' ') . ' кг/т') : 'Немає переробки' ?></div>
-                    <div class="mini-sub" id="val-steam-distrib"><?= htmlspecialchars($en['steam_distrib_subtext'] ?? 'Екстракція: 0 т • Підготовка: 0 т') ?></div>
+                    <div class="mini-number" id="val-steam-specific" style="color: #c2410c;"><?= !empty($en['has_data']) && ($en['steam_specific_kg_per_tonne'] ?? 0) > 0 ? (number_format($en['steam_specific_kg_per_tonne'], 1, ',', ' ') . ' кг/т') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-sub" id="val-steam-distrib"><?= htmlspecialchars($en['steam_distrib_subtext'] ?? 'Оберіть «Вересень» для перегляду') ?></div>
                 </div>
 
                 <!-- 5. Питома витрата електроенергії -->
                 <div class="energy-card-mini" style="border-top: 3px solid #6366f1;">
                     <div class="mini-title">⚙️ Питома ел.енергія на 1 т</div>
-                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= number_format($en['specific_kwh_per_tonne'], 2, ',', ' ') ?> кВт·год/т</div>
-                    <div class="mini-sub" id="val-specific-sub"><?= htmlspecialchars($en['specific_subtext'] ?? 'Прес: 27,92 + Екстр: 13,26 кВт·год/т') ?></div>
+                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= !empty($en['has_data']) && ($en['specific_kwh_per_tonne'] ?? 0) > 0 ? (number_format($en['specific_kwh_per_tonne'], 2, ',', ' ') . ' кВт·год/т') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-sub" id="val-specific-sub"><?= htmlspecialchars($en['specific_subtext'] ?? 'Звіт очікується') ?></div>
                 </div>
 
                 <!-- 6. Котельня, екстракція та стоки -->
                 <div class="energy-card-mini" style="border-top: 3px solid #8b5cf6;">
                     <div class="mini-title">🔥 Котельня, екстракція та стоки</div>
-                    <div class="mini-number" id="val-sewage-total" style="color: #6d28d9;">Стоки: <?= number_format($en['sewage_m3'] ?? 72.6, 1, ',', ' ') ?> м³</div>
-                    <div class="mini-sub" id="val-boiler-water">Котельня: <?= number_format($en['boiler_water_m3'] ?? 95, 0, ',', ' ') ?> м³ &bull; Екстракція: <?= number_format($en['extraction_water_m3'] ?? 32, 0, ',', ' ') ?> м³</div>
+                    <div class="mini-number" id="val-sewage-total" style="color: #6d28d9;"><?= !empty($en['has_data']) ? ('Стоки: ' . number_format($en['sewage_m3'] ?? 0, 1, ',', ' ') . ' м³') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-sub" id="val-boiler-water"><?= !empty($en['has_data']) ? ('Котельня: ' . number_format($en['boiler_water_m3'] ?? 0, 0, ',', ' ') . ' м³ &bull; Екстракція: ' . number_format($en['extraction_water_m3'] ?? 0, 0, ',', ' ') . ' м³') : 'Оберіть «Вересень» для перегляду' ?></div>
                 </div>
             </div>
 
@@ -663,16 +669,27 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 </tr>
                             </thead>
                             <tbody id="energy-departments-tbody">
-                                <?php foreach (($en['departments'] ?? []) as $dept): ?>
-                                <tr>
-                                    <td class="bold"><?= htmlspecialchars($dept['name']) ?></td>
-                                    <td class="bold" style="color: #0284c7;"><?= number_format($dept['active_kwh'], 0, ',', ' ') ?></td>
-                                    <td><?= number_format($dept['reactive_kvarh'], 1, ',', ' ') ?></td>
-                                    <td><?= $dept['specific_kwh'] > 0 ? number_format($dept['specific_kwh'], 2, ',', '') : '—' ?></td>
-                                    <td class="bold" style="color: #059669;"><?= number_format($dept['water_m3'], 0, ',', ' ') ?></td>
-                                    <td><?= number_format($dept['sewage_m3'], 0, ',', ' ') ?></td>
-                                </tr>
-                                <?php endforeach; ?>
+                                <?php if (!empty($en['departments'])): ?>
+                                    <?php foreach ($en['departments'] as $dept): ?>
+                                    <tr>
+                                        <td class="bold"><?= htmlspecialchars($dept['name']) ?></td>
+                                        <td class="bold" style="color: #0284c7;"><?= number_format($dept['active_kwh'], 0, ',', ' ') ?></td>
+                                        <td><?= number_format($dept['reactive_kvarh'], 1, ',', ' ') ?></td>
+                                        <td><?= $dept['specific_kwh'] > 0 ? number_format($dept['specific_kwh'], 2, ',', '') : '—' ?></td>
+                                        <td class="bold" style="color: #059669;"><?= number_format($dept['water_m3'], 0, ',', ' ') ?></td>
+                                        <td><?= number_format($dept['sewage_m3'], 0, ',', ' ') ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="6" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">
+                                            Жовтень 2026: дані відсутні (звіт енергетика очікується). 
+                                            <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; cursor: pointer; font-weight: 700;">
+                                                Обрати Вересень 2026
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
@@ -691,7 +708,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                     <th>Вузол обліку води / стоків</th>
                                     <th>Відповідальний</th>
                                     <th>Вересень (м³ / доб.)</th>
-                                    <th>Жовтень (м³ / доб.)</th>
+                                    <th>Жовтень</th>
                                     <th>Разом (м³)</th>
                                     <th>Технологічний баланс (пермеат / випар / КНС)</th>
                                 </tr>
@@ -702,7 +719,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                     <td class="bold"><?= htmlspecialchars($wm['node']) ?></td>
                                     <td><span class="kpi-badge badge-blue" style="font-size: 10px; padding: 2px 6px;"><?= htmlspecialchars($wm['responsible']) ?></span></td>
                                     <td><strong><?= number_format($wm['sep_m3'], 0, ',', ' ') ?></strong> <span style="color:#64748b;">(<?= number_format($wm['sep_daily'], 1, ',', '') ?>/д)</span></td>
-                                    <td style="color: #059669;"><strong><?= number_format($wm['oct_m3'], 0, ',', ' ') ?></strong> <span style="color:#64748b;">(<?= number_format($wm['oct_daily'], 1, ',', '') ?>/д)</span></td>
+                                    <td><?= $wm['oct_m3'] !== null ? ('<strong style="color: #059669;">' . number_format($wm['oct_m3'], 0, ',', ' ') . '</strong> <span style="color:#64748b;">(' . number_format($wm['oct_daily'], 1, ',', '') . '/д)</span>') : '<span style="color: #94a3b8; font-style: italic;">Немає даних</span>' ?></td>
                                     <td class="bold" style="color: #0284c7;"><?= number_format($wm['season_m3'], 0, ',', ' ') ?></td>
                                     <td style="font-size: 10.5px; color: #475569;"><?= htmlspecialchars($wm['note']) ?></td>
                                 </tr>
@@ -736,13 +753,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 <?php foreach (($en['monthly_12'] ?? []) as $em): ?>
                                 <tr>
                                     <td class="bold"><?= htmlspecialchars($em['month']) ?></td>
-                                    <td class="bold" style="color: #0284c7;"><?= number_format($em['active_kwh'], 0, ',', ' ') ?></td>
-                                    <td><?= number_format($em['reactive_kvarh'], 0, ',', ' ') ?></td>
-                                    <td><?= number_format($em['press_kwh'] + $em['extr_kwh'], 0, ',', ' ') ?></td>
-                                    <td class="bold" style="color: #059669;"><?= number_format($em['water_m3'], 0, ',', ' ') ?></td>
-                                    <td><?= number_format($em['daily_water_m3'], 1, ',', '') ?> м³</td>
-                                    <td><?= number_format($em['sewage_m3'], 0, ',', ' ') ?></td>
-                                    <td><?= $em['gas_m3'] > 0 ? number_format($em['gas_m3'], 0, ',', ' ') : '—' ?></td>
+                                    <?php if (!empty($em['has_data'])): ?>
+                                        <td class="bold" style="color: #0284c7;"><?= number_format($em['active_kwh'], 0, ',', ' ') ?></td>
+                                        <td><?= number_format($em['reactive_kvarh'], 0, ',', ' ') ?></td>
+                                        <td><?= number_format($em['press_kwh'] + $em['extr_kwh'], 0, ',', ' ') ?></td>
+                                        <td class="bold" style="color: #059669;"><?= number_format($em['water_m3'], 0, ',', ' ') ?></td>
+                                        <td><?= number_format($em['daily_water_m3'], 1, ',', '') ?> м³</td>
+                                        <td><?= number_format($em['sewage_m3'], 0, ',', ' ') ?></td>
+                                        <td><?= $em['gas_m3'] > 0 ? number_format($em['gas_m3'], 0, ',', ' ') : '—' ?></td>
+                                    <?php else: ?>
+                                        <td colspan="7" style="color: #94a3b8; font-style: italic; text-align: center;">Немає даних (звіт очікується)</td>
+                                    <?php endif; ?>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -773,18 +794,29 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 </tr>
                             </thead>
                             <tbody id="steam-daily-tbody">
-                                <?php foreach (($en['steam_daily_table'] ?? []) as $sr): ?>
-                                <tr>
-                                    <td class="bold"><?= htmlspecialchars($sr['date'] ?? ($sr['day'] . '.09.2026')) ?></td>
-                                    <td class="bold" style="color: #d97706;"><?= number_format($sr['boiler_t'], 2, ',', ' ') ?></td>
-                                    <td class="bold" style="color: #0284c7;"><?= number_format($sr['prod_t'], 2, ',', ' ') ?></td>
-                                    <td><?= number_format($sr['sn_t'], 2, ',', ' ') ?></td>
-                                    <td style="color: #2563eb;"><?= number_format($sr['extr_t'], 2, ',', ' ') ?></td>
-                                    <td style="color: #10b981;"><?= number_format($sr['prep_t'], 2, ',', ' ') ?></td>
-                                    <td><?= number_format($sr['elev_t'], 2, ',', ' ') ?></td>
-                                    <td><?= number_format($sr['heating_t'], 2, ',', ' ') ?></td>
-                                </tr>
-                                <?php endforeach; ?>
+                                <?php if (!empty($en['steam_daily_table'])): ?>
+                                    <?php foreach ($en['steam_daily_table'] as $sr): ?>
+                                    <tr>
+                                        <td class="bold"><?= htmlspecialchars($sr['date'] ?? ($sr['day'] . '.09.2026')) ?></td>
+                                        <td class="bold" style="color: #d97706;"><?= number_format($sr['boiler_t'], 2, ',', ' ') ?></td>
+                                        <td class="bold" style="color: #0284c7;"><?= number_format($sr['prod_t'], 2, ',', ' ') ?></td>
+                                        <td><?= number_format($sr['sn_t'], 2, ',', ' ') ?></td>
+                                        <td style="color: #2563eb;"><?= number_format($sr['extr_t'], 2, ',', ' ') ?></td>
+                                        <td style="color: #10b981;"><?= number_format($sr['prep_t'], 2, ',', ' ') ?></td>
+                                        <td><?= number_format($sr['elev_t'], 2, ',', ' ') ?></td>
+                                        <td><?= number_format($sr['heating_t'], 2, ',', ' ') ?></td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="8" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">
+                                            Жовтень 2026: добовий журнал обліку пари очікується. 
+                                            <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; cursor: pointer; font-weight: 700;">
+                                                Обрати Вересень 2026
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
