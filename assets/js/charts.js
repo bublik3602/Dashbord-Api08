@@ -149,24 +149,36 @@ window.FactoryCharts = {
 
         const powerName = timelineData.power_name || 'Електроенергія за добу (кВт·год)';
         const waterName = timelineData.water_name || 'Вода за добу по лічильнику (м³)';
+        const steamName = timelineData.steam_name || 'Технологічна пара за добу (т)';
         const powerUnit = timelineData.power_unit || 'кВт·год';
         const waterUnit = timelineData.water_unit || 'м³/д';
+        const steamUnit = timelineData.steam_unit || 'т/д';
+        const hasSteam  = Array.isArray(timelineData.steam) && timelineData.steam.length > 0;
+
+        const seriesList = [
+            {
+                name: powerName,
+                type: 'area',
+                data: timelineData.power || [29400, 31200, 31800, 30950, 31210, 31930, 11450, 4820, 4410, 4650, 4520, 4032]
+            },
+            {
+                name: waterName,
+                type: 'line',
+                data: timelineData.water || [211, 152, 235, 198, 206, 206, 141, 193, 151, 226, 164, 154]
+            }
+        ];
+        if (hasSteam) {
+            seriesList.push({
+                name: steamName,
+                type: 'line',
+                data: timelineData.steam
+            });
+        }
 
         const options = {
-            series: [
-                {
-                    name: powerName,
-                    type: 'area',
-                    data: timelineData.power || [29400, 31200, 31800, 30950, 31210, 31930, 11450, 4820, 4410, 4650, 4520, 4032]
-                },
-                {
-                    name: waterName,
-                    type: 'line',
-                    data: timelineData.water || [211, 152, 235, 198, 206, 206, 141, 193, 151, 226, 164, 154]
-                }
-            ],
+            series: seriesList,
             chart: {
-                height: 260,
+                height: 270,
                 type: 'line',
                 fontFamily: 'inherit',
                 toolbar: {
@@ -178,17 +190,17 @@ window.FactoryCharts = {
                 }
             },
             stroke: {
-                width: [2.5, 3],
+                width: hasSteam ? [2.5, 2.5, 3] : [2.5, 3],
                 curve: 'smooth'
             },
             markers: {
-                size: [3, 4],
+                size: hasSteam ? [3, 3, 4] : [3, 4],
                 hover: {
                     sizeOffset: 2
                 }
             },
             fill: {
-                type: ['gradient', 'solid'],
+                type: hasSteam ? ['gradient', 'solid', 'solid'] : ['gradient', 'solid'],
                 gradient: {
                     shade: 'light',
                     type: "vertical",
@@ -198,7 +210,7 @@ window.FactoryCharts = {
                     stops: [0, 90, 100]
                 }
             },
-            colors: ['#0284c7', '#10b981'],
+            colors: hasSteam ? ['#0284c7', '#10b981', '#f59e0b'] : ['#0284c7', '#10b981'],
             dataLabels: {
                 enabled: false
             },
@@ -235,7 +247,7 @@ window.FactoryCharts = {
                 {
                     opposite: true,
                     title: {
-                        text: waterUnit,
+                        text: hasSteam ? `${waterUnit} / ${steamUnit}` : waterUnit,
                         style: { color: '#10b981', fontSize: '11px', fontWeight: 700 }
                     },
                     labels: {
@@ -269,8 +281,10 @@ window.FactoryCharts = {
                     const pointLabel = labels[dataPointIndex] || '';
                     const pVal = Number(series[0] ? series[0][dataPointIndex] : 0) || 0;
                     const wVal = Number(series[1] ? series[1][dataPointIndex] : 0) || 0;
+                    const sVal = series[2] ? (Number(series[2][dataPointIndex]) || 0) : 0;
                     const pUnit = tl.power_unit || 'кВт·год';
                     const wUnit = tl.water_unit || 'м³/д';
+                    const sUnit = tl.steam_unit || 'т/д';
 
                     const pSum = (series[0] || []).reduce((a, b) => a + (Number(b) || 0), 0);
                     const wSum = (series[1] || []).reduce((a, b) => a + (Number(b) || 0), 0);
@@ -279,12 +293,13 @@ window.FactoryCharts = {
 
                     const fmtP = pVal.toLocaleString('uk-UA', { maximumFractionDigits: 1 });
                     const fmtW = wVal.toLocaleString('uk-UA', { minimumFractionDigits: wVal < 20 ? 1 : 0, maximumFractionDigits: 2 });
+                    const fmtS = sVal.toLocaleString('uk-UA', { maximumFractionDigits: 1 });
 
                     return `
                         <div class="apex-rich-tooltip bar-tooltip-box">
                             <div class="art-header bar-head">
-                                <span class="art-title">⚡💧 Дата / період: ${pointLabel}</span>
-                                <span class="art-pill">Енергооблік</span>
+                                <span class="art-title">⚡💧💨 Дата / період: ${pointLabel}</span>
+                                <span class="art-pill">Енергоносії &bull; Пара</span>
                             </div>
                             <div class="art-body">
                                 <div class="art-row" style="border-left: 3px solid #0284c7;">
@@ -301,6 +316,14 @@ window.FactoryCharts = {
                                     </div>
                                     <div class="art-sub-calc">Частка у вибірці: ${wShare}%</div>
                                 </div>
+                                ${series[2] ? `
+                                <div class="art-row" style="border-left: 3px solid #f59e0b;">
+                                    <div class="art-row-main">
+                                        <span class="art-lbl">💨 Технологічна пара:</span>
+                                        <span class="art-val bold" style="color: #d97706;">${fmtS} ${sUnit}</span>
+                                    </div>
+                                    <div class="art-sub-calc">Котельня на лушпинні</div>
+                                </div>` : ''}
                             </div>
                         </div>
                     `;
@@ -580,11 +603,34 @@ window.FactoryCharts = {
             const tl = data.energy.timeline;
             this._currentEnergyTimeline = tl;
             const pName = tl.power_name || 'Електроенергія за добу (кВт·год)';
-            const wName = tl.water_name || 'Вода за добу по лічильнику (м³)';
-            const pUnit = tl.power_unit || 'кВт·год';
-            const wUnit = tl.water_unit || 'м³/д';
+            const sName = tl.steam_name || 'Технологічна пара за добу (т)';
+            const sUnit = tl.steam_unit || 'т/д';
+            const hasSteam = Array.isArray(tl.steam) && tl.steam.length > 0;
+
+            const seriesList = [
+                {
+                    name: pName,
+                    type: 'area',
+                    data: tl.power || []
+                },
+                {
+                    name: wName,
+                    type: 'line',
+                    data: tl.water || []
+                }
+            ];
+            if (hasSteam) {
+                seriesList.push({
+                    name: sName,
+                    type: 'line',
+                    data: tl.steam
+                });
+            }
 
             this.energyChart.updateOptions({
+                colors: hasSteam ? ['#0284c7', '#10b981', '#f59e0b'] : ['#0284c7', '#10b981'],
+                stroke: { width: hasSteam ? [2.5, 2.5, 3] : [2.5, 3], curve: 'smooth' },
+                fill: { type: hasSteam ? ['gradient', 'solid', 'solid'] : ['gradient', 'solid'] },
                 xaxis: {
                     categories: tl.labels || []
                 },
@@ -605,7 +651,7 @@ window.FactoryCharts = {
                     {
                         opposite: true,
                         title: {
-                            text: wUnit,
+                            text: hasSteam ? `${wUnit} / ${sUnit}` : wUnit,
                             style: { color: '#10b981', fontSize: '11px', fontWeight: 700 }
                         },
                         labels: {
@@ -617,18 +663,7 @@ window.FactoryCharts = {
                         }
                     }
                 ],
-                series: [
-                    {
-                        name: pName,
-                        type: 'area',
-                        data: tl.power || []
-                    },
-                    {
-                        name: wName,
-                        type: 'line',
-                        data: tl.water || []
-                    }
-                ]
+                series: seriesList
             }, true, true);
         }
 

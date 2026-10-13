@@ -438,6 +438,33 @@ document.addEventListener('DOMContentLoaded', function () {
             setElementText('#val-sewage-total', `Стоки: ${formatNumber(en.sewage_m3 || 0, 1)} м³`);
             setElementText('#val-boiler-water', `Котельня: ${formatNumber(en.boiler_water_m3 || 0, 0)} м³ • Екстракція: ${formatNumber(en.extraction_water_m3 || 0, 0)} м³`);
 
+            // Пара котельні та розподіл
+            setElementText('#val-steam-total', formatNumber(en.steam_boiler_tonnes || 0, 1) + ' т');
+            if (en.steam_subtext) {
+                setElementText('#val-steam-sub', en.steam_subtext);
+            }
+            const specificSteam = Number(en.steam_specific_kg_per_tonne || 0);
+            setElementText('#val-steam-specific', specificSteam > 0 ? (formatNumber(specificSteam, 1) + ' кг/т') : 'Немає переробки');
+            if (en.steam_distrib_subtext) {
+                setElementText('#val-steam-distrib', en.steam_distrib_subtext);
+            }
+
+            const steamTbody = document.querySelector('#steam-daily-tbody');
+            if (steamTbody && Array.isArray(en.steam_daily_table)) {
+                steamTbody.innerHTML = en.steam_daily_table.map(r => `
+                    <tr>
+                        <td class="bold">${r.date || (r.day + '.09.2026')}</td>
+                        <td class="bold" style="color: #d97706;">${formatNumber(r.boiler_t, 2)}</td>
+                        <td class="bold" style="color: #0284c7;">${formatNumber(r.prod_t, 2)}</td>
+                        <td>${formatNumber(r.sn_t, 2)}</td>
+                        <td style="color: #2563eb;">${formatNumber(r.extr_t, 2)}</td>
+                        <td style="color: #10b981;">${formatNumber(r.prep_t, 2)}</td>
+                        <td>${formatNumber(r.elev_t, 2)}</td>
+                        <td>${formatNumber(r.heating_t, 2)}</td>
+                    </tr>
+                `).join('');
+            }
+
             const deptTbody = document.querySelector('#energy-departments-tbody');
             if (deptTbody && Array.isArray(en.departments)) {
                 deptTbody.innerHTML = en.departments.map(d => `

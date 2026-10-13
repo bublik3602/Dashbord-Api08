@@ -583,34 +583,55 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
          ============================================================= -->
     <div class="bottom-grid">
         
-        <!-- Графік енергетики та води + Звіт головного енергетика -->
+        <!-- Графік енергетики, води та пари + Звіт головного енергетика та облік пари -->
         <div class="card-panel">
             <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <i data-lucide="zap" style="width: 18px; height: 18px; color: #f59e0b;"></i>
-                    <span>Блок В: Електроенергія та водопостачання заводу</span>
-                    <span class="section-badge badge-green" id="lbl-energy-period"><?= htmlspecialchars($en['period_note'] ?? 'Звіт гол. енергетика та лічильники') ?></span>
+                    <span>Блок В: Електроенергія, водопостачання та технологічна пара заводу</span>
+                    <span class="section-badge badge-green" id="lbl-energy-period"><?= htmlspecialchars($en['period_note'] ?? 'Звіт гол. енергетика, облік пари та лічильники') ?></span>
                 </div>
-                <span class="section-badge badge-blue">Лічильники ТП 2×1600 / ТП-2000 та водомірний вузол</span>
+                <span class="section-badge badge-blue">ТП 2×1600 / ТП-2000 &bull; Водомірний вузол &bull; Лузгова котельня (пара)</span>
             </div>
 
-            <!-- 4 картки витрат електроенергії та води -->
-            <div class="energy-summary-cards energy-cards-4">
+            <!-- 6 карток витрат енергоносіїв (Електроенергія, Вода, Пара) -->
+            <div class="energy-summary-cards energy-cards-6">
+                <!-- 1. Активна електроенергія -->
                 <div class="energy-card-mini" style="border-top: 3px solid #0284c7;">
                     <div class="mini-title">⚡ Активна електроенергія</div>
                     <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= number_format($en['total_kwh'], 0, ',', ' ') ?> кВт·год</div>
                     <div class="mini-sub" id="val-current-power">Потужність: <?= number_format($en['current_power_kw'], 1, ',', ' ') ?> кВт &bull; Реакт.: <?= number_format($en['reactive_kvarh'] ?? 1450, 0, ',', ' ') ?> кВАр·год</div>
                 </div>
+
+                <!-- 2. Споживання води -->
                 <div class="energy-card-mini" style="border-top: 3px solid #10b981;">
                     <div class="mini-title">💧 Споживання води (вхідний ліч.)</div>
                     <div class="mini-number" id="val-water-total" style="color: #059669;"><?= number_format($en['total_water_m3'], 1, ',', ' ') ?> м³</div>
                     <div class="mini-sub" id="val-water-flow">Потік: <?= number_format($en['current_water_m3_hour'], 2, ',', ' ') ?> м³/год (<?= number_format($en['daily_water_m3'] ?? 163.7, 1, ',', ' ') ?> м³/добу)</div>
                 </div>
+
+                <!-- 3. Технологічна пара котельні -->
                 <div class="energy-card-mini" style="border-top: 3px solid #f59e0b;">
-                    <div class="mini-title">⚙️ Питома витрата на 1 т насіння</div>
-                    <div class="mini-number" id="val-specific-kwh" style="color: #d97706;"><?= number_format($en['specific_kwh_per_tonne'], 2, ',', ' ') ?> кВт·год/т</div>
+                    <div class="mini-title">💨 Технологічна пара котельні</div>
+                    <div class="mini-number" id="val-steam-total" style="color: #d97706;"><?= number_format($en['steam_boiler_tonnes'] ?? 0, 1, ',', ' ') ?> т</div>
+                    <div class="mini-sub" id="val-steam-sub"><?= htmlspecialchars($en['steam_subtext'] ?? 'Котельня на лушпинні • Тиск: 11,2 бар') ?></div>
+                </div>
+
+                <!-- 4. Розподіл пари по цехах & питома норма -->
+                <div class="energy-card-mini" style="border-top: 3px solid #ea580c;">
+                    <div class="mini-title">⚖️ Питома пара на 1 т насіння</div>
+                    <div class="mini-number" id="val-steam-specific" style="color: #c2410c;"><?= ($en['steam_specific_kg_per_tonne'] ?? 0) > 0 ? (number_format($en['steam_specific_kg_per_tonne'], 1, ',', ' ') . ' кг/т') : 'Немає переробки' ?></div>
+                    <div class="mini-sub" id="val-steam-distrib"><?= htmlspecialchars($en['steam_distrib_subtext'] ?? 'Екстракція: 0 т • Підготовка: 0 т') ?></div>
+                </div>
+
+                <!-- 5. Питома витрата електроенергії -->
+                <div class="energy-card-mini" style="border-top: 3px solid #6366f1;">
+                    <div class="mini-title">⚙️ Питома ел.енергія на 1 т</div>
+                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= number_format($en['specific_kwh_per_tonne'], 2, ',', ' ') ?> кВт·год/т</div>
                     <div class="mini-sub" id="val-specific-sub"><?= htmlspecialchars($en['specific_subtext'] ?? 'Прес: 27,92 + Екстр: 13,26 кВт·год/т') ?></div>
                 </div>
+
+                <!-- 6. Котельня, екстракція та стоки -->
                 <div class="energy-card-mini" style="border-top: 3px solid #8b5cf6;">
                     <div class="mini-title">🔥 Котельня, екстракція та стоки</div>
                     <div class="mini-number" id="val-sewage-total" style="color: #6d28d9;">Стоки: <?= number_format($en['sewage_m3'] ?? 72.6, 1, ',', ' ') ?> м³</div>
@@ -722,6 +743,84 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                     <td><?= number_format($em['daily_water_m3'], 1, ',', '') ?> м³</td>
                                     <td><?= number_format($em['sewage_m3'], 0, ',', ' ') ?></td>
                                     <td><?= $em['gas_m3'] > 0 ? number_format($em['gas_m3'], 0, ',', ' ') : '—' ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+            </div>
+
+            <!-- Блок технологічного обліку пари заводу («Учет пара на ООО “Агропроинвест 08”») -->
+            <div style="margin-top: 16px;">
+                <details class="season-monthly-details" open>
+                    <summary>
+                        <span><i data-lucide="flame" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f59e0b;"></i> Добовий журнал обліку технологічної пари («Учет пара на ООО “Агропроинвест 08”»)</span>
+                        <span style="font-size: 11px; color: #f59e0b; font-weight: 700;">Лузгова котельня &bull; Цех екстракції &bull; Підготовчо-пресовий цех &bull; Елеватор</span>
+                    </summary>
+                    <div class="season-monthly-table-wrap">
+                        <table class="data-table-clean" style="font-size: 11px;">
+                            <thead>
+                                <tr>
+                                    <th>Дата / День</th>
+                                    <th>Котел (т)</th>
+                                    <th>Відпуск на пр-во (т)</th>
+                                    <th>Власні потреби СН (т)</th>
+                                    <th>Екстракція (т)</th>
+                                    <th>Підготовка (т)</th>
+                                    <th>Елеватор (т)</th>
+                                    <th>Опалення (т)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="steam-daily-tbody">
+                                <?php foreach (($en['steam_daily_table'] ?? []) as $sr): ?>
+                                <tr>
+                                    <td class="bold"><?= htmlspecialchars($sr['date'] ?? ($sr['day'] . '.09.2026')) ?></td>
+                                    <td class="bold" style="color: #d97706;"><?= number_format($sr['boiler_t'], 2, ',', ' ') ?></td>
+                                    <td class="bold" style="color: #0284c7;"><?= number_format($sr['prod_t'], 2, ',', ' ') ?></td>
+                                    <td><?= number_format($sr['sn_t'], 2, ',', ' ') ?></td>
+                                    <td style="color: #2563eb;"><?= number_format($sr['extr_t'], 2, ',', ' ') ?></td>
+                                    <td style="color: #10b981;"><?= number_format($sr['prep_t'], 2, ',', ' ') ?></td>
+                                    <td><?= number_format($sr['elev_t'], 2, ',', ' ') ?></td>
+                                    <td><?= number_format($sr['heating_t'], 2, ',', ' ') ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </details>
+
+                <!-- Помісячний технологічний баланс пари (Архів 2025–2026 рр.) -->
+                <details class="season-monthly-details" style="margin-top: 10px;">
+                    <summary>
+                        <span><i data-lucide="history" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #6366f1;"></i> Помісячний баланс виробітку та споживання пари (Архів 2025–2026 рр.)</span>
+                        <span style="font-size: 11px; color: #64748b;">Звіт котельні МЕЗ</span>
+                    </summary>
+                    <div class="season-monthly-table-wrap">
+                        <table class="data-table-clean" style="font-size: 11px;">
+                            <thead>
+                                <tr>
+                                    <th>Місяць / Рік</th>
+                                    <th>Виробіток котлом (т)</th>
+                                    <th>Відпуск на пр-во (т)</th>
+                                    <th>Власні потреби СН (т)</th>
+                                    <th>Екстракція (т)</th>
+                                    <th>Підготовка (т)</th>
+                                    <th>Елеватор (т)</th>
+                                    <th>Опалення (т)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach (($en['steam_monthly_history'] ?? []) as $sm): ?>
+                                <tr>
+                                    <td class="bold"><?= htmlspecialchars($sm['month_ua'] ?? $sm['title']) ?></td>
+                                    <td class="bold" style="color: #d97706;"><?= number_format($sm['boiler_t'], 2, ',', ' ') ?></td>
+                                    <td class="bold" style="color: #0284c7;"><?= number_format($sm['prod_t'], 2, ',', ' ') ?></td>
+                                    <td><?= number_format($sm['sn_t'], 2, ',', ' ') ?></td>
+                                    <td style="color: #2563eb;"><?= number_format($sm['extr_t'], 2, ',', ' ') ?></td>
+                                    <td style="color: #10b981;"><?= number_format($sm['prep_t'], 2, ',', ' ') ?></td>
+                                    <td><?= number_format($sm['elev_t'], 2, ',', ' ') ?></td>
+                                    <td><?= number_format($sm['heating_t'], 2, ',', ' ') ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>

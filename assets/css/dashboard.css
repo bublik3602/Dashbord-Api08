@@ -1054,14 +1054,20 @@ body {
     grid-template-columns: repeat(4, 1fr);
 }
 
+.energy-summary-cards.energy-cards-6 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
 @media (max-width: 992px) {
-    .energy-summary-cards.energy-cards-4 { grid-template-columns: repeat(2, 1fr); }
+    .energy-summary-cards.energy-cards-4,
+    .energy-summary-cards.energy-cards-6 { grid-template-columns: repeat(2, 1fr); }
     .energy-details-grid { grid-template-columns: 1fr !important; }
 }
 
 @media (max-width: 600px) {
     .energy-summary-cards,
-    .energy-summary-cards.energy-cards-4 { grid-template-columns: 1fr; }
+    .energy-summary-cards.energy-cards-4,
+    .energy-summary-cards.energy-cards-6 { grid-template-columns: 1fr; }
 }
 
 .energy-card-mini {

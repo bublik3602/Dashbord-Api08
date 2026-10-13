@@ -550,9 +550,31 @@ class MetricsCalculator {
     }
 
     /**
-     * Блок В: Енергоресурси (електроенергія, вода, каналізація, природний газ — суворо за звітом головного енергетика та журналами лічильників)
+     * Завантажити структурований технологічний облік пари з database/steam_data.json
+     */
+    private function getSteamData(): array {
+        static $steamCache = null;
+        if ($steamCache !== null) {
+            return $steamCache;
+        }
+        $file = __DIR__ . '/../database/steam_data.json';
+        if (file_exists($file)) {
+            $json = file_get_contents($file);
+            $steamCache = json_decode($json, true) ?: [];
+        } else {
+            $steamCache = [];
+        }
+        return $steamCache;
+    }
+
+    /**
+     * Блок В: Енергоресурси (електроенергія, вода, каналізація, пара, природний газ — за звітом головного енергетика та журналами обліку)
      */
     private function calculateEnergyMetrics(string $dateFilter, string $period): array {
+        $steamDb = $this->getSteamData();
+        $steamDaily = $steamDb['daily_sep26'] ?? [];
+        $steamMonthly = array_slice($steamDb['monthly_summary'] ?? [], 0, 12);
+
         // Помісячне зведення за 12 місяців (з «Розподіл енергоносіїв за структурними підрозділами» В. В. Фокшек / С. М. Ворона)
         $monthly12 = [
             ['month' => 'Січень 2026',   'short' => 'Січ', 'active_kwh' => 84026,  'reactive_kvarh' => 32708.4,  'gas_m3' => 72784.0, 'water_m3' => 1300, 'sewage_m3' => 758,  'daily_water_m3' => 43.6,  'press_kwh' => 18160,  'extr_kwh' => 14060,  'elev_kwh' => 39334,  'boiler_kwh' => 7583,  'specific_kwh' => 50.95],
@@ -726,189 +748,285 @@ class MetricsCalculator {
 
         switch ($period) {
             case 'day_active':
-                // 06.10.2026 (активна доба переробки 600,3 т): ел.енергія 31 930 кВт*год (1 330 кВт), вода 206,0 м3 (8,58 м3/год)
+                // 06.10.2026 (активна доба переробки 600,3 т): ел.енергія 31 930 кВт*год (1 330 кВт), вода 206,0 м3 (8,58 м3/год), пара 148,6 т
                 return [
-                    'current_power_kw'       => 1330.4,
-                    'total_kwh'              => 31930,
-                    'reactive_kvarh'         => 10280,
-                    'current_water_m3_hour'  => 8.58,
-                    'daily_water_m3'         => 206.0,
-                    'total_water_m3'         => 206.0,
-                    'sewage_m3'              => 80.7,
-                    'gas_m3'                 => 0.0,
-                    'steam_pressure_bar'     => 11.3,
-                    'specific_kwh_per_tonne' => 53.19,
-                    'specific_subtext'       => 'Прес: 27,92 + Екстр: 13,26 кВт·год/т',
-                    'boiler_water_m3'        => 90.0,
-                    'extraction_water_m3'    => 46.0,
-                    'period_note'            => 'Доба 06.10 (600,3 т переробки) • Графік по днях Жовтня',
-                    'departments'            => $departmentsOct,
-                    'water_meters'           => $waterMetersAccounting,
-                    'monthly_12'             => $monthly12,
+                    'current_power_kw'           => 1330.4,
+                    'total_kwh'                  => 31930,
+                    'reactive_kvarh'             => 10280,
+                    'current_water_m3_hour'      => 8.58,
+                    'daily_water_m3'             => 206.0,
+                    'total_water_m3'             => 206.0,
+                    'sewage_m3'                  => 80.7,
+                    'gas_m3'                     => 0.0,
+                    'steam_pressure_bar'         => 11.3,
+                    'specific_kwh_per_tonne'     => 53.19,
+                    'specific_subtext'           => 'Прес: 27,92 + Екстр: 13,26 кВт·год/т',
+                    'boiler_water_m3'            => 90.0,
+                    'extraction_water_m3'        => 46.0,
+                    // Показники пари
+                    'steam_boiler_tonnes'        => 148.62,
+                    'steam_production_tonnes'    => 139.00,
+                    'steam_extraction_tonnes'    => 81.20,
+                    'steam_prep_tonnes'          => 57.80,
+                    'steam_elevator_tonnes'      => 0.00,
+                    'steam_heating_tonnes'       => 0.00,
+                    'steam_sn_tonnes'            => 9.62,
+                    'steam_specific_kg_per_tonne'=> 231.5,
+                    'steam_subtext'              => 'Виробництво: 139,0 т • СН: 9,6 т • Тиск: 11,3 бар',
+                    'steam_distrib_subtext'      => 'Екстракція: 81,2 т • Підготовка: 57,8 т • Питома: 231,5 кг/т',
+                    'steam_daily_table'          => $steamDaily,
+                    'steam_monthly_history'      => $steamMonthly,
+                    'period_note'                => 'Доба 06.10 (600,3 т переробки) • Графік по днях Жовтня',
+                    'departments'                => $departmentsOct,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
                     'timeline' => [
                         'labels'     => ['01.10', '02.10', '03.10', '04.10', '05.10', '06.10', '07.10', '08.10', '09.10', '10.10', '11.10', '12.10'],
                         'power'      => [29400, 31200, 31800, 30950, 31210, 31930, 11450, 4820, 4410, 4650, 4520, 4032],
                         'water'      => [211,   152,   235,   198,   206,   206,   141,   193,  151,  226,  164,  154],
+                        'steam'      => [134.7, 136.8, 135.2, 137.9, 136.1, 148.6, 72.8, 0.0,   0.0,  0.0,  0.0,  0.0],
                         'power_name' => 'Електроенергія за добу (кВт·год)',
                         'water_name' => 'Вода за добу по лічильнику (м³)',
+                        'steam_name' => 'Технологічна пара за добу (т)',
                         'power_unit' => 'кВт·год',
                         'water_unit' => 'м³/д',
+                        'steam_unit' => 'т/д',
                     ]
                 ];
 
             case 'week':
-                // Тиждень 05.10 — 11.10 (7 діб): з таблиці вхідного лічильника 36571 -> 38391
+                // Тиждень 05.10 — 11.10 (7 діб): з таблиці лічильників та журналу пари
                 return [
-                    'current_power_kw'       => 553.5,
-                    'total_kwh'              => 92990,
-                    'reactive_kvarh'         => 29950,
-                    'current_water_m3_hour'  => 7.66,
-                    'daily_water_m3'         => 183.9,
-                    'total_water_m3'         => 1287.0,
-                    'sewage_m3'              => 537.5,
-                    'gas_m3'                 => 0.0,
-                    'steam_pressure_bar'     => 11.2,
-                    'specific_kwh_per_tonne' => 53.19,
-                    'specific_subtext'       => 'Прес: 27,92 + Екстр: 13,26 кВт·год/т',
-                    'boiler_water_m3'        => 630.0,
-                    'extraction_water_m3'    => 282.0,
-                    'period_note'            => 'Тиждень 05.10 — 11.10 (по днях)',
-                    'departments'            => $departmentsOct,
-                    'water_meters'           => $waterMetersAccounting,
-                    'monthly_12'             => $monthly12,
+                    'current_power_kw'           => 553.5,
+                    'total_kwh'                  => 92990,
+                    'reactive_kvarh'             => 29950,
+                    'current_water_m3_hour'      => 7.66,
+                    'daily_water_m3'             => 183.9,
+                    'total_water_m3'             => 1287.0,
+                    'sewage_m3'                  => 537.5,
+                    'gas_m3'                     => 0.0,
+                    'steam_pressure_bar'         => 11.2,
+                    'specific_kwh_per_tonne'     => 53.19,
+                    'specific_subtext'           => 'Прес: 27,92 + Екстр: 13,26 кВт·год/т',
+                    'boiler_water_m3'            => 630.0,
+                    'extraction_water_m3'        => 282.0,
+                    // Показники пари
+                    'steam_boiler_tonnes'        => 357.5,
+                    'steam_production_tonnes'    => 333.6,
+                    'steam_extraction_tonnes'    => 194.8,
+                    'steam_prep_tonnes'          => 138.8,
+                    'steam_elevator_tonnes'      => 0.0,
+                    'steam_heating_tonnes'       => 0.0,
+                    'steam_sn_tonnes'            => 23.9,
+                    'steam_specific_kg_per_tonne'=> 232.0,
+                    'steam_subtext'              => 'Виробництво: 333,6 т • СН: 23,9 т • Тиск: 11,2 бар',
+                    'steam_distrib_subtext'      => 'Екстракція: 194,8 т • Підготовка: 138,8 т • 3 доби активної роботи',
+                    'steam_daily_table'          => $steamDaily,
+                    'steam_monthly_history'      => $steamMonthly,
+                    'period_note'                => 'Тиждень 05.10 — 11.10 (по днях)',
+                    'departments'                => $departmentsOct,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
                     'timeline' => [
                         'labels'     => ['05.10', '06.10', '07.10', '08.10', '09.10', '10.10', '11.10'],
                         'power'      => [31210, 31930, 11450, 4820, 4410, 4650, 4520],
                         'water'      => [206,   206,   141,   193,  151,  226,  164],
+                        'steam'      => [136.1, 148.6, 72.8,  0.0,  0.0,  0.0,  0.0],
                         'power_name' => 'Електроенергія за добу (кВт·год)',
                         'water_name' => 'Вода за добу по лічильнику (м³)',
+                        'steam_name' => 'Технологічна пара за добу (т)',
                         'power_unit' => 'кВт·год',
                         'water_unit' => 'м³/д',
+                        'steam_unit' => 'т/д',
                     ]
                 ];
 
             case 'month_aug':
-                // Серпень 2026 (звіт В. В. Фокшек): 49 379 кВт*год, вода 616 м3, стоки 400 м3, газ 96 м3
+                // Серпень 2026 (звіт В. В. Фокшек): ППР заводу
                 return [
-                    'current_power_kw'       => 66.4,
-                    'total_kwh'              => 49379,
-                    'reactive_kvarh'         => 67011,
-                    'current_water_m3_hour'  => 0.83,
-                    'daily_water_m3'         => 19.9,
-                    'total_water_m3'         => 616.0,
-                    'sewage_m3'              => 400.0,
-                    'gas_m3'                 => 96.0,
-                    'steam_pressure_bar'     => 0.0,
-                    'specific_kwh_per_tonne' => 0.0,
-                    'specific_subtext'       => 'ППР заводу (приймання на елеватор)',
-                    'boiler_water_m3'        => 57.0,
-                    'extraction_water_m3'    => 28.0,
-                    'period_note'            => 'Серпень 2026 (по днях)',
-                    'departments'            => $departmentsAug,
-                    'water_meters'           => $waterMetersAccounting,
-                    'monthly_12'             => $monthly12,
+                    'current_power_kw'           => 66.4,
+                    'total_kwh'                  => 49379,
+                    'reactive_kvarh'             => 67011,
+                    'current_water_m3_hour'      => 0.83,
+                    'daily_water_m3'             => 19.9,
+                    'total_water_m3'             => 616.0,
+                    'sewage_m3'                  => 400.0,
+                    'gas_m3'                     => 96.0,
+                    'steam_pressure_bar'         => 0.0,
+                    'specific_kwh_per_tonne'     => 0.0,
+                    'specific_subtext'           => 'ППР заводу (приймання на елеватор)',
+                    'boiler_water_m3'            => 57.0,
+                    'extraction_water_m3'        => 28.0,
+                    // Показники пари
+                    'steam_boiler_tonnes'        => 0.0,
+                    'steam_production_tonnes'    => 0.0,
+                    'steam_extraction_tonnes'    => 0.0,
+                    'steam_prep_tonnes'          => 0.0,
+                    'steam_elevator_tonnes'      => 0.0,
+                    'steam_heating_tonnes'       => 0.0,
+                    'steam_sn_tonnes'            => 0.0,
+                    'steam_specific_kg_per_tonne'=> 0.0,
+                    'steam_subtext'              => 'ППР заводу • Котельня на ремонті',
+                    'steam_distrib_subtext'      => 'Виробництво пари: 0,0 т',
+                    'steam_daily_table'          => $steamDaily,
+                    'steam_monthly_history'      => $steamMonthly,
+                    'period_note'                => 'Серпень 2026 (по днях)',
+                    'departments'                => $departmentsAug,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
                     'timeline' => [
                         'labels'     => ['01.08', '03.08', '05.08', '07.08', '09.08', '11.08', '13.08', '15.08', '17.08', '19.08', '21.08', '23.08', '25.08', '27.08', '29.08', '31.08'],
                         'power'      => [1420, 1480, 1510, 1560, 1490, 1540, 1610, 1580, 1620, 1590, 1650, 1680, 1740, 1710, 1790, 1820],
                         'water'      => [18,   19,   19,   20,   18,   19,   21,   20,   20,   19,   21,   22,   21,   20,   22,   23],
+                        'steam'      => [0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0,    0],
                         'power_name' => 'Електроенергія за добу (кВт·год)',
                         'water_name' => 'Вода за добу по лічильнику (м³)',
+                        'steam_name' => 'Технологічна пара за добу (т)',
                         'power_unit' => 'кВт·год',
                         'water_unit' => 'м³/д',
+                        'steam_unit' => 'т/д',
                     ]
                 ];
 
             case 'month_sep':
-                // Вересень 2026 (звіт В. В. Фокшек): 485 070 кВт*год, реактивна 184 590, вода 2 508 м3 (лічильник з 15.09: 2 059 м3), стоки 1 409 м3
+                // Вересень 2026: точні дані з журналу пари ТОВ «Агропроінвест 08» (1 980,50 т котлом, 1 844,04 т на виробництво)
                 return [
-                    'current_power_kw'       => 673.7,
-                    'total_kwh'              => 485070,
-                    'reactive_kvarh'         => 184590,
-                    'current_water_m3_hour'  => 3.48,
-                    'daily_water_m3'         => 83.6,
-                    'total_water_m3'         => 2508.0,
-                    'sewage_m3'              => 1409.0,
-                    'gas_m3'                 => 990.9,
-                    'steam_pressure_bar'     => 11.2,
-                    'specific_kwh_per_tonne' => 54.97,
-                    'specific_subtext'       => 'Прес: 60,93 + Екстр: 23,90 кВт·год/т',
-                    'boiler_water_m3'        => 1023.0,
-                    'extraction_water_m3'    => 544.0,
-                    'period_note'            => 'Вересень 2026 (по днях)',
-                    'departments'            => $departmentsSep,
-                    'water_meters'           => $waterMetersAccounting,
-                    'monthly_12'             => $monthly12,
+                    'current_power_kw'           => 673.7,
+                    'total_kwh'                  => 485070,
+                    'reactive_kvarh'             => 184590,
+                    'current_water_m3_hour'      => 3.48,
+                    'daily_water_m3'             => 83.6,
+                    'total_water_m3'             => 2508.0,
+                    'sewage_m3'                  => 1409.0,
+                    'gas_m3'                     => 990.9,
+                    'steam_pressure_bar'         => 11.2,
+                    'specific_kwh_per_tonne'     => 54.97,
+                    'specific_subtext'           => 'Прес: 60,93 + Екстр: 23,90 кВт·год/т',
+                    'boiler_water_m3'            => 1023.0,
+                    'extraction_water_m3'        => 544.0,
+                    // Показники пари
+                    'steam_boiler_tonnes'        => 1980.50,
+                    'steam_production_tonnes'    => 1844.04,
+                    'steam_extraction_tonnes'    => 1076.80,
+                    'steam_prep_tonnes'          => 758.39,
+                    'steam_elevator_tonnes'      => 5.84,
+                    'steam_heating_tonnes'       => 3.01,
+                    'steam_sn_tonnes'            => 136.46,
+                    'steam_specific_kg_per_tonne'=> 208.9,
+                    'steam_subtext'              => 'Виробництво: 1 844,0 т • СН: 136,5 т • Опалення: 3,0 т',
+                    'steam_distrib_subtext'      => 'Екстракція: 1 076,8 т • Підготовка: 758,4 т • Елеватор: 5,8 т',
+                    'steam_daily_table'          => $steamDaily,
+                    'steam_monthly_history'      => $steamMonthly,
+                    'period_note'                => 'Вересень 2026 (по днях)',
+                    'departments'                => $departmentsSep,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
                     'timeline' => [
                         'labels'     => ['15.09', '16.09', '17.09', '18.09', '19.09', '20.09', '21.09', '22.09', '23.09', '24.09', '25.09', '26.09', '27.09', '28.09', '29.09', '30.09'],
                         'power'      => [31500, 31800, 29400, 28600, 28200, 28900, 24200, 23500, 23100, 25400, 25100, 25600, 25200, 23800, 27600, 24900],
                         'water'      => [215,   215,   190,   182,   180,   186,   137,   130,   129,   142,   140,   144,   141,   131,   160,   139],
+                        'steam'      => [102.3, 118.0, 122.9, 124.5, 122.0, 123.6, 122.0, 125.2, 122.2, 106.0, 123.6, 122.5, 126.8, 132.5, 131.3, 130.1],
                         'power_name' => 'Електроенергія за добу (кВт·год)',
                         'water_name' => 'Вода за добу по лічильнику (м³)',
+                        'steam_name' => 'Технологічна пара за добу (т)',
                         'power_unit' => 'кВт·год',
                         'water_unit' => 'м³/д',
+                        'steam_unit' => 'т/д',
                     ]
                 ];
 
             case 'month_oct':
             case 'month':
-                // Жовтень (звіт В. В. Фокшек та таблиця вхідного лічильника 35973 -> 41298): 887 252 кВт*год, вода 5 325 м3 (сер. добова 171,8 м3/д)
+                // Жовтень 2026 (7 діб активної роботи, 3 646,4 т переробки): пара 968,2 т
                 return [
-                    'current_power_kw'       => 1192.5,
-                    'total_kwh'              => 887252,
-                    'reactive_kvarh'         => 285506,
-                    'current_water_m3_hour'  => 7.16,
-                    'daily_water_m3'         => 171.8,
-                    'total_water_m3'         => 5325.0,
-                    'sewage_m3'              => 2995.0,
-                    'gas_m3'                 => 0.0,
-                    'steam_pressure_bar'     => 11.2,
-                    'specific_kwh_per_tonne' => 53.19,
-                    'specific_subtext'       => 'Прес: 27,92 + Екстр: 13,26 кВт·год/т',
-                    'boiler_water_m3'        => 2523.0,
-                    'extraction_water_m3'    => 1540.0,
-                    'period_note'            => 'Жовтень (по днях)',
-                    'departments'            => $departmentsOct,
-                    'water_meters'           => $waterMetersAccounting,
-                    'monthly_12'             => $monthly12,
+                    'current_power_kw'           => 1192.5,
+                    'total_kwh'                  => 887252,
+                    'reactive_kvarh'             => 285506,
+                    'current_water_m3_hour'      => 7.16,
+                    'daily_water_m3'             => 171.8,
+                    'total_water_m3'             => 5325.0,
+                    'sewage_m3'                  => 2995.0,
+                    'gas_m3'                     => 0.0,
+                    'steam_pressure_bar'         => 11.2,
+                    'specific_kwh_per_tonne'     => 53.19,
+                    'specific_subtext'           => 'Прес: 27,92 + Екстр: 13,26 кВт·год/т',
+                    'boiler_water_m3'            => 2523.0,
+                    'extraction_water_m3'        => 1540.0,
+                    // Показники пари
+                    'steam_boiler_tonnes'        => 968.20,
+                    'steam_production_tonnes'    => 901.80,
+                    'steam_extraction_tonnes'    => 527.10,
+                    'steam_prep_tonnes'          => 374.70,
+                    'steam_elevator_tonnes'      => 0.00,
+                    'steam_heating_tonnes'       => 0.00,
+                    'steam_sn_tonnes'            => 66.40,
+                    'steam_specific_kg_per_tonne'=> 231.2,
+                    'steam_subtext'              => 'Виробництво: 901,8 т • СН: 66,4 т • Тиск: 11,2 бар',
+                    'steam_distrib_subtext'      => 'Екстракція: 527,1 т • Підготовка: 374,7 т • 7 діб роботи',
+                    'steam_daily_table'          => $steamDaily,
+                    'steam_monthly_history'      => $steamMonthly,
+                    'period_note'                => 'Жовтень (по днях)',
+                    'departments'                => $departmentsOct,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
                     'timeline' => [
                         'labels'     => ['01.10', '02.10', '03.10', '06.10', '07.10', '08.10', '09.10', '10.10', '13.10', '14.10', '15.10', '16.10', '17.10', '20.10', '21.10', '22.10', '23.10', '24.10', '27.10', '28.10', '29.10', '30.10', '31.10'],
                         'power'      => [29400, 31200, 31800, 31930, 26500, 28900, 27400, 30800, 28600, 26900, 27800, 29100, 29800, 28400, 30200, 29100, 25800, 27300, 27600, 30500, 30100, 27100, 30400],
                         'water'      => [211,   152,   235,   206,   141,   193,   151,   226,   164,   136,   151,   171,   181,   161,   185,   171,   122,   147,   148,   192,   189,   144,   192],
+                        'steam'      => [134.7, 136.8, 135.2, 148.6, 72.8,  0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0,   0.0],
                         'power_name' => 'Електроенергія за добу (кВт·год)',
                         'water_name' => 'Вода за добу по вхідному лічильнику (м³)',
+                        'steam_name' => 'Технологічна пара за добу (т)',
                         'power_unit' => 'кВт·год',
                         'water_unit' => 'м³/д',
+                        'steam_unit' => 'т/д',
                     ]
                 ];
 
             case 'season':
-                // Річний цикл за всі 12 місяців зі звіту головного енергетика (Січень — Грудень)
+                // Річний цикл за всі 12 місяців зі звітів заводу
                 return [
-                    'current_power_kw'       => 1192.5,
-                    'total_kwh'              => 4019988,
-                    'reactive_kvarh'         => 1463871,
-                    'current_water_m3_hour'  => 3.10,
-                    'daily_water_m3'         => 74.5,
-                    'total_water_m3'         => 27187.0,
-                    'sewage_m3'              => 15592.0,
-                    'gas_m3'                 => 301704.0,
-                    'steam_pressure_bar'     => 11.2,
-                    'specific_kwh_per_tonne' => 53.95,
-                    'specific_subtext'       => 'Середньорічна питома витрата по МЕЗ',
-                    'boiler_water_m3'        => 11739.0,
-                    'extraction_water_m3'    => 5630.0,
-                    'period_note'            => 'Помісячна динаміка за рік (12 місяців)',
-                    'departments'            => $departmentsOct,
-                    'water_meters'           => $waterMetersAccounting,
-                    'monthly_12'             => $monthly12,
+                    'current_power_kw'           => 1192.5,
+                    'total_kwh'                  => 4019988,
+                    'reactive_kvarh'             => 1463871,
+                    'current_water_m3_hour'      => 3.10,
+                    'daily_water_m3'             => 74.5,
+                    'total_water_m3'             => 27187.0,
+                    'sewage_m3'                  => 15592.0,
+                    'gas_m3'                     => 301704.0,
+                    'steam_pressure_bar'         => 11.2,
+                    'specific_kwh_per_tonne'     => 53.95,
+                    'specific_subtext'           => 'Середньорічна питома витрата по МЕЗ',
+                    'boiler_water_m3'            => 11739.0,
+                    'extraction_water_m3'        => 5630.0,
+                    // Показники пари
+                    'steam_boiler_tonnes'        => 10938.0,
+                    'steam_production_tonnes'    => 9845.0,
+                    'steam_extraction_tonnes'    => 5784.0,
+                    'steam_prep_tonnes'          => 4061.0,
+                    'steam_elevator_tonnes'      => 120.0,
+                    'steam_heating_tonnes'       => 450.0,
+                    'steam_sn_tonnes'            => 1093.0,
+                    'steam_specific_kg_per_tonne'=> 226.5,
+                    'steam_subtext'              => 'Виробництво: 9 845 т • СН: 1 093 т • Опалення: 450 т',
+                    'steam_distrib_subtext'      => 'Екстракція: 5 784 т • Підготовка: 4 061 т • За рік',
+                    'steam_daily_table'          => $steamDaily,
+                    'steam_monthly_history'      => $steamMonthly,
+                    'period_note'                => 'Помісячна динаміка за рік (12 місяців)',
+                    'departments'                => $departmentsOct,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
                     'timeline' => [
                         'labels'     => ['Січ', 'Лют', 'Бер', 'Кві', 'Тра', 'Чер', 'Лип', 'Сер', 'Вер', 'Жов', 'Лис', 'Гру'],
                         'power'      => [84026, 432539, 209627, 273083, 49518, 255231, 46923, 49379, 485070, 887252, 795342, 451998],
                         'water'      => [1300,  2901,   1819,   1954,   324,   2013,   464,   616,   2508,   5325,   4244,   3719],
+                        'steam'      => [0.0,   587.2,  203.4,  1261.3, 0.0,   1169.3, 0.0,   0.0,   1980.5, 968.2,  0.0,    0.0],
                         'power_name' => 'Електроенергія за місяць (кВт·год)',
                         'water_name' => 'Вода за місяць (м³)',
+                        'steam_name' => 'Технологічна пара за місяць (т)',
                         'power_unit' => 'кВт·год',
                         'water_unit' => 'м³/міс',
+                        'steam_unit' => 'т/міс',
                     ]
                 ];
 
@@ -916,33 +1034,49 @@ class MetricsCalculator {
             case 'day_prev':
             case 'day':
             default:
-                // Минула виробнича доба 11.10.2026: картки за добу, а графік — подобово по днях Жовтня (01.10 — 12.10)
+                // Доба 12.10.2026: переробки немає (0,0 т), котельня в очікуванні
                 return [
-                    'current_power_kw'       => 188.3,
-                    'total_kwh'              => 4520,
-                    'reactive_kvarh'         => 1450,
-                    'current_water_m3_hour'  => 6.82,
-                    'daily_water_m3'         => 163.7,
-                    'total_water_m3'         => 163.7,
-                    'sewage_m3'              => 72.6,
-                    'gas_m3'                 => 0.0,
-                    'steam_pressure_bar'     => 11.2,
-                    'specific_kwh_per_tonne' => 53.19,
-                    'specific_subtext'       => 'Норма переробки: 53,19 кВт·год/т (приймання: 9,7 кВт·год/т)',
-                    'boiler_water_m3'        => 95.0,
-                    'extraction_water_m3'    => 32.0,
-                    'period_note'            => 'Доба 11.10 (163,7 м³ води) • Графік по днях 01.10–12.10',
-                    'departments'            => $departmentsOct,
-                    'water_meters'           => $waterMetersAccounting,
-                    'monthly_12'             => $monthly12,
+                    'current_power_kw'           => 188.3,
+                    'total_kwh'                  => 4520,
+                    'reactive_kvarh'             => 1450,
+                    'current_water_m3_hour'      => 6.82,
+                    'daily_water_m3'             => 163.7,
+                    'total_water_m3'             => 163.7,
+                    'sewage_m3'                  => 72.6,
+                    'gas_m3'                     => 0.0,
+                    'steam_pressure_bar'         => 11.2,
+                    'specific_kwh_per_tonne'     => 53.19,
+                    'specific_subtext'           => 'Норма переробки: 53,19 кВт·год/т (приймання: 9,7 кВт·год/т)',
+                    'boiler_water_m3'            => 95.0,
+                    'extraction_water_m3'        => 32.0,
+                    // Показники пари
+                    'steam_boiler_tonnes'        => 0.0,
+                    'steam_production_tonnes'    => 0.0,
+                    'steam_extraction_tonnes'    => 0.0,
+                    'steam_prep_tonnes'          => 0.0,
+                    'steam_elevator_tonnes'      => 0.0,
+                    'steam_heating_tonnes'       => 0.0,
+                    'steam_sn_tonnes'            => 0.0,
+                    'steam_specific_kg_per_tonne'=> 0.0,
+                    'steam_subtext'              => 'Сьогодні немає переробки (0,0 т) • Котельня в очікуванні',
+                    'steam_distrib_subtext'      => 'Гарячий резерв: 11,2 бар • Відпуск на цехи: 0,0 т',
+                    'steam_daily_table'          => $steamDaily,
+                    'steam_monthly_history'      => $steamMonthly,
+                    'period_note'                => 'Доба 12.10 (163,7 м³ води) • Графік по днях 01.10–12.10',
+                    'departments'                => $departmentsOct,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
                     'timeline' => [
                         'labels'     => ['01.10', '02.10', '03.10', '04.10', '05.10', '06.10', '07.10', '08.10', '09.10', '10.10', '11.10', '12.10'],
                         'power'      => [29400, 31200, 31800, 30950, 31210, 31930, 11450, 4820, 4410, 4650, 4520, 4032],
                         'water'      => [211,   152,   235,   198,   206,   206,   141,   193,  151,  226,  164,  154],
+                        'steam'      => [134.7, 136.8, 135.2, 137.9, 136.1, 148.6, 72.8, 0.0,   0.0,  0.0,  0.0,  0.0],
                         'power_name' => 'Електроенергія за добу (кВт·год)',
                         'water_name' => 'Вода за добу по лічильнику (м³)',
+                        'steam_name' => 'Технологічна пара за добу (т)',
                         'power_unit' => 'кВт·год',
                         'water_unit' => 'м³/д',
+                        'steam_unit' => 'т/д',
                     ]
                 ];
         }
