@@ -1230,15 +1230,15 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
 
                 <div class="guide-list">
-                    <!-- Файл 1: Лист_погодження.xlsx -->
+                    <!-- Файл 1: Приход + Специфікація 1С (або Лист_погодження.xlsx) -->
                     <div class="guide-item" data-expected="lab">
                         <div class="guide-item-icon">📋</div>
                         <div class="guide-item-content">
-                            <div class="guide-item-name">1. <code>Лист_погодження.xlsx</code> <span class="guide-status-pill" id="guide-status-lab" style="display:none;">✓ Обрано</span></div>
-                            <div class="guide-item-filename">Вкладки всередині: <code>Лист погодження</code>, <code>Невиконані специфікації</code>, <code>Графік завезення (по днях)</code></div>
-                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Лабораторію якості (олійність, вологість, смітна домішка), Контрактацію 1С (залишок на довозі) та Зону приймання за добу/тиждень/місяць (тонни та кількість авто по днях).</div>
+                            <div class="guide-item-name">1. 2 файли з 1С: <code>prihod13-10.xlsx</code> (Приход) + <code>spec13-10.xlsx</code> (Специфікація) <span style="font-weight:400; font-size:11px; color:#64748b;">(або готовий <code>Лист_погодження.xlsx</code>)</span> <span class="guide-status-pill" id="guide-status-lab" style="display:none;">✓ Обрано</span></div>
+                            <div class="guide-item-filename">Автоматично зводить <code>Лист погодження</code> без десктопної програми (всі 6 вкладок «🌻 СЕМЕНА», аудит цін та невиконані договори)</div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Сторінку «🌻 СЕМЕНА», Зону приймання за добу/тиждень/місяць (фіз. вага без очистки та сушки, авто), Лабораторію якості (олійність, вологість, смітна домішка) та Контрактацію 1С.</div>
                         </div>
-                        <span class="guide-tag tag-primary">1С + Лабораторія + Приймання</span>
+                        <span class="guide-tag tag-primary">1С Приход + Специфікація</span>
                     </div>
 
                     <!-- Файл 2: Ежедн.отчет2_ Октябрь 26  31.xlsx -->

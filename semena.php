@@ -633,8 +633,8 @@ $histRows   = $semenaData['history_rows'] ?? [];
             <a href="index.php" class="btn-top btn-dashboard" title="Повернутися на головний дашборд заводу">
                 🏭 На головний дашборд
             </a>
-            <button type="button" class="btn-top btn-upload" onclick="openUploadModal()" title="Завантажити свіжий Лист_погодження.xlsx або файли 1С">
-                📂 Оновити звіт (Excel)
+            <button type="button" class="btn-top btn-upload" onclick="openUploadModal()" title="Завантажити 2 файли з 1С: Приход (prihod.xlsx) + Специфікація (spec.xlsx) для автоматичного формування Листа погодження">
+                ⚡ Завантажити Приход + Специфікацію (1С)
             </button>
             <a href="semena.php?download=1" class="btn-top btn-download" title="Скачати повний Excel-файл Лист_погодження.xlsx з усіма вкладками">
                 📥 Скачати Лист_погодження.xlsx
@@ -1023,26 +1023,64 @@ $histRows   = $semenaData['history_rows'] ?? [];
         </div>
     </div>
 
-    <!-- МОДАЛЬНЕ ВІКНО ОНОВЛЕННЯ ЗВІТУ (ЗАВАНТАЖЕННЯ ЛИСТ_ПОГОДЖЕННЯ.XLSX) -->
+    <!-- МОДАЛЬНЕ ВІКНО ОНОВЛЕННЯ ЗВІТУ (2 ФАЙЛИ 1С: ПРИХОД + СПЕЦИФІКАЦІЯ АБО ГОТОВИЙ ЛИСТ_ПОГОДЖЕННЯ) -->
     <div class="modal-backdrop" id="upload-modal">
-        <div class="modal-box" style="max-width: 560px;">
+        <div class="modal-box" style="max-width: 640px;">
             <div class="modal-header">
-                <span>📂 Оновити звіт «СЕМЕНА» (Лист погодження 1С)</span>
+                <span>⚡ Автоматичне зведення звіту з 2 файлів 1С (Приход + Специфікація)</span>
                 <button type="button" class="modal-close" onclick="closeUploadModal()">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="margin-bottom: 10px; color: #334155;">
-                    Оберіть сформований файл <strong>«Лист_погодження.xlsx»</strong> (з програми закупівель або 1С). Система автоматично перевірить актуальність дати прийомок 1С та оновить усі 6 вкладок і головний дашборд заводу.
+                <p style="margin-bottom: 12px; color: #334155; font-size: 12.5px;">
+                    Як у десктопній програмі закупівель, вивантажте з 1С два звіти у форматі Excel (<code>.xlsx</code>) та оберіть їх нижче — сайт сам автоматично зведе <strong>Лист погодження</strong>, перевірить зміну цін/ваги, порахує невиконані договори і оновить головний дашборд заводу без жодних сторонніх програм.
                 </p>
-                <div style="background:#EBF5FB; border:1px solid #AED6F1; border-radius:6px; padding:10px 12px; margin-bottom:12px; font-size:12px; color:#1B4F72;">
-                    🛡️ <strong>Захист від застарілих даних 1С увімкнено:</strong> якщо завантажений файл містить старішу дату прийомок 1С, ніж поточна (<strong><?= htmlspecialchars($reportDt) ?></strong>), система попередить і не дозволить затерти новіші дані.
+
+                <div style="display: grid; grid-template-columns: 1fr; gap: 10px; margin-bottom: 12px;">
+                    <!-- ФАЙЛ 1: ПРИХОД 1С -->
+                    <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-left:4px solid #1F4E78; border-radius:6px; padding:10px 12px;">
+                        <label style="display:block; font-weight:800; color:#1F4E78; margin-bottom:4px; font-size:12.5px;">
+                            📥 Файл 1 — Приход кормов и добавок 1С (Реєстр прийомок, напр. <code>prihod13-10.xlsx</code>):
+                        </label>
+                        <div style="font-size:11.5px; color:#64748B; margin-bottom:6px;">
+                            Містить помашинний реєстр прийомок на завод, фізичну/залікову вагу, вологу, сорність та фактичну олійність.
+                        </div>
+                        <input type="file" id="prihod-file-input" accept=".xlsx,.xls" style="width:100%; padding:7px; border:1px dashed #64748B; border-radius:5px; background:#ffffff; cursor:pointer; font-size:12px;">
+                    </div>
+
+                    <!-- ФАЙЛ 2: СПЕЦИФІКАЦІЯ 1С -->
+                    <div style="background:#F8FAFC; border:1px solid #CBD5E1; border-left:4px solid #D97706; border-radius:6px; padding:10px 12px;">
+                        <label style="display:block; font-weight:800; color:#B45309; margin-bottom:4px; font-size:12.5px;">
+                            📋 Файл 2 — Специфікація 1С (Реєстр договорів, напр. <code>spec13-10.xlsx</code>):
+                        </label>
+                        <div style="font-size:11.5px; color:#64748B; margin-bottom:6px;">
+                            Містить договірний тоннаж, ціну з доставкою / без доставки (з місця), менеджера та базову олійність.
+                        </div>
+                        <input type="file" id="spec-file-input" accept=".xlsx,.xls" style="width:100%; padding:7px; border:1px dashed #D97706; border-radius:5px; background:#ffffff; cursor:pointer; font-size:12px;">
+                    </div>
                 </div>
-                <input type="file" id="semena-file-input" accept=".xlsx,.xls" style="width:100%; padding:10px; border:2px dashed #94A3B8; border-radius:6px; background:#F8FAFC; cursor:pointer;">
+
+                <div style="background:#EBF5FB; border:1px solid #AED6F1; border-radius:6px; padding:9px 12px; margin-bottom:10px; font-size:12px; color:#1B4F72; display:flex; flex-direction:column; gap:6px;">
+                    <div>
+                        🛡️ <strong>Захист від застарілих даних 1С:</strong> поточна актуальність звіту — <strong><?= htmlspecialchars($reportDt) ?></strong>. Якщо випадково обрати старіший файл «Приход», система заблокує перезапис.
+                    </div>
+                    <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-weight:700; color:#0F172A; margin-top:2px;">
+                        <input type="checkbox" id="allow-older-checkbox">
+                        <span>Дозволити старішу дату прийомок (вимкнути захист часу для цього оновлення)</span>
+                    </label>
+                </div>
+
+                <details style="margin-top:8px; font-size:12px; color:#475569;">
+                    <summary style="cursor:pointer; font-weight:700; color:#1F4E78;">📂 Або завантажити вже готовий зведений файл «Лист_погодження.xlsx»</summary>
+                    <div style="margin-top:8px; padding:8px; background:#F1F5F9; border-radius:6px;">
+                        <input type="file" id="semena-file-input" accept=".xlsx,.xls" multiple style="width:100%; padding:6px; border:1px dashed #94A3B8; border-radius:5px; background:#ffffff; cursor:pointer; font-size:12px;">
+                    </div>
+                </details>
+
                 <div id="upload-status-box" style="margin-top:12px; display:none; padding:10px; border-radius:6px; font-size:12.5px;"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-top btn-upload" id="btn-submit-upload" onclick="submitSemenaUpload()">
-                    🚀 Завантажити та оновити
+                    ⚡ Сформувати та оновити Лист погодження
                 </button>
                 <button type="button" class="btn-sm" onclick="closeUploadModal()">Скасувати</button>
             </div>
@@ -1809,44 +1847,65 @@ $histRows   = $semenaData['history_rows'] ?? [];
         }
 
         async function submitSemenaUpload() {
-            const inp = document.getElementById('semena-file-input');
-            const box = document.getElementById('upload-status-box');
-            const btn = document.getElementById('btn-submit-upload');
+            const prihodInp = document.getElementById('prihod-file-input');
+            const specInp   = document.getElementById('spec-file-input');
+            const readyInp  = document.getElementById('semena-file-input');
+            const allowOld  = document.getElementById('allow-older-checkbox');
+            const box       = document.getElementById('upload-status-box');
+            const btn       = document.getElementById('btn-submit-upload');
 
-            if (!inp.files || !inp.files.length) {
+            const hasPrihod = prihodInp && prihodInp.files && prihodInp.files.length > 0;
+            const hasSpec   = specInp && specInp.files && specInp.files.length > 0;
+            const hasReady  = readyInp && readyInp.files && readyInp.files.length > 0;
+
+            if (!hasPrihod && !hasSpec && !hasReady) {
                 box.style.display = 'block';
                 box.style.background = '#FDECE8';
                 box.style.color = '#A61C1C';
-                box.textContent = '⚠️ Будь ласка, оберіть файл Лист_погодження.xlsx.';
+                box.innerHTML = '⚠️ Будь ласка, оберіть <strong>Файл 1 (Приход 1С)</strong> та <strong>Файл 2 (Специфікація 1С)</strong> (або готовий Лист_погодження.xlsx).';
                 return;
             }
 
             const fd = new FormData();
-            fd.append('report_files[]', inp.files[0]);
+            if (hasPrihod) {
+                fd.append('prihod_file', prihodInp.files[0]);
+            }
+            if (hasSpec) {
+                fd.append('spec_file', specInp.files[0]);
+            }
+            if (hasReady) {
+                for (let i = 0; i < readyInp.files.length; i++) {
+                    fd.append('report_files[]', readyInp.files[i]);
+                }
+            }
+            if (allowOld && allowOld.checked) {
+                fd.append('allow_older', '1');
+            }
 
             btn.disabled = true;
-            btn.textContent = '⏳ Обробка файлу...';
+            btn.textContent = '⏳ Зведення даних 1С...';
             box.style.display = 'block';
             box.style.background = '#EBF5FB';
             box.style.color = '#1B4F72';
-            box.textContent = 'Завантаження та аналіз вкладок звіту...';
+            box.textContent = 'Обробка файлів Приход + Специфікація, аудит цін та формування Листа погодження...';
 
             try {
                 const resp = await fetch('api/import.php', { method: 'POST', body: fd });
                 const data = await resp.json();
 
-                if (data.errors && data.errors.length > 0 && (!data.details || data.details.length === 0)) {
+                if ((data.status === 'error') || (data.errors && data.errors.length > 0 && (!data.processed_reports || data.processed_reports.length === 0))) {
                     box.style.background = '#FDECE8';
                     box.style.color = '#A61C1C';
-                    box.innerHTML = '<strong>❌ Помилка оновлення:</strong><br>' + data.errors.map(esc).join('<br>');
+                    const errList = (data.errors && data.errors.length) ? data.errors.map(esc).join('<br>') : esc(data.message || 'Помилка імпорту');
+                    box.innerHTML = '<strong>❌ Оновлення зупинено:</strong><br>' + errList;
                 } else {
                     box.style.background = '#EAF2E8';
                     box.style.color = '#1E8449';
                     const msg = (data.details && data.details.length) ? data.details.join('<br>') : data.message;
                     const errWarn = (data.errors && data.errors.length) ? '<br><span style="color:#A61C1C;">' + data.errors.map(esc).join('<br>') + '</span>' : '';
-                    box.innerHTML = `<strong>✅ Успішно!</strong><br>${msg}${errWarn}<br><em>Сторінка зараз оновиться...</em>`;
+                    box.innerHTML = `<strong>✅ Звіт успішно сформовано!</strong><br>${msg}${errWarn}<br><em>Сторінка зараз оновиться...</em>`;
                     if (!data.errors || data.errors.length === 0) {
-                        setTimeout(() => window.location.reload(), 1200);
+                        setTimeout(() => window.location.reload(), 1300);
                     }
                 }
             } catch (err) {
@@ -1855,7 +1914,7 @@ $histRows   = $semenaData['history_rows'] ?? [];
                 box.textContent = '❌ Помилка з\'єднання з сервером: ' + err.message;
             } finally {
                 btn.disabled = false;
-                btn.textContent = '🚀 Завантажити та оновити';
+                btn.textContent = '⚡ Сформувати та оновити Лист погодження';
             }
         }
 

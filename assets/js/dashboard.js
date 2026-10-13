@@ -616,8 +616,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function detectFileGuideCategory(filename) {
         const lower = (filename || '').toLowerCase();
-        if (lower.includes('погоджен') || lower.includes('согласован') || lower.includes('лаборатор')) {
-            return { key: 'lab', label: '1С / Лабораторія / Приймання' };
+        if (lower.includes('prihod') || lower.includes('приход') || lower.includes('spec') || lower.includes('спец') || lower.includes('погоджен') || lower.includes('согласован') || lower.includes('лаборатор')) {
+            return { key: 'lab', label: '1С Приход + Специфікація / Лист погодження' };
         }
         if (lower.includes('ежедн.отчет2') || lower.includes('свод') || lower.includes('залишк') || lower.includes('остатк')) {
             return { key: 'stocks', label: 'Залишки СВОД / Відвантаження' };
