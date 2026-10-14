@@ -653,7 +653,7 @@ def process_datasets(prihod_data, specs_db, history_path, semena_data_path):
         oil_diff = round(oil_fact - base_oil, 2) if (oil_fact is not None and oil_fact > 0) else None
         
         formatted_trucks.append({
-            'num': idx + 1,
+            'num': int(t.get('num_pp', idx + 1)),
             'supplier': t.get('supplier') or spec_info.get('supplier', ''),
             'spec': spec_info.get('spec_display') or t.get('spec_display') or code,
             'car_num': t.get('auto', ''),
@@ -672,6 +672,9 @@ def process_datasets(prihod_data, specs_db, history_path, semena_data_path):
             'oil_fact': oil_fact,
             'oil_diff': oil_diff
         })
+
+    # Сортуємо Реєстр прийомок помашинно від нових до старих (сьогоднішня дата зверху таблиці)
+    formatted_trucks.sort(key=lambda t: (date_sort_key(t.get('date', '')), t.get('num', 0)), reverse=True)
 
     # Summary calculations
     tot_specs = len(specs_db)
@@ -714,6 +717,21 @@ def process_datasets(prihod_data, specs_db, history_path, semena_data_path):
     history_data['last_receipts_datetime'] = prihod_data['receipts_datetime']
     history_data['last_receipts_iso'] = prihod_data['last_receipts_iso']
     
+    def dt_sort_key(s):
+        m = re.search(r'(\d{2})\.(\d{2})\.(\d{4})(?:[\sчас]+(\d{1,2}):(\d{2}))?', str(s or ''))
+        if m:
+            y, mo, d = m.group(3), m.group(2), m.group(1)
+            h = m.group(4).zfill(2) if m.group(4) else '00'
+            mi = m.group(5).zfill(2) if m.group(5) else '00'
+            return f'{y}-{mo}-{d} {h}:{mi}'
+        return '0000-00-00 00:00'
+
+    all_events = sorted(history_data.get('events', []), key=lambda e: dt_sort_key(e.get('timestamp') or e.get('dt')), reverse=True)
+    history_rows = [
+        {'dt': e.get('timestamp', ''), 'supplier': e.get('supplier', ''), 'spec': e.get('specification', ''), 'manager': e.get('manager', ''), 'category': e.get('category_label', ''), 'details': e.get('summary', '')}
+        for e in all_events[:200]
+    ]
+
     updated_at = prihod_data['receipts_datetime']
     final_data = {
         'updated_at': updated_at,
@@ -728,11 +746,8 @@ def process_datasets(prihod_data, specs_db, history_path, semena_data_path):
         'discount_rows': discount_rows,
         'disc_rows': discount_rows,
         'truck_rows': formatted_trucks,
-        'history_events': history_data.get('events', [])[-200:],
-        'history_rows': [
-            {'dt': e.get('timestamp', ''), 'supplier': e.get('supplier', ''), 'spec': e.get('specification', ''), 'manager': e.get('manager', ''), 'category': e.get('category_label', ''), 'details': e.get('summary', '')}
-            for e in reversed(history_data.get('events', [])[-200:])
-        ]
+        'history_events': all_events[:200],
+        'history_rows': history_rows
     }
     
     return final_data, history_data

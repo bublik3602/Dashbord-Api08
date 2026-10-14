@@ -949,7 +949,7 @@ $histRows   = $semenaData['history_rows'] ?? [];
                         <th>Специфікація</th>
                         <th>№ Авто</th>
                         <th>ТТН / Док</th>
-                        <th>Дата</th>
+                        <th style="color:#F59E0B;" title="Сортування: від нових до старих (сьогоднішня дата зверху)">Дата ▾</th>
                         <th>Менеджер</th>
                         <th>Умови</th>
                         <th>Завезено, т</th>
@@ -997,7 +997,7 @@ $histRows   = $semenaData['history_rows'] ?? [];
             <table class="report-table" id="table-hist">
                 <thead>
                     <tr>
-                        <th>Дата / Час</th>
+                        <th style="color:#F59E0B;" title="Сортування: від нових до старих (сьогоднішня дата зверху)">Дата / Час ▾</th>
                         <th class="text-left">Контрагент</th>
                         <th>Специфікація</th>
                         <th>Менеджер</th>
@@ -1724,6 +1724,17 @@ $histRows   = $semenaData['history_rows'] ?? [];
                 return hay.includes(q);
             });
 
+            // Сортування: від нових до старих (сьогоднішня дата зверху таблиці)
+            filtered.sort((a, b) => {
+                const parseD = s => {
+                    const p = (s || '').split('.');
+                    return p.length === 3 ? `${p[2]}-${p[1]}-${p[0]}` : s;
+                };
+                const da = parseD(a.date), db = parseD(b.date);
+                if (da !== db) return db.localeCompare(da);
+                return Number(b.num || 0) - Number(a.num || 0);
+            });
+
             let sumDeliv = 0, sumAcc = 0, sumDiff = 0;
             const tbody = document.getElementById('tbody-trucks');
 
@@ -1817,6 +1828,15 @@ $histRows   = $semenaData['history_rows'] ?? [];
                     if (!hay.includes(q)) return false;
                 }
                 return true;
+            });
+
+            // Сортування: від нових до старих (сьогоднішня дата зверху таблиці)
+            filtered.sort((a, b) => {
+                const parseDt = s => {
+                    const m = (s || '').match(/(\d{2})\.(\d{2})\.(\d{4})(?:[\sчас]+(\d{1,2}):(\d{2}))?/);
+                    return m ? `${m[3]}-${m[2]}-${m[1]} ${(m[4]||'00').padStart(2,'0')}:${(m[5]||'00').padStart(2,'0')}` : '0000-00-00 00:00';
+                };
+                return parseDt(b.dt).localeCompare(parseDt(a.dt));
             });
 
             const tbody = document.getElementById('tbody-hist');

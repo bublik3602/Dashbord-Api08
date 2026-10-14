@@ -51,6 +51,20 @@ class SemenaHelper {
     }
 
     /**
+     * Перетворює дату та час на ключ сортування YYYY-MM-DD HH:MM
+     */
+    public static function dateTimeSortKey(string $dtVal): string {
+        $s = trim($dtVal);
+        if (preg_match('/(\d{2})\.(\d{2})\.(\d{4})(?:[\sчас]+(\d{1,2}):(\d{2}))?/', $s, $m)) {
+            $y = $m[3]; $mo = $m[2]; $d = $m[1];
+            $h = isset($m[4]) && $m[4] !== '' ? str_pad($m[4], 2, '0', STR_PAD_LEFT) : '00';
+            $mi = isset($m[5]) && $m[5] !== '' ? str_pad($m[5], 2, '0', STR_PAD_LEFT) : '00';
+            return "{$y}-{$mo}-{$d} {$h}:{$mi}";
+        }
+        return '0000-00-00 00:00';
+    }
+
+    /**
      * День тижня українською (Пн, Вт, Ср, Чт, Пт, Сб, Нд)
      */
     public static function getUkrainianDayOfWeek(string $dateStr): string {
@@ -1109,7 +1123,7 @@ class SemenaHelper {
             $oilDiff = ($oilFact !== null && $oilFact > 0) ? round($oilFact - $baseOil, 2) : null;
 
             $formattedTrucks[] = [
-                'num'              => $idx + 1,
+                'num'              => (int)($t['num_pp'] ?? ($idx + 1)),
                 'supplier'         => $t['supplier'] ?? ($specInfo['supplier'] ?? ''),
                 'spec'             => ($specInfo['spec_display'] ?? '') ?: ($t['spec_display'] ?? $code),
                 'car_num'          => $t['auto'] ?? '',
@@ -1130,6 +1144,16 @@ class SemenaHelper {
             ];
         }
 
+        // Сортуємо Реєстр прийомок помашинно від нових до старих (сьогоднішня дата зверху таблиці)
+        usort($formattedTrucks, function($a, $b) {
+            $ka = self::dateSortKey($a['date'] ?? '');
+            $kb = self::dateSortKey($b['date'] ?? '');
+            if ($ka !== $kb) {
+                return strcmp($kb, $ka); // descending date
+            }
+            return ($b['num'] ?? 0) <=> ($a['num'] ?? 0); // descending truck number
+        });
+
         // Оновлюємо історію змін
         if ($newDisplay !== '') {
             $historyData['last_receipts_datetime'] = $newDisplay;
@@ -1138,6 +1162,26 @@ class SemenaHelper {
             $historyData['last_receipts_iso'] = $newIso;
         }
         self::saveChangesHistory($historyData);
+
+        // Сортуємо події історії змін від нових до старих (сьогоднішня дата зверху таблиці)
+        $histEvents = $historyData['events'] ?? [];
+        usort($histEvents, function($a, $b) {
+            $ka = self::dateTimeSortKey($a['timestamp'] ?? ($a['dt'] ?? ''));
+            $kb = self::dateTimeSortKey($b['timestamp'] ?? ($b['dt'] ?? ''));
+            return strcmp($kb, $ka);
+        });
+
+        $historyRows = [];
+        foreach (array_slice($histEvents, 0, 200) as $ev) {
+            $historyRows[] = [
+                'dt'       => (string)($ev['dt'] ?? $ev['timestamp'] ?? ''),
+                'supplier' => (string)($ev['supplier'] ?? ''),
+                'spec'     => (string)($ev['spec'] ?? $ev['specification'] ?? ''),
+                'manager'  => (string)($ev['manager'] ?? ''),
+                'category' => (string)($ev['category_label'] ?? $ev['category'] ?? ''),
+                'details'  => (string)($ev['details'] ?? $ev['summary'] ?? ''),
+            ];
+        }
 
         $updatedAt = $newDisplay !== '' ? $newDisplay : date('d.m.Y час H:i');
         $finalData = [
@@ -1152,7 +1196,8 @@ class SemenaHelper {
             'discount_rows'     => $discountRows,
             'disc_rows'         => $discountRows,
             'truck_rows'        => $formattedTrucks,
-            'history_events'    => array_slice(array_reverse($historyData['events'] ?? []), 0, 200),
+            'history_events'    => array_slice($histEvents, 0, 200),
+            'history_rows'      => $historyRows,
         ];
 
         file_put_contents(self::getJsonPath(), json_encode($finalData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
@@ -1213,7 +1258,25 @@ class SemenaHelper {
                 'details'  => (string)($ev['details'] ?? $ev['summary'] ?? ''),
             ];
         }
+        // Сортуємо history_rows від нових до старих (сьогоднішня дата зверху таблиці)
+        usort($historyRows, function($a, $b) {
+            $ka = self::dateTimeSortKey($a['dt'] ?? '');
+            $kb = self::dateTimeSortKey($b['dt'] ?? '');
+            return strcmp($kb, $ka);
+        });
         $data['history_rows'] = $historyRows;
+
+        // Сортуємо truck_rows від нових до старих (сьогоднішня дата зверху таблиці)
+        if (!empty($data['truck_rows'])) {
+            usort($data['truck_rows'], function($a, $b) {
+                $ka = self::dateSortKey($a['date'] ?? '');
+                $kb = self::dateSortKey($b['date'] ?? '');
+                if ($ka !== $kb) {
+                    return strcmp($kb, $ka); // descending date
+                }
+                return ($b['num'] ?? 0) <=> ($a['num'] ?? 0); // descending truck number
+            });
+        }
 
         // Нормалізуємо ключі agg_rows
         $normalizedAgg = [];
@@ -1857,6 +1920,17 @@ class SemenaHelper {
 
         if ($sourceFilePath && file_exists($sourceFilePath)) {
             @copy($sourceFilePath, self::getXlsxPath());
+        }
+
+        if (!empty($truckRowsFinal)) {
+            usort($truckRowsFinal, function($a, $b) {
+                $ka = self::dateSortKey($a['date'] ?? '');
+                $kb = self::dateSortKey($b['date'] ?? '');
+                if ($ka !== $kb) {
+                    return strcmp($kb, $ka); // descending date
+                }
+                return ($b['num'] ?? 0) <=> ($a['num'] ?? 0); // descending truck number
+            });
         }
 
         $newData = [
