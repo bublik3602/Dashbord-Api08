@@ -155,6 +155,8 @@ function ensureSchemaExists(PDO $db): void {
                     MODIFY COLUMN `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
                     MODIFY COLUMN `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00
             ");
+        } catch (Throwable $e) {}
+
         try {
             $db->exec("DELETE FROM `material_balance_logs` WHERE `recorded_at` >= '2026-10-14 00:00:00' AND (`seed_in_production` = 0 OR `seed_in_production` IS NULL)");
         } catch (Throwable $e) {}

@@ -1911,7 +1911,13 @@ $histRows   = $semenaData['history_rows'] ?? [];
 
             try {
                 const resp = await fetch('api/import.php', { method: 'POST', body: fd });
-                const data = await resp.json();
+                const text = await resp.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (jsonErr) {
+                    throw new Error(`Помилка сервера (HTTP ${resp.status}): ${text.replace(/<[^>]*>/g, ' ').trim().substring(0, 200) || 'Порожня відповідь сервера'}`);
+                }
 
                 if ((data.status === 'error') || (data.errors && data.errors.length > 0 && (!data.processed_reports || data.processed_reports.length === 0))) {
                     box.style.background = '#FDECE8';
