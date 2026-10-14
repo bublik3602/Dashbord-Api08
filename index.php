@@ -79,7 +79,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="brand-subtitle">
                     <span class="live-pill"><span class="pulse-dot"></span> LIVE</span>
                     <span>&bull;</span>
-                    <span>Оновлено: <?= date('H:i:s') ?></span>
+                    <span id="header-sync-time">Оновлено: <?= date('H:i:s') ?></span>
                 </div>
             </div>
         </div>

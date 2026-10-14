@@ -19,9 +19,18 @@ function get_config(): array {
         } else {
             $config = [];
         }
+
+        // Встановлюємо часовий пояс за конфігурацією (за замовчуванням Europe/Kyiv)
+        $tz = $config['timezone'] ?? 'Europe/Kyiv';
+        if (!empty($tz)) {
+            date_default_timezone_set($tz);
+        }
     }
     return $config;
 }
+
+// Застосовуємо часовий пояс одразу при підключенні helpers.php
+get_config();
 
 /**
  * Форматирование веса в тоннах

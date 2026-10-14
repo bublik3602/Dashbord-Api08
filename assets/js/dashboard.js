@@ -194,6 +194,7 @@ document.addEventListener('DOMContentLoaded', function () {
             setElementText('#banner-period-title', pi.range_display || pi.period_label);
             setElementText('#lbl-prod-period', 'Період: ' + (pi.period_label || pi.range_display));
             setElementText('#banner-sync-time', 'Оновлено: ' + (pi.generated_at || new Date().toLocaleTimeString()));
+            setElementText('#header-sync-time', 'Оновлено: ' + (pi.current_time || new Date().toLocaleTimeString('uk-UA', { hour: '2-digit', minute: '2-digit', second: '2-digit' })));
 
             const subElem = document.querySelector('#banner-period-sub');
             if (subElem) {
