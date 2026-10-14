@@ -23,6 +23,15 @@ if (!Auth::check()) {
     exit;
 }
 
+if (!Auth::canUpload()) {
+    http_response_code(403);
+    echo json_encode([
+        'status'  => 'error',
+        'message' => 'Користувачу semena заборонено завантажувати файли приходу та звітів.',
+    ], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
 /**
  * Автоматична перевірка та створення відсутніх таблиць і колонок
  */

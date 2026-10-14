@@ -639,9 +639,11 @@ $histRows   = $semenaData['history_rows'] ?? [];
                 🏭 На головний дашборд
             </a>
             <?php endif; ?>
+            <?php if (Auth::canUpload()): ?>
             <button type="button" class="btn-top btn-upload" onclick="openUploadModal()" title="Завантажити 2 файли з 1С: Приход (prihod.xlsx) + Специфікація (spec.xlsx) для автоматичного формування Листа погодження">
                 ⚡ Завантажити Приход + Специфікацію (1С)
             </button>
+            <?php endif; ?>
             <a href="semena.php?download=1" class="btn-top btn-download" title="Скачати повний Excel-файл Лист_погодження.xlsx з усіма вкладками">
                 📥 Скачати Лист_погодження.xlsx
             </a>
@@ -1035,6 +1037,7 @@ $histRows   = $semenaData['history_rows'] ?? [];
         </div>
     </div>
 
+    <?php if (Auth::canUpload()): ?>
     <!-- МОДАЛЬНЕ ВІКНО ОНОВЛЕННЯ ЗВІТУ (2 ФАЙЛИ 1С: ПРИХОД + СПЕЦИФІКАЦІЯ АБО ГОТОВИЙ ЛИСТ_ПОГОДЖЕННЯ) -->
     <div class="modal-backdrop" id="upload-modal">
         <div class="modal-box" style="max-width: 640px;">
@@ -1098,6 +1101,7 @@ $histRows   = $semenaData['history_rows'] ?? [];
             </div>
         </div>
     </div>
+    <?php endif; ?>
 
     <script>
         // Всі дані звіту з PHP

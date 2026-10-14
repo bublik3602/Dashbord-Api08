@@ -195,8 +195,30 @@ class Auth {
         if (in_array('all', $allowed, true)) {
             return true;
         }
-
         return in_array($page, $allowed, true);
+    }
+
+    /**
+     * Чи є поточний користувач адміністратором
+     */
+    public static function isAdmin(): bool {
+        $u = self::user();
+        return ($u['role'] ?? '') === 'admin';
+    }
+
+    /**
+     * Чи дозволено поточному користувачу завантажувати звіти та файли 1С.
+     * Користувачу 'semena' заборонено завантажувати приход / оновлювати дані.
+     */
+    public static function canUpload(): bool {
+        $u = self::user();
+        if (!$u) {
+            return false;
+        }
+        if (($u['role'] ?? '') === 'semena' || ($u['username'] ?? '') === 'semena') {
+            return false;
+        }
+        return true;
     }
 
     /**
