@@ -352,14 +352,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="gauge-card">
                 <div class="gauge-header">
                     <span class="gauge-title">🧪 Олійність у переробку</span>
-                    <span class="gauge-badge <?= ($prodLab['oil_deviation_pct'] ?? -2.38) >= 0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-prod-oil-dev">
-                        <?= ($prodLab['oil_deviation_pct'] ?? -2.38) >= 0 ? '+' : '' ?><?= number_format($prodLab['oil_deviation_pct'] ?? -2.38, 2, ',', ' ') ?>%
-                    </span>
+                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-asr">а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 48.53, 2, ',', ' ') ?>%</span>
                 </div>
                 <div id="chart-gauge-prod-oil" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
-                    <div class="gauge-sub">Базова норма: <strong><?= number_format($prodLab['oil_content_base_pct'] ?? 48.0, 1, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 48.53, 2, ',', ' ') ?>%)</div>
-                    <div class="gauge-note" id="note-prod-oil">Товарна олійність у переробку</div>
+                    <div class="gauge-sub" id="val-prod-oil-asr">На суху речовину (а.с.р.): <strong><?= number_format($prodLab['oil_asr_pct'] ?? 48.53, 2, ',', ' ') ?>%</strong></div>
+                    <div class="gauge-note" id="note-prod-oil">Фактична товарна олійність насіння</div>
                 </div>
             </div>
 

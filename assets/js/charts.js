@@ -453,8 +453,7 @@ window.FactoryCharts = {
         const elProdOil = document.querySelector("#chart-gauge-prod-oil");
         if (elProdOil) {
             const prodOilVal = parseFloat(prodLabData.oil_content_pct !== undefined ? prodLabData.oil_content_pct : 45.62);
-            const prodBaseOil = parseFloat(prodLabData.oil_content_base_pct || 48.0);
-            const prodOilColor = (prodOilVal >= prodBaseOil) ? '#10b981' : '#f59e0b';
+            const prodOilColor = '#f59e0b';
             this.gaugeProdOilChart = new ApexCharts(elProdOil, makeGaugeOptions(prodOilVal, 30, 60, prodOilColor, 2));
             this.gaugeProdOilChart.render();
         }
@@ -798,7 +797,7 @@ window.FactoryCharts = {
             if (this.gaugeProdOilChart) {
                 this.gaugeProdOilChart.updateSeries([prodOilVal]);
                 this.gaugeProdOilChart.updateOptions({
-                    fill: { colors: [prodOilVal >= prodBaseOil ? '#10b981' : '#f59e0b'] }
+                    fill: { colors: ['#f59e0b'] }
                 });
             }
             if (this.gaugeProdMoistChart) {

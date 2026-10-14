@@ -310,11 +310,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- Блок: Лабораторія якості - Подача на переробку (МЕЗ) ---
         if (data.production_lab_quality) {
             const plq = data.production_lab_quality;
-            const devSign = (plq.oil_deviation_pct >= 0) ? '+' : '';
-            const devBadge = document.querySelector('#badge-prod-oil-dev');
-            if (devBadge) {
-                devBadge.textContent = `${devSign}${formatNumber(plq.oil_deviation_pct, 2)}%`;
-                devBadge.className = 'gauge-badge ' + (plq.oil_deviation_pct >= 0 ? 'badge-bonus' : 'badge-discount');
+            if (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) {
+                setElementText('#badge-prod-oil-asr', `а.с.р. ${formatNumber(plq.oil_asr_pct, 2)}%`);
+                const valAsrEl = document.querySelector('#val-prod-oil-asr');
+                if (valAsrEl) valAsrEl.innerHTML = `На суху речовину (а.с.р.): <strong>${formatNumber(plq.oil_asr_pct, 2)}%</strong>`;
+            } else {
+                setElementText('#badge-prod-oil-asr', '—');
+                const valAsrEl = document.querySelector('#val-prod-oil-asr');
+                if (valAsrEl) valAsrEl.innerHTML = `На суху речовину (а.с.р.): <strong>—</strong>`;
             }
 
             const moistBadge = document.querySelector('#badge-prod-moisture');
