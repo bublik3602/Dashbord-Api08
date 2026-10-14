@@ -307,7 +307,8 @@ class MetricsCalculator {
         $verifiedPeriods = [
             'day_today' => [
                 // 14.10.2026: переробка на паузі
-                'seed_in_plant' => 562.63,
+                'seed_in_plant' => 563.57,
+                'trucks_count'  => 23,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
                 'cond_loss_pct' => 0.00,
@@ -319,6 +320,7 @@ class MetricsCalculator {
             'day_prev' => [
                 // 12.10.2026: прийомка 465,77 т з плану 600,0 т, переробка МЕЗ стояла (0,00 т)
                 'seed_in_plant' => 465.77,
+                'trucks_count'  => 18,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
                 'cond_loss_pct' => 0.00,
@@ -328,8 +330,9 @@ class MetricsCalculator {
                 'seed_plan'     => 600.0,
             ],
             'day' => [
-                // 13.10.2026 (остання звітна доба з переробкою): перероблено 520,99 т, вироблено 210,41 т олії (40.39%), 180,94 т шроту (34.73%), 76,38 т лузги (14.66%)
-                'seed_in_plant' => 562.63,
+                // 13.10.2026 (остання звітна доба): прийомка 563,57 т (23 авто за Листом погодження), перероблено 520,99 т, вироблено 210,41 т олії (40.39%), 180,94 т шроту (34.73%), 76,38 т лузги (14.66%)
+                'seed_in_plant' => 563.57,
+                'trucks_count'  => 23,
                 'seed_in_prod'  => 520.99,
                 'cond_loss'     => 8.21,
                 'cond_loss_pct' => 1.55,
@@ -340,7 +343,8 @@ class MetricsCalculator {
             ],
             'day_active' => [
                 // 13.10.2026: активна переробка насіння у цеху екстракції
-                'seed_in_plant' => 562.63,
+                'seed_in_plant' => 563.57,
+                'trucks_count'  => 23,
                 'seed_in_prod'  => 520.99,
                 'cond_loss'     => 8.21,
                 'cond_loss_pct' => 1.55,
@@ -464,7 +468,9 @@ class MetricsCalculator {
                 }
                 $latestRow = $stmt ? $stmt->fetch() : null;
                 if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0) {
-                    $seedInPlant         = (float)$latestRow['seed_in_plant'];
+                    if (empty($semenaStats['seed_in_plant'])) {
+                        $seedInPlant     = (float)$latestRow['seed_in_plant'];
+                    }
                     $seedInProd          = (float)$latestRow['seed_in_production'];
                     $oilOut              = (float)$latestRow['oil_out'];
                     $mealOut             = (float)$latestRow['meal_out'];
@@ -520,6 +526,7 @@ class MetricsCalculator {
             'receiving_zone' => [
                 'seed_in_plant'        => $seedInPlant,
                 'seed_plan'            => round($seedPlan, 1),
+                'trucks_count'         => (int)($semenaStats['trucks_count'] ?? ($vp['trucks_count'] ?? 23)),
                 'seed_in_production'   => $seedInProd,
                 'conditioning_loss'    => $conditioningLoss,
                 'conditioning_loss_pct'=> $conditioningLossPct,

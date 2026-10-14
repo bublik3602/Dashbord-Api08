@@ -201,7 +201,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <span class="kpi-badge badge-blue">Лист погодження</span>
             </div>
             <div class="kpi-subtext">
-                <span id="val-seed-plan">План: <?= number_format($mb['receiving_zone']['seed_plan'], 1, ',', ' ') ?> т (<?= $mb['receiving_zone']['plan_fulfillment_pct'] ?>%)</span>
+                <span id="val-seed-plan">План: <?= number_format($mb['receiving_zone']['seed_plan'], 1, ',', ' ') ?> т (<?= $mb['receiving_zone']['plan_fulfillment_pct'] ?>%)<?php if (!empty($mb['receiving_zone']['trucks_count'])): ?> • <?= $mb['receiving_zone']['trucks_count'] ?> авто<?php endif; ?></span>
                 <span>Без очистки та сушки</span>
             </div>
         </div>

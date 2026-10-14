@@ -221,7 +221,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- Блок А: Зона приймання та склад насіння ---
         const rz = mb.receiving_zone;
         setElementText('#val-seed-in-plant', formatNumber(rz.seed_in_plant, 2) + ' т');
-        setElementText('#val-seed-plan', 'План: ' + formatNumber(rz.seed_plan, 1) + ' т (' + rz.plan_fulfillment_pct + '%)');
+        const trucksTxt = rz.trucks_count ? ` • ${rz.trucks_count} авто` : '';
+        setElementText('#val-seed-plan', 'План: ' + formatNumber(rz.seed_plan, 1) + ' т (' + rz.plan_fulfillment_pct + '%)' + trucksTxt);
         
         if (data.warehouse_stocks) {
             const ws = data.warehouse_stocks;
