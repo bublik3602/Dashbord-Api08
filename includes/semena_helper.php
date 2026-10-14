@@ -1603,8 +1603,8 @@ class SemenaHelper {
         foreach ($sheets as $sName => $rows) {
             $sLower = mb_strtolower($sName, 'UTF-8');
 
-            // 1. Вкладка «Лист погодження»
-            if (strpos($sLower, 'погоджен') !== false && strpos($sLower, 'відхилен') === false) {
+            // 1. Вкладка «Лист погодження» / «Зведена відомість»
+            if ((strpos($sLower, 'погоджен') !== false || strpos($sLower, 'зведен') !== false || strpos($sLower, 'всі_специфікації') !== false || strpos($sLower, 'все_спецификации') !== false) && strpos($sLower, 'відхилен') === false && strpos($sLower, 'невиконан') === false) {
                 if (!empty($rows[1][0])) {
                     $sub = trim((string)$rows[1][0]);
                     $subtitle = $sub;
@@ -1613,13 +1613,12 @@ class SemenaHelper {
                     }
                 }
                 foreach ($rows as $ri => $r) {
-                    if ($ri < 4) continue;
                     $num = trim((string)($r[0] ?? ''));
+                    if (!is_numeric($num)) continue;
                     $sup = trim((string)($r[1] ?? ''));
                     if ($sup === '' || mb_stripos($sup, 'всього', 0, 'UTF-8') !== false || mb_stripos($sup, 'разом', 0, 'UTF-8') !== false) {
                         continue;
                     }
-                    if (!is_numeric($num)) continue;
 
                     $contract  = (float)self::parseFloatVal($r[6] ?? 0);
                     $delivered = (float)self::parseFloatVal($r[7] ?? 0);
@@ -1655,7 +1654,6 @@ class SemenaHelper {
             // 2. Вкладка «Невиконані специфікації»
             if (strpos($sLower, 'невиконан') !== false || strpos($sLower, 'невыполнен') !== false) {
                 foreach ($rows as $ri => $r) {
-                    if ($ri < 4) continue;
                     $num = trim((string)($r[0] ?? ''));
                     $statusRaw = trim((string)($r[1] ?? ''));
                     $sup = trim((string)($r[2] ?? ''));
@@ -1692,7 +1690,6 @@ class SemenaHelper {
             // 3. Вкладка «Графік завезення (по днях)»
             if (strpos($sLower, 'графік') !== false || strpos($sLower, 'график') !== false || strpos($sLower, 'по днях') !== false) {
                 foreach ($rows as $ri => $r) {
-                    if ($ri < 4) continue;
                     $num  = trim((string)($r[0] ?? ''));
                     $dStr = self::normalizeDate(trim((string)($r[1] ?? '')));
                     if (!is_numeric($num) || !preg_match('/^\d{2}\.\d{2}\.\d{4}$/', $dStr)) continue;
@@ -1722,7 +1719,6 @@ class SemenaHelper {
             // 4. Вкладка «Натуральна скидка (сор, волога)»
             if (strpos($sLower, 'натуральн') !== false || strpos($sLower, 'скидк') !== false) {
                 foreach ($rows as $ri => $r) {
-                    if ($ri < 4) continue;
                     $num = trim((string)($r[0] ?? ''));
                     $sup = trim((string)($r[1] ?? ''));
                     if ($sup === '' || !is_numeric($num) || mb_stripos($sup, 'разом', 0, 'UTF-8') !== false) continue;
@@ -1746,6 +1742,121 @@ class SemenaHelper {
                     ];
                 }
             }
+
+            // 5. Вкладка «Реєстр прийомок» (помашинний реєстр)
+            if (strpos($sLower, 'реєстр') !== false || strpos($sLower, 'реестр') !== false || strpos($sLower, 'прийомок') !== false || strpos($sLower, 'приемок') !== false || strpos($sLower, 'помашин') !== false) {
+                $parsedTruckRows = [];
+                foreach ($rows as $ri => $r) {
+                    $num = trim((string)($r[0] ?? ''));
+                    if (!is_numeric($num)) continue;
+                    $dStr = self::normalizeDate(trim((string)($r[5] ?? '')));
+                    if (empty($dStr)) continue;
+
+                    $delivT = (float)self::parseFloatVal($r[8] ?? 0);
+                    $zachT  = (float)self::parseFloatVal($r[9] ?? 0);
+                    $diffT  = (float)self::parseFloatVal($r[10] ?? ($delivT - $zachT));
+
+                    $parsedTruckRows[] = [
+                        'num'              => (int)$num,
+                        'supplier'         => trim((string)($r[1] ?? '')),
+                        'spec'             => trim((string)($r[2] ?? '')),
+                        'car_num'          => trim((string)($r[3] ?? '')),
+                        'ttn'              => trim((string)($r[4] ?? '')),
+                        'date'             => $dStr,
+                        'manager'          => trim((string)($r[6] ?? '')),
+                        'terms'            => trim((string)($r[7] ?? '')),
+                        'delivered_t'      => round($delivT, 3),
+                        'accounting_t'     => round($zachT, 3),
+                        'weight_diff'      => round($diffT, 3),
+                        'price_with_deliv' => self::parseFloatVal($r[11] ?? null),
+                        'price_no_deliv'   => self::parseFloatVal($r[12] ?? null),
+                        'oil_base'         => (float)(self::parseFloatVal($r[13] ?? 48.0) ?: 48.0),
+                        'moisture'         => self::parseFloatVal($r[14] ?? null),
+                        'trash'            => self::parseFloatVal($r[15] ?? null),
+                        'oil_fact'         => self::parseFloatVal($r[16] ?? null),
+                        'oil_diff'         => self::parseFloatVal($r[17] ?? null),
+                    ];
+                }
+                if (!empty($parsedTruckRows)) {
+                    $truckRows = $parsedTruckRows;
+                }
+            }
+        }
+
+        $truckRowsFinal = !empty($truckRows) ? $truckRows : ($existing['truck_rows'] ?? []);
+
+        // Якщо в Реєстрі прийомок є дати, яких немає в Графіку завезення (наприклад, свіжі авто за 14.10)
+        if (!empty($truckRowsFinal)) {
+            $existingDailyDates = array_column($dailyRows, 'date');
+            $truckDatesMap = [];
+            foreach ($truckRowsFinal as $t) {
+                $td = $t['date'] ?? '';
+                if (empty($td)) continue;
+                if (!isset($truckDatesMap[$td])) {
+                    $truckDatesMap[$td] = [
+                        'cars'      => 0,
+                        'delivered' => 0.0,
+                        'credit_w'  => 0.0,
+                        'oil_sum'   => 0.0,
+                        'moist_sum' => 0.0,
+                        'trash_sum' => 0.0,
+                        'oil_cnt'   => 0,
+                    ];
+                }
+                $truckDatesMap[$td]['cars']++;
+                $deliv = (float)($t['delivered_t'] ?? 0);
+                $cred  = (float)($t['accounting_t'] ?? 0);
+                $truckDatesMap[$td]['delivered'] += $deliv;
+                $truckDatesMap[$td]['credit_w']  += $cred;
+                if (isset($t['oil_fact']) && $t['oil_fact'] > 0) {
+                    $truckDatesMap[$td]['oil_sum'] += (float)$t['oil_fact'] * $deliv;
+                    $truckDatesMap[$td]['oil_cnt'] += $deliv;
+                }
+                if (isset($t['moisture']) && $t['moisture'] > 0) {
+                    $truckDatesMap[$td]['moist_sum'] += (float)$t['moisture'] * $deliv;
+                }
+                if (isset($t['trash']) && $t['trash'] > 0) {
+                    $truckDatesMap[$td]['trash_sum'] += (float)$t['trash'] * $deliv;
+                }
+            }
+
+            foreach ($truckDatesMap as $td => $tStat) {
+                if (!in_array($td, $existingDailyDates, true)) {
+                    $deliv = round($tStat['delivered'], 3);
+                    $cred  = round($tStat['credit_w'], 3);
+                    $disc  = round($deliv - $cred, 3);
+                    $discP = $deliv > 0 ? round(($disc / $deliv) * 100, 2) : 0.0;
+                    $avgOil = $tStat['oil_cnt'] > 0 ? round($tStat['oil_sum'] / $tStat['oil_cnt'], 2) : 49.0;
+                    $avgM   = $tStat['oil_cnt'] > 0 ? round($tStat['moist_sum'] / $tStat['oil_cnt'], 2) : 7.0;
+                    $avgT   = $tStat['oil_cnt'] > 0 ? round($tStat['trash_sum'] / $tStat['oil_cnt'], 2) : 3.0;
+                    $dow    = self::getUkrainianDayOfWeek($td);
+
+                    $dailyRows[] = [
+                        'num'           => count($dailyRows) + 1,
+                        'date'          => $td,
+                        'weekday'       => $dow,
+                        'day_name'      => $dow,
+                        'cars'          => $tStat['cars'],
+                        'trucks'        => $tStat['cars'],
+                        'trucks_count'  => $tStat['cars'],
+                        'delivered'     => $deliv,
+                        'delivered_t'   => $deliv,
+                        'credit_weight' => $cred,
+                        'accounting_t'  => $cred,
+                        'discount'      => $disc,
+                        'discount_pct'  => $discP,
+                        'oil'           => $avgOil,
+                        'moisture'      => $avgM,
+                        'trash'         => $avgT,
+                    ];
+                }
+            }
+
+            usort($dailyRows, fn($a, $b) => strcmp(self::dateSortKey($a['date'] ?? ''), self::dateSortKey($b['date'] ?? '')));
+            foreach ($dailyRows as $idx => &$dr) {
+                $dr['num'] = $idx + 1;
+            }
+            unset($dr);
         }
 
         if ($sourceFilePath && file_exists($sourceFilePath)) {
@@ -1760,7 +1871,7 @@ class SemenaHelper {
             'unfulfilled_rows' => !empty($unfRows) ? $unfRows : ($existing['unfulfilled_rows'] ?? []),
             'daily_rows'       => !empty($dailyRows) ? $dailyRows : ($existing['daily_rows'] ?? []),
             'discount_rows'    => !empty($discountRows) ? $discountRows : ($existing['discount_rows'] ?? []),
-            'truck_rows'       => $existing['truck_rows'] ?? [],
+            'truck_rows'       => $truckRowsFinal,
             'history_events'   => $existing['history_events'] ?? [],
         ];
 

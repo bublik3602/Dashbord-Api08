@@ -595,6 +595,30 @@ try {
                     $stmt2->execute([$nowStr, $reportTimeStr, $finalContracted, $finalDelivered, $finalRemaining, $activeSpecs, $pendingSpecs]);
                 } catch (Throwable $e) {}
 
+                // Синхронізуємо добові прийомки насіння в material_balance_logs
+                $dailyRowsUploaded = $semenaRes['daily_rows'] ?? [];
+                foreach ($dailyRowsUploaded as $dRow) {
+                    $dStr = $dRow['date'] ?? '';
+                    if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $dStr, $dm)) {
+                        $isoDate = "{$dm[3]}-{$dm[2]}-{$dm[1]}";
+                        $phys = (float)($dRow['delivered'] ?? 0);
+                        if ($phys > 0) {
+                            try {
+                                $checkStmt = $db->prepare("SELECT id FROM material_balance_logs WHERE recorded_at LIKE ?");
+                                $checkStmt->execute(["{$isoDate}%"]);
+                                $existingRow = $checkStmt->fetch(PDO::FETCH_ASSOC);
+                                if ($existingRow) {
+                                    $upd = $db->prepare("UPDATE material_balance_logs SET report_date = ?, seed_in_plant = ? WHERE id = ?");
+                                    $upd->execute([$dStr, $phys, $existingRow['id']]);
+                                } else {
+                                    $ins = $db->prepare("INSERT INTO material_balance_logs (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out) VALUES (?, ?, 'day', ?, 0, 0, 0, 0)");
+                                    $ins->execute(["{$isoDate} 20:00:00", $dStr, $phys]);
+                                }
+                            } catch (Throwable $e) {}
+                        }
+                    }
+                }
+
                 $processedReports[] = 'lab_quality';
                 $processedReports[] = 'contracts_summary';
                 $processedReports[] = 'semena_full';
