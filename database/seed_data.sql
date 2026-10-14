@@ -138,7 +138,7 @@ INSERT INTO `lab_quality_logs` (`recorded_at`, `report_date`, `oil_content_pct`,
 
 -- 8. Контрактація та виконання специфікацій (реальні дані з Листа погодження 1С: 121 специфікація, 14 невиконаних)
 INSERT INTO `contracts_summary` (`recorded_at`, `report_date`, `contracted_tonnes`, `delivered_tonnes`, `remaining_tonnes`, `active_specs_count`, `pending_specs_count`) VALUES
-(NOW(), '12.10.2026 09:34', 18711.000, 17642.900, 1647.930, 11, 3);
+(NOW(), '14.10.2026 13:00', 18806.000, 18109.240, 696.760, 126, 8);
 
 -- 9. Облікові записи користувачів (admin / orrz20054Q+, test / 12345 та semena / 12345)
 INSERT INTO `dashboard_users` (`username`, `password_hash`, `display_name`, `role`, `allowed_pages`, `is_active`) VALUES
