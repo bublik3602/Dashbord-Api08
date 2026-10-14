@@ -240,6 +240,7 @@ class MetricsCalculator {
             'logistics'            => $logisticsData,
             'warehouse_stocks'     => $stocksData,
             'lab_quality'          => $labData,
+            'production_lab_quality' => $this->getProductionLabQuality($period),
             'contracts_summary'    => $contractsData,
             'historical_analytics' => $this->getHistoricalAnalytics($period),
             'period_comparison'    => $this->getHistoricalAnalytics($period)['period_comparison'] ?? [],
@@ -2455,6 +2456,146 @@ class MetricsCalculator {
             'weight_discount_tonnes' => 2.65,
             'report_date'            => '11.10.2026 (Лист погодження — по днях)',
         ];
+    }
+
+    /**
+     * Показники якості сировини, поданої у переробку (зі звіту виробництва цеху екстракції «СВОДНАЯ 2026-27» та «Октябрь26»)
+     */
+    public function getProductionLabQuality(string $period = 'day'): array {
+        $p = strtolower(trim($period));
+        $basePct = 48.00;
+
+        switch ($p) {
+            case 'month_aug':
+                return [
+                    'oil_content_pct'        => 0.00,
+                    'oil_content_base_pct'   => $basePct,
+                    'oil_deviation_pct'      => -48.00,
+                    'oil_asr_pct'            => 0.00,
+                    'moisture_pct'           => 0.00,
+                    'impurity_pct'           => 0.00,
+                    'seed_processed_tonnes'  => 0.00,
+                    'seed_plan_tonnes'       => 0.00,
+                    'plan_fulfillment_pct'   => 0.0,
+                    'report_date'            => 'Серпень 2026 (0 діб переробки, ППР)',
+                    'processed_note'         => 'ППР заводу (виробництво не велося)',
+                ];
+
+            case 'month_sep':
+                $seedProc = 8823.66;
+                $seedPlan = 9600.0;
+                $oil = 44.05;
+                $moist = 6.80;
+                return [
+                    'oil_content_pct'        => $oil,
+                    'oil_content_base_pct'   => $basePct,
+                    'oil_deviation_pct'      => round($oil - $basePct, 2),
+                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'moisture_pct'           => $moist,
+                    'impurity_pct'           => 1.85,
+                    'seed_processed_tonnes'  => $seedProc,
+                    'seed_plan_tonnes'       => $seedPlan,
+                    'plan_fulfillment_pct'   => round(($seedProc / $seedPlan) * 100, 1),
+                    'report_date'            => 'Вересень 2026 (16 діб роботи МЕЗ, СВОД)',
+                    'processed_note'         => '16 діб переробки (15.09 — 30.09.2026)',
+                ];
+
+            case 'season':
+                $seedProc = 12991.00;
+                $seedPlan = 14400.0;
+                $oil = 44.55;
+                $moist = 6.60;
+                return [
+                    'oil_content_pct'        => $oil,
+                    'oil_content_base_pct'   => $basePct,
+                    'oil_deviation_pct'      => round($oil - $basePct, 2),
+                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'moisture_pct'           => $moist,
+                    'impurity_pct'           => 1.77,
+                    'seed_processed_tonnes'  => $seedProc,
+                    'seed_plan_tonnes'       => $seedPlan,
+                    'plan_fulfillment_pct'   => round(($seedProc / $seedPlan) * 100, 1),
+                    'report_date'            => 'Сезон 2026–2027 (24 доби роботи, СВОД)',
+                    'processed_note'         => 'Загалом перероблено за сезон 12 991 т',
+                ];
+
+            case 'week':
+                $seedProc = 644.33;
+                $seedPlan = 1200.0;
+                $oil = 45.62;
+                $moist = 6.00;
+                return [
+                    'oil_content_pct'        => $oil,
+                    'oil_content_base_pct'   => $basePct,
+                    'oil_deviation_pct'      => round($oil - $basePct, 2),
+                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'moisture_pct'           => $moist,
+                    'impurity_pct'           => 2.00,
+                    'seed_processed_tonnes'  => $seedProc,
+                    'seed_plan_tonnes'       => $seedPlan,
+                    'plan_fulfillment_pct'   => round(($seedProc / $seedPlan) * 100, 1),
+                    'report_date'            => '07.10 — 13.10.2026 (2 доби роботи)',
+                    'processed_note'         => '2 робочі доби (10.10 та 13.10)',
+                ];
+
+            case 'day_prev':
+                return [
+                    'oil_content_pct'        => 45.62,
+                    'oil_content_base_pct'   => $basePct,
+                    'oil_deviation_pct'      => -2.38,
+                    'oil_asr_pct'            => 48.53,
+                    'moisture_pct'           => 6.00,
+                    'impurity_pct'           => 2.00,
+                    'seed_processed_tonnes'  => 0.00,
+                    'seed_plan_tonnes'       => 600.0,
+                    'plan_fulfillment_pct'   => 0.0,
+                    'report_date'            => '12.10.2026 (ППР заводу, переробка: 0 т)',
+                    'processed_note'         => 'Переробка насіння не проводилася',
+                ];
+
+            case 'month':
+            case 'month_oct':
+                $seedProc = 4167.34;
+                $seedPlan = 4800.0;
+                $oil = 45.62;
+                $moist = 6.17;
+                return [
+                    'oil_content_pct'        => $oil,
+                    'oil_content_base_pct'   => $basePct,
+                    'oil_deviation_pct'      => round($oil - $basePct, 2),
+                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'moisture_pct'           => $moist,
+                    'impurity_pct'           => 1.62,
+                    'seed_processed_tonnes'  => $seedProc,
+                    'seed_plan_tonnes'       => $seedPlan,
+                    'plan_fulfillment_pct'   => round(($seedProc / $seedPlan) * 100, 1),
+                    'report_date'            => 'Жовтень 2026 (8 діб переробки з 13, СВОД)',
+                    'processed_note'         => 'Середньозважена якість насіння у переробку',
+                ];
+
+            case 'day':
+            case 'day_active':
+            case 'day_today':
+            case 'shift':
+            default:
+                $seedProc = 520.99;
+                $seedPlan = 600.0;
+                $oil = 45.62;
+                $moist = 6.00;
+                return [
+                    'oil_content_pct'        => $oil,
+                    'oil_content_base_pct'   => $basePct,
+                    'oil_deviation_pct'      => round($oil - $basePct, 2),
+                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'moisture_pct'           => $moist,
+                    'impurity_pct'           => 2.00,
+                    'seed_processed_tonnes'  => $seedProc,
+                    'seed_plan_tonnes'       => $seedPlan,
+                    'plan_fulfillment_pct'   => round(($seedProc / $seedPlan) * 100, 1),
+                    'report_date'            => '13.10.2026 (Звіт виробництва — доба 13)',
+                    'processed_note'         => 'Подано у вальцьовий цех та екстракцію',
+                ];
+        }
     }
 
     /**

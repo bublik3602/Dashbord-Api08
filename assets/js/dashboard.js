@@ -19,7 +19,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.INITIAL_DASHBOARD_DATA) {
         FactoryCharts.initDonutChart(window.INITIAL_DASHBOARD_DATA.material_balance.yield_chart);
         FactoryCharts.initEnergyChart(window.INITIAL_DASHBOARD_DATA.energy.timeline);
-        FactoryCharts.initGauges(window.INITIAL_DASHBOARD_DATA.lab_quality, window.INITIAL_DASHBOARD_DATA.contracts_summary);
+        FactoryCharts.initGauges(
+            window.INITIAL_DASHBOARD_DATA.lab_quality,
+            window.INITIAL_DASHBOARD_DATA.contracts_summary,
+            window.INITIAL_DASHBOARD_DATA.production_lab_quality
+        );
         FactoryCharts.initMonthlyAnalyticsChart(window.INITIAL_DASHBOARD_DATA.historical_analytics);
     }
 
@@ -207,6 +211,11 @@ document.addEventListener('DOMContentLoaded', function () {
             setElementText('#banner-lab-time', data.lab_quality.report_date);
         }
 
+        if (data.production_lab_quality && data.production_lab_quality.report_date) {
+            setElementText('#lbl-prod-lab-time', 'Звіт цеху переробки станом на: ' + data.production_lab_quality.report_date);
+            setElementText('#banner-prod-lab-time', data.production_lab_quality.report_date);
+        }
+
         if (data.warehouse_stocks && data.warehouse_stocks.report_date) {
             const stocksLbl = document.querySelector('#lbl-stocks-time');
             if (stocksLbl) stocksLbl.innerHTML = `Станом на: <strong>${escapeHtml(data.warehouse_stocks.report_date)}</strong> (СВОД)`;
@@ -296,6 +305,51 @@ document.addEventListener('DOMContentLoaded', function () {
             setElementText('#val-contracts-delivered', `${formatNumber(cs.delivered_tonnes, 0)} т / ${formatNumber(cs.contracted_tonnes, 0)} т`);
             setElementText('#badge-contracts-pct', `${formatNumber(cs.fulfillment_pct, 1)}%`);
             setElementText('#val-contracts-sub', `Залишок: ${formatNumber(cs.remaining_tonnes, 0)} т (${cs.active_specs_count || 14} у роботі, ${cs.pending_specs_count || 3} очікують)`);
+        }
+
+        // --- Блок: Лабораторія якості - Подача на переробку (МЕЗ) ---
+        if (data.production_lab_quality) {
+            const plq = data.production_lab_quality;
+            const devSign = (plq.oil_deviation_pct >= 0) ? '+' : '';
+            const devBadge = document.querySelector('#badge-prod-oil-dev');
+            if (devBadge) {
+                devBadge.textContent = `${devSign}${formatNumber(plq.oil_deviation_pct, 2)}%`;
+                devBadge.className = 'gauge-badge ' + (plq.oil_deviation_pct >= 0 ? 'badge-bonus' : 'badge-discount');
+            }
+
+            const moistBadge = document.querySelector('#badge-prod-moisture');
+            if (moistBadge) {
+                if (plq.moisture_pct <= 7.0 && plq.moisture_pct > 0) {
+                    moistBadge.textContent = `В нормі (${formatNumber(plq.moisture_pct, 1)}%)`;
+                    moistBadge.className = 'gauge-badge badge-bonus';
+                } else if (plq.moisture_pct === 0) {
+                    moistBadge.textContent = 'Немає даних';
+                    moistBadge.className = 'gauge-badge badge-normal';
+                } else {
+                    moistBadge.textContent = `Перевищення (${formatNumber(plq.moisture_pct, 1)}%)`;
+                    moistBadge.className = 'gauge-badge badge-discount';
+                }
+            }
+
+            const impBadge = document.querySelector('#badge-prod-impurity');
+            if (impBadge) {
+                if (plq.impurity_pct <= 2.0 && plq.impurity_pct > 0) {
+                    impBadge.textContent = `В нормі (≤ 2.0%)`;
+                    impBadge.className = 'gauge-badge badge-bonus';
+                } else if (plq.impurity_pct === 0) {
+                    impBadge.textContent = 'Немає даних';
+                    impBadge.className = 'gauge-badge badge-normal';
+                } else {
+                    impBadge.textContent = `Перевищення (${formatNumber(plq.impurity_pct, 1)}%)`;
+                    impBadge.className = 'gauge-badge badge-discount';
+                }
+            }
+
+            setElementText('#badge-prod-seed-tonnes', formatNumber(plq.seed_processed_tonnes, 1) + ' т');
+            setElementText('#val-prod-seed-processed', formatNumber(plq.seed_processed_tonnes, 1) + ' т');
+            if (plq.processed_note) {
+                setElementText('#val-prod-seed-sub', plq.processed_note);
+            }
         }
 
         // --- Блок А: Зона виробництва ---

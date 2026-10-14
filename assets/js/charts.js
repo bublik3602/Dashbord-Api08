@@ -360,11 +360,12 @@ window.FactoryCharts = {
     },
 
     /**
-     * Ініціалізація 4 графічних радіальних діаграм (Лабораторія та Контракти)
+     * Ініціалізація графічних радіальних діаграм (Лабораторія приходу та Лабораторія переробки)
      */
-    initGauges: function (labData, contractsData) {
+    initGauges: function (labData, contractsData, prodLabData) {
         labData = labData || {};
         contractsData = contractsData || {};
+        prodLabData = prodLabData || {};
 
         const oilVal = parseFloat(labData.oil_content_pct || 49.62);
         const baseOil = parseFloat(labData.oil_content_base_pct || 48.0);
@@ -414,7 +415,8 @@ window.FactoryCharts = {
             };
         };
 
-        // 1. Олійність
+        // --- Блок 1: Прихід насіння (1С) ---
+        // 1. Олійність приходу
         const elOil = document.querySelector("#chart-gauge-oil");
         if (elOil) {
             const oilColor = (oilVal >= baseOil) ? '#10b981' : '#ef4444';
@@ -422,7 +424,7 @@ window.FactoryCharts = {
             this.gaugeOilChart.render();
         }
 
-        // 2. Вологість
+        // 2. Вологість приходу
         const elMoist = document.querySelector("#chart-gauge-moisture");
         if (elMoist) {
             const moistColor = (moistVal <= 8.0) ? '#0284c7' : '#f59e0b';
@@ -430,7 +432,7 @@ window.FactoryCharts = {
             this.gaugeMoistureChart.render();
         }
 
-        // 3. Смітна домішка
+        // 3. Смітна домішка приходу
         const elImp = document.querySelector("#chart-gauge-impurity");
         if (elImp) {
             const impColor = (impVal <= 3.0) ? '#10b981' : '#f59e0b';
@@ -444,6 +446,44 @@ window.FactoryCharts = {
             const contrColor = '#6366f1';
             this.gaugeContractsChart = new ApexCharts(elContr, makeGaugeOptions(contractPct, 0, 100, contrColor, 1));
             this.gaugeContractsChart.render();
+        }
+
+        // --- Блок 2: Подача на переробку (МЕЗ) ---
+        // 1. Олійність на переробку
+        const elProdOil = document.querySelector("#chart-gauge-prod-oil");
+        if (elProdOil) {
+            const prodOilVal = parseFloat(prodLabData.oil_content_pct !== undefined ? prodLabData.oil_content_pct : 45.62);
+            const prodBaseOil = parseFloat(prodLabData.oil_content_base_pct || 48.0);
+            const prodOilColor = (prodOilVal >= prodBaseOil) ? '#10b981' : '#f59e0b';
+            this.gaugeProdOilChart = new ApexCharts(elProdOil, makeGaugeOptions(prodOilVal, 30, 60, prodOilColor, 2));
+            this.gaugeProdOilChart.render();
+        }
+
+        // 2. Вологість у цех
+        const elProdMoist = document.querySelector("#chart-gauge-prod-moisture");
+        if (elProdMoist) {
+            const prodMoistVal = parseFloat(prodLabData.moisture_pct !== undefined ? prodLabData.moisture_pct : 6.00);
+            const prodMoistColor = (prodMoistVal <= 7.0) ? '#0284c7' : '#f59e0b';
+            this.gaugeProdMoistChart = new ApexCharts(elProdMoist, makeGaugeOptions(prodMoistVal, 0, 14, prodMoistColor, 2));
+            this.gaugeProdMoistChart.render();
+        }
+
+        // 3. Смітна домішка після очищення
+        const elProdImp = document.querySelector("#chart-gauge-prod-impurity");
+        if (elProdImp) {
+            const prodImpVal = parseFloat(prodLabData.impurity_pct !== undefined ? prodLabData.impurity_pct : 2.00);
+            const prodImpColor = (prodImpVal <= 2.0) ? '#10b981' : '#ef4444';
+            this.gaugeProdImpChart = new ApexCharts(elProdImp, makeGaugeOptions(prodImpVal, 0, 8, prodImpColor, 2));
+            this.gaugeProdImpChart.render();
+        }
+
+        // 4. Завантаження потужності переробки (%)
+        const elProdSeed = document.querySelector("#chart-gauge-prod-seed");
+        if (elProdSeed) {
+            const prodSeedPct = parseFloat(prodLabData.plan_fulfillment_pct !== undefined ? prodLabData.plan_fulfillment_pct : 86.8);
+            const prodSeedColor = '#059669';
+            this.gaugeProdSeedChart = new ApexCharts(elProdSeed, makeGaugeOptions(prodSeedPct, 0, 120, prodSeedColor, 1));
+            this.gaugeProdSeedChart.render();
         }
     },
 
@@ -744,6 +784,37 @@ window.FactoryCharts = {
                 this.gaugeImpurityChart.updateOptions({
                     fill: { colors: [impVal <= 3.0 ? '#10b981' : '#f59e0b'] }
                 });
+            }
+        }
+
+        if (data.production_lab_quality) {
+            const plq = data.production_lab_quality;
+            const prodOilVal = parseFloat(plq.oil_content_pct !== undefined ? plq.oil_content_pct : 45.62);
+            const prodBaseOil = parseFloat(plq.oil_content_base_pct || 48.0);
+            const prodMoistVal = parseFloat(plq.moisture_pct !== undefined ? plq.moisture_pct : 6.00);
+            const prodImpVal = parseFloat(plq.impurity_pct !== undefined ? plq.impurity_pct : 2.00);
+            const prodSeedPct = parseFloat(plq.plan_fulfillment_pct !== undefined ? plq.plan_fulfillment_pct : 86.8);
+
+            if (this.gaugeProdOilChart) {
+                this.gaugeProdOilChart.updateSeries([prodOilVal]);
+                this.gaugeProdOilChart.updateOptions({
+                    fill: { colors: [prodOilVal >= prodBaseOil ? '#10b981' : '#f59e0b'] }
+                });
+            }
+            if (this.gaugeProdMoistChart) {
+                this.gaugeProdMoistChart.updateSeries([prodMoistVal]);
+                this.gaugeProdMoistChart.updateOptions({
+                    fill: { colors: [prodMoistVal <= 7.0 ? '#0284c7' : '#f59e0b'] }
+                });
+            }
+            if (this.gaugeProdImpChart) {
+                this.gaugeProdImpChart.updateSeries([prodImpVal]);
+                this.gaugeProdImpChart.updateOptions({
+                    fill: { colors: [prodImpVal <= 2.0 ? '#10b981' : '#ef4444'] }
+                });
+            }
+            if (this.gaugeProdSeedChart) {
+                this.gaugeProdSeedChart.updateSeries([prodSeedPct]);
             }
         }
 

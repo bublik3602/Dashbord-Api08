@@ -39,6 +39,7 @@ $eq = $dashboardData['equipment'];
 $log = $dashboardData['logistics'];
 $stocks = $dashboardData['warehouse_stocks'] ?? [];
 $lab = $dashboardData['lab_quality'] ?? [];
+$prodLab = $dashboardData['production_lab_quality'] ?? [];
 $contracts = $dashboardData['contracts_summary'] ?? [];
 $historical = $dashboardData['historical_analytics'] ?? [];
 $config = get_config();
@@ -148,6 +149,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     $pInfo = $dashboardData['period_info'] ?? [];
     $activeRangeText = $pInfo['range_display'] ?? ("Виробнича доба (" . $bounds['label'] . ", з 08:00 до 08:00)");
     $labDate = $lab['report_date'] ?? '11.10.2026 (Лист погодження — по днях)';
+    $prodLabDate = $prodLab['report_date'] ?? '13.10.2026 (Звіт виробництва)';
     $stocksDate = $stocks['report_date'] ?? '12.10.2026 08:00';
     ?>
     <div class="active-period-banner" id="active-period-banner">
@@ -163,7 +165,9 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="banner-sub-text">
                     <span id="banner-period-sub">Розрахунок доби: <strong>з 08:00 до 08:00</strong> наступного дня</span>
                     <span class="banner-separator">&bull;</span>
-                    <span>Лабораторія 1С: <strong id="banner-lab-time"><?= htmlspecialchars($labDate) ?></strong></span>
+                    <span>Прихід насіння 1С: <strong id="banner-lab-time"><?= htmlspecialchars($labDate) ?></strong></span>
+                    <span class="banner-separator">&bull;</span>
+                    <span>Переробка МЕЗ: <strong id="banner-prod-lab-time"><?= htmlspecialchars($prodLabDate) ?></strong></span>
                     <span class="banner-separator">&bull;</span>
                     <span>СВОД залишків: <strong id="banner-stocks-time"><?= htmlspecialchars($stocksDate) ?></strong></span>
                 </div>
@@ -262,12 +266,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     </div>
 
     <!-- =============================================================
-         ЛАБОРАТОРІЯ ТА КОНТРАКТАЦІЯ (ГРАФІЧНІ ДІАГРАМИ-СПІДОМЕТРИ)
+         ЛАБОРАТОРІЯ ТА КОНТРАКТАЦІЯ: ПРИХІД НАСІННЯ (1С)
          ============================================================= -->
     <div class="card-panel quality-gauges-panel">
         <div class="section-title">
-            <i data-lucide="gauge" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
-            <span>Лабораторія якості сировини та контрактація (1С)</span>
+            <i data-lucide="scale" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
+            <span>Лабораторія якості: Прихід насіння (1С)</span>
             <span class="section-badge badge-blue" id="lbl-lab-time">Звіт 1С станом на: <?= htmlspecialchars($labDate) ?></span>
         </div>
 
@@ -328,6 +332,77 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             🌻 Відкрити звіт «СЕМЕНА» (всі вкладки) &rarr;
                         </a>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- =============================================================
+         ЛАБОРАТОРІЯ: ПОДАЧА НА ПЕРЕРОБКУ (ТЕХНОЛОГІЧНА ЯКІСТЬ МЕЗ)
+         ============================================================= -->
+    <div class="card-panel quality-gauges-panel" style="margin-top: 14px;">
+        <div class="section-title">
+            <i data-lucide="flask-conical" style="width: 18px; height: 18px; color: #0284c7;"></i>
+            <span>Лабораторія якості: Подача на переробку (виробництво МЕЗ)</span>
+            <span class="section-badge badge-blue" id="lbl-prod-lab-time">Звіт цеху переробки станом на: <?= htmlspecialchars($prodLabDate) ?></span>
+        </div>
+
+        <div class="gauges-grid">
+            <!-- 1. Графік: Олійність у переробку -->
+            <div class="gauge-card">
+                <div class="gauge-header">
+                    <span class="gauge-title">🧪 Олійність у переробку</span>
+                    <span class="gauge-badge <?= ($prodLab['oil_deviation_pct'] ?? -2.38) >= 0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-prod-oil-dev">
+                        <?= ($prodLab['oil_deviation_pct'] ?? -2.38) >= 0 ? '+' : '' ?><?= number_format($prodLab['oil_deviation_pct'] ?? -2.38, 2, ',', ' ') ?>%
+                    </span>
+                </div>
+                <div id="chart-gauge-prod-oil" class="gauge-chart-container"></div>
+                <div class="gauge-footer">
+                    <div class="gauge-sub">Базова норма: <strong><?= number_format($prodLab['oil_content_base_pct'] ?? 48.0, 1, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 48.53, 2, ',', ' ') ?>%)</div>
+                    <div class="gauge-note" id="note-prod-oil">Товарна олійність у переробку</div>
+                </div>
+            </div>
+
+            <!-- 2. Графік: Вологість у цех -->
+            <div class="gauge-card">
+                <div class="gauge-header">
+                    <span class="gauge-title">💧 Вологість у цех</span>
+                    <span class="gauge-badge <?= ($prodLab['moisture_pct'] ?? 6.0) <= 7.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-prod-moisture">
+                        <?= ($prodLab['moisture_pct'] ?? 6.0) <= 7.0 ? 'В нормі (' . number_format($prodLab['moisture_pct'] ?? 6.0, 1, ',', ' ') . '%)' : 'Перевищення' ?>
+                    </span>
+                </div>
+                <div id="chart-gauge-prod-moisture" class="gauge-chart-container"></div>
+                <div class="gauge-footer">
+                    <div class="gauge-sub">Техн. норма: <strong>5.50% — 7.00%</strong></div>
+                    <div class="gauge-note">Оптимум для вальців та жаровень</div>
+                </div>
+            </div>
+
+            <!-- 3. Графік: Смітна домішка після очищення -->
+            <div class="gauge-card">
+                <div class="gauge-header">
+                    <span class="gauge-title">🌾 Смітна домішка (сор після БІС)</span>
+                    <span class="gauge-badge <?= ($prodLab['impurity_pct'] ?? 2.0) <= 2.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-prod-impurity">
+                        <?= ($prodLab['impurity_pct'] ?? 2.0) <= 2.0 ? 'В нормі (≤ 2.0%)' : 'Перевищення' ?>
+                    </span>
+                </div>
+                <div id="chart-gauge-prod-impurity" class="gauge-chart-container"></div>
+                <div class="gauge-footer">
+                    <div class="gauge-sub">Норма цеху: <strong>до 2.00%</strong></div>
+                    <div class="gauge-note">Очищення сепаратором БІС</div>
+                </div>
+            </div>
+
+            <!-- 4. Графік: Подача насіння в переробку -->
+            <div class="gauge-card">
+                <div class="gauge-header">
+                    <span class="gauge-title">⚙️ Подача у переробку</span>
+                    <span class="gauge-badge badge-bonus" id="badge-prod-seed-tonnes"><?= number_format($prodLab['seed_processed_tonnes'] ?? 520.99, 1, ',', ' ') ?> т</span>
+                </div>
+                <div id="chart-gauge-prod-seed" class="gauge-chart-container"></div>
+                <div class="gauge-footer">
+                    <div class="gauge-sub">Перероблено: <strong id="val-prod-seed-processed"><?= number_format($prodLab['seed_processed_tonnes'] ?? 520.99, 1, ',', ' ') ?> т</strong> (План: <?= number_format($prodLab['seed_plan_tonnes'] ?? 600.0, 0, ',', ' ') ?> т)</div>
+                    <div class="gauge-note" id="val-prod-seed-sub"><?= htmlspecialchars($prodLab['processed_note'] ?? 'Подано у вальцьовий цех та екстракцію') ?></div>
                 </div>
             </div>
         </div>
