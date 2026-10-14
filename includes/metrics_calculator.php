@@ -444,16 +444,25 @@ class MetricsCalculator {
             }
         }
 
-        // Якщо в БД були імпортовані свіжіші записи виробничого звіту, враховуємо їх для поточного дня
-        if (in_array($period, ['day', 'day_prev', 'day_today'], true)) {
+        // Якщо в БД були імпортовані свіжіші записи виробничого звіту, враховуємо їх
+        if (in_array($period, ['day', 'day_prev', 'day_today', 'day_active'], true)) {
             try {
-                $stmt = $this->db->query("
-                    SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
-                    FROM material_balance_logs
-                    ORDER BY id DESC LIMIT 1
-                ");
+                if ($period === 'day_active') {
+                    $stmt = $this->db->query("
+                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
+                        FROM material_balance_logs
+                        WHERE seed_in_production > 0
+                        ORDER BY recorded_at DESC, id DESC LIMIT 1
+                    ");
+                } else {
+                    $stmt = $this->db->query("
+                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
+                        FROM material_balance_logs
+                        ORDER BY recorded_at DESC, id DESC LIMIT 1
+                    ");
+                }
                 $latestRow = $stmt ? $stmt->fetch() : null;
-                if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0 && empty($semenaStats)) {
+                if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0) {
                     $seedInPlant         = (float)$latestRow['seed_in_plant'];
                     $seedInProd          = (float)$latestRow['seed_in_production'];
                     $oilOut              = (float)$latestRow['oil_out'];

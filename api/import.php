@@ -859,7 +859,7 @@ try {
         $prodMonthSheets = [];
         foreach ($sheetsData as $sheetName => $rows) {
             $sLower = mb_strtolower($sheetName, 'UTF-8');
-            if (strpos($sLower, 'октябр') !== false || strpos($sLower, 'сент') !== false || strpos($sLower, 'жовт') !== false || strpos($sLower, 'верес') !== false) {
+            if (strpos($sLower, 'октябр') !== false || strpos($sLower, 'сент') !== false || strpos($sLower, 'жовт') !== false || strpos($sLower, 'верес') !== false || strpos($sLower, 'переработ') !== false || strpos($sLower, 'перероб') !== false) {
                 $prodMonthSheets[$sheetName] = $rows;
             }
         }
@@ -870,8 +870,13 @@ try {
             foreach ($prodMonthSheets as $sName => $rows) {
                 foreach ($rows as $r) {
                     $dCell = trim((string)($r[0] ?? ''));
-                    if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $dCell, $dm)) {
-                        $isoDate = "{$dm[3]}-{$dm[2]}-{$dm[1]}";
+                    if (preg_match('/^(\d{1,2})[\.\/-](\d{1,2})[\.\/-](\d{2,4})$/', $dCell, $dm)) {
+                        $day = str_pad($dm[1], 2, '0', STR_PAD_LEFT);
+                        $month = str_pad($dm[2], 2, '0', STR_PAD_LEFT);
+                        $year = strlen($dm[3]) === 2 ? '20' . $dm[3] : $dm[3];
+                        $isoDate = "{$year}-{$month}-{$day}";
+                        $dCellFormatted = "{$day}.{$month}.{$year}";
+
                         $seedCleaned = isset($r[1]) && is_numeric($r[1]) ? round((float)$r[1], 3) : 0.0;
                         $elevLoss    = isset($r[2]) && is_numeric($r[2]) ? round((float)$r[2], 3) : 0.0;
                         $oilTonnes   = isset($r[5]) && is_numeric($r[5]) ? round((float)$r[5], 3) : 0.0;
@@ -889,20 +894,20 @@ try {
                             if ($ex) {
                                 $upd = $db->prepare("
                                     UPDATE material_balance_logs
-                                    SET report_date = ?, seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?
+                                    SET report_date = ?, seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?, conditioning_loss = ?, conditioning_loss_pct = ?, production_loss = ?, production_loss_pct = ?
                                     WHERE id = ?
                                 ");
-                                $upd->execute([$dCell, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes, $ex['id']]);
+                                $upd->execute([$dCellFormatted, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes, $elevLoss, $condLossPct, $prodLossT, $prodLossPct, $ex['id']]);
                             } else {
                                 $ins = $db->prepare("
                                     INSERT INTO material_balance_logs
-                                    (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out)
-                                    VALUES (?, ?, 'day', ?, ?, ?, ?, ?)
+                                    (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
+                                    VALUES (?, ?, 'day', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                                 ");
-                                $ins->execute(["{$isoDate} 20:00:00", $dCell, $seedCleaned + $elevLoss, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes]);
+                                $ins->execute(["{$isoDate} 20:00:00", $dCellFormatted, $seedCleaned + $elevLoss, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes, $elevLoss, $condLossPct, $prodLossT, $prodLossPct]);
                             }
                             $importedProdDays++;
-                            $lastProdDate = $dCell;
+                            $lastProdDate = $dCellFormatted;
                         } catch (Throwable $e) {}
                     }
                 }

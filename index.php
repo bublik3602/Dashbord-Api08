@@ -340,10 +340,16 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         
         <!-- Кругова діаграма виходу готової продукції -->
         <div class="card-panel">
-            <div class="section-title">
-                <i data-lucide="pie-chart" style="width: 18px; height: 18px; color: var(--color-oil);"></i>
-                <span>Вихід готової продукції</span>
-                <span class="section-badge badge-orange">Матеріальний баланс</span>
+            <div class="section-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="pie-chart" style="width: 18px; height: 18px; color: var(--color-oil);"></i>
+                    <span>Вихід готової продукції</span>
+                    <span class="section-badge badge-orange">Матеріальний баланс</span>
+                </div>
+                <div id="badge-prod-idle-notice" style="<?= (($mb['production_zone']['seed_in_production'] ?? 0) <= 0) ? 'display: inline-flex;' : 'display: none;' ?> align-items: center; gap: 6px; font-size: 11px; color: #b45309; background: #fef3c7; border: 1px solid #fde68a; border-radius: 6px; padding: 3px 10px; font-weight: 600;">
+                    <span>⚠️ За обрану добу переробки не було (0 т). Завод на прийомці насіння.</span>
+                    <button type="button" class="btn-quick-period" data-period="month_oct" style="background:#0284c7; color:#fff; border:none; border-radius:4px; padding:2px 7px; cursor:pointer; font-size:10px; font-weight:700;">Жовтень (3 646 т) &rarr;</button>
+                </div>
             </div>
 
             <!-- ВЕЛИКІ ЦИФРИ: ВИХІД ПРОДУКЦІЇ У ВІДСОТКАХ (ОЛІЯ + ШРОТ + ЛУЗГА) -->
@@ -372,6 +378,13 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <?= number_format($mb['production_zone']['products_total'], 1, ',', ' ') ?> т<?= (($mb['production_zone']['yield_surplus_tonnes'] ?? 0) > 0) ? (' (+' . number_format($mb['production_zone']['yield_surplus_tonnes'], 1, ',', ' ') . ' т)') : '' ?>
                     </div>
                 </div>
+            </div>
+
+            <div id="prod-idle-hint" style="<?= (($mb['production_zone']['seed_in_production'] ?? 0) <= 0) ? 'display: flex;' : 'display: none;' ?> align-items: center; justify-content: center; gap: 8px; margin-top: 10px; padding: 8px 12px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; font-size: 12px; color: #64748b;">
+                <span>💡 Щоб переглянути вихід готової продукції з переробки насіння:</span>
+                <button type="button" class="btn-quick-period" data-period="month_oct" style="border: 1px solid #0284c7; background: #f0f9ff; color: #0284c7; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 11px; font-weight: 700;">📅 Жовтень 2026 (3 646,4 т)</button>
+                <button type="button" class="btn-quick-period" data-period="day_active" style="border: 1px solid #059669; background: #ecfdf5; color: #059669; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 11px; font-weight: 700;">⚡ Доба 06.10 (600,3 т)</button>
+                <button type="button" class="btn-quick-period" data-period="month_sep" style="border: 1px solid #64748b; background: #f1f5f9; color: #334155; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 11px; font-weight: 700;">Вересень (8 823,7 т)</button>
             </div>
 
             <div class="chart-layout">

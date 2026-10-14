@@ -340,6 +340,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         setElementText('#sub-yield-total', formatNumber(pz.products_total) + ' т' + (surplusTonnesVal > 0 ? ` (+${formatNumber(surplusTonnesVal)} т)` : ''));
 
+        // Сповіщення коли за обрану добу переробка на паузі (0 т)
+        const idleNoticeEl = document.querySelector('#badge-prod-idle-notice');
+        if (idleNoticeEl) {
+            idleNoticeEl.style.display = (pz.seed_in_production <= 0) ? 'inline-flex' : 'none';
+        }
+        const idleHintEl = document.querySelector('#prod-idle-hint');
+        if (idleHintEl) {
+            idleHintEl.style.display = (pz.seed_in_production <= 0) ? 'flex' : 'none';
+        }
+
         // Легенда виходу продукції
         setElementText('#legend-oil-val', formatNumber(pz.oil_out) + ' т');
         setElementText('#legend-oil-pct', oilPctVal + '%');
