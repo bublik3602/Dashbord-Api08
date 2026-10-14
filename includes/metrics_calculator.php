@@ -459,7 +459,7 @@ class MetricsCalculator {
                     $stmt = $this->db->query("
                         SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
                         FROM material_balance_logs
-                        ORDER BY recorded_at DESC, id DESC LIMIT 1
+                        ORDER BY (seed_in_production > 0) DESC, recorded_at DESC, id DESC LIMIT 1
                     ");
                 }
                 $latestRow = $stmt ? $stmt->fetch() : null;
@@ -1479,7 +1479,8 @@ class MetricsCalculator {
             $stmt = $this->db->query("
                 SELECT seed_in_production, oil_out, meal_out, husk_out
                 FROM material_balance_logs
-                ORDER BY id DESC LIMIT 1
+                WHERE seed_in_production > 0
+                ORDER BY recorded_at DESC, id DESC LIMIT 1
             ");
             $latestMb = $stmt ? $stmt->fetch() : null;
             if ($latestMb && (float)($latestMb['seed_in_production'] ?? 0) > 0) {

@@ -75,6 +75,11 @@ class SemenaHelper {
             return ['code' => '', 'sp_num' => '', 'display' => ''];
         }
 
+        // Якщо рядок є суто числовим без літер (наприклад, вага авто 25460 або тара) — це НЕ код специфікації!
+        if (preg_match('/^\d+(\.\d+)?$/', $s)) {
+            return ['code' => '', 'sp_num' => '', 'display' => ''];
+        }
+
         $spNum = '';
         if (preg_match('/(?:Сп\.?|СП\.?|№)\s*(\d+)/iu', $s, $m)) {
             $spNum = 'Сп.' . $m[1];
@@ -87,7 +92,15 @@ class SemenaHelper {
             $code = mb_strtoupper(trim($pm[1]), 'UTF-8');
         } else {
             $parts = explode('(', $s);
-            $code = mb_strtoupper(trim($parts[0]), 'UTF-8');
+            $candidate = mb_strtoupper(trim($parts[0]), 'UTF-8');
+            // Кандидат не повинен бути числом
+            if (!preg_match('/^\d+$/', $candidate)) {
+                $code = $candidate;
+            }
+        }
+
+        if ($code === '' || preg_match('/^\d+$/', $code)) {
+            return ['code' => '', 'sp_num' => '', 'display' => ''];
         }
 
         $display = ($spNum !== '' && $code !== '') ? "{$code} ({$spNum})" : $code;
@@ -142,16 +155,50 @@ class SemenaHelper {
      * Перевіряє, чи таблиця є Файлом 1 («Приход кормов и добавок» / Реєстр прийомок 1С)
      */
     public static function isPrihodSheet(array $rows): bool {
-        $maxR = min(12, count($rows));
+        $maxR = min(15, count($rows));
+        $hasPrihodKormov = false;
+        $hasVehiclesHeader = false;
+        $hasSpecsCol = false;
+        $hasOldYears = false;
+        $isSupplySheet = false;
+
         for ($r = 0; $r < $maxR; $r++) {
             $rowStr = mb_strtolower(implode(' ', array_map('strval', $rows[$r] ?? [])), 'UTF-8');
             if (strpos($rowStr, 'приход кормов') !== false) {
-                return true;
+                $hasPrihodKormov = true;
             }
-            if (strpos($rowStr, 'дата и время въезда') !== false && (strpos($rowStr, 'зачетный') !== false || strpos($rowStr, 'нетто') !== false)) {
-                return true;
+            if (strpos($rowStr, 'поставка подсолнечника') !== false || strpos($rowStr, 'движения сырья') !== false || strpos($rowStr, 'план производства') !== false || strpos($rowStr, 'свод за период') !== false) {
+                $isSupplySheet = true;
+            }
+            if (strpos($rowStr, 'дата и время въезда') !== false) {
+                $hasVehiclesHeader = true;
+            }
+            if (strpos($rowStr, 'спецификац') !== false || strpos($rowStr, 'договор') !== false) {
+                $hasSpecsCol = true;
+            }
+            if (preg_match('/\b(202[0-4]|2[1-4])\b/', $rowStr)) {
+                $hasOldYears = true;
             }
         }
+
+        if ($isSupplySheet || $hasOldYears) {
+            return false;
+        }
+
+        // Пряма офіційна назва 1С
+        if ($hasPrihodKormov) {
+            return true;
+        }
+
+        // Запасний варіант: обов'язково шапка авто + специфікація + не менше 25 колонок
+        $maxCols = 0;
+        foreach (array_slice($rows, 0, 8) as $r) {
+            $maxCols = max($maxCols, count($r));
+        }
+        if ($hasVehiclesHeader && $hasSpecsCol && $maxCols >= 25) {
+            return true;
+        }
+
         return false;
     }
 
@@ -162,8 +209,13 @@ class SemenaHelper {
         $maxR = min(15, count($rows));
         $hasPodsoln = false;
         $hasSpecCols = false;
+        $isSupplySheet = false;
+
         for ($r = 0; $r < $maxR; $r++) {
             $rowStr = mb_strtolower(implode(' ', array_map('strval', $rows[$r] ?? [])), 'UTF-8');
+            if (strpos($rowStr, 'поставка подсолнечника') !== false || strpos($rowStr, 'движения сырья') !== false || strpos($rowStr, 'план производства') !== false || strpos($rowStr, 'свод за период') !== false) {
+                $isSupplySheet = true;
+            }
             if (strpos($rowStr, 'номенклатура равно') !== false || strpos($rowStr, 'период контрактов') !== false) {
                 $hasPodsoln = true;
             }
@@ -171,7 +223,12 @@ class SemenaHelper {
                 $hasSpecCols = true;
             }
         }
-        return $hasPodsoln || $hasSpecCols;
+
+        if ($isSupplySheet) {
+            return false;
+        }
+
+        return $hasSpecCols;
     }
 
     /**
@@ -451,6 +508,22 @@ class SemenaHelper {
                     'oil_fact'     => $oilFact,
                 ];
             }
+        }
+
+        // Валідація: якщо таблиця не містить валідних специфікацій (наприклад, колонка 11 містила вагу авто чи інше)
+        $validCodesCount = 0;
+        foreach ($truckRows as $tr) {
+            if (!empty($tr['code'])) {
+                $validCodesCount++;
+            }
+        }
+        if (count($truckRows) > 0 && $validCodesCount < 3) {
+            return [
+                'receipts_datetime' => '',
+                'last_receipts_iso' => '',
+                'truck_rows'        => [],
+                'summary_rows'      => [],
+            ];
         }
 
         return [

@@ -146,6 +146,8 @@ function ensureSchemaExists(PDO $db): void {
                     MODIFY COLUMN `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
                     MODIFY COLUMN `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00
             ");
+        try {
+            $db->exec("DELETE FROM `material_balance_logs` WHERE `recorded_at` >= '2026-10-14 00:00:00' AND (`seed_in_production` = 0 OR `seed_in_production` IS NULL)");
         } catch (Throwable $e) {}
     }
 }
@@ -275,22 +277,40 @@ try {
         // -------------------------------------------------------------
         // 0. ПРЯМІ ФАЙЛИ 1С: ФАЙЛ 1 («ПРИХОД») ТА ФАЙЛ 2 («СПЕЦИФІКАЦІЯ»)
         // -------------------------------------------------------------
+        $isFactoryProductionBook = false;
+        foreach (array_keys($sheetsData) as $sNameCheck) {
+            $scLow = mb_strtolower((string)$sNameCheck, 'UTF-8');
+            if (strpos($scLow, 'план производства') !== false || strpos($scLow, 'свод за период') !== false || strpos($scLow, 'свод_') !== false || strpos($scLow, 'сводная') !== false || strpos($scLow, 'октябрь') !== false || strpos($scLow, 'сент') !== false) {
+                $isFactoryProductionBook = true;
+                break;
+            }
+        }
+        if (count($sheetsData) > 4) {
+            $isFactoryProductionBook = true;
+        }
+
         $matchedRaw1CFile = false;
-        foreach ($sheetsData as $sName => $sRows) {
-            if (SemenaHelper::isPrihodSheet($sRows)) {
-                $parsedPrihodData = SemenaHelper::parseReceiptsRows($sRows);
-                $prihodFilename = $filename;
-                $tCount = count($parsedPrihodData['truck_rows'] ?? []);
-                $sCount = count($parsedPrihodData['summary_by_code'] ?? []);
-                $dtStr  = $parsedPrihodData['receipts_datetime'] ?? '';
-                $details[] = "📥 Файл 1 «Приход 1С» ({$filename}): розпізнано {$tCount} прийомок авто по {$sCount} специфікаціях (станом на {$dtStr}).";
-                $matchedRaw1CFile = true;
-            } elseif (SemenaHelper::isSpecSheet($sRows)) {
-                $parsedSpecsDb = SemenaHelper::parseSpecificationsRows($sRows);
-                $specFilename = $filename;
-                $spCount = count($parsedSpecsDb);
-                $details[] = "📥 Файл 2 «Специфікація 1С» ({$filename}): розпізнано {$spCount} договірних специфікацій (ціни з дост./без дост., менеджер, тоннаж).";
-                $matchedRaw1CFile = true;
+        if (!$isFactoryProductionBook) {
+            foreach ($sheetsData as $sName => $sRows) {
+                if (SemenaHelper::isPrihodSheet($sRows)) {
+                    $parsedPrihodData = SemenaHelper::parseReceiptsRows($sRows);
+                    if (!empty($parsedPrihodData['truck_rows'])) {
+                        $prihodFilename = $filename;
+                        $tCount = count($parsedPrihodData['truck_rows']);
+                        $sCount = count($parsedPrihodData['summary_by_code'] ?? []);
+                        $dtStr  = $parsedPrihodData['receipts_datetime'] ?? '';
+                        $details[] = "📥 Файл 1 «Приход 1С» ({$filename}): розпізнано {$tCount} прийомок авто по {$sCount} специфікаціях (станом на {$dtStr}).";
+                        $matchedRaw1CFile = true;
+                    }
+                } elseif (SemenaHelper::isSpecSheet($sRows)) {
+                    $parsedSpecsDb = SemenaHelper::parseSpecificationsRows($sRows);
+                    if (!empty($parsedSpecsDb)) {
+                        $specFilename = $filename;
+                        $spCount = count($parsedSpecsDb);
+                        $details[] = "📥 Файл 2 «Специфікація 1С» ({$filename}): розпізнано {$spCount} договірних специфікацій (ціни з дост./без дост., менеджер, тоннаж).";
+                        $matchedRaw1CFile = true;
+                    }
+                }
             }
         }
         if ($matchedRaw1CFile) {
@@ -948,6 +968,11 @@ try {
                     }
 
                     if ($matchedDay) {
+                        // Захист від створення порожніх записів на майбутні дати календаря
+                        if ($isoDate > date('Y-m-d')) {
+                            continue;
+                        }
+
                         $isKgWide = (isset($r[17]) && is_numeric($r[17]) && (float)$r[17] > 1000);
                         if ($isKgWide) {
                             $seedCleaned = round((float)$r[17] / 1000.0, 3);
@@ -963,6 +988,11 @@ try {
                             $mealTonnes  = isset($r[7]) && is_numeric($r[7]) ? round((float)$r[7], 3) : 0.0;
                             $huskTonnes  = isset($r[9]) && is_numeric($r[9]) ? round((float)$r[9], 3) : 0.0;
                             $prodLossT   = isset($r[11]) && is_numeric($r[11]) ? max(0.0, round((float)$r[11], 3)) : 0.0;
+                        }
+
+                        // Пропускаємо пусті рядки (дні, в яких ще немає заповнених цифр переробки)
+                        if ($seedCleaned <= 0 && $oilTonnes <= 0 && $mealTonnes <= 0 && $huskTonnes <= 0) {
+                            continue;
                         }
 
                         $condLossPct = ($seedCleaned + $elevLoss) > 0 ? round(($elevLoss / ($seedCleaned + $elevLoss)) * 100, 2) : 0.0;
