@@ -224,6 +224,18 @@ try {
         }
     }
 
+    $seenTmpNames = [];
+    $dedupedFiles = [];
+    foreach ($uploadedFiles as $uf) {
+        $t = $uf['tmp_name'] ?? '';
+        if ($t !== '' && isset($seenTmpNames[$t])) {
+            continue;
+        }
+        $seenTmpNames[$t] = true;
+        $dedupedFiles[] = $uf;
+    }
+    $uploadedFiles = $dedupedFiles;
+
     if (empty($uploadedFiles)) {
         $msg = !empty($uploadErrors) ? implode("; ", $uploadErrors) : "Файли не вдалося завантажити на сервер.";
         throw new Exception($msg);
@@ -310,9 +322,9 @@ try {
         $isSpecCandidate = ($srcField === 'spec_file') || preg_match('/spec|спец|контракт/iu', $fnLowerCheck);
 
         $matchedRaw1CFile = false;
-        if (!$isFactoryProductionBook && ($isPrihCandidate || $isSpecCandidate)) {
+        if (!$isFactoryProductionBook) {
             foreach ($sheetsData as $sName => $sRows) {
-                if ($isPrihCandidate && SemenaHelper::isPrihodSheet($sRows)) {
+                if (($isPrihCandidate || SemenaHelper::isPrihodSheet($sRows)) && SemenaHelper::isPrihodSheet($sRows)) {
                     $parsedPrihodData = SemenaHelper::parseReceiptsRows($sRows);
                     if (!empty($parsedPrihodData['truck_rows'])) {
                         $prihodFilename = $filename;
@@ -322,7 +334,7 @@ try {
                         $matchedRaw1CFile = true;
                         break;
                     }
-                } elseif ($isSpecCandidate && SemenaHelper::isSpecSheet($sRows)) {
+                } elseif (($isSpecCandidate || SemenaHelper::isSpecSheet($sRows)) && SemenaHelper::isSpecSheet($sRows)) {
                     $parsedSpecsDb = SemenaHelper::parseSpecificationsRows($sRows);
                     if (!empty($parsedSpecsDb)) {
                         $specFilename = $filename;

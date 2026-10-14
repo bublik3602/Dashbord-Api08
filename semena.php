@@ -1885,16 +1885,19 @@ $histRows   = $semenaData['history_rows'] ?? [];
             const fd = new FormData();
             if (hasPrihod) {
                 for (let i = 0; i < prihodInp.files.length; i++) {
+                    fd.append('prihod_file', prihodInp.files[i]);
                     fd.append('report_files[]', prihodInp.files[i]);
                 }
             }
             if (hasSpec) {
                 for (let i = 0; i < specInp.files.length; i++) {
+                    fd.append('spec_file', specInp.files[i]);
                     fd.append('report_files[]', specInp.files[i]);
                 }
             }
             if (hasReady) {
                 for (let i = 0; i < readyInp.files.length; i++) {
+                    fd.append('file', readyInp.files[i]);
                     fd.append('report_files[]', readyInp.files[i]);
                 }
             }

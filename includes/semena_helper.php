@@ -159,7 +159,6 @@ class SemenaHelper {
         $hasPrihodKormov = false;
         $hasVehiclesHeader = false;
         $hasSpecsCol = false;
-        $hasOldYears = false;
         $isSupplySheet = false;
 
         for ($r = 0; $r < $maxR; $r++) {
@@ -176,12 +175,9 @@ class SemenaHelper {
             if (strpos($rowStr, 'спецификац') !== false || strpos($rowStr, 'договор') !== false) {
                 $hasSpecsCol = true;
             }
-            if (preg_match('/\b(202[0-4]|2[1-4])\b/', $rowStr)) {
-                $hasOldYears = true;
-            }
         }
 
-        if ($isSupplySheet || $hasOldYears) {
+        if ($isSupplySheet) {
             return false;
         }
 
