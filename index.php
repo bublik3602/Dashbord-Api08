@@ -92,14 +92,14 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <button type="button" class="period-btn" data-period="month">Місяць</button>
                 <div class="month-select-wrapper">
                     <select id="select-other-months" class="month-dropdown-select" title="Обрати інший місяць або період">
-                        <option value="" disabled selected>📅 Інші місяці...</option>
-                        <option value="month_oct">Жовтень 2026 (працював 7 діб з 11)</option>
-                        <option value="month_sep">Вересень 2026 (працював 16 діб з 30)</option>
+                        <option value="" disabled selected>📅 Інші періоди / місяці...</option>
+                        <option value="day_active">⚡ Остання доба переробки (13.10 — 521,0 т перероблено)</option>
+                        <option value="month_oct">Жовтень 2026 (працював 8 діб з 13 • 4 167,3 т)</option>
+                        <option value="month_sep">Вересень 2026 (працював 16 діб з 30 • 8 823,7 т)</option>
                         <option value="month_aug">Серпень 2026 (0 діб переробки, ППР)</option>
-                        <option value="season">Сезон 2026–2027 (01.08.2026 — 01.08.2027 • 23 доби переробки)</option>
-                        <option value="day_prev">Минула доба (11.10 — прийомка 465,9 т, переробка 0 т)</option>
-                        <option value="day_active">Остання доба переробки (06.10 — перероблено 600,3 т)</option>
-                        <option value="day_today">Сьогодні (12.10, без переробки)</option>
+                        <option value="season">Сезон 2026–2027 (24 доби переробки • 12 991,0 т)</option>
+                        <option value="day_prev">Минула доба (12.10 — прийомка 465,8 т, переробка 0 т)</option>
+                        <option value="day_today">Сьогодні (14.10, без переробки)</option>
                     </select>
                 </div>
             </div>
