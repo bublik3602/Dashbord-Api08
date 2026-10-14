@@ -188,6 +188,7 @@ try {
         if (!empty($_FILES[$singleKey])) {
             $f = $_FILES[$singleKey];
             if ($f['error'] === UPLOAD_ERR_OK) {
+                $f['source_field'] = $singleKey;
                 $uploadedFiles[] = $f;
             } elseif ($f['error'] !== UPLOAD_ERR_NO_FILE) {
                 $uploadErrors[] = "Помилка завантаження ({$singleKey}): " . ($errorMap[$f['error']] ?? "Код {$f['error']}");
@@ -207,12 +208,14 @@ try {
                         'name' => $f['name'][$i],
                         'tmp_name' => $f['tmp_name'][$i],
                         'size' => $f['size'][$i],
+                        'source_field' => 'factory_reports',
                     ];
                 } else if ($err !== UPLOAD_ERR_NO_FILE) {
                     $uploadErrors[] = "Файл «{$f['name'][$i]}»: " . ($errorMap[$err] ?? "Код помилки {$err}");
                 }
             }
         } else if ($f['error'] === UPLOAD_ERR_OK) {
+            $f['source_field'] = 'factory_reports';
             $uploadedFiles[] = $f;
         } else if ($f['error'] !== UPLOAD_ERR_NO_FILE) {
             $uploadErrors[] = "Помилка завантаження: " . ($errorMap[$f['error']] ?? "Код {$f['error']}");
@@ -285,39 +288,46 @@ try {
 
         // -------------------------------------------------------------
         // 0. ПРЯМІ ФАЙЛИ 1С: ФАЙЛ 1 («ПРИХОД») ТА ФАЙЛ 2 («СПЕЦИФІКАЦІЯ»)
+        // СУВОРО: ТІЛЬКИ файли spec та prih використовуються для вкладки «СЕМЕНА»!
+        // Інші звіти заводу (СВОД, Баланс, Октябрь26) заборонено застосовувати до насіння!
         // -------------------------------------------------------------
         $isFactoryProductionBook = false;
         foreach (array_keys($sheetsData) as $sNameCheck) {
             $scLow = mb_strtolower((string)$sNameCheck, 'UTF-8');
-            if (strpos($scLow, 'план производства') !== false || strpos($scLow, 'свод за период') !== false || strpos($scLow, 'свод_') !== false || strpos($scLow, 'сводная') !== false || strpos($scLow, 'октябрь') !== false || strpos($scLow, 'сент') !== false) {
+            if (strpos($scLow, 'план производства') !== false || strpos($scLow, 'свод за период') !== false || strpos($scLow, 'свод_') !== false || strpos($scLow, 'сводная') !== false || strpos($scLow, 'октябрь') !== false || strpos($scLow, 'сент') !== false || strpos($scLow, 'баланс') !== false || strpos($scLow, 'расход') !== false) {
                 $isFactoryProductionBook = true;
                 break;
             }
         }
-        if (count($sheetsData) > 4) {
+        if (count($sheetsData) > 4 && !isset($sheetsData['Зведена_відомість']) && !isset($sheetsData['Графік_завезення'])) {
             $isFactoryProductionBook = true;
         }
 
+        $srcField = $file['source_field'] ?? '';
+        $isPrihCandidate = ($srcField === 'prihod_file') || preg_match('/prih|приход|прийомк/iu', $fnLowerCheck);
+        $isSpecCandidate = ($srcField === 'spec_file') || preg_match('/spec|спец|контракт/iu', $fnLowerCheck);
+
         $matchedRaw1CFile = false;
-        if (!$isFactoryProductionBook) {
+        if (!$isFactoryProductionBook && ($isPrihCandidate || $isSpecCandidate)) {
             foreach ($sheetsData as $sName => $sRows) {
-                if (SemenaHelper::isPrihodSheet($sRows)) {
+                if ($isPrihCandidate && SemenaHelper::isPrihodSheet($sRows)) {
                     $parsedPrihodData = SemenaHelper::parseReceiptsRows($sRows);
                     if (!empty($parsedPrihodData['truck_rows'])) {
                         $prihodFilename = $filename;
                         $tCount = count($parsedPrihodData['truck_rows']);
-                        $sCount = count($parsedPrihodData['summary_by_code'] ?? []);
                         $dtStr  = $parsedPrihodData['receipts_datetime'] ?? '';
-                        $details[] = "📥 Файл 1 «Приход 1С» ({$filename}): розпізнано {$tCount} прийомок авто по {$sCount} специфікаціях (станом на {$dtStr}).";
+                        $details[] = "📥 Файл 1 «Приход 1С» ({$filename}): розпізнано {$tCount} прийомок авто (станом на {$dtStr}).";
                         $matchedRaw1CFile = true;
+                        break;
                     }
-                } elseif (SemenaHelper::isSpecSheet($sRows)) {
+                } elseif ($isSpecCandidate && SemenaHelper::isSpecSheet($sRows)) {
                     $parsedSpecsDb = SemenaHelper::parseSpecificationsRows($sRows);
                     if (!empty($parsedSpecsDb)) {
                         $specFilename = $filename;
                         $spCount = count($parsedSpecsDb);
-                        $details[] = "📥 Файл 2 «Специфікація 1С» ({$filename}): розпізнано {$spCount} договірних специфікацій (ціни з дост./без дост., менеджер, тоннаж).";
+                        $details[] = "📥 Файл 2 «Специфікація 1С» ({$filename}): розпізнано {$spCount} договірних специфікацій.";
                         $matchedRaw1CFile = true;
+                        break;
                     }
                 }
             }
@@ -440,25 +450,15 @@ try {
         // -------------------------------------------------------------
         $isLabReport = false;
         $fnLower = mb_strtolower($filename, 'UTF-8');
-        if (strpos($fnLower, 'погоджен') !== false || strpos($fnLower, 'согласован') !== false || strpos($fnLower, 'лаборатор') !== false) {
-            $isLabReport = true;
-        }
+        $isReadySemenaFile = (
+            (($file['source_field'] ?? '') === 'file') ||
+            preg_match('/погоджен|согласован|лист_погодження/iu', $fnLower)
+        );
 
-        if (!$isLabReport) {
+        if ($isReadySemenaFile && !$isFactoryProductionBook) {
             foreach ($sheetsData as $sheetName => $rows) {
                 $sLower = mb_strtolower($sheetName, 'UTF-8');
-                if (strpos($sLower, 'погоджен') !== false || strpos($sLower, 'согласован') !== false) {
-                    $isLabReport = true;
-                    break;
-                }
-            }
-        }
-
-        if (!$isLabReport) {
-            $firstSheetRows = reset($sheetsData) ?: [];
-            foreach (array_slice($firstSheetRows, 0, 6) as $r) {
-                $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                if (strpos($rowText, 'лист погодження') !== false || strpos($rowText, 'лист согласования') !== false || strpos($rowText, 'прийомок 1с') !== false) {
+                if (strpos($sLower, 'погоджен') !== false || strpos($sLower, 'согласован') !== false || strpos($sLower, 'зведена') !== false) {
                     $isLabReport = true;
                     break;
                 }

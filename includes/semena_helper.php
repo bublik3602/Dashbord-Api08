@@ -213,10 +213,10 @@ class SemenaHelper {
 
         for ($r = 0; $r < $maxR; $r++) {
             $rowStr = mb_strtolower(implode(' ', array_map('strval', $rows[$r] ?? [])), 'UTF-8');
-            if (strpos($rowStr, 'поставка подсолнечника') !== false || strpos($rowStr, 'движения сырья') !== false || strpos($rowStr, 'план производства') !== false || strpos($rowStr, 'свод за период') !== false) {
+            if (strpos($rowStr, 'поставка подсолнечника') !== false || strpos($rowStr, 'движения сырья') !== false || strpos($rowStr, 'план производства') !== false || strpos($rowStr, 'свод за период') !== false || strpos($rowStr, 'баланс') !== false || strpos($rowStr, 'расход сырья') !== false) {
                 $isSupplySheet = true;
             }
-            if (strpos($rowStr, 'номенклатура равно') !== false || strpos($rowStr, 'период контрактов') !== false) {
+            if (strpos($rowStr, 'номенклатура равно') !== false || strpos($rowStr, 'период контрактов') !== false || strpos($rowStr, 'семена подсолнечника') !== false) {
                 $hasPodsoln = true;
             }
             if (strpos($rowStr, 'цена поставки (с дост.)') !== false || (strpos($rowStr, 'срок поставки') !== false && strpos($rowStr, 'подоговору') !== false)) {
@@ -228,7 +228,8 @@ class SemenaHelper {
             return false;
         }
 
-        return $hasSpecCols;
+        // Обов'язково наявність шапки 1С з номенклатурою соняшника або періоду контрактів ТА колонок специфікацій
+        return $hasPodsoln && $hasSpecCols;
     }
 
     /**
