@@ -369,28 +369,29 @@ class MetricsCalculator {
                 'seed_plan'     => 600.0,
             ],
             'day' => [
-                // 13.10.2026 (остання звітна доба): прийомка 563,57 т (23 авто за Листом погодження), перероблено 520,99 т, вироблено 210,41 т олії (40.39%), 180,94 т шроту (34.73%), 76,38 т лузги (14.66%)
-                'seed_in_plant' => 563.57,
-                'trucks_count'  => 23,
-                'seed_in_prod'  => 520.99,
-                'cond_loss'     => 8.21,
-                'cond_loss_pct' => 1.55,
-                'oil_out'       => 210.41,
-                'meal_out'      => 180.94,
-                'husk_out'      => 76.38,
-                'seed_plan'     => 600.0,
+                // 14.10.2026: прийомка 318,66 т (13 авто), неочищене насіння у переробку 602,122 т (Ежедн.отчет2), очищене 596,805 т (довідка МЕЗ), вихід олії 256,489 т (42.98%), шроту 248,786 т (41.69%), лузги 87,020 т (14.58%)
+                'seed_in_plant'    => 318.66,
+                'trucks_count'     => 13,
+                'seed_in_prod'     => 596.805,
+                'seed_in_prod_raw' => 602.122,
+                'cond_loss'        => 5.317,
+                'cond_loss_pct'    => 0.88,
+                'oil_out'          => 256.489,
+                'meal_out'         => 248.786,
+                'husk_out'         => 87.020,
+                'seed_plan'        => 600.0,
             ],
             'day_active' => [
-                // 13.10.2026: активна переробка насіння у цеху екстракції
-                'seed_in_plant' => 563.57,
-                'trucks_count'  => 23,
-                'seed_in_prod'  => 520.99,
-                'cond_loss'     => 8.21,
-                'cond_loss_pct' => 1.55,
-                'oil_out'       => 210.41,
-                'meal_out'      => 180.94,
-                'husk_out'      => 76.38,
-                'seed_plan'     => 600.0,
+                'seed_in_plant'    => 318.66,
+                'trucks_count'     => 13,
+                'seed_in_prod'     => 596.805,
+                'seed_in_prod_raw' => 602.122,
+                'cond_loss'        => 5.317,
+                'cond_loss_pct'    => 0.88,
+                'oil_out'          => 256.489,
+                'meal_out'         => 248.786,
+                'husk_out'         => 87.020,
+                'seed_plan'        => 600.0,
             ],
             'shift' => [
                 'seed_in_plant' => 281.32,
@@ -514,6 +515,7 @@ class MetricsCalculator {
                     ");
                 }
                 $latestRow = $stmt ? $stmt->fetch() : null;
+                $seedInProdRaw = $vp['seed_in_prod_raw'] ?? 602.122;
                 if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0) {
                     if (empty($semenaStats['seed_in_plant'])) {
                         $seedInPlant     = (float)$latestRow['seed_in_plant'];
@@ -522,8 +524,9 @@ class MetricsCalculator {
                     $oilOut              = (float)$latestRow['oil_out'];
                     $mealOut             = (float)$latestRow['meal_out'];
                     $huskOut             = (float)$latestRow['husk_out'];
-                    $conditioningLoss    = (float)($latestRow['conditioning_loss'] ?? 0.0);
-                    $conditioningLossPct = (float)($latestRow['conditioning_loss_pct'] ?? 0.0);
+                    $conditioningLoss    = (float)($latestRow['conditioning_loss'] ?? 5.317);
+                    $conditioningLossPct = (float)($latestRow['conditioning_loss_pct'] ?? 0.88);
+                    $seedInProdRaw       = round($seedInProd + $conditioningLoss, 3);
                 }
             } elseif (in_array($period, ['month', 'month_oct'], true)) {
                 $stmt = $this->db->query("
@@ -622,18 +625,20 @@ class MetricsCalculator {
             'seed_in_plant'        => $seedInPlant,
             // Зона приймання
             'receiving_zone' => [
-                'seed_in_plant'        => $seedInPlant,
-                'seed_plan'            => round($seedPlan, 1),
-                'trucks_count'         => (int)($semenaStats['trucks_count'] ?? ($vp['trucks_count'] ?? 23)),
-                'seed_in_production'   => $seedInProd,
-                'conditioning_loss'    => $conditioningLoss,
-                'conditioning_loss_pct'=> $conditioningLossPct,
-                'status_class'         => get_conditioning_loss_class($conditioningLossPct, $this->thresholds),
-                'plan_fulfillment_pct' => ($seedPlan > 0) ? round(($seedInPlant / $seedPlan) * 100, 1) : 0.0,
+                'seed_in_plant'            => $seedInPlant,
+                'seed_plan'                => round($seedPlan, 1),
+                'trucks_count'             => (int)($semenaStats['trucks_count'] ?? ($vp['trucks_count'] ?? 13)),
+                'seed_in_production'       => $seedInProd,
+                'seed_in_production_raw'   => $seedInProdRaw ?? $seedInProd,
+                'conditioning_loss'        => $conditioningLoss,
+                'conditioning_loss_pct'    => $conditioningLossPct,
+                'status_class'             => get_conditioning_loss_class($conditioningLossPct, $this->thresholds),
+                'plan_fulfillment_pct'     => ($seedPlan > 0) ? round(($seedInPlant / $seedPlan) * 100, 1) : 0.0,
             ],
             // Зона виробництва
             'production_zone' => [
                 'seed_processed'       => $seedInProd,
+                'seed_processed_raw'   => $seedInProdRaw ?? $seedInProd,
                 'oil_out'              => $oilOut,
                 'oil_plan'             => round($oilPlan, 1),
                 'meal_out'             => $mealOut,
@@ -1029,20 +1034,20 @@ class MetricsCalculator {
      */
     private function loadLiveSvodStocks(): array {
         $defaults = [
-            'seed_stock_tonnes'            => 13115.47,
-            'seed_stock_accounting_tonnes' => 13794.46,
-            'seed_received_tonnes'         => 465.77,
-            'oil_stock_tonnes'             => 3332.32,
+            'seed_stock_tonnes'            => 12857.66,
+            'seed_stock_accounting_tonnes' => 13310.97,
+            'seed_received_tonnes'         => 318.66,
+            'oil_stock_tonnes'             => 3650.10,
             'oil_shipped_tonnes'           => 26.44,
-            'meal_stock_tonnes'            => 773.73,
+            'meal_stock_tonnes'            => 674.86,
             'meal_shipped_tonnes'          => 282.40,
-            'husk_stock_tonnes'            => 87.64,
+            'husk_stock_tonnes'            => 166.77,
             'husk_shipped_tonnes'          => 29.50,
-            'month_oil_shipped_tonnes'     => 1050.54,
-            'month_meal_shipped_tonnes'    => 2461.42,
-            'month_husk_shipped_tonnes'    => 507.58,
-            'sheet_title'                  => '12 число',
-            'updated_at'                   => '12.10.2026',
+            'month_oil_shipped_tonnes'     => 1070.26,
+            'month_meal_shipped_tonnes'    => 2712.72,
+            'month_husk_shipped_tonnes'    => 533.82,
+            'sheet_title'                  => '14 число',
+            'updated_at'                   => '14.10.2026',
         ];
 
         $svodJsonPath = __DIR__ . '/../database/svod_stocks.json';
@@ -1057,22 +1062,28 @@ class MetricsCalculator {
         try {
             $stmt = $this->db->query("
                 SELECT seed_stock_tonnes, seed_stock_accounting_tonnes, oil_stock_tonnes, meal_stock_tonnes, husk_stock_tonnes,
-                       oil_shipped_tonnes, meal_shipped_tonnes, husk_shipped_tonnes, recorded_at
+                       oil_shipped_tonnes, meal_shipped_tonnes, husk_shipped_tonnes, report_date, recorded_at
                 FROM warehouse_stocks
                 ORDER BY id DESC LIMIT 1
             ");
             $row = $stmt ? $stmt->fetch() : null;
-            // Якщо в БД не застарілий дефолт 13326.41 або немає JSON-файлу
-            if ($row && (!file_exists($svodJsonPath) || abs((float)$row['seed_stock_tonnes'] - 13326.41) > 0.05)) {
-                $defaults['seed_stock_tonnes']            = round((float)$row['seed_stock_tonnes'], 2);
-                $defaults['seed_stock_accounting_tonnes'] = round((float)$row['seed_stock_accounting_tonnes'], 2);
-                $defaults['oil_stock_tonnes']             = round((float)$row['oil_stock_tonnes'], 2);
-                $defaults['meal_stock_tonnes']            = round((float)$row['meal_stock_tonnes'], 2);
-                $defaults['husk_stock_tonnes']            = round((float)$row['husk_stock_tonnes'], 2);
-                if ((float)$row['oil_shipped_tonnes'] > 0 || (float)$row['meal_shipped_tonnes'] > 0 || (float)$row['husk_shipped_tonnes'] > 0) {
-                    $defaults['oil_shipped_tonnes']  = round((float)$row['oil_shipped_tonnes'], 2);
-                    $defaults['meal_shipped_tonnes'] = round((float)$row['meal_shipped_tonnes'], 2);
-                    $defaults['husk_shipped_tonnes'] = round((float)$row['husk_shipped_tonnes'], 2);
+            if ($row) {
+                if ((float)$row['seed_stock_tonnes'] > 1000) {
+                    $defaults['seed_stock_tonnes']            = round((float)$row['seed_stock_tonnes'], 2);
+                    $defaults['seed_stock_accounting_tonnes'] = round((float)$row['seed_stock_accounting_tonnes'], 2);
+                    $defaults['oil_stock_tonnes']             = round((float)$row['oil_stock_tonnes'], 2);
+                    $defaults['meal_stock_tonnes']            = round((float)$row['meal_stock_tonnes'], 2);
+                    $defaults['husk_stock_tonnes']            = round((float)$row['husk_stock_tonnes'], 2);
+                }
+                if (!empty($row['report_date'])) {
+                    if (strpos($row['report_date'], 'число') !== false) {
+                        preg_match('/(\d+\s*число)/iu', $row['report_date'], $m);
+                        if (!empty($m[1])) {
+                            $defaults['sheet_title'] = $m[1];
+                        }
+                    } elseif (strpos($row['report_date'], '14') !== false) {
+                        $defaults['sheet_title'] = '14 число';
+                    }
                 }
             }
         } catch (Throwable $e) {}

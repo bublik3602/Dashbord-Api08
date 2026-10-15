@@ -236,8 +236,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (data.warehouse_stocks) {
             const ws = data.warehouse_stocks;
             setElementText('#val-seed-stock', formatNumber(ws.seed_stock_tonnes, 2) + ' т');
-            setElementText('#badge-days-reserve', (ws.days_seed_reserve || 21.9) + ' дн. запасу');
-            setElementText('#val-seed-stock-sub', `Облік: ${formatNumber(ws.seed_stock_accounting_tonnes, 2)} т • Потреба: 600 т/д`);
+            setElementText('#badge-days-reserve', (ws.days_seed_reserve || 21.4) + ' дн. запасу');
+            setElementText('#val-seed-stock-sub', `Факт: ${formatNumber(ws.seed_stock_tonnes, 2)} т • Облік: ${formatNumber(ws.seed_stock_accounting_tonnes, 2)} т`);
 
             // Залишки готової продукції на складах та відвантаження за обраний період
             setElementText('#val-stock-oil', formatNumber(ws.oil_stock_tonnes, 2) + ' т');
@@ -268,7 +268,8 @@ document.addEventListener('DOMContentLoaded', function () {
             condLossBadge.textContent = 'Підробка: ' + rz.conditioning_loss_pct + '%';
             condLossBadge.className = 'kpi-badge ' + rz.status_class;
         }
-        setElementText('#val-cond-loss', 'Усушка/сміття: ' + formatNumber(rz.conditioning_loss) + ' т');
+        const rawSeedTxt = rz.seed_in_production_raw ? `Неочищене: ${formatNumber(rz.seed_in_production_raw, 2)} т • ` : '';
+        setElementText('#val-cond-loss', `${rawSeedTxt}Підробка: ${formatNumber(rz.conditioning_loss, 2)} т`);
 
         // --- Блок А: Лабораторія якості та виконання контрактів ---
         if (data.lab_quality) {
