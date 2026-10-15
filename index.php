@@ -123,10 +123,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
                     <span>Імпорт Excel</span>
                 </button>
+                <?php if (!$isEnergo): ?>
                 <a href="api/export.php" class="btn-action btn-export" id="btn-export-excel" title="Завантажити звіт за зміну / добу в Excel">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i>
                     <span>Експорт в Excel</span>
                 </a>
+                <?php endif; ?>
             </div>
 
             <!-- Ручне оновлення та зворотний відлік -->

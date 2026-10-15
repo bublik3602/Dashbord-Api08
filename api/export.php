@@ -10,6 +10,12 @@ require_once __DIR__ . '/../includes/metrics_calculator.php';
 
 Auth::requireAuth('dashboard');
 
+if (Auth::isRole('energo')) {
+    header('HTTP/1.1 403 Forbidden');
+    echo 'Доступ до експорту загального звіту заводу обмежено для облікового запису енергетика.';
+    exit;
+}
+
 try {
     $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';
     $validPeriods = ['shift', 'day', 'week', 'month', 'month_oct', 'month_sep', 'month_aug', 'season'];
