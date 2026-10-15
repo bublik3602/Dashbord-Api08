@@ -110,7 +110,7 @@ try {
     $steamT   = isset($postData['steam_t'])   ? (float)str_replace(',', '.', (string)$postData['steam_t'])   : null;
 
     if ($powerKwh === null || $powerKwh < 0) {
-        throw new InvalidArgumentException('Вкажіть коректне споживання електроенергії (кВт·год >= 0).');
+        throw new InvalidArgumentException('Вкажіть коректне споживання електроенергії (кВт за добу >= 0).');
     }
     if ($waterM3 === null || $waterM3 < 0) {
         throw new InvalidArgumentException('Вкажіть коректні витрати води (м³ >= 0).');
@@ -163,7 +163,7 @@ try {
     $fmtDate = date('d.m.Y', strtotime($date));
     echo json_encode([
         'status'  => 'success',
-        'message' => "Показники за добу {$fmtDate} успішно збережено: {$powerKwh} кВт·год, {$waterM3} м³ води, {$steamT} т пари.",
+        'message' => "Показники за добу {$fmtDate} успішно збережено: {$powerKwh} кВт за добу, {$waterM3} м³ води, {$steamT} т пари.",
         'entry'   => $entries[$date],
     ], JSON_UNESCAPED_UNICODE);
 

@@ -734,8 +734,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="energy-summary-cards energy-cards-6">
                 <!-- 1. Активна електроенергія -->
                 <div class="energy-card-mini" style="border-top: 3px solid #0284c7;">
-                    <div class="mini-title">⚡ Активна електроенергія</div>
-                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= !empty($en['has_data']) ? (number_format($en['total_kwh'], 0, ',', ' ') . ' кВт·год') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-title">⚡ Активна електроенергія за добу</div>
+                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= !empty($en['has_data']) ? (number_format($en['total_kwh'], 0, ',', ' ') . ' кВт') : 'Жовтень: немає даних' ?></div>
                     <div class="mini-sub" id="val-current-power"><?= !empty($en['has_data']) ? ('Потужність: ' . number_format($en['current_power_kw'], 1, ',', ' ') . ' кВт &bull; Реакт.: ' . number_format($en['reactive_kvarh'] ?? 0, 0, ',', ' ') . ' кВАр·год') : 'Звіт головного енергетика очікується' ?></div>
                 </div>
 
@@ -763,7 +763,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <!-- 5. Питома витрата електроенергії -->
                 <div class="energy-card-mini" style="border-top: 3px solid #6366f1;">
                     <div class="mini-title">⚙️ Питома ел.енергія на 1 т</div>
-                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= !empty($en['has_data']) && ($en['specific_kwh_per_tonne'] ?? 0) > 0 ? (number_format($en['specific_kwh_per_tonne'], 2, ',', ' ') . ' кВт·год/т') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= !empty($en['has_data']) && ($en['specific_kwh_per_tonne'] ?? 0) > 0 ? (number_format($en['specific_kwh_per_tonne'], 2, ',', ' ') . ' кВт/т') : 'Жовтень: немає даних' ?></div>
                     <div class="mini-sub" id="val-specific-sub"><?= htmlspecialchars($en['specific_subtext'] ?? 'Звіт очікується') ?></div>
                 </div>
 
@@ -775,18 +775,18 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
             </div>
 
-            <!-- Подобовий графік споживання електроенергії заводу (у кВт·год, МВт·год або потужність у МВт) -->
+            <!-- Подобовий графік споживання електроенергії заводу (у кВт за добу або МВт) -->
             <div class="card-panel-inner" style="background: #ffffff; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 14px 16px; margin-top: 14px; margin-bottom: 14px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; color: #0284c7;"></i>
                         <span style="font-weight: 700; font-size: 13px; color: #1e293b;">Подобовий графік споживання електроенергії заводу (МЕЗ)</span>
-                        <span class="section-badge badge-blue" id="lbl-plant-power-unit">Режим: кВт·год за добу</span>
+                        <span class="section-badge badge-blue" id="lbl-plant-power-unit">Режим: кВт за добу</span>
                     </div>
                     <div style="display: inline-flex; align-items: center; gap: 4px; background: #f8fafc; padding: 3px; border-radius: 6px; border: 1px solid #e2e8f0;">
                         <span style="font-size: 11px; color: #64748b; font-weight: 600; margin-right: 4px;">Одиниці:</span>
-                        <button type="button" class="btn-power-unit active" data-unit="kwh" id="btn-toggle-kwh" style="border: none; background: #0284c7; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">кВт·год</button>
-                        <button type="button" class="btn-power-unit" data-unit="mwh" id="btn-toggle-mwh" style="border: none; background: transparent; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">МВт·год</button>
+                        <button type="button" class="btn-power-unit active" data-unit="kwh" id="btn-toggle-kwh" style="border: none; background: #0284c7; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">кВт за добу</button>
+                        <button type="button" class="btn-power-unit" data-unit="mwh" id="btn-toggle-mwh" style="border: none; background: transparent; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">МВт за добу</button>
                         <button type="button" class="btn-power-unit" data-unit="mw" id="btn-toggle-mw" style="border: none; background: transparent; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">Потужність (МВт)</button>
                     </div>
                 </div>
@@ -794,7 +794,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 6px;">
-                <span style="font-size: 12px; font-weight: 700; color: #334155;">📊 Комплексний баланс: Електроенергія (кВт·год), Вода (м³) та Технологічна пара (т)</span>
+                <span style="font-size: 12px; font-weight: 700; color: #334155;">📊 Комплексний баланс: Електроенергія (кВт), Вода (м³) та Технологічна пара (т)</span>
                 <span style="font-size: 11px; color: #64748b;">(Наведіть на графік для перегляду розрахунку на 1 т переробленого насіння)</span>
             </div>
             <!-- Інтерактивний графік електроенергії та води -->
@@ -813,9 +813,9 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <thead>
                                 <tr>
                                     <th>Підрозділ заводу</th>
-                                    <th>Активна (кВт·год)</th>
+                                    <th>Активна (кВт)</th>
                                     <th>Реактивна (кВАр·год)</th>
-                                    <th>Питома (кВт·год/т)</th>
+                                    <th>Питома (кВт/т)</th>
                                     <th>Вода (м³)</th>
                                     <th>Каналізація (м³)</th>
                                 </tr>
@@ -892,7 +892,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <thead>
                                 <tr>
                                     <th>Місяць</th>
-                                    <th>Ел.енергія (кВт·год)</th>
+                                    <th>Ел.енергія (кВт)</th>
                                     <th>Реактивна</th>
                                     <th>Прес + Екстр</th>
                                     <th>Вода (м³)</th>
@@ -1488,7 +1488,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <div class="guide-item-content">
                             <div class="guide-item-name">1. <code>РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx</code> <span class="guide-status-pill" id="guide-status-energy" style="display:none;">✓ Обрано</span></div>
                             <div class="guide-item-filename">Вкладки всередині: <code>ЖОВТЕНЬ</code>, <code>2026</code>, <code>ел. енергія 2026</code>, помісячний розподіл</div>
-                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Добовий розподіл активної електроенергії по підстанціях та об'єктах МЕЗ, графіки споживання та питому норму кВт·год/т насіння.</div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Добовий розподіл активної електроенергії по підстанціях та об'єктах МЕЗ, графіки споживання та питому норму кВт/т насіння.</div>
                         </div>
                         <span class="guide-tag tag-primary">Розподіл електроенергії</span>
                     </div>
@@ -1583,7 +1583,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <div class="guide-item-content">
                             <div class="guide-item-name">5. <code>РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx</code>, <code>АГРОПРОІНВЕСТ 08(28).xlsx</code> та <code>Облік води.xlsx</code> <span class="guide-status-pill" id="guide-status-energy" style="display:none;">✓ Обрано</span></div>
                             <div class="guide-item-filename">Вкладки всередині: <code>січень 26</code> … <code>вересень 26</code>, <code>ЖОВТЕНЬ</code>, <code>2026</code>, <code>ел. енергія 2026</code>, <code>Лист1 (Облік води)</code></div>
-                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Блок В — графік електроенергії та води по днях, питому витрату кВт·год/т, показники водомірного вузла по відповідальних (Усов А.В., Хлібець В., Нікітіна А., Довгаленко С.), пермеат котельні, випар ГМВ та стоки.</div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Блок В — графік електроенергії та води по днях, питому витрату кВт/т, показники водомірного вузла по відповідальних (Усов А.В., Хлібець В., Нікітіна А., Довгаленко С.), пермеат котельні, випар ГМВ та стоки.</div>
                         </div>
                         <span class="guide-tag tag-primary">Електроенергія + Вода</span>
                     </div>
@@ -1638,7 +1638,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="modal-icon" style="background: #0284c7; color: #ffffff;"><i data-lucide="zap"></i></div>
                 <div>
                     <h2 class="modal-title" style="color: #0f172a; font-size: 17px;">Ввід показників енергоносіїв (Служба головного енергетика)</h2>
-                    <p class="modal-subtitle">Введіть фактичні добові показники лічильників заводу за обрану дату</p>
+                    <p class="modal-subtitle">Оберіть дату та введіть споживання електроенергії у кВт за добу, витрату води та пару</p>
                 </div>
             </div>
             <button type="button" class="modal-close-btn" id="btn-close-energy-entry" title="Закрити">&times;</button>
@@ -1660,10 +1660,10 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <!-- 1. Електроенергія -->
                     <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px;">
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 6px;">
-                            ⚡ Електроенергія (кВт·год):
+                            ⚡ Споживання електроенергії (кВт за добу):
                         </label>
                         <input type="number" step="0.1" min="0" id="energy-form-kwh" placeholder="напр. 31200" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #7dd3fc; border-radius: 6px; color: #0284c7; background: #fff;" required>
-                        <div style="font-size: 10.5px; color: #0284c7; margin-top: 4px;">Загальний добовий лічильник заводу</div>
+                        <div style="font-size: 10.5px; color: #0284c7; margin-top: 4px;">Кількість кіловат (кВт) споживання заводу за добу</div>
                     </div>
 
                     <!-- 2. Вода -->
@@ -1717,7 +1717,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <thead>
                                 <tr>
                                     <th>Дата</th>
-                                    <th>Електроенергія</th>
+                                    <th>Електроенергія (кВт)</th>
                                     <th>Вода</th>
                                     <th>Пара</th>
                                     <th>Автор</th>

@@ -532,14 +532,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (hasData) {
-                setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт·год');
+                setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт');
                 setElementText('#val-current-power', `Потужність: ${formatNumber(en.current_power_kw, 1)} кВт • Реакт.: ${formatNumber(en.reactive_kvarh || 0, 0)} кВАр·год`);
 
                 setElementText('#val-water-total', formatNumber(en.total_water_m3, 1) + ' м³');
                 setElementText('#val-water-flow', `Потік: ${formatNumber(en.current_water_m3_hour, 2)} м³/год (${formatNumber(en.daily_water_m3 || en.total_water_m3, 1)} м³/добу)`);
 
-                setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 2) + ' кВт·год/т');
-                setElementText('#val-specific-sub', en.specific_subtext || 'Прес: 60,93 + Екстр: 23,90 кВт·год/т');
+                setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 2) + ' кВт/т');
+                setElementText('#val-specific-sub', en.specific_subtext || 'Прес: 60,93 + Екстр: 23,90 кВт/т');
 
                 setElementText('#val-sewage-total', `Стоки: ${formatNumber(en.sewage_m3 || 0, 1)} м³`);
                 setElementText('#val-boiler-water', `Котельня: ${formatNumber(en.boiler_water_m3 || 0, 0)} м³ • Екстракція: ${formatNumber(en.extraction_water_m3 || 0, 0)} м³`);
@@ -1148,7 +1148,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // -------------------------------------------------------------
-    // 12. ЕНЕРГЕТИКА: ПЕРЕМИКАЧ ОДИНИЦЬ ГРАФІКА СПОЖИВАННЯ (кВт·год / МВт·год / МВт)
+    // 12. ЕНЕРГЕТИКА: ПЕРЕМИКАЧ ОДИНИЦЬ ГРАФІКА СПОЖИВАННЯ (кВт / МВт)
     // -------------------------------------------------------------
     const powerUnitButtons = document.querySelectorAll('.btn-power-unit');
     const lblPlantPowerUnit = document.getElementById('lbl-plant-power-unit');
@@ -1166,9 +1166,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const unit = this.getAttribute('data-unit') || 'kwh';
             if (lblPlantPowerUnit) {
-                if (unit === 'mwh') lblPlantPowerUnit.textContent = 'Режим: МВт·год за добу';
+                if (unit === 'mwh') lblPlantPowerUnit.textContent = 'Режим: МВт за добу';
                 else if (unit === 'mw') lblPlantPowerUnit.textContent = 'Режим: Середня потужність (МВт)';
-                else lblPlantPowerUnit.textContent = 'Режим: кВт·год за добу';
+                else lblPlantPowerUnit.textContent = 'Режим: кВт за добу';
             }
 
             if (window.FactoryCharts && FactoryCharts.initPlantPowerChart) {
@@ -1250,7 +1250,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 energyHistoryTbody.innerHTML = json.entries.map(e => `
                     <tr>
                         <td class="bold">${e.date}</td>
-                        <td class="bold" style="color: #0284c7;">${formatNumber(e.power_kwh, 1)} кВт·год</td>
+                        <td class="bold" style="color: #0284c7;">${formatNumber(e.power_kwh, 1)} кВт</td>
                         <td style="color: #059669;">${formatNumber(e.water_m3, 1)} м³</td>
                         <td style="color: #d97706;">${formatNumber(e.steam_t, 1)} т</td>
                         <td><span style="font-size: 10px; color: #64748b;">${escapeHtml(e.author || 'energo')}</span></td>

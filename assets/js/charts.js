@@ -149,10 +149,10 @@ window.FactoryCharts = {
         timelineData = timelineData || {};
         this._currentEnergyTimeline = timelineData;
 
-        const powerName = timelineData.power_name || 'Електроенергія за добу (кВт·год)';
+        const powerName = timelineData.power_name || 'Електроенергія за добу (кВт)';
         const waterName = timelineData.water_name || 'Вода за добу по лічильнику (м³)';
         const steamName = timelineData.steam_name || 'Технологічна пара за добу (т)';
-        const powerUnit = timelineData.power_unit || 'кВт·год';
+        const powerUnit = timelineData.power_unit || 'кВт';
         const waterUnit = timelineData.water_unit || 'м³/д';
         const steamUnit = timelineData.steam_unit || 'т/д';
         const hasSteam  = Array.isArray(timelineData.steam) && timelineData.steam.length > 0;
@@ -284,7 +284,7 @@ window.FactoryCharts = {
                     const pVal = Number(series[0] ? series[0][dataPointIndex] : 0) || 0;
                     const wVal = Number(series[1] ? series[1][dataPointIndex] : 0) || 0;
                     const sVal = series[2] ? (Number(series[2][dataPointIndex]) || 0) : 0;
-                    const pUnit = tl.power_unit || 'кВт·год';
+                    const pUnit = tl.power_unit || 'кВт';
                     const wUnit = tl.water_unit || 'м³/д';
                     const sUnit = tl.steam_unit || 'т/д';
 
@@ -307,9 +307,9 @@ window.FactoryCharts = {
                                 <div class="art-row" style="border-left: 3px solid #0284c7;">
                                     <div class="art-row-main">
                                         <span class="art-lbl">⚡ Споживання заводу:</span>
-                                        <span class="art-val bold" style="color: #0284c7;">${fmtP} ${pUnit} (${(pVal / 1000).toFixed(2)} МВт·год)</span>
+                                        <span class="art-val bold" style="color: #0284c7;">${fmtP} ${pUnit} (${(pVal / 1000).toFixed(2)} МВт)</span>
                                     </div>
-                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Питома: ~${(pVal / 596.8).toFixed(2)} кВт·год/т насіння</div>
+                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Питома: ~${(pVal / 596.8).toFixed(2)} кВт/т насіння</div>
                                 </div>
                                 <div class="art-row" style="border-left: 3px solid #10b981;">
                                     <div class="art-row-main">
@@ -362,7 +362,7 @@ window.FactoryCharts = {
     },
 
     /**
-     * Подобовий графік споживання електроенергії заводу (у кВт·год, МВт·год або середня потужність у МВт / кВт)
+     * Подобовий графік споживання електроенергії заводу (у кВт, МВт або середня потужність у МВт / кВт)
      */
     initPlantPowerChart: function (timelineData, unit) {
         const el = document.querySelector("#plant-daily-power-chart");
@@ -379,15 +379,15 @@ window.FactoryCharts = {
             return;
         }
 
-        let seriesName = 'Споживання електроенергії заводу (кВт·год)';
+        let seriesName = 'Споживання електроенергії заводу (кВт)';
         let rawPowers  = timelineData.power || [];
         let seriesData = rawPowers;
-        let yaxisTitle = 'кВт·год';
+        let yaxisTitle = 'кВт';
 
         if (unit === 'mwh') {
-            seriesName = 'Споживання електроенергії заводу (МВт·год)';
+            seriesName = 'Споживання електроенергії заводу (МВт)';
             seriesData = timelineData.power_mwh || rawPowers.map(v => Number((v / 1000).toFixed(2)));
-            yaxisTitle = 'МВт·год';
+            yaxisTitle = 'МВт';
         } else if (unit === 'mw') {
             seriesName = 'Середня електрична потужність заводу (МВт)';
             seriesData = timelineData.power_mw_avg || rawPowers.map(v => Number((v / 24000).toFixed(3)));
@@ -423,7 +423,7 @@ window.FactoryCharts = {
             dataLabels: {
                 enabled: true,
                 formatter: function (val) {
-                    if (unit === 'mwh') return val.toFixed(1) + ' МВт·год';
+                    if (unit === 'mwh') return val.toFixed(1) + ' МВт';
                     if (unit === 'mw') return val.toFixed(2) + ' МВт';
                     return val >= 1000 ? Math.round(val / 1000) + 'k' : Math.round(val);
                 },
@@ -479,12 +479,12 @@ window.FactoryCharts = {
                             </div>
                             <div class="art-body" style="font-size: 11.5px; line-height: 1.5;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                    <span style="color: #64748b;">Споживання (кВт·год):</span>
-                                    <strong style="color: #0284c7;">${Math.round(rawKwh).toLocaleString('uk-UA')} кВт·год</strong>
+                                    <span style="color: #64748b;">Споживання (кВт):</span>
+                                    <strong style="color: #0284c7;">${Math.round(rawKwh).toLocaleString('uk-UA')} кВт</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                                    <span style="color: #64748b;">Споживання (МВт·год):</span>
-                                    <strong style="color: #0369a1;">${mwhVal} МВт·год</strong>
+                                    <span style="color: #64748b;">Споживання (МВт):</span>
+                                    <strong style="color: #0369a1;">${mwhVal} МВт</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                     <span style="color: #64748b;">Середня потужність:</span>
@@ -492,7 +492,7 @@ window.FactoryCharts = {
                                 </div>
                                 <div style="border-top: 1px dashed #cbd5e1; margin-top: 6px; padding-top: 4px; display: flex; justify-content: space-between;">
                                     <span style="color: #475569;">⚙️ Питома на 1 т насіння:</span>
-                                    <strong style="color: #4f46e5;">~${specKwh} кВт·год/т</strong>
+                                    <strong style="color: #4f46e5;">~${specKwh} кВт/т</strong>
                                 </div>
                             </div>
                         </div>
@@ -811,10 +811,10 @@ window.FactoryCharts = {
         if (this.energyChart && data.energy && data.energy.timeline) {
             const tl = data.energy.timeline;
             this._currentEnergyTimeline = tl;
-            const pName = tl.power_name || 'Електроенергія за добу (кВт·год)';
+            const pName = tl.power_name || 'Електроенергія за добу (кВт)';
             const wName = tl.water_name || 'Вода за добу по лічильнику (м³)';
             const sName = tl.steam_name || 'Технологічна пара за добу (т)';
-            const pUnit = tl.power_unit || 'кВт·год';
+            const pUnit = tl.power_unit || 'кВт';
             const wUnit = tl.water_unit || 'м³/д';
             const sUnit = tl.steam_unit || 'т/д';
             const hasSteam = Array.isArray(tl.steam) && tl.steam.length > 0;
