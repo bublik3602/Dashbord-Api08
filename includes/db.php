@@ -36,9 +36,6 @@ class DashboardDB {
 
             self::$instance = new PDO($dsn, $dbCfg['username'] ?? 'root', $dbCfg['password'] ?? '', $options);
             self::$isFallback = false;
-            try {
-                self::$instance->exec("DELETE FROM `material_balance_logs` WHERE `recorded_at` >= '2026-10-14 00:00:00' AND (`seed_in_production` = 0 OR `seed_in_production` IS NULL)");
-            } catch (Throwable $e) {}
             return self::$instance;
 
         } catch (PDOException $e) {

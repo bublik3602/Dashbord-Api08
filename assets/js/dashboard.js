@@ -590,6 +590,10 @@ document.addEventListener('DOMContentLoaded', function () {
             updateSeasonComparisonUI(periodComp);
         }
 
+        if (data.historical_analytics) {
+            updateHistoricalMonthCards(data.historical_analytics);
+        }
+
         // Оновлення графіків
         FactoryCharts.updateCharts(data);
 
@@ -698,6 +702,79 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td><span class="trend-badge ${escapeHtml(r.trend_class)}">${escapeHtml(r.trend_text)}</span></td>
                 </tr>
             `).join('');
+        }
+    }
+
+    /**
+     * Оновлення помісячних карток (Жовтень, Сезон) Блоку Г на основі реальних даних БД
+     */
+    function updateHistoricalMonthCards(histData) {
+        if (!histData) return;
+        const months = histData.months || {};
+        const oct = months.oct;
+        const season = histData.season_total;
+
+        if (season) {
+            if (season.badge_label) {
+                setElementText('#badge-historical-season', season.badge_label);
+            }
+            if (season.working_days_label) {
+                setElementText('#val-season-work-days', season.working_days_label);
+            }
+            if (season.seed_in !== undefined) {
+                setElementText('#val-season-seed-in', formatNumber(season.seed_in, 2) + ' т');
+            }
+            if (season.seed_processed !== undefined) {
+                setElementText('#val-season-seed-proc', formatNumber(season.seed_processed, 2) + ' т (' + (season.working_days || 25) + ' діб)');
+            }
+            if (season.oil_out !== undefined) {
+                setElementText('#val-season-oil-out', formatNumber(season.oil_out, 2) + ' т (' + (season.oil_yield_pct || 43.60) + '%)');
+            }
+            if (season.meal_out !== undefined) {
+                setElementText('#val-season-meal-out', formatNumber(season.meal_out, 2) + ' т (' + (season.meal_yield_pct || 41.47) + '%)');
+            }
+            if (season.trucks_count !== undefined) {
+                setElementText('#val-season-trucks', season.trucks_count + ' авто');
+            }
+            if (season.husk_out !== undefined) {
+                setElementText('#val-season-husk-out', formatNumber(season.husk_out, 2) + ' т');
+            }
+            const footerSeason = document.querySelector('#val-season-footer');
+            if (footerSeason && season.oil_stock !== undefined && season.meal_stock !== undefined) {
+                footerSeason.innerHTML = `<span>Залишки зараз: Олія ${formatNumber(season.oil_stock, 1)} т • Шрот ${formatNumber(season.meal_stock, 1)} т</span>`;
+            }
+        }
+
+        if (oct) {
+            if (oct.name) {
+                setElementText('#name-oct-card', oct.name);
+            }
+            if (oct.working_days_label) {
+                setElementText('#badge-oct-working-days', oct.working_days_label);
+                setElementText('#val-oct-work-days', oct.working_days_label);
+            }
+            if (oct.seed_in !== undefined) {
+                setElementText('#val-oct-seed-in', formatNumber(oct.seed_in, 2) + ' т');
+            }
+            if (oct.seed_processed !== undefined) {
+                setElementText('#val-oct-seed-proc', formatNumber(oct.seed_processed, 2) + ' т (' + (oct.working_days || 9) + ' діб)');
+            }
+            if (oct.oil_out !== undefined) {
+                setElementText('#val-oct-oil-out', formatNumber(oct.oil_out, 2) + ' т (' + (oct.oil_yield_pct || 44.35) + '%)');
+            }
+            if (oct.meal_out !== undefined) {
+                setElementText('#val-oct-meal-out', formatNumber(oct.meal_out, 2) + ' т (' + (oct.meal_yield_pct || 40.96) + '%)');
+            }
+            if (oct.trucks_count !== undefined) {
+                setElementText('#val-oct-trucks', oct.trucks_count + ' авто');
+            }
+            if (oct.seed_stock !== undefined) {
+                setElementText('#val-oct-seed-stock', formatNumber(oct.seed_stock, 2) + ' т');
+            }
+            const footerOct = document.querySelector('#val-oct-footer');
+            if (footerOct && oct.husk_out !== undefined) {
+                footerOct.innerHTML = `<span>Лузга: ${formatNumber(oct.husk_out, 1)} т &bull; Відвантажено: олія ${formatNumber(oct.oil_shipped || 0, 0)} т, шрот ${formatNumber(oct.meal_shipped || 0, 0)} т</span>`;
+            }
         }
     }
 

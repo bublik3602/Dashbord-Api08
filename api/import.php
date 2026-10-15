@@ -156,10 +156,6 @@ function ensureSchemaExists(PDO $db): void {
                     MODIFY COLUMN `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00
             ");
         } catch (Throwable $e) {}
-
-        try {
-            $db->exec("DELETE FROM `material_balance_logs` WHERE `recorded_at` >= '2026-10-14 00:00:00' AND (`seed_in_production` = 0 OR `seed_in_production` IS NULL)");
-        } catch (Throwable $e) {}
     }
 }
 
@@ -1037,26 +1033,58 @@ try {
                             continue;
                         }
 
-                        $isKgWide = (isset($r[17]) && is_numeric($r[17]) && (float)$r[17] > 1000);
-                        if ($isKgWide) {
+                        $seedCleaned = 0.0;
+                        $oilTonnes   = 0.0;
+                        $mealTonnes  = 0.0;
+                        $huskTonnes  = 0.0;
+                        $prodLossT   = 0.0;
+                        $elevLoss    = 8.214;
+                        $dayOilPct   = 0.0;
+                        $dayMoistPct = 0.0;
+                        $dayImpPct   = 0.0;
+
+                        // 1. Компактний формат у кг (де Col 1 = Насіння у переробку в кг, напр. 520 990 або 596 805)
+                        if (isset($r[1]) && is_numeric($r[1]) && (float)$r[1] > 1000) {
+                            $seedCleaned = round((float)$r[1] / 1000.0, 3);
+                            $oilTonnes   = isset($r[6]) && is_numeric($r[6]) ? round((float)$r[6] / 1000.0, 3) : (isset($r[5]) && is_numeric($r[5]) ? round((float)$r[5] / 1000.0, 3) : 0.0);
+                            $mealTonnes  = isset($r[8]) && is_numeric($r[8]) ? round((float)$r[8] / 1000.0, 3) : (isset($r[7]) && is_numeric($r[7]) ? round((float)$r[7] / 1000.0, 3) : 0.0);
+                            $huskTonnes  = isset($r[14]) && is_numeric($r[14]) ? round((float)$r[14] / 1000.0, 3) : (isset($r[9]) && is_numeric($r[9]) ? round((float)$r[9] / 1000.0, 3) : 0.0);
+                            $prodLossT   = isset($r[17]) && is_numeric($r[17]) ? max(0.0, round((float)$r[17] / 1000.0, 3)) : (isset($r[11]) && is_numeric($r[11]) ? max(0.0, round((float)$r[11] / 1000.0, 3)) : 0.0);
+
+                            $dayOilPct   = isset($r[3]) && is_numeric($r[3]) && (float)$r[3] > 10 ? (float)$r[3] : (isset($r[2]) && is_numeric($r[2]) && (float)$r[2] > 10 ? (float)$r[2] : 0.0);
+                            $dayMoistPct = isset($r[4]) && is_numeric($r[4]) && (float)$r[4] > 0 && (float)$r[4] < 25 ? (float)$r[4] : 0.0;
+                            $dayImpPct   = isset($r[5]) && is_numeric($r[5]) && (float)$r[5] > 0 && (float)$r[5] < 25 ? (float)$r[5] : 0.0;
+                        }
+                        // 2. Широкий формат цеху екстракції у кг (де Col 17 = Насіння у виробництво факт в кг, напр. 553 035)
+                        elseif (isset($r[17]) && is_numeric($r[17]) && (float)$r[17] > 1000) {
                             $seedCleaned = round((float)$r[17] / 1000.0, 3);
                             $oilTonnes   = isset($r[29]) && is_numeric($r[29]) ? round((float)$r[29] / 1000.0, 3) : 0.0;
                             $mealTonnes  = isset($r[31]) && is_numeric($r[31]) ? round((float)$r[31] / 1000.0, 3) : 0.0;
                             $huskTonnes  = isset($r[38]) && is_numeric($r[38]) ? round((float)$r[38] / 1000.0, 3) : 0.0;
                             $prodLossT   = isset($r[42]) && is_numeric($r[42]) ? max(0.0, round((float)$r[42] / 1000.0, 3)) : 0.0;
-                            $elevLoss    = 8.214;
-                        } else {
-                            $seedCleaned = isset($r[1]) && is_numeric($r[1]) ? round((float)$r[1], 3) : 0.0;
-                            $elevLoss    = isset($r[2]) && is_numeric($r[2]) ? round((float)$r[2], 3) : 0.0;
-                            $oilTonnes   = isset($r[5]) && is_numeric($r[5]) ? round((float)$r[5], 3) : 0.0;
-                            $mealTonnes  = isset($r[7]) && is_numeric($r[7]) ? round((float)$r[7], 3) : 0.0;
-                            $huskTonnes  = isset($r[9]) && is_numeric($r[9]) ? round((float)$r[9], 3) : 0.0;
-                            $prodLossT   = isset($r[11]) && is_numeric($r[11]) ? max(0.0, round((float)$r[11], 3)) : 0.0;
+
+                            $dayOilPct   = isset($r[19]) && is_numeric($r[19]) && (float)$r[19] > 10 ? (float)$r[19] : (isset($r[25]) && is_numeric($r[25]) && (float)$r[25] > 10 ? (float)$r[25] : 0.0);
+                            $dayMoistPct = isset($r[21]) && is_numeric($r[21]) && (float)$r[21] > 0 && (float)$r[21] < 25 ? (float)$r[21] : 0.0;
+                            $dayImpPct   = isset($r[23]) && is_numeric($r[23]) && (float)$r[23] > 0 && (float)$r[23] < 25 ? (float)$r[23] : 0.0;
+                        }
+                        // 3. Формат у тоннах
+                        elseif (isset($r[1]) && is_numeric($r[1]) && (float)$r[1] > 0) {
+                            $seedCleaned = round((float)$r[1], 3);
+                            $elevLoss    = isset($r[2]) && is_numeric($r[2]) ? round((float)$r[2], 3) : 8.214;
+                            $oilTonnes   = isset($r[6]) && is_numeric($r[6]) ? round((float)$r[6], 3) : (isset($r[5]) && is_numeric($r[5]) ? round((float)$r[5], 3) : 0.0);
+                            $mealTonnes  = isset($r[8]) && is_numeric($r[8]) ? round((float)$r[8], 3) : (isset($r[7]) && is_numeric($r[7]) ? round((float)$r[7], 3) : 0.0);
+                            $huskTonnes  = isset($r[14]) && is_numeric($r[14]) ? round((float)$r[14], 3) : (isset($r[9]) && is_numeric($r[9]) ? round((float)$r[9], 3) : 0.0);
+                            $prodLossT   = isset($r[17]) && is_numeric($r[17]) ? max(0.0, round((float)$r[17], 3)) : (isset($r[11]) && is_numeric($r[11]) ? max(0.0, round((float)$r[11], 3)) : 0.0);
                         }
 
                         // Пропускаємо пусті рядки (дні, в яких ще немає заповнених цифр переробки)
                         if ($seedCleaned <= 0 && $oilTonnes <= 0 && $mealTonnes <= 0 && $huskTonnes <= 0) {
                             continue;
+                        }
+
+                        // Розрахунок втрат переробки за балансом, якщо в таблиці колонка втрат порожня
+                        if ($prodLossT <= 0 && $seedCleaned > 0 && ($oilTonnes + $mealTonnes + $huskTonnes) > 0) {
+                            $prodLossT = max(0.0, round($seedCleaned - ($oilTonnes + $mealTonnes + $huskTonnes), 3));
                         }
 
                         $condLossPct = ($seedCleaned + $elevLoss) > 0 ? round(($elevLoss / ($seedCleaned + $elevLoss)) * 100, 2) : 0.0;
@@ -1081,6 +1109,32 @@ try {
                                 ");
                                 $ins->execute(["{$isoDate} 20:00:00", $dCellFormatted, $seedCleaned + $elevLoss, $seedCleaned, $oilTonnes, $mealTonnes, $huskTonnes, $elevLoss, $condLossPct, $prodLossT, $prodLossPct]);
                             }
+
+                            // Оновлюємо якість у lab_quality_logs за відповідну дату
+                            if ($dayOilPct > 0) {
+                                try {
+                                    $chkLab = $db->prepare("SELECT id FROM lab_quality_logs WHERE recorded_at LIKE ?");
+                                    $chkLab->execute(["{$isoDate}%"]);
+                                    $exLab = $chkLab->fetch(PDO::FETCH_ASSOC);
+                                    $oilDev = round($dayOilPct - 48.0, 2);
+                                    if ($exLab) {
+                                        $updLab = $db->prepare("
+                                            UPDATE lab_quality_logs
+                                            SET report_date = ?, oil_content_pct = ?, oil_content_base_pct = 48.00, oil_deviation_pct = ?, moisture_pct = ?, impurity_pct = ?
+                                            WHERE id = ?
+                                        ");
+                                        $updLab->execute([$dCellFormatted, $dayOilPct, $oilDev, $dayMoistPct, $dayImpPct, $exLab['id']]);
+                                    } else {
+                                        $insLab = $db->prepare("
+                                            INSERT INTO lab_quality_logs
+                                            (recorded_at, report_date, oil_content_pct, oil_content_base_pct, oil_deviation_pct, moisture_pct, impurity_pct, weight_discount_tonnes)
+                                            VALUES (?, ?, ?, 48.00, ?, ?, ?, 0.0)
+                                        ");
+                                        $insLab->execute(["{$isoDate} 20:00:00", $dCellFormatted, $dayOilPct, $oilDev, $dayMoistPct, $dayImpPct]);
+                                    }
+                                } catch (Throwable $e) {}
+                            }
+
                             $importedProdDays++;
                             $lastProdDate = $dCellFormatted;
                         } catch (Throwable $e) {}

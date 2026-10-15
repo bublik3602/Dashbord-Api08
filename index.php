@@ -94,13 +94,13 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-select-wrapper">
                     <select id="select-other-months" class="month-dropdown-select" title="Обрати інший місяць або період">
                         <option value="" disabled selected>📅 Інші періоди / місяці...</option>
-                        <option value="day_active">⚡ Остання доба переробки (13.10 — 521,0 т перероблено)</option>
-                        <option value="month_oct">Жовтень 2026 (працював 8 діб з 13 • 4 167,3 т)</option>
+                        <option value="day_active">⚡ Остання доба переробки (<?= htmlspecialchars(substr($prodLab['report_date'] ?? '14.10', 0, 5)) ?> — <?= number_format($prodLab['seed_processed_tonnes'] ?? 596.8, 1, ',', ' ') ?> т перероблено)</option>
+                        <option value="month_oct">Жовтень 2026 (працював <?= $mOct['working_days'] ?? 9 ?> діб з <?= $mOct['days_count'] ?? 14 ?> • <?= number_format($mOct['seed_processed'] ?? 4764.15, 1, ',', ' ') ?> т)</option>
                         <option value="month_sep">Вересень 2026 (працював 16 діб з 30 • 8 823,7 т)</option>
                         <option value="month_aug">Серпень 2026 (0 діб переробки, ППР)</option>
-                        <option value="season">Сезон 2026–2027 (24 доби переробки • 12 991,0 т)</option>
-                        <option value="day_prev">Минула доба (12.10 — прийомка 465,8 т, переробка 0 т)</option>
-                        <option value="day_today">Сьогодні (14.10, без переробки)</option>
+                        <option value="season">Сезон 2026–2027 (<?= $seasonTot['working_days'] ?? 25 ?> діб переробки • <?= number_format($seasonTot['seed_processed'] ?? 13587.81, 1, ',', ' ') ?> т)</option>
+                        <option value="day_prev">Минула доба (13.10 — перероблено 521,0 т)</option>
+                        <option value="day_today">Сьогодні (поточний оперативний стан)</option>
                     </select>
                 </div>
             </div>
@@ -972,7 +972,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         <div class="section-title">
             <i data-lucide="line-chart" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
             <span>Блок Г: Порівняльна аналітика періодів (Серпень — Вересень — Жовтень 2026)</span>
-            <span class="section-badge badge-blue">Виробничий сезон 2026–2027 (01.08.2026 — 01.08.2027 • 23 доби переробки)</span>
+            <span class="section-badge badge-blue" id="badge-historical-season"><?= htmlspecialchars($seasonTot['badge_label'] ?? ('Виробничий сезон 2026–2027 (01.08.2026 — 01.08.2027 • ' . ($seasonTot['working_days'] ?? 25) . ' діб переробки)')) ?></span>
         </div>
 
         <!-- Картки-підсумки помісячно (Серпень, Вересень, Жовтень, Сезон) -->
@@ -1074,8 +1074,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="history-month-card" data-period-trigger="month_oct">
                 <div class="month-card-header">
                     <div class="month-card-title">
-                        <span class="month-name">Жовтень 2026</span>
-                        <span class="month-badge badge-blue">Працював: 7 діб з 11 (01.10–07.10)</span>
+                        <span class="month-name" id="name-oct-card"><?= htmlspecialchars($mOct['name'] ?? 'Жовтень 2026') ?></span>
+                        <span class="month-badge badge-blue" id="badge-oct-working-days"><?= htmlspecialchars($mOct['working_days_label'] ?? ('Працював: ' . ($mOct['working_days'] ?? 9) . ' діб з ' . ($mOct['days_count'] ?? 14))) ?></span>
                     </div>
                     <button type="button" class="btn-quick-period" data-period="month_oct" title="Показати дашборд за жовтень">
                         <span>Детально</span> &rarr;
@@ -1084,35 +1084,35 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-metrics-list">
                     <div class="metric-row">
                         <span class="metric-lbl">🗓️ Днів роботи (переробка):</span>
-                        <span class="metric-val bold" style="color: #0284c7;">7 діб (01.10 — 07.10) з 11</span>
+                        <span class="metric-val bold" id="val-oct-work-days" style="color: #0284c7;"><?= htmlspecialchars($mOct['working_days_label'] ?? ('Працював: ' . ($mOct['working_days'] ?? 9) . ' діб з ' . ($mOct['days_count'] ?? 14))) ?></span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌻 Завіз насіння:</span>
-                        <span class="metric-val bold text-primary"><?= number_format($mOct['seed_in'] ?? 6075.91, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val bold text-primary" id="val-oct-seed-in"><?= number_format($mOct['seed_in'] ?? 6075.91, 2, ',', ' ') ?> т</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">⚙️ Переробка:</span>
-                        <span class="metric-val bold"><?= number_format($mOct['seed_processed'] ?? 3646.35, 2, ',', ' ') ?> т (7 діб)</span>
+                        <span class="metric-val bold" id="val-oct-seed-proc"><?= number_format($mOct['seed_processed'] ?? 4764.15, 2, ',', ' ') ?> т (<?= $mOct['working_days'] ?? 9 ?> діб)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">💧 Вихід олії:</span>
-                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($mOct['oil_out'] ?? 1646.15, 2, ',', ' ') ?> т (<?= $mOct['oil_yield_pct'] ?? 45.15 ?>%)</span>
+                        <span class="metric-val bold" id="val-oct-oil-out" style="color: #d97706;"><?= number_format($mOct['oil_out'] ?? 2113.05, 2, ',', ' ') ?> т (<?= $mOct['oil_yield_pct'] ?? 44.35 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌾 Вихід шроту:</span>
-                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($mOct['meal_out'] ?? 1521.68, 2, ',', ' ') ?> т (<?= $mOct['meal_yield_pct'] ?? 41.73 ?>%)</span>
+                        <span class="metric-val bold" id="val-oct-meal-out" style="color: #2563eb;"><?= number_format($mOct['meal_out'] ?? 1951.41, 2, ',', ' ') ?> т (<?= $mOct['meal_yield_pct'] ?? 40.96 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🚚 Автотранспорт:</span>
-                        <span class="metric-val bold"><?= $mOct['trucks_count'] ?? 231 ?> авто</span>
+                        <span class="metric-val bold" id="val-oct-trucks"><?= $mOct['trucks_count'] ?? 231 ?> авто</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🏢 Залишок насіння:</span>
-                        <span class="metric-val"><?= number_format($mOct['seed_stock'] ?? 13326.41, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val" id="val-oct-seed-stock"><?= number_format($mOct['seed_stock'] ?? 13326.41, 2, ',', ' ') ?> т</span>
                     </div>
                 </div>
-                <div class="month-card-footer">
-                    <span>Лузга: 554,9 т &bull; Відвантажено: олія 1 024 т, шрот 2 179 т</span>
+                <div class="month-card-footer" id="val-oct-footer">
+                    <span>Лузга: <?= number_format($mOct['husk_out'] ?? 718.27, 1, ',', ' ') ?> т &bull; Відвантажено: олія <?= number_format($mOct['oil_shipped'] ?? 1050.54, 0, ',', ' ') ?> т, шрот <?= number_format($mOct['meal_shipped'] ?? 2461.42, 0, ',', ' ') ?> т</span>
                 </div>
             </div>
 
@@ -1121,7 +1121,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-card-header">
                     <div class="month-card-title">
                         <span class="month-name">Сезон 2026–2027 РАЗОМ</span>
-                        <span class="month-badge badge-green">01.08.2026 — 01.08.2027</span>
+                        <span class="month-badge badge-green" id="badge-season-date-range">01.08.2026 — 01.08.2027</span>
                     </div>
                     <button type="button" class="btn-quick-period" data-period="season" title="Показати дашборд за сезон">
                         <span>Детально</span> &rarr;
@@ -1130,34 +1130,34 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-metrics-list">
                     <div class="metric-row">
                         <span class="metric-lbl">🗓️ Днів роботи (переробка):</span>
-                        <span class="metric-val bold" style="color: #059669;">23 доби переробки (з 74 діб сезону)</span>
+                        <span class="metric-val bold" id="val-season-work-days" style="color: #059669;"><?= htmlspecialchars($seasonTot['working_days_label'] ?? ('Працював: ' . ($seasonTot['working_days'] ?? 25) . ' діб переробки (з ' . ($seasonTot['total_days'] ?? 75) . ' діб сезону)')) ?></span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌻 Завіз насіння:</span>
-                        <span class="metric-val bold text-primary"><?= number_format($seasonTot['seed_in'] ?? 25353.92, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val bold text-primary" id="val-season-seed-in"><?= number_format($seasonTot['seed_in'] ?? 25361.41, 2, ',', ' ') ?> т</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">⚙️ Переробка:</span>
-                        <span class="metric-val bold"><?= number_format($seasonTot['seed_processed'] ?? 12470.01, 2, ',', ' ') ?> т (23 доби)</span>
+                        <span class="metric-val bold" id="val-season-seed-proc"><?= number_format($seasonTot['seed_processed'] ?? 13587.81, 2, ',', ' ') ?> т (<?= $seasonTot['working_days'] ?? 25 ?> діб)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">💧 Вихід олії:</span>
-                        <span class="metric-val bold" style="color: #d97706;"><?= number_format($seasonTot['oil_out'] ?? 5457.81, 2, ',', ' ') ?> т (<?= $seasonTot['oil_yield_pct'] ?? 43.77 ?>%)</span>
+                        <span class="metric-val bold" id="val-season-oil-out" style="color: #d97706;"><?= number_format($seasonTot['oil_out'] ?? 5924.71, 2, ',', ' ') ?> т (<?= $seasonTot['oil_yield_pct'] ?? 43.60 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🌾 Вихід шроту:</span>
-                        <span class="metric-val bold" style="color: #2563eb;"><?= number_format($seasonTot['meal_out'] ?? 5204.89, 2, ',', ' ') ?> т (<?= $seasonTot['meal_yield_pct'] ?? 41.74 ?>%)</span>
+                        <span class="metric-val bold" id="val-season-meal-out" style="color: #2563eb;"><?= number_format($seasonTot['meal_out'] ?? 5634.62, 2, ',', ' ') ?> т (<?= $seasonTot['meal_yield_pct'] ?? 41.47 ?>%)</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🚚 Автотранспорт:</span>
-                        <span class="metric-val bold"><?= $seasonTot['trucks_count'] ?? 977 ?> авто</span>
+                        <span class="metric-val bold" id="val-season-trucks"><?= $seasonTot['trucks_count'] ?? 977 ?> авто</span>
                     </div>
                     <div class="metric-row">
                         <span class="metric-lbl">🪵 Лузга всього:</span>
-                        <span class="metric-val"><?= number_format($seasonTot['husk_out'] ?? 1822.01, 2, ',', ' ') ?> т</span>
+                        <span class="metric-val" id="val-season-husk-out"><?= number_format($seasonTot['husk_out'] ?? 1979.50, 2, ',', ' ') ?> т</span>
                     </div>
                 </div>
-                <div class="month-card-footer">
+                <div class="month-card-footer" id="val-season-footer">
                     <span>Залишки зараз: Олія <?= number_format($seasonTot['oil_stock'] ?? 3358.63, 1, ',', ' ') ?> т • Шрот <?= number_format($seasonTot['meal_stock'] ?? 1056.13, 1, ',', ' ') ?> т</span>
                 </div>
             </div>
