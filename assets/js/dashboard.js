@@ -317,6 +317,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const oilLossKg = plq.oil_loss_kg !== undefined ? plq.oil_loss_kg : 38654;
             const oilLossPct = plq.oil_loss_pct !== undefined ? plq.oil_loss_pct : 0.81;
+            const oilUnaccLossKg = plq.oil_unaccounted_loss_kg !== undefined ? plq.oil_unaccounted_loss_kg : 15094;
+            const oilUnaccLossPct = plq.oil_unaccounted_loss_pct !== undefined ? plq.oil_unaccounted_loss_pct : 0.32;
 
             setElementText('#badge-prod-oil-asr', `за ${oilDate} • ${formatNumber(oilVal, 2)}%`);
             const valAsrEl = document.querySelector('#val-prod-oil-asr');
@@ -325,7 +327,22 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             const valOilLossEl = document.querySelector('#val-prod-oil-loss');
             if (valOilLossEl) {
-                valOilLossEl.innerHTML = `<span style="color: #854d0e; font-weight: 600;">Виробн. втрати олії:</span> <strong style="color: #713f12;">${formatNumber(oilLossKg, 0)} кг</strong> <span class="badge-discount" style="padding: 1px 6px; font-size: 10px; font-weight: 700; border-radius: 4px;">${formatNumber(oilLossPct, 2)}%</span>`;
+                valOilLossEl.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #fefce8; border: 1px solid #fef08a; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
+                        <span style="color: #854d0e; font-weight: 600;">Виробн. втрати олії:</span>
+                        <div>
+                            <strong style="color: #713f12;">${formatNumber(oilLossKg, 0)} кг</strong>
+                            <span class="badge-discount" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;">${formatNumber(oilLossPct, 2)}%</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
+                        <span style="color: #9f1239; font-weight: 600;">Невраховані втрати:</span>
+                        <div>
+                            <strong style="color: #881337;">${formatNumber(oilUnaccLossKg, 0)} кг</strong>
+                            <span class="badge-discount" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;">${formatNumber(oilUnaccLossPct, 2)}%</span>
+                        </div>
+                    </div>
+                `;
             }
             const noteOilEl = document.querySelector('#note-prod-oil');
             if (noteOilEl) {

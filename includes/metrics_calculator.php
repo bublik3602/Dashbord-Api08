@@ -2686,6 +2686,8 @@ class MetricsCalculator {
         $basePct = 48.00;
         $defaultOilLossKg = 38654;
         $defaultOilLossPct = 0.81;
+        $defaultOilUnaccountedLossKg = 15094;
+        $defaultOilUnaccountedLossPct = 0.32;
 
         $dyn = $this->getHistoricalSeasonMetrics();
         $dOct = $dyn['oct'];
@@ -2694,19 +2696,21 @@ class MetricsCalculator {
         switch ($p) {
             case 'month_aug':
                 return [
-                    'oil_content_pct'        => 0.00,
-                    'oil_content_base_pct'   => $basePct,
-                    'oil_deviation_pct'      => -48.00,
-                    'oil_asr_pct'            => 0.00,
-                    'oil_loss_kg'            => 0,
-                    'oil_loss_pct'           => 0.00,
-                    'moisture_pct'           => 0.00,
-                    'impurity_pct'           => 0.00,
-                    'seed_processed_tonnes'  => 0.00,
-                    'seed_plan_tonnes'       => 0.00,
-                    'plan_fulfillment_pct'   => 0.0,
-                    'report_date'            => 'Серпень 2026 (0 діб переробки, ППР)',
-                    'processed_note'         => 'ППР заводу (виробництво не велося)',
+                    'oil_content_pct'             => 0.00,
+                    'oil_content_base_pct'        => $basePct,
+                    'oil_deviation_pct'           => -48.00,
+                    'oil_asr_pct'                 => 0.00,
+                    'oil_loss_kg'                 => 0,
+                    'oil_loss_pct'                => 0.00,
+                    'oil_unaccounted_loss_kg'     => 0,
+                    'oil_unaccounted_loss_pct'    => 0.00,
+                    'moisture_pct'                => 0.00,
+                    'impurity_pct'                => 0.00,
+                    'seed_processed_tonnes'       => 0.00,
+                    'seed_plan_tonnes'            => 0.00,
+                    'plan_fulfillment_pct'        => 0.0,
+                    'report_date'                 => 'Серпень 2026 (0 діб переробки, ППР)',
+                    'processed_note'              => 'ППР заводу (виробництво не велося)',
                 ];
 
             case 'month_sep':
@@ -2715,19 +2719,21 @@ class MetricsCalculator {
                 $oil = 44.05;
                 $moist = 6.80;
                 return [
-                    'oil_content_pct'        => $oil,
-                    'oil_content_base_pct'   => $basePct,
-                    'oil_deviation_pct'      => round($oil - $basePct, 2),
-                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
-                    'oil_loss_kg'            => $defaultOilLossKg,
-                    'oil_loss_pct'           => $defaultOilLossPct,
-                    'moisture_pct'           => $moist,
-                    'impurity_pct'           => 1.85,
-                    'seed_processed_tonnes'  => $seedProc,
-                    'seed_plan_tonnes'       => $seedPlan,
-                    'plan_fulfillment_pct'   => round(($seedProc / $seedPlan) * 100, 1),
-                    'report_date'            => 'Вересень 2026 (16 діб роботи МЕЗ, СВОД)',
-                    'processed_note'         => '16 діб переробки (15.09 — 30.09.2026)',
+                    'oil_content_pct'             => $oil,
+                    'oil_content_base_pct'        => $basePct,
+                    'oil_deviation_pct'           => round($oil - $basePct, 2),
+                    'oil_asr_pct'                 => round($oil / (1 - ($moist / 100)), 2),
+                    'oil_loss_kg'                 => $defaultOilLossKg,
+                    'oil_loss_pct'                => $defaultOilLossPct,
+                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
+                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
+                    'moisture_pct'                => $moist,
+                    'impurity_pct'                => 1.85,
+                    'seed_processed_tonnes'       => $seedProc,
+                    'seed_plan_tonnes'            => $seedPlan,
+                    'plan_fulfillment_pct'        => round(($seedProc / $seedPlan) * 100, 1),
+                    'report_date'                 => 'Вересень 2026 (16 діб роботи МЕЗ, СВОД)',
+                    'processed_note'              => '16 діб переробки (15.09 — 30.09.2026)',
                 ];
 
             case 'season':
@@ -2736,19 +2742,21 @@ class MetricsCalculator {
                 $oil = 44.55;
                 $moist = 6.60;
                 return [
-                    'oil_content_pct'        => $oil,
-                    'oil_content_base_pct'   => $basePct,
-                    'oil_deviation_pct'      => round($oil - $basePct, 2),
-                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
-                    'oil_loss_kg'            => $defaultOilLossKg,
-                    'oil_loss_pct'           => $defaultOilLossPct,
-                    'moisture_pct'           => $moist,
-                    'impurity_pct'           => 1.77,
-                    'seed_processed_tonnes'  => $seedProc,
-                    'seed_plan_tonnes'       => $seedPlan,
-                    'plan_fulfillment_pct'   => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
-                    'report_date'            => "Сезон 2026–2027 ({$dSeason['working_days']} доби роботи, СВОД)",
-                    'processed_note'         => "Загалом перероблено за сезон " . number_format($seedProc, 1, ',', ' ') . " т",
+                    'oil_content_pct'             => $oil,
+                    'oil_content_base_pct'        => $basePct,
+                    'oil_deviation_pct'           => round($oil - $basePct, 2),
+                    'oil_asr_pct'                 => round($oil / (1 - ($moist / 100)), 2),
+                    'oil_loss_kg'                 => $defaultOilLossKg,
+                    'oil_loss_pct'                => $defaultOilLossPct,
+                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
+                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
+                    'moisture_pct'                => $moist,
+                    'impurity_pct'                => 1.77,
+                    'seed_processed_tonnes'       => $seedProc,
+                    'seed_plan_tonnes'            => $seedPlan,
+                    'plan_fulfillment_pct'        => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
+                    'report_date'                 => "Сезон 2026–2027 ({$dSeason['working_days']} доби роботи, СВОД)",
+                    'processed_note'              => "Загалом перероблено за сезон " . number_format($seedProc, 1, ',', ' ') . " т",
                 ];
 
             case 'week':
@@ -2771,21 +2779,23 @@ class MetricsCalculator {
                 } catch (Throwable $e) {}
 
                 return [
-                    'oil_content_pct'        => $oil,
-                    'oil_content_base_pct'   => $basePct,
-                    'oil_deviation_pct'      => round($oil - $basePct, 2),
-                    'oil_asr_pct'            => $oilAsr,
-                    'oil_loss_kg'            => $defaultOilLossKg,
-                    'oil_loss_pct'           => $defaultOilLossPct,
-                    'oil_date'               => $oilDateStr,
-                    'oil_note'               => "Фактична товарна олійність за {$oilDateStr} (звіт МЕЗ)",
-                    'moisture_pct'           => $moist,
-                    'impurity_pct'           => 2.00,
-                    'seed_processed_tonnes'  => $seedProc,
-                    'seed_plan_tonnes'       => $seedPlan,
-                    'plan_fulfillment_pct'   => round(($seedProc / $seedPlan) * 100, 1),
-                    'report_date'            => '07.10 — 14.10.2026 (тиждень переробки)',
-                    'processed_note'         => 'Робочі доби тижня у цеху екстракції',
+                    'oil_content_pct'             => $oil,
+                    'oil_content_base_pct'        => $basePct,
+                    'oil_deviation_pct'           => round($oil - $basePct, 2),
+                    'oil_asr_pct'                 => $oilAsr,
+                    'oil_loss_kg'                 => $defaultOilLossKg,
+                    'oil_loss_pct'                => $defaultOilLossPct,
+                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
+                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
+                    'oil_date'                    => $oilDateStr,
+                    'oil_note'                    => "Фактична товарна олійність за {$oilDateStr} (звіт МЕЗ)",
+                    'moisture_pct'                => $moist,
+                    'impurity_pct'                => 2.00,
+                    'seed_processed_tonnes'       => $seedProc,
+                    'seed_plan_tonnes'            => $seedPlan,
+                    'plan_fulfillment_pct'        => round(($seedProc / $seedPlan) * 100, 1),
+                    'report_date'                 => '07.10 — 14.10.2026 (тиждень переробки)',
+                    'processed_note'              => 'Робочі доби тижня у цеху екстракції',
                 ];
 
             case 'day_prev':
@@ -2801,21 +2811,23 @@ class MetricsCalculator {
                 } catch (Throwable $e) {}
 
                 return [
-                    'oil_content_pct'        => 44.49,
-                    'oil_content_base_pct'   => $basePct,
-                    'oil_deviation_pct'      => round(44.49 - $basePct, 2),
-                    'oil_asr_pct'            => 48.30,
-                    'oil_loss_kg'            => $defaultOilLossKg,
-                    'oil_loss_pct'           => $defaultOilLossPct,
-                    'oil_date'               => '13.10',
-                    'oil_note'               => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
-                    'moisture_pct'           => 6.00,
-                    'impurity_pct'           => 2.00,
-                    'seed_processed_tonnes'  => $seedProc,
-                    'seed_plan_tonnes'       => 600.0,
-                    'plan_fulfillment_pct'   => round(($seedProc / 600.0) * 100, 1),
-                    'report_date'            => "{$repDateStr} (Минула активна доба)",
-                    'processed_note'         => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
+                    'oil_content_pct'             => 44.49,
+                    'oil_content_base_pct'        => $basePct,
+                    'oil_deviation_pct'           => round(44.49 - $basePct, 2),
+                    'oil_asr_pct'                 => 48.30,
+                    'oil_loss_kg'                 => $defaultOilLossKg,
+                    'oil_loss_pct'                => $defaultOilLossPct,
+                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
+                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
+                    'oil_date'                    => '13.10',
+                    'oil_note'                    => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
+                    'moisture_pct'                => 6.00,
+                    'impurity_pct'                => 2.00,
+                    'seed_processed_tonnes'       => $seedProc,
+                    'seed_plan_tonnes'            => 600.0,
+                    'plan_fulfillment_pct'        => round(($seedProc / 600.0) * 100, 1),
+                    'report_date'                 => "{$repDateStr} (Минула активна доба)",
+                    'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
                 ];
 
             case 'month':
@@ -2826,21 +2838,23 @@ class MetricsCalculator {
                 $oilAsr = 48.30;
                 $moist = 6.17;
                 return [
-                    'oil_content_pct'        => $oil,
-                    'oil_content_base_pct'   => $basePct,
-                    'oil_deviation_pct'      => round($oil - $basePct, 2),
-                    'oil_asr_pct'            => $oilAsr,
-                    'oil_loss_kg'            => $defaultOilLossKg,
-                    'oil_loss_pct'           => $defaultOilLossPct,
-                    'oil_date'               => '13.10',
-                    'oil_note'               => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
-                    'moisture_pct'           => $moist,
-                    'impurity_pct'           => 1.62,
-                    'seed_processed_tonnes'  => $seedProc,
-                    'seed_plan_tonnes'       => $seedPlan,
-                    'plan_fulfillment_pct'   => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
-                    'report_date'            => "Жовтень 2026 ({$dOct['working_days']} діб переробки з {$dOct['days_count']}, СВОД)",
-                    'processed_note'         => "Середньозважена якість насіння у переробку (" . number_format($seedProc, 1, ',', ' ') . " т)",
+                    'oil_content_pct'             => $oil,
+                    'oil_content_base_pct'        => $basePct,
+                    'oil_deviation_pct'           => round($oil - $basePct, 2),
+                    'oil_asr_pct'                 => $oilAsr,
+                    'oil_loss_kg'                 => $defaultOilLossKg,
+                    'oil_loss_pct'                => $defaultOilLossPct,
+                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
+                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
+                    'oil_date'                    => '13.10',
+                    'oil_note'                    => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
+                    'moisture_pct'                => $moist,
+                    'impurity_pct'                => 1.62,
+                    'seed_processed_tonnes'       => $seedProc,
+                    'seed_plan_tonnes'            => $seedPlan,
+                    'plan_fulfillment_pct'        => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
+                    'report_date'                 => "Жовтень 2026 ({$dOct['working_days']} діб переробки з {$dOct['days_count']}, СВОД)",
+                    'processed_note'              => "Середньозважена якість насіння у переробку (" . number_format($seedProc, 1, ',', ' ') . " т)",
                 ];
 
             case 'day':
@@ -2891,21 +2905,23 @@ class MetricsCalculator {
                 } catch (Throwable $e) {}
 
                 return [
-                    'oil_content_pct'        => $oil,
-                    'oil_content_base_pct'   => $basePct,
-                    'oil_deviation_pct'      => round($oil - $basePct, 2),
-                    'oil_asr_pct'            => $oilAsr,
-                    'oil_loss_kg'            => $defaultOilLossKg,
-                    'oil_loss_pct'           => $defaultOilLossPct,
-                    'oil_date'               => $oilDateStr,
-                    'oil_note'               => "Фактична товарна олійність за {$oilDateStr} як у звіті МЕЗ",
-                    'moisture_pct'           => $moist,
-                    'impurity_pct'           => $imp,
-                    'seed_processed_tonnes'  => $seedProc,
-                    'seed_plan_tonnes'       => $seedPlan,
-                    'plan_fulfillment_pct'   => round(($seedProc / $seedPlan) * 100, 1),
-                    'report_date'            => "{$repDateStr} (Звіт виробництва — цех екстракції)",
-                    'processed_note'         => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
+                    'oil_content_pct'             => $oil,
+                    'oil_content_base_pct'        => $basePct,
+                    'oil_deviation_pct'           => round($oil - $basePct, 2),
+                    'oil_asr_pct'                 => $oilAsr,
+                    'oil_loss_kg'                 => $defaultOilLossKg,
+                    'oil_loss_pct'                => $defaultOilLossPct,
+                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
+                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
+                    'oil_date'                    => $oilDateStr,
+                    'oil_note'                    => "Фактична товарна олійність за {$oilDateStr} як у звіті МЕЗ",
+                    'moisture_pct'                => $moist,
+                    'impurity_pct'                => $imp,
+                    'seed_processed_tonnes'       => $seedProc,
+                    'seed_plan_tonnes'            => $seedPlan,
+                    'plan_fulfillment_pct'        => round(($seedProc / $seedPlan) * 100, 1),
+                    'report_date'                 => "{$repDateStr} (Звіт виробництва — цех екстракції)",
+                    'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
                 ];
         }
     }
