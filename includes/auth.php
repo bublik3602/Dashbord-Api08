@@ -60,6 +60,15 @@ class Auth {
                 'allowed_pages' => ['semena'],
                 'is_active'     => true,
             ],
+            'energo' => [
+                'username'      => 'energo',
+                'password_hash' => password_hash('12345', PASSWORD_DEFAULT),
+                'password'      => '12345',
+                'display_name'  => 'Служба головного енергетика (Блок В)',
+                'role'          => 'energo',
+                'allowed_pages' => ['dashboard', 'energo'],
+                'is_active'     => true,
+            ],
         ];
 
         // 1. Спроба завантажити з файлу database/users.json
@@ -207,15 +216,23 @@ class Auth {
     }
 
     /**
+     * Чи є поточний користувач енергетиком (роль energo)
+     */
+    public static function isEnergo(): bool {
+        $u = self::user();
+        return ($u['role'] ?? '') === 'energo';
+    }
+
+    /**
      * Чи дозволено поточному користувачу завантажувати звіти та файли 1С.
-     * Користувачу 'semena' заборонено завантажувати приход / оновлювати дані.
+     * Користувачам 'semena' та 'energo' заборонено завантажувати приход / оновлювати дані.
      */
     public static function canUpload(): bool {
         $u = self::user();
         if (!$u) {
             return false;
         }
-        if (($u['role'] ?? '') === 'semena' || ($u['username'] ?? '') === 'semena') {
+        if (in_array(($u['role'] ?? ''), ['semena', 'energo'], true) || in_array(($u['username'] ?? ''), ['semena', 'energo'], true)) {
             return false;
         }
         return true;

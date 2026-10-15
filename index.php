@@ -16,6 +16,7 @@ require_once __DIR__ . '/includes/metrics_calculator.php';
 // Обов'язкова авторизація: головний дашборд доступний тільки для дозволених ролей (admin)
 // Користувач 'semena' автоматично перенаправляється на semena.php
 $currentUser = Auth::requireAuth('dashboard');
+$isEnergo = Auth::isEnergo();
 
 try {
     $calculator = new MetricsCalculator();
@@ -72,15 +73,21 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
          ============================================================= -->
     <header class="dashboard-header">
         <div class="brand-section">
-            <div class="brand-icon">
-                <i data-lucide="factory"></i>
+            <div class="brand-icon" style="<?= $isEnergo ? 'background: linear-gradient(135deg, #fef3c7, #fde68a); border-color: #f59e0b;' : '' ?>">
+                <i data-lucide="<?= $isEnergo ? 'zap' : 'factory' ?>" style="<?= $isEnergo ? 'color: #d97706;' : '' ?>"></i>
             </div>
             <div>
-                <h1 class="brand-title"><?= htmlspecialchars($config['app_name'] ?? 'Олійноекстракційний завод — Єдиний Моніторинг') ?></h1>
+                <h1 class="brand-title">
+                    <?= $isEnergo ? 'Олійноекстракційний завод — Енергоресурси (Блок В)' : htmlspecialchars($config['app_name'] ?? 'Олійноекстракційний завод — Єдиний Моніторинг') ?>
+                </h1>
                 <div class="brand-subtitle">
                     <span class="live-pill"><span class="pulse-dot"></span> LIVE</span>
                     <span>&bull;</span>
                     <span id="header-sync-time">Оновлено: <?= date('H:i:s') ?></span>
+                    <?php if ($isEnergo): ?>
+                        <span>&bull;</span>
+                        <span style="color: #d97706; font-weight: 700;">Служба енергетики та технологічної пари</span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -107,6 +114,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
             <!-- Дії: Вкладка СЕМЕНА, Імпорт та Експорт звітів -->
             <div class="action-buttons-group">
+                <?php if (!$isEnergo): ?>
                 <a href="semena.php" class="btn-action" id="btn-open-semena" title="Відкрити детальний звіт з постачання соняшнику (Лист погодження, Невиконані, Графік, Реєстр прийомок)" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #ffffff; border: 1px solid #b45309; font-weight: 800; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35); text-decoration: none;">
                     <span>🌻 СЕМЕНА</span>
                 </a>
@@ -114,6 +122,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
                     <span>Імпорт Excel</span>
                 </button>
+                <?php endif; ?>
                 <a href="api/export.php" class="btn-action btn-export" id="btn-export-excel" title="Завантажити звіт за зміну / добу в Excel">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i>
                     <span>Експорт в Excel</span>
@@ -131,8 +140,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
             <!-- Користувач та вихід із системи -->
             <div class="user-session-control" style="display: flex; align-items: center; gap: 6px; margin-left: 6px;">
-                <span class="btn-action" style="background: rgba(31, 78, 120, 0.08); border: 1px solid rgba(31, 78, 120, 0.2); color: #1e40af; cursor: default; font-weight: 700; padding: 6px 10px; font-size: 13px;" title="Поточний користувач">
-                    👤 <?= htmlspecialchars($currentUser['username'] ?? 'admin') ?>
+                <span class="btn-action" style="<?= $isEnergo ? 'background: #fef3c7; border: 1px solid #fcd34d; color: #b45309;' : 'background: rgba(31, 78, 120, 0.08); border: 1px solid rgba(31, 78, 120, 0.2); color: #1e40af;' ?> cursor: default; font-weight: 700; padding: 6px 10px; font-size: 13px;" title="<?= htmlspecialchars($currentUser['display_name'] ?? '') ?>">
+                    👤 <?= htmlspecialchars($currentUser['username'] ?? 'admin') ?> <?= $isEnergo ? '(Енергетика)' : '' ?>
                 </span>
                 <a href="logout.php" class="btn-action" style="background: #fee2e2; border: 1px solid #fca5a5; color: #991b1b; text-decoration: none; padding: 6px 10px; font-size: 13px; font-weight: 700;" title="Вийти з системи">
                     🚪 Вийти
@@ -164,12 +173,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
                 <div class="banner-sub-text">
                     <span id="banner-period-sub">Розрахунок доби: <strong>з 08:00 до 08:00</strong> наступного дня</span>
-                    <span class="banner-separator">&bull;</span>
-                    <span>Прихід насіння 1С: <strong id="banner-lab-time"><?= htmlspecialchars($labDate) ?></strong></span>
-                    <span class="banner-separator">&bull;</span>
-                    <span>Переробка МЕЗ: <strong id="banner-prod-lab-time"><?= htmlspecialchars($prodLabDate) ?></strong></span>
-                    <span class="banner-separator">&bull;</span>
-                    <span>СВОД залишків: <strong id="banner-stocks-time"><?= htmlspecialchars($stocksDate) ?></strong></span>
+                    <?php if ($isEnergo): ?>
+                        <span class="banner-separator">&bull;</span>
+                        <span>Облік енергоносіїв заводу: <strong style="color: #0284c7;">Електроенергія</strong> &bull; <strong style="color: #059669;">Водопостачання</strong> &bull; <strong style="color: #d97706;">Технологічна пара</strong> &bull; <strong style="color: #7c3aed;">Стоки</strong></span>
+                    <?php else: ?>
+                        <span class="banner-separator">&bull;</span>
+                        <span>Прихід насіння 1С: <strong id="banner-lab-time"><?= htmlspecialchars($labDate) ?></strong></span>
+                        <span class="banner-separator">&bull;</span>
+                        <span>Переробка МЕЗ: <strong id="banner-prod-lab-time"><?= htmlspecialchars($prodLabDate) ?></strong></span>
+                        <span class="banner-separator">&bull;</span>
+                        <span>СВОД залишків: <strong id="banner-stocks-time"><?= htmlspecialchars($stocksDate) ?></strong></span>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -184,6 +198,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         </div>
     </div>
 
+    <?php if (!$isEnergo): ?>
     <!-- =============================================================
          БЛОК А: ПРОИЗВОДСТВО И МАТЕРИАЛЬНЫЙ БАЛАНС (ВЕРХНИЙ РЯД KPI)
          ============================================================= -->
@@ -679,6 +694,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             </div>
         </div>
     </div>
+    <?php endif; // end !$isEnergo (Block A, Lab, Yield, Stocks) ?>
 
     <!-- =============================================================
          БЛОК В: ЕНЕРГОРЕСУРСИ ЗАВОДУ (ЕЛЕКТРОЕНЕРГІЯ, ВОДА, СТОКИ, ГАЗ)
@@ -966,6 +982,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
     </div>
 
+    <?php if (!$isEnergo): ?>
     <!-- =============================================================
          БЛОК Г: АНАЛІТИКА ТА ПОРІВНЯННЯ ПЕРІОДІВ (СЕРПЕНЬ — ВЕРЕСЕНЬ — ЖОВТЕНЬ 2026)
          ============================================================= -->
@@ -1522,6 +1539,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         </div>
     </div>
 </div>
+<?php endif; // end !$isEnergo (Block G, Contracts, SCADA, Modals) ?>
 
 <!-- Контейнер для всплывающих уведомлений (Toast) -->
 <div id="toast-container" class="toast-container"></div>

@@ -16,6 +16,7 @@ def create_archive():
         'login.php',
         'logout.php',
         'semena.php',
+        'energo.php',
     ]
     
     include_dirs = [
