@@ -1051,7 +1051,8 @@ try {
                             $huskTonnes  = isset($r[14]) && is_numeric($r[14]) ? round((float)$r[14] / 1000.0, 3) : (isset($r[9]) && is_numeric($r[9]) ? round((float)$r[9] / 1000.0, 3) : 0.0);
                             $prodLossT   = isset($r[17]) && is_numeric($r[17]) ? max(0.0, round((float)$r[17] / 1000.0, 3)) : (isset($r[11]) && is_numeric($r[11]) ? max(0.0, round((float)$r[11] / 1000.0, 3)) : 0.0);
 
-                            $dayOilPct   = isset($r[3]) && is_numeric($r[3]) && (float)$r[3] > 10 ? (float)$r[3] : (isset($r[2]) && is_numeric($r[2]) && (float)$r[2] > 10 ? (float)$r[2] : 0.0);
+                            $dayOilPct   = isset($r[2]) && is_numeric($r[2]) && (float)$r[2] > 10 ? (float)$r[2] : (isset($r[3]) && is_numeric($r[3]) && (float)$r[3] > 10 ? (float)$r[3] : 0.0);
+                            $dayOilAsrPct = isset($r[3]) && is_numeric($r[3]) && (float)$r[3] > 10 ? (float)$r[3] : 0.0;
                             $dayMoistPct = isset($r[4]) && is_numeric($r[4]) && (float)$r[4] > 0 && (float)$r[4] < 25 ? (float)$r[4] : 0.0;
                             $dayImpPct   = isset($r[5]) && is_numeric($r[5]) && (float)$r[5] > 0 && (float)$r[5] < 25 ? (float)$r[5] : 0.0;
                         }

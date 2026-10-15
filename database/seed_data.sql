@@ -135,6 +135,7 @@ INSERT INTO `warehouse_stocks` (`recorded_at`, `report_date`, `seed_stock_tonnes
 
 -- 7. Показники якості лабораторії (реальні середньозважені з Листа погодження та Графіка завезення)
 INSERT INTO `lab_quality_logs` (`recorded_at`, `report_date`, `oil_content_pct`, `oil_content_base_pct`, `oil_deviation_pct`, `moisture_pct`, `impurity_pct`, `weight_discount_tonnes`) VALUES
+('2026-10-13 20:00:00', '13.10.2026', 44.49, 48.00, -3.51, 6.00, 2.00, 0.000),
 (NOW(), '14.10.2026 22:12', 49.21, 48.00, 1.21, 7.00, 3.25, 77.680);
 
 -- 8. Контрактація та виконання специфікацій (реальні дані з Листа погодження 1С: 128 специфікацій)

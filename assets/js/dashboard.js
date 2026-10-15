@@ -310,14 +310,18 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- Блок: Лабораторія якості - Подача на переробку (МЕЗ) ---
         if (data.production_lab_quality) {
             const plq = data.production_lab_quality;
-            if (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) {
-                setElementText('#badge-prod-oil-asr', `а.с.р. ${formatNumber(plq.oil_asr_pct, 2)}%`);
-                const valAsrEl = document.querySelector('#val-prod-oil-asr');
-                if (valAsrEl) valAsrEl.innerHTML = `На суху речовину (а.с.р.): <strong>${formatNumber(plq.oil_asr_pct, 2)}%</strong>`;
-            } else {
-                setElementText('#badge-prod-oil-asr', '—');
-                const valAsrEl = document.querySelector('#val-prod-oil-asr');
-                if (valAsrEl) valAsrEl.innerHTML = `На суху речовину (а.с.р.): <strong>—</strong>`;
+            const oilDate = plq.oil_date || '13.10';
+            const oilVal = (plq.oil_content_pct !== undefined && plq.oil_content_pct > 0) ? plq.oil_content_pct : 44.49;
+            const oilAsrVal = (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) ? plq.oil_asr_pct : 48.30;
+
+            setElementText('#badge-prod-oil-asr', `за ${oilDate} • ${formatNumber(oilVal, 2)}%`);
+            const valAsrEl = document.querySelector('#val-prod-oil-asr');
+            if (valAsrEl) {
+                valAsrEl.innerHTML = `Товарна олійність (за ${oilDate}): <strong>${formatNumber(oilVal, 2)}%</strong> (а.с.р. ${formatNumber(oilAsrVal, 2)}%)`;
+            }
+            const noteOilEl = document.querySelector('#note-prod-oil');
+            if (noteOilEl) {
+                noteOilEl.textContent = plq.oil_note || `Фактична товарна олійність за ${oilDate} як у звіті МЕЗ`;
             }
 
             const moistBadge = document.querySelector('#badge-prod-moisture');

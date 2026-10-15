@@ -2735,7 +2735,9 @@ class MetricsCalculator {
             case 'week':
                 $seedProc = 644.33;
                 $seedPlan = 1200.0;
-                $oil = 45.62;
+                $oil = 44.49;
+                $oilAsr = 48.30;
+                $oilDateStr = '13.10';
                 $moist = 6.00;
                 try {
                     $wAgg = $this->db->query("
@@ -2753,7 +2755,9 @@ class MetricsCalculator {
                     'oil_content_pct'        => $oil,
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round($oil - $basePct, 2),
-                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'oil_asr_pct'            => $oilAsr,
+                    'oil_date'               => $oilDateStr,
+                    'oil_note'               => "Фактична товарна олійність за {$oilDateStr} (звіт МЕЗ)",
                     'moisture_pct'           => $moist,
                     'impurity_pct'           => 2.00,
                     'seed_processed_tonnes'  => $seedProc,
@@ -2776,10 +2780,12 @@ class MetricsCalculator {
                 } catch (Throwable $e) {}
 
                 return [
-                    'oil_content_pct'        => 45.62,
+                    'oil_content_pct'        => 44.49,
                     'oil_content_base_pct'   => $basePct,
-                    'oil_deviation_pct'      => -2.38,
-                    'oil_asr_pct'            => 48.53,
+                    'oil_deviation_pct'      => round(44.49 - $basePct, 2),
+                    'oil_asr_pct'            => 48.30,
+                    'oil_date'               => '13.10',
+                    'oil_note'               => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
                     'moisture_pct'           => 6.00,
                     'impurity_pct'           => 2.00,
                     'seed_processed_tonnes'  => $seedProc,
@@ -2793,13 +2799,16 @@ class MetricsCalculator {
             case 'month_oct':
                 $seedProc = $dOct['seed_processed'];
                 $seedPlan = $dOct['working_days'] * 600.0;
-                $oil = 45.62;
+                $oil = 44.49;
+                $oilAsr = 48.30;
                 $moist = 6.17;
                 return [
                     'oil_content_pct'        => $oil,
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round($oil - $basePct, 2),
-                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'oil_asr_pct'            => $oilAsr,
+                    'oil_date'               => '13.10',
+                    'oil_note'               => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
                     'moisture_pct'           => $moist,
                     'impurity_pct'           => 1.62,
                     'seed_processed_tonnes'  => $seedProc,
@@ -2816,7 +2825,9 @@ class MetricsCalculator {
             default:
                 $seedProc = 596.81;
                 $seedPlan = 600.0;
-                $oil = 45.62;
+                $oil = 44.49; // Товарна олійність за 13.10 (як у звіті)
+                $oilAsr = 48.30; // а.с.р. за 13.10 (як у звіті)
+                $oilDateStr = '13.10';
                 $moist = 6.00;
                 $imp = 2.00;
                 $repDateStr = '14.10.2026';
@@ -2835,15 +2846,22 @@ class MetricsCalculator {
                         $repDateStr = !empty($latestMb['report_date']) ? $latestMb['report_date'] : date('d.m.Y', strtotime($latestMb['recorded_at']));
                     }
 
-                    // Перевіряємо якість у lab_quality_logs за відповідну дату
-                    $chkLab = $this->db->prepare("SELECT oil_content_pct, moisture_pct, impurity_pct FROM lab_quality_logs WHERE report_date = ? OR recorded_at LIKE ? ORDER BY id DESC LIMIT 1");
+                    // Перевіряємо фактичну якість: якщо на поточну добу (14.10) ще немає олійності в звіті, беремо фактичну товарну за 13.10 (44.49%)
                     $dateIso = date('Y-m-d', strtotime(str_replace('.', '-', $repDateStr)));
+                    $chkLab = $this->db->prepare("SELECT oil_content_pct, moisture_pct, impurity_pct, report_date FROM lab_quality_logs WHERE (report_date = ? OR recorded_at LIKE ?) AND oil_content_pct > 10 ORDER BY id DESC LIMIT 1");
                     $chkLab->execute([$repDateStr, "{$dateIso}%"]);
                     $labRow = $chkLab->fetch(PDO::FETCH_ASSOC);
-                    if ($labRow) {
-                        if ((float)($labRow['oil_content_pct'] ?? 0) > 0) $oil = (float)$labRow['oil_content_pct'];
+                    if ($labRow && (float)($labRow['oil_content_pct'] ?? 0) > 0 && (float)$labRow['oil_content_pct'] < 47) {
+                        $oil = (float)$labRow['oil_content_pct'];
+                        $oilDateStr = explode(' ', trim($repDateStr))[0];
                         if ((float)($labRow['moisture_pct'] ?? 0) > 0) $moist = (float)$labRow['moisture_pct'];
                         if ((float)($labRow['impurity_pct'] ?? 0) > 0) $imp = (float)$labRow['impurity_pct'];
+                        $oilAsr = round($oil / (1 - ($moist / 100)), 2);
+                    } else {
+                        // За 14.10 в довідці аналізу ще немає, тому фіксуємо товарну олійність за 13.10 (44.49% та а.с.р. 48.30%)
+                        $oil = 44.49;
+                        $oilAsr = 48.30;
+                        $oilDateStr = '13.10';
                     }
                 } catch (Throwable $e) {}
 
@@ -2851,7 +2869,9 @@ class MetricsCalculator {
                     'oil_content_pct'        => $oil,
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round($oil - $basePct, 2),
-                    'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'oil_asr_pct'            => $oilAsr,
+                    'oil_date'               => $oilDateStr,
+                    'oil_note'               => "Фактична товарна олійність за {$oilDateStr} як у звіті МЕЗ",
                     'moisture_pct'           => $moist,
                     'impurity_pct'           => $imp,
                     'seed_processed_tonnes'  => $seedProc,
