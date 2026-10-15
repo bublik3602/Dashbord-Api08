@@ -315,14 +315,21 @@ document.addEventListener('DOMContentLoaded', function () {
             const oilVal = (plq.oil_content_pct !== undefined && plq.oil_content_pct > 0) ? plq.oil_content_pct : 44.49;
             const oilAsrVal = (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) ? plq.oil_asr_pct : 48.30;
 
+            const oilLossKg = plq.oil_loss_kg !== undefined ? plq.oil_loss_kg : 38654;
+            const oilLossPct = plq.oil_loss_pct !== undefined ? plq.oil_loss_pct : 0.81;
+
             setElementText('#badge-prod-oil-asr', `за ${oilDate} • ${formatNumber(oilVal, 2)}%`);
             const valAsrEl = document.querySelector('#val-prod-oil-asr');
             if (valAsrEl) {
                 valAsrEl.innerHTML = `Товарна олійність (за ${oilDate}): <strong>${formatNumber(oilVal, 2)}%</strong> (а.с.р. ${formatNumber(oilAsrVal, 2)}%)`;
             }
+            const valOilLossEl = document.querySelector('#val-prod-oil-loss');
+            if (valOilLossEl) {
+                valOilLossEl.innerHTML = `<span style="color: #854d0e; font-weight: 600;">Виробн. втрати олії:</span> <strong style="color: #713f12;">${formatNumber(oilLossKg, 0)} кг</strong> <span class="badge-discount" style="padding: 1px 6px; font-size: 10px; font-weight: 700; border-radius: 4px;">${formatNumber(oilLossPct, 2)}%</span>`;
+            }
             const noteOilEl = document.querySelector('#note-prod-oil');
             if (noteOilEl) {
-                noteOilEl.textContent = plq.oil_note || `Фактична товарна олійність за ${oilDate} як у звіті МЕЗ`;
+                noteOilEl.textContent = (plq.oil_note || `Фактична товарна олійність за ${oilDate} як у звіті МЕЗ`) + ' • Справка по переработке';
             }
 
             const moistBadge = document.querySelector('#badge-prod-moisture');

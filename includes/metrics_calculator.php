@@ -2684,6 +2684,8 @@ class MetricsCalculator {
     public function getProductionLabQuality(string $period = 'day'): array {
         $p = strtolower(trim($period));
         $basePct = 48.00;
+        $defaultOilLossKg = 38654;
+        $defaultOilLossPct = 0.81;
 
         $dyn = $this->getHistoricalSeasonMetrics();
         $dOct = $dyn['oct'];
@@ -2696,6 +2698,8 @@ class MetricsCalculator {
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => -48.00,
                     'oil_asr_pct'            => 0.00,
+                    'oil_loss_kg'            => 0,
+                    'oil_loss_pct'           => 0.00,
                     'moisture_pct'           => 0.00,
                     'impurity_pct'           => 0.00,
                     'seed_processed_tonnes'  => 0.00,
@@ -2715,6 +2719,8 @@ class MetricsCalculator {
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round($oil - $basePct, 2),
                     'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'oil_loss_kg'            => $defaultOilLossKg,
+                    'oil_loss_pct'           => $defaultOilLossPct,
                     'moisture_pct'           => $moist,
                     'impurity_pct'           => 1.85,
                     'seed_processed_tonnes'  => $seedProc,
@@ -2734,6 +2740,8 @@ class MetricsCalculator {
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round($oil - $basePct, 2),
                     'oil_asr_pct'            => round($oil / (1 - ($moist / 100)), 2),
+                    'oil_loss_kg'            => $defaultOilLossKg,
+                    'oil_loss_pct'           => $defaultOilLossPct,
                     'moisture_pct'           => $moist,
                     'impurity_pct'           => 1.77,
                     'seed_processed_tonnes'  => $seedProc,
@@ -2767,6 +2775,8 @@ class MetricsCalculator {
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round($oil - $basePct, 2),
                     'oil_asr_pct'            => $oilAsr,
+                    'oil_loss_kg'            => $defaultOilLossKg,
+                    'oil_loss_pct'           => $defaultOilLossPct,
                     'oil_date'               => $oilDateStr,
                     'oil_note'               => "Фактична товарна олійність за {$oilDateStr} (звіт МЕЗ)",
                     'moisture_pct'           => $moist,
@@ -2795,6 +2805,8 @@ class MetricsCalculator {
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round(44.49 - $basePct, 2),
                     'oil_asr_pct'            => 48.30,
+                    'oil_loss_kg'            => $defaultOilLossKg,
+                    'oil_loss_pct'           => $defaultOilLossPct,
                     'oil_date'               => '13.10',
                     'oil_note'               => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
                     'moisture_pct'           => 6.00,
@@ -2818,6 +2830,8 @@ class MetricsCalculator {
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round($oil - $basePct, 2),
                     'oil_asr_pct'            => $oilAsr,
+                    'oil_loss_kg'            => $defaultOilLossKg,
+                    'oil_loss_pct'           => $defaultOilLossPct,
                     'oil_date'               => '13.10',
                     'oil_note'               => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
                     'moisture_pct'           => $moist,
@@ -2881,6 +2895,8 @@ class MetricsCalculator {
                     'oil_content_base_pct'   => $basePct,
                     'oil_deviation_pct'      => round($oil - $basePct, 2),
                     'oil_asr_pct'            => $oilAsr,
+                    'oil_loss_kg'            => $defaultOilLossKg,
+                    'oil_loss_pct'           => $defaultOilLossPct,
                     'oil_date'               => $oilDateStr,
                     'oil_note'               => "Фактична товарна олійність за {$oilDateStr} як у звіті МЕЗ",
                     'moisture_pct'           => $moist,

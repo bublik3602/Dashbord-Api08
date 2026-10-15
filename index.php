@@ -357,7 +357,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div id="chart-gauge-prod-oil" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
                     <div class="gauge-sub" id="val-prod-oil-asr">Товарна олійність (за <?= htmlspecialchars($prodLab['oil_date'] ?? '13.10') ?>): <strong><?= number_format($prodLab['oil_content_pct'] ?? 44.49, 2, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 48.30, 2, ',', ' ') ?>%)</div>
-                    <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична товарна олійність за 13.10 як у звіті МЕЗ') ?></div>
+                    <div class="gauge-oil-loss-row" id="val-prod-oil-loss" style="margin-top: 5px; padding: 3px 8px; background: #fefce8; border: 1px solid #fef08a; border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 11px;">
+                        <span style="color: #854d0e; font-weight: 600;">Виробн. втрати олії:</span>
+                        <strong style="color: #713f12;"><?= number_format($prodLab['oil_loss_kg'] ?? 38654, 0, '', ' ') ?> кг</strong>
+                        <span class="badge-discount" style="padding: 1px 6px; font-size: 10px; font-weight: 700; border-radius: 4px;"><?= number_format($prodLab['oil_loss_pct'] ?? 0.81, 2, ',', ' ') ?>%</span>
+                    </div>
+                    <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична товарна олійність за 13.10 як у звіті МЕЗ') ?> • Справка по переработке</div>
                 </div>
             </div>
 
