@@ -1,0 +1,57 @@
+{
+    "2026-10-10": {
+        "date": "2026-10-10",
+        "power_kwh": 28400,
+        "water_m3": 168.0,
+        "steam_t": 112.5,
+        "steam_pressure_bar": 11.2,
+        "reactive_kvarh": 9200,
+        "note": "Виробництво МЕЗ (вихід на плановий режим)",
+        "author": "energo",
+        "updated_at": "2026-10-10 20:00:00"
+    },
+    "2026-10-11": {
+        "date": "2026-10-11",
+        "power_kwh": 29100,
+        "water_m3": 174.5,
+        "steam_t": 116.0,
+        "steam_pressure_bar": 11.3,
+        "reactive_kvarh": 9450,
+        "note": "Стабільна робота пресового та екстракційного відділень",
+        "author": "energo",
+        "updated_at": "2026-10-11 20:00:00"
+    },
+    "2026-10-12": {
+        "date": "2026-10-12",
+        "power_kwh": 30500,
+        "water_m3": 180.0,
+        "steam_t": 121.2,
+        "steam_pressure_bar": 11.2,
+        "reactive_kvarh": 9900,
+        "note": "Робота на проектному навантаженні",
+        "author": "energo",
+        "updated_at": "2026-10-12 20:00:00"
+    },
+    "2026-10-13": {
+        "date": "2026-10-13",
+        "power_kwh": 31200,
+        "water_m3": 184.2,
+        "steam_t": 125.0,
+        "steam_pressure_bar": 11.4,
+        "reactive_kvarh": 10100,
+        "note": "Переробка 521,0 т насіння • питома 59,88 кВт·год/т",
+        "author": "energo",
+        "updated_at": "2026-10-13 20:00:00"
+    },
+    "2026-10-14": {
+        "date": "2026-10-14",
+        "power_kwh": 31800,
+        "water_m3": 188.5,
+        "steam_t": 127.4,
+        "steam_pressure_bar": 11.5,
+        "reactive_kvarh": 10350,
+        "note": "Переробка 596,8 т насіння • норма 53,28 кВт·год/т",
+        "author": "energo",
+        "updated_at": "2026-10-14 20:00:00"
+    }
+}

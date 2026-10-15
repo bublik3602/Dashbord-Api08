@@ -710,10 +710,22 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <span class="section-badge <?= !empty($en['has_data']) ? 'badge-green' : 'badge-blue' ?>" id="lbl-energy-period"><?= htmlspecialchars($en['period_note'] ?? 'Жовтень 2026: немає даних') ?></span>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span class="section-badge badge-blue">ТП 2×1600 / ТП-2000 &bull; Водомірний вузол &bull; Лузгова котельня (пара)</span>
-                    <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #ffffff; border: none; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
+                    <!-- Перемикач періодів для енергетика: Доба, Тиждень, Місяць -->
+                    <div class="period-switcher energy-period-switcher" style="margin: 0; background: #f1f5f9; padding: 2px; border-radius: 6px; display: inline-flex; gap: 2px; border: 1px solid #cbd5e1;">
+                        <button type="button" class="period-btn energy-period-btn active" data-period="day" style="padding: 4px 10px; font-size: 11px; font-weight: 700;">📅 Доба</button>
+                        <button type="button" class="period-btn energy-period-btn" data-period="week" style="padding: 4px 10px; font-size: 11px; font-weight: 700;">🗓️ Тиждень</button>
+                        <button type="button" class="period-btn energy-period-btn" data-period="month" style="padding: 4px 10px; font-size: 11px; font-weight: 700;">📆 Місяць</button>
+                    </div>
+
+                    <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #ffffff; border: none; padding: 5px 11px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
                         <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
-                        <span>📅 Переглянути Вересень 2026 (факт)</span>
+                        <span>📅 Вересень (факт)</span>
+                    </button>
+
+                    <!-- Кнопка вводу показників енергетика -->
+                    <button type="button" id="btn-open-energy-entry" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: 1px solid #047857; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(16,185,129,0.35);">
+                        <i data-lucide="edit-3" style="width: 13px; height: 13px;"></i>
+                        <span>+ Внести показники</span>
                     </button>
                 </div>
             </div>
@@ -763,6 +775,28 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
             </div>
 
+            <!-- Подобовий графік споживання електроенергії заводу (у кВт·год, МВт·год або потужність у МВт) -->
+            <div class="card-panel-inner" style="background: #ffffff; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 14px 16px; margin-top: 14px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; color: #0284c7;"></i>
+                        <span style="font-weight: 700; font-size: 13px; color: #1e293b;">Подобовий графік споживання електроенергії заводу (МЕЗ)</span>
+                        <span class="section-badge badge-blue" id="lbl-plant-power-unit">Режим: кВт·год за добу</span>
+                    </div>
+                    <div style="display: inline-flex; align-items: center; gap: 4px; background: #f8fafc; padding: 3px; border-radius: 6px; border: 1px solid #e2e8f0;">
+                        <span style="font-size: 11px; color: #64748b; font-weight: 600; margin-right: 4px;">Одиниці:</span>
+                        <button type="button" class="btn-power-unit active" data-unit="kwh" id="btn-toggle-kwh" style="border: none; background: #0284c7; color: #fff; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">кВт·год</button>
+                        <button type="button" class="btn-power-unit" data-unit="mwh" id="btn-toggle-mwh" style="border: none; background: transparent; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">МВт·год</button>
+                        <button type="button" class="btn-power-unit" data-unit="mw" id="btn-toggle-mw" style="border: none; background: transparent; color: #475569; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; cursor: pointer;">Потужність (МВт)</button>
+                    </div>
+                </div>
+                <div id="plant-daily-power-chart"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 6px;">
+                <span style="font-size: 12px; font-weight: 700; color: #334155;">📊 Комплексний баланс: Електроенергія (кВт·год), Вода (м³) та Технологічна пара (т)</span>
+                <span style="font-size: 11px; color: #64748b;">(Наведіть на графік для перегляду розрахунку на 1 т переробленого насіння)</span>
+            </div>
             <!-- Інтерактивний графік електроенергії та води -->
             <div id="energy-timeline-chart"></div>
 
@@ -1591,6 +1625,123 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <span>Завантажити та оновити дашборд</span>
             </button>
         </div>
+    </div>
+</div>
+
+<!-- =============================================================
+     МОДАЛЬНЕ ВІКНО: ВВІД ПОКАЗНИКІВ ЕНЕРГОНОСІЇВ (ЕЛЕКТРОЕНЕРГІЯ, ВОДА, ПАРА)
+     ============================================================= -->
+<div id="energy-entry-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-container" style="max-width: 680px;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border-bottom: 1px solid #e2e8f0;">
+            <div class="modal-title-wrap">
+                <div class="modal-icon" style="background: #0284c7; color: #ffffff;"><i data-lucide="zap"></i></div>
+                <div>
+                    <h2 class="modal-title" style="color: #0f172a; font-size: 17px;">Ввід показників енергоносіїв (Служба головного енергетика)</h2>
+                    <p class="modal-subtitle">Введіть фактичні добові показники лічильників заводу за обрану дату</p>
+                </div>
+            </div>
+            <button type="button" class="modal-close-btn" id="btn-close-energy-entry" title="Закрити">&times;</button>
+        </div>
+
+        <form id="form-energy-entry" autocomplete="off">
+            <div class="modal-body" style="padding: 20px;">
+                <!-- Дата обліку -->
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                        📅 Дата зняття показників / доба:
+                    </label>
+                    <input type="date" id="energy-form-date" class="form-input-clean" value="<?= date('Y-m-d') ?>" style="width: 100%; max-width: 260px; padding: 8px 12px; font-size: 13px; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 6px; color: #0f172a; outline: none;" required>
+                    <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Показники записуються за повну робочу добу заводу (24 години).</div>
+                </div>
+
+                <!-- 3 основні показники в рядку -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px;">
+                    <!-- 1. Електроенергія -->
+                    <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px;">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 6px;">
+                            ⚡ Електроенергія (кВт·год):
+                        </label>
+                        <input type="number" step="0.1" min="0" id="energy-form-kwh" placeholder="напр. 31200" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #7dd3fc; border-radius: 6px; color: #0284c7; background: #fff;" required>
+                        <div style="font-size: 10.5px; color: #0284c7; margin-top: 4px;">Загальний добовий лічильник заводу</div>
+                    </div>
+
+                    <!-- 2. Вода -->
+                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px;">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #15803d; margin-bottom: 6px;">
+                            💧 Витрата води (м³):
+                        </label>
+                        <input type="number" step="0.1" min="0" id="energy-form-water" placeholder="напр. 185.0" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #86efac; border-radius: 6px; color: #16a34a; background: #fff;" required>
+                        <div style="font-size: 10.5px; color: #15803d; margin-top: 4px;">Вхідний лічильник водопроводу МЕЗ</div>
+                    </div>
+
+                    <!-- 3. Технологічна пара -->
+                    <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px;">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #b45309; margin-bottom: 6px;">
+                            ♨️ Кількість пари (т):
+                        </label>
+                        <input type="number" step="0.1" min="0" id="energy-form-steam" placeholder="напр. 124.5" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #fcd34d; border-radius: 6px; color: #d97706; background: #fff;" required>
+                        <div style="font-size: 10.5px; color: #b45309; margin-top: 4px;">Виробіток котельні на лушпинні</div>
+                    </div>
+                </div>
+
+                <!-- Додаткові поля (тиск, реактивна енергія, примітка) -->
+                <details style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px;">
+                    <summary style="font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">
+                        ⚙️ Додаткові параметри (тиск пари, реактивна енергія, примітка)
+                    </summary>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Тиск пари в магістралі (бар):</label>
+                            <input type="number" step="0.1" id="energy-form-pressure" value="11.2" placeholder="11.2" style="width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px;">
+                        </div>
+                        <div>
+                            <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Реактивна енергія (кВАр·год):</label>
+                            <input type="number" step="0.1" id="energy-form-reactive" placeholder="напр. 9900" style="width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px;">
+                        </div>
+                    </div>
+                    <div style="margin-top: 8px;">
+                        <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Примітка чергового енергетика / зміни:</label>
+                        <input type="text" id="energy-form-note" placeholder="напр. Чергова зміна №1, нормальний режим переробки" style="width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px;">
+                    </div>
+                </details>
+
+                <!-- Останні внесені записи (таблиця історії) -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 11.5px; font-weight: 700; color: #334155;">📋 Останні збережені показники енергетика:</span>
+                        <button type="button" id="btn-reload-energy-history" style="background: none; border: none; font-size: 11px; color: #0284c7; cursor: pointer; text-decoration: underline;">Оновити таблицю</button>
+                    </div>
+                    <div style="max-height: 140px; overflow-y: auto; border: 1px solid #e2e8f0; border-radius: 6px;">
+                        <table class="data-table-clean" style="font-size: 11px; width: 100%;">
+                            <thead>
+                                <tr>
+                                    <th>Дата</th>
+                                    <th>Електроенергія</th>
+                                    <th>Вода</th>
+                                    <th>Пара</th>
+                                    <th>Автор</th>
+                                    <th>Дія</th>
+                                </tr>
+                            </thead>
+                            <tbody id="energy-history-tbody">
+                                <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 10px;">Завантаження історії...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="energy-form-alert" style="display: none; margin-top: 12px; padding: 8px 12px; border-radius: 6px; font-size: 12px;"></div>
+            </div>
+
+            <div class="modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
+                <button type="button" class="btn-modal-cancel" id="btn-cancel-energy-entry" style="padding: 8px 14px; font-size: 12px;">Скасувати</button>
+                <button type="submit" class="btn-modal-submit" id="btn-submit-energy-entry" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 8px 16px; font-size: 12px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                    <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                    <span>Зберегти показники</span>
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 

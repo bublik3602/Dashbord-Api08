@@ -19,6 +19,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.INITIAL_DASHBOARD_DATA) {
         FactoryCharts.initDonutChart(window.INITIAL_DASHBOARD_DATA.material_balance.yield_chart);
         FactoryCharts.initEnergyChart(window.INITIAL_DASHBOARD_DATA.energy.timeline);
+        if (window.INITIAL_DASHBOARD_DATA.energy && window.INITIAL_DASHBOARD_DATA.energy.timeline) {
+            FactoryCharts.initPlantPowerChart(window.INITIAL_DASHBOARD_DATA.energy.timeline, 'kwh');
+        }
         FactoryCharts.initGauges(
             window.INITIAL_DASHBOARD_DATA.lab_quality,
             window.INITIAL_DASHBOARD_DATA.contracts_summary,
@@ -1142,6 +1145,227 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!text) return '';
         const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
         return text.replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // -------------------------------------------------------------
+    // 12. ЕНЕРГЕТИКА: ПЕРЕМИКАЧ ОДИНИЦЬ ГРАФІКА СПОЖИВАННЯ (кВт·год / МВт·год / МВт)
+    // -------------------------------------------------------------
+    const powerUnitButtons = document.querySelectorAll('.btn-power-unit');
+    const lblPlantPowerUnit = document.getElementById('lbl-plant-power-unit');
+
+    powerUnitButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            powerUnitButtons.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'transparent';
+                b.style.color = '#475569';
+            });
+            this.classList.add('active');
+            this.style.background = '#0284c7';
+            this.style.color = '#ffffff';
+
+            const unit = this.getAttribute('data-unit') || 'kwh';
+            if (lblPlantPowerUnit) {
+                if (unit === 'mwh') lblPlantPowerUnit.textContent = 'Режим: МВт·год за добу';
+                else if (unit === 'mw') lblPlantPowerUnit.textContent = 'Режим: Середня потужність (МВт)';
+                else lblPlantPowerUnit.textContent = 'Режим: кВт·год за добу';
+            }
+
+            if (window.FactoryCharts && FactoryCharts.initPlantPowerChart) {
+                FactoryCharts.initPlantPowerChart(FactoryCharts._currentEnergyTimeline, unit);
+            }
+        });
+    });
+
+    // -------------------------------------------------------------
+    // 13. ЕНЕРГЕТИКА: ПЕРЕМИКАЧ ПЕРІОДІВ (Доба, Тиждень, Місяць)
+    // -------------------------------------------------------------
+    const energyPeriodButtons = document.querySelectorAll('.energy-period-btn');
+    energyPeriodButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+            const p = this.getAttribute('data-period');
+            if (!p || isFetching) return;
+
+            energyPeriodButtons.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+
+            // Синхронізуємо з глобальним селектором періоду, якщо є
+            const globalBtn = document.querySelector(`.period-btn:not(.energy-period-btn)[data-period="${p}"]`);
+            if (globalBtn) {
+                periodButtons.forEach(b => b.classList.remove('active'));
+                globalBtn.classList.add('active');
+            }
+
+            currentPeriod = p;
+            updateExportLink();
+            fetchDashboardData(true);
+        });
+    });
+
+    // -------------------------------------------------------------
+    // 14. МОДАЛЬНЕ ВІКНО: РУЧНИЙ ВВІД ПОКАЗНИКІВ ЕНЕРГОНОСІЇВ
+    // -------------------------------------------------------------
+    const btnOpenEnergyEntry   = document.getElementById('btn-open-energy-entry');
+    const energyEntryModal     = document.getElementById('energy-entry-modal');
+    const btnCloseEnergyEntry  = document.getElementById('btn-close-energy-entry');
+    const btnCancelEnergyEntry = document.getElementById('btn-cancel-energy-entry');
+    const formEnergyEntry      = document.getElementById('form-energy-entry');
+    const energyHistoryTbody   = document.getElementById('energy-history-tbody');
+    const btnReloadEnergyHist  = document.getElementById('btn-reload-energy-history');
+    const energyFormAlert      = document.getElementById('energy-form-alert');
+
+    function openEnergyModal() {
+        if (!energyEntryModal) return;
+        energyEntryModal.style.display = 'flex';
+        loadEnergyHistory();
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    }
+
+    function closeEnergyModal() {
+        if (!energyEntryModal) return;
+        energyEntryModal.style.display = 'none';
+        if (energyFormAlert) energyFormAlert.style.display = 'none';
+    }
+
+    if (btnOpenEnergyEntry) btnOpenEnergyEntry.addEventListener('click', openEnergyModal);
+    if (btnCloseEnergyEntry) btnCloseEnergyEntry.addEventListener('click', closeEnergyModal);
+    if (btnCancelEnergyEntry) btnCancelEnergyEntry.addEventListener('click', closeEnergyModal);
+    if (btnReloadEnergyHist) btnReloadEnergyHist.addEventListener('click', loadEnergyHistory);
+
+    // Закриття кліком по підкладці
+    if (energyEntryModal) {
+        energyEntryModal.addEventListener('click', function (e) {
+            if (e.target === energyEntryModal) closeEnergyModal();
+        });
+    }
+
+    // Завантаження історії записів енергетика
+    async function loadEnergyHistory() {
+        if (!energyHistoryTbody) return;
+        try {
+            energyHistoryTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 10px;">Завантаження...</td></tr>';
+            const res = await fetch('api/save_energy_entry.php', { cache: 'no-store' });
+            const json = await res.json();
+            if (json.status === 'success' && Array.isArray(json.entries) && json.entries.length > 0) {
+                energyHistoryTbody.innerHTML = json.entries.map(e => `
+                    <tr>
+                        <td class="bold">${e.date}</td>
+                        <td class="bold" style="color: #0284c7;">${formatNumber(e.power_kwh, 1)} кВт·год</td>
+                        <td style="color: #059669;">${formatNumber(e.water_m3, 1)} м³</td>
+                        <td style="color: #d97706;">${formatNumber(e.steam_t, 1)} т</td>
+                        <td><span style="font-size: 10px; color: #64748b;">${escapeHtml(e.author || 'energo')}</span></td>
+                        <td>
+                            <button type="button" class="btn-delete-energy-entry" data-date="${e.date}" title="Видалити запис" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 13px; font-weight: 700; padding: 2px 6px;">&times;</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Навішуємо обробник видалення
+                document.querySelectorAll('.btn-delete-energy-entry').forEach(btn => {
+                    btn.addEventListener('click', async function () {
+                        const d = this.getAttribute('data-date');
+                        if (!confirm(`Ви дійсно бажаєте видалити збережені показники за дату ${d}?`)) return;
+                        try {
+                            const delRes = await fetch('api/save_energy_entry.php', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ action: 'delete', date: d })
+                            });
+                            const delJson = await delRes.json();
+                            if (delJson.status === 'success') {
+                                showToast(delJson.message);
+                                loadEnergyHistory();
+                                fetchDashboardData(true);
+                            } else {
+                                alert(delJson.message || 'Помилка видалення');
+                            }
+                        } catch (err) {
+                            alert('Помилка видалення запису: ' + err.message);
+                        }
+                    });
+                });
+            } else {
+                energyHistoryTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 10px;">Записів ще немає. Введіть перший показник вище.</td></tr>';
+            }
+        } catch (err) {
+            energyHistoryTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 10px;">Помилка: ${escapeHtml(err.message)}</td></tr>`;
+        }
+    }
+
+    // Збереження форми показників
+    if (formEnergyEntry) {
+        formEnergyEntry.addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btnSubmit = document.getElementById('btn-submit-energy-entry');
+            const dateVal     = document.getElementById('energy-form-date').value;
+            const kwhVal      = document.getElementById('energy-form-kwh').value;
+            const waterVal    = document.getElementById('energy-form-water').value;
+            const steamVal    = document.getElementById('energy-form-steam').value;
+            const pressureVal = document.getElementById('energy-form-pressure') ? document.getElementById('energy-form-pressure').value : 11.2;
+            const reactiveVal = document.getElementById('energy-form-reactive') ? document.getElementById('energy-form-reactive').value : '';
+            const noteVal     = document.getElementById('energy-form-note') ? document.getElementById('energy-form-note').value : '';
+
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = `<span>Збереження...</span>`;
+            }
+
+            try {
+                const payload = {
+                    action: 'save',
+                    date: dateVal,
+                    power_kwh: kwhVal,
+                    water_m3: waterVal,
+                    steam_t: steamVal,
+                    steam_pressure_bar: pressureVal,
+                    reactive_kvarh: reactiveVal,
+                    note: noteVal
+                };
+
+                const res = await fetch('api/save_energy_entry.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const json = await res.json();
+
+                if (json.status === 'success') {
+                    showToast(json.message);
+                    if (energyFormAlert) {
+                        energyFormAlert.style.display = 'block';
+                        energyFormAlert.style.background = '#dcfce7';
+                        energyFormAlert.style.color = '#15803d';
+                        energyFormAlert.style.border = '1px solid #86efac';
+                        energyFormAlert.innerHTML = `<strong>✓ Успішно збережено:</strong> ${escapeHtml(json.message)}`;
+                    }
+
+                    // Перезавантажуємо історію та оновлюємо дашборд
+                    loadEnergyHistory();
+                    fetchDashboardData(true);
+
+                    setTimeout(() => {
+                        closeEnergyModal();
+                    }, 1200);
+                } else {
+                    throw new Error(json.message || 'Помилка збереження даних.');
+                }
+            } catch (err) {
+                if (energyFormAlert) {
+                    energyFormAlert.style.display = 'block';
+                    energyFormAlert.style.background = '#fee2e2';
+                    energyFormAlert.style.color = '#991b1b';
+                    energyFormAlert.style.border = '1px solid #fca5a5';
+                    energyFormAlert.innerHTML = `<strong>⚠️ Помилка:</strong> ${escapeHtml(err.message)}`;
+                }
+                showToast(err.message, true);
+            } finally {
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = `<i data-lucide="check" style="width: 14px; height: 14px;"></i><span>Зберегти показники</span>`;
+                    if (typeof lucide !== 'undefined') lucide.createIcons();
+                }
+            }
+        });
     }
 
     // Запуск таймера

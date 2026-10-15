@@ -5,6 +5,8 @@
 window.FactoryCharts = {
     donutChart: null,
     energyChart: null,
+    plantPowerChart: null,
+    _currentPlantPowerUnit: 'kwh',
     gaugeOilChart: null,
     gaugeMoistureChart: null,
     gaugeImpurityChart: null,
@@ -304,10 +306,10 @@ window.FactoryCharts = {
                             <div class="art-body">
                                 <div class="art-row" style="border-left: 3px solid #0284c7;">
                                     <div class="art-row-main">
-                                        <span class="art-lbl">⚡ Електроенергія:</span>
-                                        <span class="art-val bold" style="color: #0284c7;">${fmtP} ${pUnit}</span>
+                                        <span class="art-lbl">⚡ Споживання заводу:</span>
+                                        <span class="art-val bold" style="color: #0284c7;">${fmtP} ${pUnit} (${(pVal / 1000).toFixed(2)} МВт·год)</span>
                                     </div>
-                                    <div class="art-sub-calc">Частка у вибірці: ${pShare}%</div>
+                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Питома: ~${(pVal / 596.8).toFixed(2)} кВт·год/т насіння</div>
                                 </div>
                                 <div class="art-row" style="border-left: 3px solid #10b981;">
                                     <div class="art-row-main">
@@ -357,6 +359,150 @@ window.FactoryCharts = {
             if (noticeEl) noticeEl.style.display = "none";
             el.style.display = "block";
         }
+    },
+
+    /**
+     * Подобовий графік споживання електроенергії заводу (у кВт·год, МВт·год або середня потужність у МВт / кВт)
+     */
+    initPlantPowerChart: function (timelineData, unit) {
+        const el = document.querySelector("#plant-daily-power-chart");
+        if (!el) return;
+
+        timelineData = timelineData || this._currentEnergyTimeline || {};
+        this._currentEnergyTimeline = timelineData;
+        unit = unit || this._currentPlantPowerUnit || 'kwh';
+        this._currentPlantPowerUnit = unit;
+
+        const labels = timelineData.labels || [];
+        if (!labels.length) {
+            el.innerHTML = '<div style="padding: 24px; text-align: center; color: #64748b; font-size: 12px; font-style: italic;">Дані подобового споживання заводу очікуються або ще не внесені</div>';
+            return;
+        }
+
+        let seriesName = 'Споживання електроенергії заводу (кВт·год)';
+        let rawPowers  = timelineData.power || [];
+        let seriesData = rawPowers;
+        let yaxisTitle = 'кВт·год';
+
+        if (unit === 'mwh') {
+            seriesName = 'Споживання електроенергії заводу (МВт·год)';
+            seriesData = timelineData.power_mwh || rawPowers.map(v => Number((v / 1000).toFixed(2)));
+            yaxisTitle = 'МВт·год';
+        } else if (unit === 'mw') {
+            seriesName = 'Середня електрична потужність заводу (МВт)';
+            seriesData = timelineData.power_mw_avg || rawPowers.map(v => Number((v / 24000).toFixed(3)));
+            yaxisTitle = 'Потужність (МВт)';
+        }
+
+        if (this.plantPowerChart) {
+            try { this.plantPowerChart.destroy(); } catch (e) {}
+            this.plantPowerChart = null;
+        }
+
+        const self = this;
+        const options = {
+            series: [{
+                name: seriesName,
+                data: seriesData
+            }],
+            chart: {
+                type: 'bar',
+                height: 250,
+                fontFamily: 'inherit',
+                toolbar: { show: false },
+                animations: { enabled: true, speed: 450 }
+            },
+            plotOptions: {
+                bar: {
+                    borderRadius: 5,
+                    columnWidth: '50%',
+                    dataLabels: { position: 'top' }
+                }
+            },
+            colors: ['#0284c7'],
+            dataLabels: {
+                enabled: true,
+                formatter: function (val) {
+                    if (unit === 'mwh') return val.toFixed(1) + ' МВт·год';
+                    if (unit === 'mw') return val.toFixed(2) + ' МВт';
+                    return val >= 1000 ? Math.round(val / 1000) + 'k' : Math.round(val);
+                },
+                offsetY: -18,
+                style: {
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    colors: ['#0369a1']
+                }
+            },
+            xaxis: {
+                categories: labels,
+                axisBorder: { show: false },
+                axisTicks: { show: false },
+                labels: {
+                    style: { colors: '#64748b', fontSize: '11px', fontWeight: 600 }
+                }
+            },
+            yaxis: {
+                title: {
+                    text: yaxisTitle,
+                    style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
+                },
+                labels: {
+                    style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
+                    formatter: function (v) {
+                        if (v === undefined || v === null || isNaN(v)) return '0';
+                        if (unit === 'mwh' || unit === 'mw') return v.toLocaleString('uk-UA');
+                        return v >= 1000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
+                    }
+                }
+            },
+            grid: {
+                borderColor: '#f1f5f9',
+                strokeDashArray: 4
+            },
+            tooltip: {
+                shared: true,
+                intersect: false,
+                custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                    const rawKwh = Number(rawPowers[dataPointIndex] || (unit === 'mwh' ? Number(seriesData[dataPointIndex]) * 1000 : 0)) || 0;
+                    const pointLabel = labels[dataPointIndex] || '';
+                    const mwhVal = (rawKwh / 1000).toFixed(2);
+                    const avgKw  = (rawKwh / 24).toFixed(1);
+                    const avgMw  = (rawKwh / 24000).toFixed(3);
+                    const specKwh = (rawKwh / 596.8).toFixed(2);
+
+                    return `
+                        <div class="apex-rich-tooltip bar-tooltip-box" style="padding: 10px 14px; min-width: 250px;">
+                            <div class="art-header bar-head" style="margin-bottom: 8px;">
+                                <span class="art-title" style="font-weight: 700; color: #0f172a;">⚡ Дата: ${pointLabel}</span>
+                                <span class="art-pill" style="background:#e0f2fe; color:#0284c7; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700;">МЕЗ Завод</span>
+                            </div>
+                            <div class="art-body" style="font-size: 11.5px; line-height: 1.5;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="color: #64748b;">Споживання (кВт·год):</span>
+                                    <strong style="color: #0284c7;">${Math.round(rawKwh).toLocaleString('uk-UA')} кВт·год</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="color: #64748b;">Споживання (МВт·год):</span>
+                                    <strong style="color: #0369a1;">${mwhVal} МВт·год</strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="color: #64748b;">Середня потужність:</span>
+                                    <strong style="color: #d97706;">${avgMw} МВт (${avgKw} кВт)</strong>
+                                </div>
+                                <div style="border-top: 1px dashed #cbd5e1; margin-top: 6px; padding-top: 4px; display: flex; justify-content: space-between;">
+                                    <span style="color: #475569;">⚙️ Питома на 1 т насіння:</span>
+                                    <strong style="color: #4f46e5;">~${specKwh} кВт·год/т</strong>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        };
+
+        this.plantPowerChart = new ApexCharts(el, options);
+        this.plantPowerChart.render();
     },
 
     /**
@@ -756,6 +902,10 @@ window.FactoryCharts = {
                     ],
                     series: seriesList
                 }, true, true);
+            }
+
+            if (tl) {
+                this.initPlantPowerChart(tl, this._currentPlantPowerUnit || 'kwh');
             }
         }
 

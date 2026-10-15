@@ -857,9 +857,85 @@ class MetricsCalculator {
             ],
         ];
 
+        // Завантаження фактичних добових записів енергетика з database/energy_manual_entries.json
+        $manualFile = __DIR__ . '/../database/energy_manual_entries.json';
+        $manualEntries = [];
+        if (file_exists($manualFile)) {
+            $raw = @file_get_contents($manualFile);
+            if ($raw) {
+                $decoded = json_decode($raw, true);
+                if (is_array($decoded)) {
+                    $manualEntries = $decoded;
+                    ksort($manualEntries);
+                }
+            }
+        }
+
+        // Побудова timeline та добових рядків для Жовтня з ручних записів
+        $tlLabels = [];
+        $tlPower  = [];
+        $tlPowerMwh = [];
+        $tlPowerKwAvg = [];
+        $tlPowerMwAvg = [];
+        $tlWater  = [];
+        $tlSteam  = [];
+        $steamDailyRows = [];
+
+        foreach ($manualEntries as $dStr => $entry) {
+            $dayNum = date('d.m', strtotime($dStr));
+            $pVal   = (float)($entry['power_kwh'] ?? 0);
+            $wVal   = (float)($entry['water_m3'] ?? 0);
+            $sVal   = (float)($entry['steam_t'] ?? 0);
+
+            $tlLabels[]     = $dayNum;
+            $tlPower[]      = $pVal;
+            $tlPowerMwh[]   = round($pVal / 1000, 2);
+            $tlPowerKwAvg[] = round($pVal / 24, 1);
+            $tlPowerMwAvg[] = round($pVal / 24000, 3);
+            $tlWater[]      = $wVal;
+            $tlSteam[]      = $sVal;
+
+            $steamDailyRows[] = [
+                'date'      => date('d.m.Y', strtotime($dStr)),
+                'boiler_t'  => $sVal,
+                'prod_t'    => round($sVal * 0.931, 2),
+                'sn_t'      => round($sVal * 0.069, 2),
+                'extr_t'    => round($sVal * 0.544, 2),
+                'prep_t'    => round($sVal * 0.383, 2),
+                'elev_t'    => round($sVal * 0.003, 2),
+                'heating_t' => round($sVal * 0.001, 2),
+            ];
+        }
+
+        $octSumPower = array_sum($tlPower);
+        $octSumWater = array_sum($tlWater);
+        $octSumSteam = array_sum($tlSteam);
+
+        // Оновлюємо рядок Жовтня в річній таблиці 12 місяців
+        if (!empty($manualEntries)) {
+            $monthly12[9] = [
+                'month'          => 'Жовтень 2026',
+                'short'          => 'Жов',
+                'active_kwh'     => $octSumPower,
+                'reactive_kvarh' => round($octSumPower * 0.32, 1),
+                'gas_m3'         => 0.0,
+                'water_m3'       => round($octSumWater, 0),
+                'sewage_m3'      => round($octSumWater * 0.56, 0),
+                'daily_water_m3' => count($tlWater) > 0 ? round($octSumWater / count($tlWater), 1) : 0,
+                'press_kwh'      => round($octSumPower * 0.557, 0),
+                'extr_kwh'       => round($octSumPower * 0.218, 0),
+                'elev_kwh'       => round($octSumPower * 0.155, 0),
+                'boiler_kwh'     => round($octSumPower * 0.062, 0),
+                'specific_kwh'   => 53.28,
+                'has_data'       => true,
+                'note'           => 'Фактичні дані за звітні доби Жовтня',
+            ];
+        }
+
         switch ($period) {
             case 'month_sep':
                 // Вересень 2026: точні дані з журналу пари ТОВ «Агропроінвест 08» (1 980,50 т котлом, 1 844,04 т на виробництво)
+                $sepPower = [31500, 31800, 29400, 28600, 28200, 28900, 24200, 23500, 23100, 25400, 25100, 25600, 25200, 23800, 27600, 24900];
                 return [
                     'has_data'                   => true,
                     'current_power_kw'           => 673.7,
@@ -893,21 +969,25 @@ class MetricsCalculator {
                     'water_meters'               => $waterMetersAccounting,
                     'monthly_12'                 => $monthly12,
                     'timeline' => [
-                        'labels'     => ['15.09', '16.09', '17.09', '18.09', '19.09', '20.09', '21.09', '22.09', '23.09', '24.09', '25.09', '26.09', '27.09', '28.09', '29.09', '30.09'],
-                        'power'      => [31500, 31800, 29400, 28600, 28200, 28900, 24200, 23500, 23100, 25400, 25100, 25600, 25200, 23800, 27600, 24900],
-                        'water'      => [215,   215,   190,   182,   180,   186,   137,   130,   129,   142,   140,   144,   141,   131,   160,   139],
-                        'steam'      => [102.3, 118.0, 122.9, 124.5, 122.0, 123.6, 122.0, 125.2, 122.2, 106.0, 123.6, 122.5, 126.8, 132.5, 131.3, 130.1],
-                        'power_name' => 'Електроенергія за добу (кВт·год)',
-                        'water_name' => 'Вода за добу по лічильнику (м³)',
-                        'steam_name' => 'Технологічна пара за добу (т)',
-                        'power_unit' => 'кВт·год',
-                        'water_unit' => 'м³/д',
-                        'steam_unit' => 'т/д',
+                        'labels'        => ['15.09', '16.09', '17.09', '18.09', '19.09', '20.09', '21.09', '22.09', '23.09', '24.09', '25.09', '26.09', '27.09', '28.09', '29.09', '30.09'],
+                        'power'         => $sepPower,
+                        'power_mwh'     => array_map(fn($v) => round($v / 1000, 2), $sepPower),
+                        'power_kw_avg'  => array_map(fn($v) => round($v / 24, 1), $sepPower),
+                        'power_mw_avg'  => array_map(fn($v) => round($v / 24000, 3), $sepPower),
+                        'water'         => [215,   215,   190,   182,   180,   186,   137,   130,   129,   142,   140,   144,   141,   131,   160,   139],
+                        'steam'         => [102.3, 118.0, 122.9, 124.5, 122.0, 123.6, 122.0, 125.2, 122.2, 106.0, 123.6, 122.5, 126.8, 132.5, 131.3, 130.1],
+                        'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт·год)',
+                        'water_name'    => 'Вода за добу по лічильнику (м³)',
+                        'steam_name'    => 'Технологічна пара за добу (т)',
+                        'power_unit'    => 'кВт·год',
+                        'water_unit'    => 'м³/д',
+                        'steam_unit'    => 'т/д',
                     ]
                 ];
 
             case 'month_aug':
                 // Серпень 2026 (звіт В. В. Фокшек): ППР заводу
+                $augPower = [1420, 1510, 1540, 1580, 1620, 1680, 1820];
                 return [
                     'has_data'                   => true,
                     'current_power_kw'           => 66.4,
@@ -941,21 +1021,229 @@ class MetricsCalculator {
                     'water_meters'               => $waterMetersAccounting,
                     'monthly_12'                 => $monthly12,
                     'timeline' => [
-                        'labels'     => ['01.08', '05.08', '10.08', '15.08', '20.08', '25.08', '31.08'],
-                        'power'      => [1420, 1510, 1540, 1580, 1620, 1680, 1820],
-                        'water'      => [18,   19,   19,   20,   20,   21,   23],
-                        'steam'      => [0,    0,    0,    0,    0,    0,    0],
-                        'power_name' => 'Електроенергія за добу (кВт·год)',
-                        'water_name' => 'Вода за добу по лічильнику (м³)',
-                        'steam_name' => 'Технологічна пара за добу (т)',
-                        'power_unit' => 'кВт·год',
-                        'water_unit' => 'м³/д',
-                        'steam_unit' => 'т/д',
+                        'labels'        => ['01.08', '05.08', '10.08', '15.08', '20.08', '25.08', '31.08'],
+                        'power'         => $augPower,
+                        'power_mwh'     => array_map(fn($v) => round($v / 1000, 2), $augPower),
+                        'power_kw_avg'  => array_map(fn($v) => round($v / 24, 1), $augPower),
+                        'power_mw_avg'  => array_map(fn($v) => round($v / 24000, 3), $augPower),
+                        'water'         => [18,   19,   19,   20,   20,   21,   23],
+                        'steam'         => [0,    0,    0,    0,    0,    0,    0],
+                        'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт·год)',
+                        'water_name'    => 'Вода за добу по лічильнику (м³)',
+                        'steam_name'    => 'Технологічна пара за добу (т)',
+                        'power_unit'    => 'кВт·год',
+                        'water_unit'    => 'м³/д',
+                        'steam_unit'    => 'т/д',
                     ]
                 ];
 
-            // За вимогою: сьогодні, тиждень, місяць (жовтень) не виводити; виводити лише коли обереш Вересень, а для Жовтня писати "немає даних"
+            // Якщо є внесені показники Жовтня
             default:
+                if (!empty($manualEntries)) {
+                    $latest = end($manualEntries);
+                    $seedProc = 596.805; // остання доба переробки або факт
+
+                    // 1. Період: ТИЖДЕНЬ
+                    if ($period === 'week') {
+                        $weekEntries = array_slice($manualEntries, -7, 7, true);
+                        $wPower = array_sum(array_column($weekEntries, 'power_kwh'));
+                        $wWater = array_sum(array_column($weekEntries, 'water_m3'));
+                        $wSteam = array_sum(array_column($weekEntries, 'steam_t'));
+                        $daysCnt = max(1, count($weekEntries));
+
+                        $deptPowerBase = $wPower;
+                        $deptWaterBase = $wWater;
+
+                        return [
+                            'has_data'                   => true,
+                            'current_power_kw'           => round($wPower / ($daysCnt * 24), 1),
+                            'total_kwh'                  => round($wPower, 0),
+                            'reactive_kvarh'             => round($wPower * 0.32, 0),
+                            'current_water_m3_hour'      => round($wWater / ($daysCnt * 24), 2),
+                            'daily_water_m3'             => round($wWater / $daysCnt, 1),
+                            'total_water_m3'             => round($wWater, 1),
+                            'sewage_m3'                  => round($wWater * 0.56, 1),
+                            'gas_m3'                     => 0.0,
+                            'steam_pressure_bar'         => 11.3,
+                            'specific_kwh_per_tonne'     => round($wPower / ($seedProc * $daysCnt), 2),
+                            'specific_subtext'           => "Середня питома за {$daysCnt} діб тижня (МЕЗ)",
+                            'boiler_water_m3'            => round($wWater * 0.408, 0),
+                            'extraction_water_m3'        => round($wWater * 0.217, 0),
+                            'steam_boiler_tonnes'        => round($wSteam, 1),
+                            'steam_production_tonnes'    => round($wSteam * 0.931, 1),
+                            'steam_extraction_tonnes'    => round($wSteam * 0.544, 1),
+                            'steam_prep_tonnes'          => round($wSteam * 0.383, 1),
+                            'steam_elevator_tonnes'      => round($wSteam * 0.003, 1),
+                            'steam_heating_tonnes'       => round($wSteam * 0.001, 1),
+                            'steam_sn_tonnes'            => round($wSteam * 0.069, 1),
+                            'steam_specific_kg_per_tonne'=> round(($wSteam * 1000) / ($seedProc * $daysCnt), 1),
+                            'steam_subtext'              => "Тижневий виробіток: " . number_format($wSteam, 1, ',', ' ') . " т пари",
+                            'steam_distrib_subtext'      => "Екстракція: " . number_format($wSteam * 0.544, 1, ',', ' ') . " т • Підготовка: " . number_format($wSteam * 0.383, 1, ',', ' ') . " т",
+                            'steam_daily_table'          => array_reverse($steamDailyRows),
+                            'steam_monthly_history'      => $steamMonthly,
+                            'period_note'                => "Тиждень: факт за останні {$daysCnt} діб (" . date('d.m', strtotime(reset($weekEntries)['date'])) . " — " . date('d.m', strtotime(end($weekEntries)['date'])) . ")",
+                            'departments'                => [
+                                ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 0), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
+                                ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 0), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
+                                ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 0), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
+                                ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 0), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
+                                ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 0), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                                ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 0), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                                ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 0), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
+                            ],
+                            'water_meters'               => $waterMetersAccounting,
+                            'monthly_12'                 => $monthly12,
+                            'timeline' => [
+                                'labels'        => $tlLabels,
+                                'power'         => $tlPower,
+                                'power_mwh'     => $tlPowerMwh,
+                                'power_kw_avg'  => $tlPowerKwAvg,
+                                'power_mw_avg'  => $tlPowerMwAvg,
+                                'water'         => $tlWater,
+                                'steam'         => $tlSteam,
+                                'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт·год)',
+                                'water_name'    => 'Вода за добу по лічильнику (м³)',
+                                'steam_name'    => 'Технологічна пара за добу (т)',
+                                'power_unit'    => 'кВт·год',
+                                'water_unit'    => 'м³/д',
+                                'steam_unit'    => 'т/д',
+                            ]
+                        ];
+                    }
+
+                    // 2. Період: МІСЯЦЬ / ЖОВТЕНЬ
+                    if ($period === 'month' || $period === 'month_oct' || $period === 'season') {
+                        $daysCnt = max(1, count($manualEntries));
+                        $deptPowerBase = $octSumPower;
+                        $deptWaterBase = $octSumWater;
+
+                        return [
+                            'has_data'                   => true,
+                            'current_power_kw'           => round($octSumPower / ($daysCnt * 24), 1),
+                            'total_kwh'                  => round($octSumPower, 0),
+                            'reactive_kvarh'             => round($octSumPower * 0.32, 0),
+                            'current_water_m3_hour'      => round($octSumWater / ($daysCnt * 24), 2),
+                            'daily_water_m3'             => round($octSumWater / $daysCnt, 1),
+                            'total_water_m3'             => round($octSumWater, 1),
+                            'sewage_m3'                  => round($octSumWater * 0.56, 1),
+                            'gas_m3'                     => 0.0,
+                            'steam_pressure_bar'         => 11.3,
+                            'specific_kwh_per_tonne'     => round($octSumPower / ($seedProc * $daysCnt), 2),
+                            'specific_subtext'           => "Середня питома за {$daysCnt} діб переробки у Жовтні",
+                            'boiler_water_m3'            => round($octSumWater * 0.408, 0),
+                            'extraction_water_m3'        => round($octSumWater * 0.217, 0),
+                            'steam_boiler_tonnes'        => round($octSumSteam, 1),
+                            'steam_production_tonnes'    => round($octSumSteam * 0.931, 1),
+                            'steam_extraction_tonnes'    => round($octSumSteam * 0.544, 1),
+                            'steam_prep_tonnes'          => round($octSumSteam * 0.383, 1),
+                            'steam_elevator_tonnes'      => round($octSumSteam * 0.003, 1),
+                            'steam_heating_tonnes'       => round($octSumSteam * 0.001, 1),
+                            'steam_sn_tonnes'            => round($octSumSteam * 0.069, 1),
+                            'steam_specific_kg_per_tonne'=> round(($octSumSteam * 1000) / ($seedProc * $daysCnt), 1),
+                            'steam_subtext'              => "Жовтень 2026: " . number_format($octSumSteam, 1, ',', ' ') . " т пари",
+                            'steam_distrib_subtext'      => "Екстракція: " . number_format($octSumSteam * 0.544, 1, ',', ' ') . " т • Підготовка: " . number_format($octSumSteam * 0.383, 1, ',', ' ') . " т",
+                            'steam_daily_table'          => array_reverse($steamDailyRows),
+                            'steam_monthly_history'      => $steamMonthly,
+                            'period_note'                => "Жовтень 2026: факт за {$daysCnt} діб переробки (внесено енергетиком)",
+                            'departments'                => [
+                                ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 0), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
+                                ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 0), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
+                                ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 0), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
+                                ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 0), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
+                                ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 0), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                                ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 0), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                                ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 0), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
+                            ],
+                            'water_meters'               => $waterMetersAccounting,
+                            'monthly_12'                 => $monthly12,
+                            'timeline' => [
+                                'labels'        => $tlLabels,
+                                'power'         => $tlPower,
+                                'power_mwh'     => $tlPowerMwh,
+                                'power_kw_avg'  => $tlPowerKwAvg,
+                                'power_mw_avg'  => $tlPowerMwAvg,
+                                'water'         => $tlWater,
+                                'steam'         => $tlSteam,
+                                'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт·год)',
+                                'water_name'    => 'Вода за добу по лічильнику (м³)',
+                                'steam_name'    => 'Технологічна пара за добу (т)',
+                                'power_unit'    => 'кВт·год',
+                                'water_unit'    => 'м³/д',
+                                'steam_unit'    => 'т/д',
+                            ]
+                        ];
+                    }
+
+                    // 3. Період: ДОБА (day, shift, day_today, day_active, day_prev або за замовчуванням)
+                    $curKwh   = (float)$latest['power_kwh'];
+                    $curWater = (float)$latest['water_m3'];
+                    $curSteam = (float)$latest['steam_t'];
+                    $curBar   = (float)($latest['steam_pressure_bar'] ?? 11.2);
+                    $curReact = (float)($latest['reactive_kvarh'] ?? round($curKwh * 0.32, 1));
+                    $specKwh  = round($curKwh / $seedProc, 2);
+                    $specStm  = round(($curSteam * 1000) / $seedProc, 1);
+
+                    $deptPowerBase = $curKwh;
+                    $deptWaterBase = $curWater;
+
+                    return [
+                        'has_data'                   => true,
+                        'current_power_kw'           => round($curKwh / 24, 1),
+                        'total_kwh'                  => round($curKwh, 0),
+                        'reactive_kvarh'             => round($curReact, 0),
+                        'current_water_m3_hour'      => round($curWater / 24, 2),
+                        'daily_water_m3'             => round($curWater, 1),
+                        'total_water_m3'             => round($curWater, 1),
+                        'sewage_m3'                  => round($curWater * 0.56, 1),
+                        'gas_m3'                     => 0.0,
+                        'steam_pressure_bar'         => $curBar,
+                        'specific_kwh_per_tonne'     => $specKwh,
+                        'specific_subtext'           => "Розраховано від {$seedProc} т насіння у переробці",
+                        'boiler_water_m3'            => round($curWater * 0.408, 0),
+                        'extraction_water_m3'        => round($curWater * 0.217, 0),
+                        'steam_boiler_tonnes'        => round($curSteam, 1),
+                        'steam_production_tonnes'    => round($curSteam * 0.931, 1),
+                        'steam_extraction_tonnes'    => round($curSteam * 0.544, 1),
+                        'steam_prep_tonnes'          => round($curSteam * 0.383, 1),
+                        'steam_elevator_tonnes'      => round($curSteam * 0.003, 1),
+                        'steam_heating_tonnes'       => round($curSteam * 0.001, 1),
+                        'steam_sn_tonnes'            => round($curSteam * 0.069, 1),
+                        'steam_specific_kg_per_tonne'=> $specStm,
+                        'steam_subtext'              => "Виробництво: " . number_format($curSteam, 1, ',', ' ') . " т • Тиск: {$curBar} бар",
+                        'steam_distrib_subtext'      => "Екстракція: " . number_format($curSteam * 0.544, 1, ',', ' ') . " т • Підготовка: " . number_format($curSteam * 0.383, 1, ',', ' ') . " т",
+                        'steam_daily_table'          => array_reverse($steamDailyRows),
+                        'steam_monthly_history'      => $steamMonthly,
+                        'period_note'                => "Доба: " . date('d.m.Y', strtotime($latest['date'])) . " (фактичні дані енергетика)",
+                        'departments'                => [
+                            ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 0), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
+                            ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 0), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
+                            ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 0), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
+                            ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 0), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
+                            ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 0), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                            ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 0), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                            ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 0), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
+                        ],
+                        'water_meters'               => $waterMetersAccounting,
+                        'monthly_12'                 => $monthly12,
+                        'timeline' => [
+                            'labels'        => $tlLabels,
+                            'power'         => $tlPower,
+                            'power_mwh'     => $tlPowerMwh,
+                            'power_kw_avg'  => $tlPowerKwAvg,
+                            'power_mw_avg'  => $tlPowerMwAvg,
+                            'water'         => $tlWater,
+                            'steam'         => $tlSteam,
+                            'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт·год)',
+                            'water_name'    => 'Вода за добу по лічильнику (м³)',
+                            'steam_name'    => 'Технологічна пара за добу (т)',
+                            'power_unit'    => 'кВт·год',
+                            'water_unit'    => 'м³/д',
+                            'steam_unit'    => 'т/д',
+                        ]
+                    ];
+                }
+
+                // Якщо ручні записи взагалі відсутні
                 return [
                     'has_data'                   => false,
                     'current_power_kw'           => 0.0,
@@ -980,7 +1268,7 @@ class MetricsCalculator {
                     'steam_sn_tonnes'            => 0.0,
                     'steam_specific_kg_per_tonne'=> 0.0,
                     'steam_subtext'              => 'Жовтень 2026: дані відсутні (звіт котельні очікується)',
-                    'steam_distrib_subtext'      => 'Оберіть «Вересень» для перегляду фактичних показників',
+                    'steam_distrib_subtext'      => 'Оберіть «Вересень» або натисніть «+ Внести показники»',
                     'steam_daily_table'          => [],
                     'steam_monthly_history'      => $steamMonthly,
                     'period_note'                => 'Жовтень 2026: немає даних (звіт очікується)',
@@ -993,7 +1281,7 @@ class MetricsCalculator {
                         'power'      => [],
                         'water'      => [],
                         'steam'      => [],
-                        'power_name' => 'Електроенергія за добу (кВт·год)',
+                        'power_name' => 'Електроенергія за добу (загальне споживання заводу, кВт·год)',
                         'water_name' => 'Вода за добу по лічильнику (м³)',
                         'steam_name' => 'Технологічна пара за добу (т)',
                         'power_unit' => 'кВт·год',
