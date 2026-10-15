@@ -218,8 +218,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="kpi-main-number" id="val-seed-stock">
                     <?= number_format($stocks['seed_stock_tonnes'] ?? 12857.66, 2, ',', ' ') ?><span class="kpi-unit">т</span>
                 </div>
-                <span class="kpi-badge badge-green" id="badge-days-reserve">
-                    <?= ($stocks['days_seed_reserve'] ?? 21.4) ?> дн. запасу
+                <span class="kpi-badge badge-green" id="badge-days-reserve" title="Розраховано від стандарту подачі насіння 600 т/добу (12 857,66 т / 600 т = 21,4 дн.)">
+                    <?= ($stocks['days_seed_reserve'] ?? 21.4) ?> дн. (при 600 т/д)
                 </span>
             </div>
             <div class="kpi-subtext">

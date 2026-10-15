@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (data.warehouse_stocks) {
             const ws = data.warehouse_stocks;
             setElementText('#val-seed-stock', formatNumber(ws.seed_stock_tonnes, 2) + ' т');
-            setElementText('#badge-days-reserve', (ws.days_seed_reserve || 21.4) + ' дн. запасу');
+            setElementText('#badge-days-reserve', (ws.days_seed_reserve || 21.4) + ' дн. (при 600 т/д)');
             setElementText('#val-seed-stock-sub', `Факт: ${formatNumber(ws.seed_stock_tonnes, 2)} т • Облік: ${formatNumber(ws.seed_stock_accounting_tonnes, 2)} т`);
 
             // Залишки готової продукції на складах та відвантаження за обраний період
