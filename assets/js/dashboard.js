@@ -986,8 +986,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (lower.includes('ежедневный отчет') || lower.includes('план производства')) {
             return { key: 'daily_prod', label: 'План-факт виробництва' };
         }
-        if (lower.includes('энергоносител') || lower.includes('енергоносі') || lower.includes('агропроінвест') || lower.includes('агропроинвест') || lower.includes('вод') || lower.includes('енерг')) {
-            return { key: 'energy', label: 'Електроенергія та Вода' };
+        if (lower.includes('энергоносител') || lower.includes('енергоносі') || lower.includes('агропроінвест') || lower.includes('агропроинвест') || lower.includes('вод') || lower.includes('енерг') || lower.includes('пар') || lower.includes('котел')) {
+            return { key: 'energy', label: 'Електроенергія, Вода та Пара' };
         }
         return { key: null, label: 'Звіт Excel' };
     }

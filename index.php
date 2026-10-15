@@ -118,11 +118,11 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <a href="semena.php" class="btn-action" id="btn-open-semena" title="Відкрити детальний звіт з постачання соняшнику (Лист погодження, Невиконані, Графік, Реєстр прийомок)" style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #ffffff; border: 1px solid #b45309; font-weight: 800; box-shadow: 0 2px 8px rgba(245, 158, 11, 0.35); text-decoration: none;">
                     <span>🌻 СЕМЕНА</span>
                 </a>
-                <button type="button" class="btn-action btn-import" id="btn-open-import" title="Імпортувати щоденні звіти завода (Лист погодження, СВОД, Баланс)">
+                <?php endif; ?>
+                <button type="button" class="btn-action btn-import" id="btn-open-import" title="<?= $isEnergo ? 'Імпортувати звіти енергетики (РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ, АГРОПРОІНВЕСТ 08, Облік води, Учет пара)' : 'Імпортувати щоденні звіти завода (Лист погодження, СВОД, Баланс)' ?>">
                     <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
                     <span>Імпорт Excel</span>
                 </button>
-                <?php endif; ?>
                 <a href="api/export.php" class="btn-action btn-export" id="btn-export-excel" title="Завантажити звіт за зміну / добу в Excel">
                     <i data-lucide="download" style="width: 14px; height: 14px;"></i>
                     <span>Експорт в Excel</span>
@@ -1404,6 +1404,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         </div>
 
     </div>
+    <?php endif; // end !$isEnergo (Block G) ?>
 
     <!-- =============================================================
          ПІДВАЛ
@@ -1428,18 +1429,70 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     <div class="modal-container">
         <div class="modal-header">
             <div class="modal-title-wrap">
-                <div class="modal-icon"><i data-lucide="file-spreadsheet"></i></div>
+                <div class="modal-icon"><i data-lucide="<?= $isEnergo ? 'zap' : 'file-spreadsheet' ?>"></i></div>
                 <div>
-                    <h2 class="modal-title">Щоденний імпорт звітів заводу</h2>
-                    <p class="modal-subtitle">Завантажте файли Excel (.xlsx / .csv) для автоматичного оновлення показників МЕЗ</p>
+                    <h2 class="modal-title"><?= $isEnergo ? 'Імпорт звітів енергоносіїв заводу' : 'Щоденний імпорт звітів заводу' ?></h2>
+                    <p class="modal-subtitle"><?= $isEnergo ? 'Завантажте файли Excel (.xlsx / .xls) для оновлення Блоку В (Електроенергія, Водопостачання, Пара)' : 'Завантажте файли Excel (.xlsx / .csv) для автоматичного оновлення показників МЕЗ' ?></p>
                 </div>
             </div>
             <button type="button" class="modal-close-btn" id="btn-close-import" title="Закрити">&times;</button>
         </div>
 
         <div class="modal-body">
-            <!-- Список файлів з точними назвами, які ви скидали -->
+            <!-- Список файлів з точними назвами -->
             <div class="import-files-guide">
+                <?php if ($isEnergo): ?>
+                <div class="guide-title">
+                    <i data-lucide="info" style="width: 15px; height: 15px; color: #d97706;"></i>
+                    <span>Точні назви файлів звітів енергетика для завантаження (можна обирати по одному або всі разом):</span>
+                </div>
+
+                <div class="guide-list">
+                    <!-- Файл 1: РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx -->
+                    <div class="guide-item" data-expected="energy">
+                        <div class="guide-item-icon">⚡</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">1. <code>РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx</code> <span class="guide-status-pill" id="guide-status-energy" style="display:none;">✓ Обрано</span></div>
+                            <div class="guide-item-filename">Вкладки всередині: <code>ЖОВТЕНЬ</code>, <code>2026</code>, <code>ел. енергія 2026</code>, помісячний розподіл</div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Добовий розподіл активної електроенергії по підстанціях та об'єктах МЕЗ, графіки споживання та питому норму кВт·год/т насіння.</div>
+                        </div>
+                        <span class="guide-tag tag-primary">Розподіл електроенергії</span>
+                    </div>
+
+                    <!-- Файл 2: АГРОПРОІНВЕСТ 08(28).xlsx -->
+                    <div class="guide-item" data-expected="energy">
+                        <div class="guide-item-icon">🏢</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">2. <code>АГРОПРОІНВЕСТ 08(28).xlsx</code></div>
+                            <div class="guide-item-filename">Вкладки всередині: помісячні акти та зведення споживання ТОВ «Агропроінвест 08»</div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Зведені показники комерційного обліку енергоносіїв, договірні ліміти та акти звірки з обленерго/постачальниками.</div>
+                        </div>
+                        <span class="guide-tag tag-amber">Агропроінвест 08</span>
+                    </div>
+
+                    <!-- Файл 3: Облік води.xlsx -->
+                    <div class="guide-item" data-expected="energy">
+                        <div class="guide-item-icon">💧</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">3. <code>Облік води.xlsx</code></div>
+                            <div class="guide-item-filename">Вкладки всередині: <code>Лист1 (Облік води)</code>, щоденні показники водомірних лічильників</div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Водомірний вузол по відповідальних особах (Усов А.В., Хлібець В., Нікітіна А., Довгаленко С.), підживлення котельні, витрати пермеату, випар ГМВ та стоки.</div>
+                        </div>
+                        <span class="guide-tag tag-emerald">Облік води</span>
+                    </div>
+
+                    <!-- Файл 4: Учет пара.xlsx -->
+                    <div class="guide-item" data-expected="energy">
+                        <div class="guide-item-icon">♨️</div>
+                        <div class="guide-item-content">
+                            <div class="guide-item-name">4. <code>Учет пара.xlsx</code></div>
+                            <div class="guide-item-filename">Вкладки всередині: щодобовий облік виробництва та споживання технологічної пари котельнею МЕЗ</div>
+                            <div class="guide-item-desc"><strong>Що оновлює:</strong> Виробництво технологічної пари котельнею на луззі, тиск пари, розподіл на пресове та екстракційне відділення.</div>
+                        </div>
+                        <span class="guide-tag tag-slate">Технологічна пара</span>
+                    </div>
+                </div>
+                <?php else: ?>
                 <div class="guide-title">
                     <i data-lucide="info" style="width: 15px; height: 15px; color: var(--color-primary);"></i>
                     <span>Точні назви ваших файлів Excel для завантаження (можна завантажувати по одному або всі разом):</span>
@@ -1501,6 +1554,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <span class="guide-tag tag-primary">Електроенергія + Вода</span>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
 
             <!-- Зона завантаження файлів (Drag-and-Drop) -->
@@ -1539,7 +1593,6 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
         </div>
     </div>
 </div>
-<?php endif; // end !$isEnergo (Block G, Contracts, SCADA, Modals) ?>
 
 <!-- Контейнер для всплывающих уведомлений (Toast) -->
 <div id="toast-container" class="toast-container"></div>

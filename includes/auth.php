@@ -224,15 +224,16 @@ class Auth {
     }
 
     /**
-     * Чи дозволено поточному користувачу завантажувати звіти та файли 1С.
-     * Користувачам 'semena' та 'energo' заборонено завантажувати приход / оновлювати дані.
+     * Чи дозволено поточному користувачу завантажувати звіти та файли.
+     * Користувачам 'admin', 'test' та 'energo' дозволено завантаження звітів.
+     * Користувачу 'semena' заборонено оновлювати загальні файли 1С.
      */
     public static function canUpload(): bool {
         $u = self::user();
         if (!$u) {
             return false;
         }
-        if (in_array(($u['role'] ?? ''), ['semena', 'energo'], true) || in_array(($u['username'] ?? ''), ['semena', 'energo'], true)) {
+        if (($u['role'] ?? '') === 'semena' || ($u['username'] ?? '') === 'semena') {
             return false;
         }
         return true;

@@ -1161,22 +1161,22 @@ try {
         }
 
         // -------------------------------------------------------------
-        // 6. АРКУШ: ЕЛЕКТРОЕНЕРГІЯ ТА ВОДОПОСТАЧАННЯ («РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx», «АГРОПРОІНВЕСТ 08(28).xlsx», «Облік води.xlsx»)
+        // 6. АРКУШ: ЕЛЕКТРОЕНЕРГІЯ, ВОДОПОСТАЧАННЯ ТА ПАРА («РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx», «АГРОПРОІНВЕСТ 08(28).xlsx», «Облік води.xlsx», «Учет пара.xlsx»)
         // -------------------------------------------------------------
         $isEnergyReport = false;
-        if (strpos($fnLower, 'энергоносител') !== false || strpos($fnLower, 'енергоносі') !== false || strpos($fnLower, 'агропроінвест') !== false || strpos($fnLower, 'агропроинвест') !== false || strpos($fnLower, 'вод') !== false) {
+        if (strpos($fnLower, 'энергоносител') !== false || strpos($fnLower, 'енергоносі') !== false || strpos($fnLower, 'агропроінвест') !== false || strpos($fnLower, 'агропроинвест') !== false || strpos($fnLower, 'вод') !== false || strpos($fnLower, 'пар') !== false) {
             $isEnergyReport = true;
         }
         if (!$isEnergyReport) {
             foreach ($sheetsData as $sName => $rows) {
                 $sLow = mb_strtolower($sName, 'UTF-8');
-                if (strpos($sLow, 'ел. енергія') !== false || strpos($sLow, 'эл. энергия') !== false) {
+                if (strpos($sLow, 'ел. енергія') !== false || strpos($sLow, 'эл. энергия') !== false || strpos($sLow, 'пар') !== false) {
                     $isEnergyReport = true;
                     break;
                 }
                 foreach (array_slice($rows, 0, 12) as $r) {
                     $rTxt = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                    if (strpos($rTxt, 'распределение энергоносителей') !== false || strpos($rTxt, 'вхідний лічильник') !== false || strpos($rTxt, 'водопостачання') !== false || strpos($rTxt, 'водонасосна') !== false || strpos($rTxt, 'пермеат') !== false) {
+                    if (strpos($rTxt, 'распределение энергоносителей') !== false || strpos($rTxt, 'вхідний лічильник') !== false || strpos($rTxt, 'водопостачання') !== false || strpos($rTxt, 'водонасосна') !== false || strpos($rTxt, 'пермеат') !== false || strpos($rTxt, 'учет пара') !== false || strpos($rTxt, 'облік пари') !== false || strpos($rTxt, 'котел') !== false) {
                         $isEnergyReport = true;
                         break 2;
                     }
