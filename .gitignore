@@ -9,6 +9,8 @@ config.php
 logs/
 cache/
 tmp/
+__pycache__/
+*.pyc
 
 # Composer and vendor (if used)
 /vendor/

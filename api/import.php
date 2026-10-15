@@ -260,9 +260,26 @@ try {
         $tmpPath = $file['tmp_name'];
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-        if (!in_array($ext, ['xlsx', 'xls', 'csv'])) {
-            $details[] = "Файл «{$filename}»: пропущено (підтримуються лише .xlsx та .csv)";
+        if (!in_array($ext, ['xlsx', 'xls', 'csv', 'json'])) {
+            $details[] = "Файл «{$filename}»: пропущено (підтримуються .xlsx, .csv, .json)";
             continue;
+        }
+
+        if ($ext === 'json') {
+            $jsonContent = @file_get_contents($tmpPath);
+            $jData = json_decode((string)$jsonContent, true);
+            if (is_array($jData) && (isset($jData['events']) || isset($jData['spec_price_notes']))) {
+                $curHist = SemenaHelper::loadChangesHistory();
+                $merged = SemenaHelper::mergeChangesHistory($curHist, $jData);
+                SemenaHelper::saveChangesHistory($merged);
+                $semenaData = SemenaHelper::loadData();
+                @file_put_contents(SemenaHelper::getJsonPath(), json_encode($semenaData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+                $evCnt = count($merged['events'] ?? []);
+                $details[] = "✅ «{$filename}»: Оновлено журнал змін ({$evCnt} записів)";
+                $fileHadProcessedReport = true;
+                $processedReports[] = 'changes_history';
+                continue;
+            }
         }
 
         // Парсинг аркушів

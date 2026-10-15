@@ -12,7 +12,22 @@ class SemenaHelper {
     }
 
     public static function getXlsxPath(): string {
-        return __DIR__ . '/../database/Лист_погодження.xlsx';
+        $local = __DIR__ . '/../database/Лист_погодження.xlsx';
+        $net = self::getNetworkXlsxPath();
+        if (@file_exists($net) && @is_readable($net)) {
+            if (!file_exists($local) || @filemtime($net) > @filemtime($local)) {
+                @copy($net, $local);
+            }
+        }
+        return $local;
+    }
+
+    public static function getNetworkHistoryPath(): string {
+        return '\\\\10.61.43.251\\6143 бухгалтерия\\Documents\\закупки\\changes_history.json';
+    }
+
+    public static function getNetworkXlsxPath(): string {
+        return '\\\\10.61.43.251\\6143 бухгалтерия\\Documents\\закупки\\Лист_погодження.xlsx';
     }
 
     public static function getHistoryPath(): string {
@@ -134,6 +149,52 @@ class SemenaHelper {
     }
 
     /**
+     * Об'єднує дві структури changes_history.json без втрати записів
+     */
+    public static function mergeChangesHistory(array $base, array $incoming): array {
+        $result = $base;
+        if (!empty($incoming['last_receipts_iso'])) {
+            if (empty($result['last_receipts_iso']) || $incoming['last_receipts_iso'] > $result['last_receipts_iso']) {
+                $result['last_receipts_iso'] = $incoming['last_receipts_iso'];
+                if (!empty($incoming['last_receipts_datetime'])) {
+                    $result['last_receipts_datetime'] = $incoming['last_receipts_datetime'];
+                }
+            }
+        } elseif (!empty($incoming['last_receipts_datetime']) && empty($result['last_receipts_datetime'])) {
+            $result['last_receipts_datetime'] = $incoming['last_receipts_datetime'];
+        }
+
+        if (!empty($incoming['spec_price_notes']) && is_array($incoming['spec_price_notes'])) {
+            if (!isset($result['spec_price_notes']) || !is_array($result['spec_price_notes'])) {
+                $result['spec_price_notes'] = [];
+            }
+            foreach ($incoming['spec_price_notes'] as $code => $noteInfo) {
+                $result['spec_price_notes'][$code] = $noteInfo;
+            }
+        }
+
+        $seenIds = [];
+        $mergedEvents = [];
+        foreach ($result['events'] ?? [] as $ev) {
+            $id = $ev['id'] ?? (($ev['code'] ?? '') . '_' . ($ev['timestamp'] ?? ($ev['dt'] ?? '')) . '_' . ($ev['summary'] ?? ($ev['details'] ?? '')));
+            if (!isset($seenIds[$id])) {
+                $seenIds[$id] = true;
+                $mergedEvents[] = $ev;
+            }
+        }
+        foreach ($incoming['events'] ?? [] as $ev) {
+            $id = $ev['id'] ?? (($ev['code'] ?? '') . '_' . ($ev['timestamp'] ?? ($ev['dt'] ?? '')) . '_' . ($ev['summary'] ?? ($ev['details'] ?? '')));
+            if (!isset($seenIds[$id])) {
+                $seenIds[$id] = true;
+                $mergedEvents[] = $ev;
+            }
+        }
+
+        $result['events'] = $mergedEvents;
+        return $result;
+    }
+
+    /**
      * Завантажити історію змін (changes_history.json)
      */
     public static function loadChangesHistory(): array {
@@ -143,14 +204,24 @@ class SemenaHelper {
             'spec_price_notes'       => [],
             'events'                 => [],
         ];
-        $path = self::getHistoryPath();
-        if (file_exists($path)) {
-            $decoded = json_decode((string)file_get_contents($path), true);
+        $localPath = self::getHistoryPath();
+        $merged = $default;
+        if (file_exists($localPath)) {
+            $decoded = json_decode((string)file_get_contents($localPath), true);
             if (is_array($decoded)) {
-                return array_merge($default, $decoded);
+                $merged = self::mergeChangesHistory($merged, $decoded);
             }
         }
-        return $default;
+
+        $netPath = self::getNetworkHistoryPath();
+        if (@file_exists($netPath) && @is_readable($netPath)) {
+            $netDecoded = json_decode((string)@file_get_contents($netPath), true);
+            if (is_array($netDecoded)) {
+                $merged = self::mergeChangesHistory($merged, $netDecoded);
+            }
+        }
+
+        return $merged;
     }
 
     /**
@@ -162,7 +233,13 @@ class SemenaHelper {
         if (!is_dir($dir)) {
             @mkdir($dir, 0775, true);
         }
-        file_put_contents($path, json_encode($history, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+        $jsonStr = json_encode($history, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        @file_put_contents($path, $jsonStr);
+
+        $netPath = self::getNetworkHistoryPath();
+        if (@is_dir(dirname($netPath)) && @is_writable(dirname($netPath))) {
+            @file_put_contents($netPath, $jsonStr);
+        }
     }
 
     /**
@@ -738,30 +815,48 @@ class SemenaHelper {
                     }
                 } else {
                     $old = $existingByCode[$code];
-                    $oldPriceDeliv = isset($old['price_delivered']) && $old['price_delivered'] > 0 ? (float)$old['price_delivered'] : null;
-                    $oldPriceExw   = isset($old['price_exw']) && $old['price_exw'] > 0 ? (float)$old['price_exw'] : null;
-                    $oldDeliv      = (float)($old['delivered'] ?? 0);
-                    $oldZach       = (float)($old['credit_weight'] ?? 0);
-                    $oldOil        = (float)($old['oil_fact'] ?? 0);
+                    $oldPriceDeliv = (isset($old['price_delivered']) && $old['price_delivered'] > 0) ? (float)$old['price_delivered'] : ((isset($old['price_delivery']) && $old['price_delivery'] > 0) ? (float)$old['price_delivery'] : null);
+                    $oldPriceExw   = (isset($old['price_exw']) && $old['price_exw'] > 0) ? (float)$old['price_exw'] : ((isset($old['price_no_delivery']) && $old['price_no_delivery'] > 0) ? (float)$old['price_no_delivery'] : null);
+                    $oldDeliv      = (float)($old['delivered'] ?? $old['weight_delivered'] ?? 0);
+                    $oldZach       = (float)($old['credit_weight'] ?? $old['weight_zachet'] ?? 0);
+                    $oldBaseOil    = isset($old['oil_base']) ? (float)$old['oil_base'] : null;
+                    $oldOil        = isset($old['oil_fact']) ? (float)$old['oil_fact'] : null;
+                    $oldW          = isset($old['moisture']) ? (float)$old['moisture'] : (isset($old['w_fact']) ? (float)$old['w_fact'] : null);
+                    $oldS          = isset($old['trash']) ? (float)$old['trash'] : (isset($old['s_fact']) ? (float)$old['s_fact'] : null);
 
-                    if ($priceDelivery !== null && $oldPriceDeliv !== null && abs($priceDelivery - $oldPriceDeliv) > 0.05) {
-                        $diffP = $priceDelivery - $oldPriceDeliv;
-                        $sign = $diffP >= 0 ? '+' : '';
-                        $priceChanges[] = sprintf("Ціна з дост: %s -> %s (%s%.2f)", number_format($oldPriceDeliv, 2, '.', ','), number_format($priceDelivery, 2, '.', ','), $sign, $diffP);
+                    if ($priceDelivery !== null && $oldPriceDeliv !== null) {
+                        if (abs($priceDelivery - $oldPriceDeliv) > 0.05) {
+                            $diffP = $priceDelivery - $oldPriceDeliv;
+                            $sign = $diffP >= 0 ? '+' : '';
+                            $priceChanges[] = sprintf("Ціна з дост: %s -> %s (%s%.2f)", number_format($oldPriceDeliv, 2, '.', ','), number_format($priceDelivery, 2, '.', ','), $sign, $diffP);
+                        }
+                    } elseif ($priceDelivery !== null && $oldPriceDeliv === null) {
+                        $priceChanges[] = sprintf("Ціна з дост додана: %s", number_format($priceDelivery, 2, '.', ','));
                     }
+
                     if ($priceNoDelivery !== null && $oldPriceExw !== null && abs($priceNoDelivery - $oldPriceExw) > 0.05) {
                         $diffP = $priceNoDelivery - $oldPriceExw;
                         $sign = $diffP >= 0 ? '+' : '';
                         $priceChanges[] = sprintf("Ціна без дост: %s -> %s (%s%.2f)", number_format($oldPriceExw, 2, '.', ','), number_format($priceNoDelivery, 2, '.', ','), $sign, $diffP);
                     }
+
                     if (abs($weightDelivered - $oldDeliv) > 0.05) {
                         $otherChanges[] = sprintf("Завезено: %.2f -> %.2f т", $oldDeliv, $weightDelivered);
                     }
                     if (abs($weightZachet - $oldZach) > 0.05) {
                         $otherChanges[] = sprintf("Залікова: %.2f -> %.2f т", $oldZach, $weightZachet);
                     }
-                    if ($factOil > 0 && $oldOil > 0 && abs($factOil - $oldOil) > 0.01) {
+                    if ($baseOil !== null && $oldBaseOil !== null && abs($baseOil - $oldBaseOil) > 0.01) {
+                        $otherChanges[] = sprintf("База масла: %.2f%% -> %.2f%%", $oldBaseOil, $baseOil);
+                    }
+                    if ($factOil > 0 && $oldOil !== null && $oldOil > 0 && abs($factOil - $oldOil) > 0.01) {
                         $otherChanges[] = sprintf("Факт масла: %.2f%% -> %.2f%%", $oldOil, $factOil);
+                    }
+                    if ($factW > 0 && $oldW !== null && $oldW > 0 && abs($factW - $oldW) > 0.05) {
+                        $otherChanges[] = sprintf("Волога: %.2f%% -> %.2f%%", $oldW, $factW);
+                    }
+                    if ($factS > 0 && $oldS !== null && $oldS > 0 && abs($factS - $oldS) > 0.05) {
+                        $otherChanges[] = sprintf("Сор: %.2f%% -> %.2f%%", $oldS, $factS);
                     }
 
                     if (!empty($priceChanges)) {
@@ -1238,13 +1333,21 @@ class SemenaHelper {
             $data['report_datetime'] = $data['updated_at'] ?? date('d.m.Y H:i');
         }
 
-        // Якщо history_events порожні, підтягуємо з changes_history.json
-        if (empty($data['history_events'])) {
-            $hist = self::loadChangesHistory();
-            if (!empty($hist['events'])) {
-                $data['history_events'] = array_slice(array_reverse($hist['events']), 0, 200);
+        // Завжди синхронізуємо актуальні події з changes_history.json
+        $hist = self::loadChangesHistory();
+        $baseEvents = !empty($hist['events']) ? $hist['events'] : [];
+        $dataEvents = !empty($data['history_events']) ? $data['history_events'] : [];
+
+        $seenIds = [];
+        $allEvents = [];
+        foreach (array_merge($baseEvents, $dataEvents) as $ev) {
+            $id = $ev['id'] ?? (($ev['code'] ?? '') . '_' . ($ev['timestamp'] ?? ($ev['dt'] ?? '')) . '_' . ($ev['summary'] ?? ($ev['details'] ?? '')));
+            if (!isset($seenIds[$id])) {
+                $seenIds[$id] = true;
+                $allEvents[] = $ev;
             }
         }
+        $data['history_events'] = $allEvents;
 
         // Формуємо history_rows для semena.php
         $historyRows = [];
@@ -1840,6 +1943,48 @@ class SemenaHelper {
                     $truckRows = $parsedTruckRows;
                 }
             }
+
+            // 6. Вкладка «Історія змін»
+            if (strpos($sLower, 'історія') !== false || strpos($sLower, 'история') !== false || strpos($sLower, 'аудит') !== false) {
+                $parsedEvents = [];
+                foreach ($rows as $ri => $r) {
+                    if ($ri < 4) continue;
+                    $num = trim((string)($r[0] ?? ''));
+                    $ts = trim((string)($r[1] ?? ''));
+                    $sup = trim((string)($r[2] ?? ''));
+                    if ($sup === '' || $ts === '') continue;
+
+                    $spec = trim((string)($r[3] ?? ''));
+                    $man = trim((string)($r[4] ?? ''));
+                    $catLabel = trim((string)($r[5] ?? ''));
+                    $summary = trim((string)($r[6] ?? ''));
+                    $code = self::extractCodeAndSpecNum($spec)['code'];
+
+                    $cat = 'weight_quality';
+                    if (strpos($catLabel, 'новий') !== false || strpos($catLabel, 'новый') !== false) {
+                        $cat = 'new';
+                    } elseif (strpos($catLabel, 'цін') !== false || strpos($catLabel, 'цен') !== false) {
+                        $cat = 'price';
+                    }
+
+                    $parsedEvents[] = [
+                        'id'             => "{$code}_{$ts}_{$cat}",
+                        'timestamp'      => $ts,
+                        'code'           => $code,
+                        'supplier'       => $sup,
+                        'specification'  => $spec,
+                        'manager'        => $man,
+                        'category'       => $cat,
+                        'category_label' => $catLabel,
+                        'summary'        => $summary,
+                    ];
+                }
+                if (!empty($parsedEvents)) {
+                    $curH = self::loadChangesHistory();
+                    $curH = self::mergeChangesHistory($curH, ['events' => $parsedEvents]);
+                    self::saveChangesHistory($curH);
+                }
+            }
         }
 
         $truckRowsFinal = !empty($truckRows) ? $truckRows : ($existing['truck_rows'] ?? []);
@@ -1933,16 +2078,19 @@ class SemenaHelper {
             });
         }
 
+        $histCurrent = self::loadChangesHistory();
         $newData = [
             'updated_at'       => $updatedAt,
             'report_datetime'  => $updatedAt,
             'source_subtitle'  => $subtitle,
             'agg_rows'         => !empty($aggRows) ? $aggRows : ($existing['agg_rows'] ?? []),
             'unfulfilled_rows' => !empty($unfRows) ? $unfRows : ($existing['unfulfilled_rows'] ?? []),
+            'unf_rows'         => !empty($unfRows) ? $unfRows : ($existing['unf_rows'] ?? []),
             'daily_rows'       => !empty($dailyRows) ? $dailyRows : ($existing['daily_rows'] ?? []),
             'discount_rows'    => !empty($discountRows) ? $discountRows : ($existing['discount_rows'] ?? []),
+            'disc_rows'        => !empty($discountRows) ? $discountRows : ($existing['disc_rows'] ?? []),
             'truck_rows'       => $truckRowsFinal,
-            'history_events'   => $existing['history_events'] ?? [],
+            'history_events'   => $histCurrent['events'] ?? [],
         ];
 
         file_put_contents(self::getJsonPath(), json_encode($newData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));

@@ -4,6 +4,7 @@ import re
 import json
 import os
 import datetime
+import sys
 
 def normalize_date(d_str):
     s = str(d_str or '').strip().split()[0] if str(d_str or '').strip() else ''
@@ -843,7 +844,27 @@ def build_excel_workbook(data, out_path):
     print(f"Excel workbook successfully written to {out_path}")
 
 def main():
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if base_dir not in sys.path:
+        sys.path.insert(0, base_dir)
+    try:
+        from scripts.sync_semena_data import main as sync_main
+        ret = sync_main()
+        if ret == 0:
+            return 0
+    except Exception:
+        try:
+            import sync_semena_data
+            ret = sync_semena_data.main()
+            if ret == 0:
+                return 0
+        except Exception as e:
+            print(f"Помилка sync_semena_data: {e}, продовжуємо через базовий парсер...")
+
     prihod_path = r'C:\Users\SB1\.gemini\antigravity\brain\cf7c72ec-7c34-4571-be33-671eefad0219\.user_uploaded\media_1792006815108_027f127a.xlsx'
     spec_path = r'C:\Users\SB1\.gemini\antigravity\brain\cf7c72ec-7c34-4571-be33-671eefad0219\.user_uploaded\media_1792006814974_5eb4f28c.xlsx'
     
