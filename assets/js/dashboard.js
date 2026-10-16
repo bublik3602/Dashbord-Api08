@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (window.INITIAL_DASHBOARD_DATA) {
         FactoryCharts.initDonutChart(window.INITIAL_DASHBOARD_DATA.material_balance.yield_chart);
         FactoryCharts.initEnergyChart(window.INITIAL_DASHBOARD_DATA.energy.timeline);
+        FactoryCharts.initWaterSteamChart(window.INITIAL_DASHBOARD_DATA.energy.timeline);
         if (window.INITIAL_DASHBOARD_DATA.energy && window.INITIAL_DASHBOARD_DATA.energy.timeline) {
             FactoryCharts.initPlantPowerChart(window.INITIAL_DASHBOARD_DATA.energy.timeline, 'kwh');
         }

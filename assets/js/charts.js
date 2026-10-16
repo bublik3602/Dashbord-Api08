@@ -5,6 +5,7 @@
 window.FactoryCharts = {
     donutChart: null,
     energyChart: null,
+    waterSteamChart: null,
     plantPowerChart: null,
     _currentPlantPowerUnit: 'kwh',
     gaugeOilChart: null,
@@ -151,16 +152,11 @@ window.FactoryCharts = {
 
         const powerName    = timelineData.power_name || 'Активна електроенергія (кВт)';
         const reactiveName = timelineData.reactive_name || 'Реактивна електроенергія (кВАр·год)';
-        const waterName    = timelineData.water_name || 'Вода за добу по лічильнику (м³)';
-        const steamName    = timelineData.steam_name || 'Технологічна пара за добу (т)';
         const powerUnit    = timelineData.power_unit || 'кВт';
         const reactiveUnit = timelineData.reactive_unit || 'кВАр·год';
-        const waterUnit    = timelineData.water_unit || 'м³/д';
-        const steamUnit    = timelineData.steam_unit || 'т/д';
         const hasReactive  = Array.isArray(timelineData.reactive) && timelineData.reactive.length > 0;
-        const hasSteam     = Array.isArray(timelineData.steam) && timelineData.steam.length > 0;
 
-        // Серії: активна та реактивна електроенергія виводяться ЖИРНИМИ лініями
+        // Серії: тільки активна та реактивна електроенергія ЖИРНИМИ лініями
         const seriesList = [
             {
                 name: powerName,
@@ -169,7 +165,7 @@ window.FactoryCharts = {
             }
         ];
         const colors = ['#0284c7'];
-        const strokeWidths = [4.5]; // Жирна лінія для активної енергії
+        const strokeWidths = [4.5]; // Жирна синя лінія для активної енергії
 
         if (hasReactive) {
             seriesList.push({
@@ -178,25 +174,7 @@ window.FactoryCharts = {
                 data: timelineData.reactive
             });
             colors.push('#8b5cf6');
-            strokeWidths.push(4.0); // Жирна лінія для реактивної енергії
-        }
-
-        seriesList.push({
-            name: waterName,
-            type: 'line',
-            data: timelineData.water || [211, 152, 235, 198, 206, 206, 141, 193, 151, 226, 164, 154]
-        });
-        colors.push('#10b981');
-        strokeWidths.push(2.0);
-
-        if (hasSteam) {
-            seriesList.push({
-                name: steamName,
-                type: 'line',
-                data: timelineData.steam
-            });
-            colors.push('#f59e0b');
-            strokeWidths.push(2.0);
+            strokeWidths.push(4.0); // Жирна фіолетова лінія для реактивної енергії
         }
 
         const options = {
@@ -218,7 +196,7 @@ window.FactoryCharts = {
                 curve: 'smooth'
             },
             markers: {
-                size: strokeWidths.map(w => w >= 4 ? 4 : 2),
+                size: 4,
                 hover: {
                     sizeOffset: 3
                 }
@@ -246,35 +224,19 @@ window.FactoryCharts = {
                     }
                 }
             },
-            yaxis: [
-                {
-                    title: {
-                        text: hasReactive ? `${powerUnit} / ${reactiveUnit}` : powerUnit,
-                        style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
-                    },
-                    labels: {
-                        style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
-                        formatter: function (v) {
-                            if (v === undefined || v === null || isNaN(v)) return '0';
-                            return v >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
-                        }
-                    }
+            yaxis: {
+                title: {
+                    text: hasReactive ? `${powerUnit} / ${reactiveUnit}` : powerUnit,
+                    style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
                 },
-                {
-                    opposite: true,
-                    title: {
-                        text: hasSteam ? `${waterUnit} / ${steamUnit}` : waterUnit,
-                        style: { color: '#10b981', fontSize: '11px', fontWeight: 700 }
-                    },
-                    labels: {
-                        style: { colors: '#10b981', fontSize: '11px', fontWeight: 600 },
-                        formatter: function (v) {
-                            if (v === undefined || v === null || isNaN(v)) return '0';
-                            return v < 20 ? Number(v).toFixed(1) : Math.round(v).toLocaleString('uk-UA');
-                        }
+                labels: {
+                    style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
+                    formatter: function (v) {
+                        if (v === undefined || v === null || isNaN(v)) return '0';
+                        return v >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
                     }
                 }
-            ],
+            },
             grid: {
                 borderColor: '#f1f5f9',
                 strokeDashArray: 4,
@@ -298,23 +260,15 @@ window.FactoryCharts = {
 
                     const pVal = Number(tl.power && tl.power[dataPointIndex] !== undefined ? tl.power[dataPointIndex] : 0) || 0;
                     const rVal = Number(tl.reactive && tl.reactive[dataPointIndex] !== undefined ? tl.reactive[dataPointIndex] : 0) || 0;
-                    const wVal = Number(tl.water && tl.water[dataPointIndex] !== undefined ? tl.water[dataPointIndex] : 0) || 0;
-                    const sVal = Number(tl.steam && tl.steam[dataPointIndex] !== undefined ? tl.steam[dataPointIndex] : 0) || 0;
 
                     const pUnit = tl.power_unit || 'кВт';
                     const rUnit = tl.reactive_unit || 'кВАр·год';
-                    const wUnit = tl.water_unit || 'м³/д';
-                    const sUnit = tl.steam_unit || 'т/д';
 
                     const pSum = (tl.power || []).reduce((a, b) => a + (Number(b) || 0), 0);
-                    const wSum = (tl.water || []).reduce((a, b) => a + (Number(b) || 0), 0);
                     const pShare = pSum > 0 ? ((pVal / pSum) * 100).toFixed(1) : '0.0';
-                    const wShare = wSum > 0 ? ((wVal / wSum) * 100).toFixed(1) : '0.0';
 
                     const fmtP = pVal.toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 3 });
                     const fmtR = rVal.toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
-                    const fmtW = wVal.toLocaleString('uk-UA', { minimumFractionDigits: wVal < 20 ? 1 : 0, maximumFractionDigits: 2 });
-                    const fmtS = sVal.toLocaleString('uk-UA', { maximumFractionDigits: 1 });
 
                     let cosPhiStr = '';
                     if (pVal > 0 && rVal > 0) {
@@ -327,8 +281,8 @@ window.FactoryCharts = {
                     return `
                         <div class="apex-rich-tooltip bar-tooltip-box">
                             <div class="art-header bar-head">
-                                <span class="art-title">⚡💧💨 Дата / період: ${pointLabel}</span>
-                                <span class="art-pill">Енергоносії &bull; Баланс</span>
+                                <span class="art-title">⚡ Дата / період: ${pointLabel}</span>
+                                <span class="art-pill" style="background: #e0f2fe; color: #0369a1;">Електроенергія</span>
                             </div>
                             <div class="art-body">
                                 <div class="art-row" style="border-left: 4px solid #0284c7; background: rgba(2, 132, 199, 0.04);">
@@ -336,7 +290,7 @@ window.FactoryCharts = {
                                         <span class="art-lbl">⚡ <b>Активна ел-енергія:</b></span>
                                         <span class="art-val bold" style="color: #0284c7; font-size: 13px;">${fmtP} ${pUnit} (${(pVal / 1000).toFixed(3)} МВт)</span>
                                     </div>
-                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Частка: ${pShare}%</div>
+                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Частка: ${pShare}% &bull; Питома: ~${(pVal / 596.8).toFixed(2)} кВт/т насіння</div>
                                 </div>
                                 ${rVal > 0 ? `
                                 <div class="art-row" style="border-left: 4px solid #8b5cf6; background: rgba(139, 92, 246, 0.04);">
@@ -346,27 +300,17 @@ window.FactoryCharts = {
                                     </div>
                                     <div class="art-sub-calc">Реактивна складова${cosPhiStr}</div>
                                 </div>` : ''}
-                                <div class="art-row" style="border-left: 3px solid #10b981;">
-                                    <div class="art-row-main">
-                                        <span class="art-lbl">💧 Вода (лічильник):</span>
-                                        <span class="art-val bold" style="color: #059669;">${fmtW} ${wUnit}</span>
-                                    </div>
-                                    <div class="art-sub-calc">Частка у вибірці: ${wShare}%</div>
-                                </div>
-                                ${sVal > 0 ? `
-                                <div class="art-row" style="border-left: 3px solid #f59e0b;">
-                                    <div class="art-row-main">
-                                        <span class="art-lbl">💨 Технологічна пара:</span>
-                                        <span class="art-val bold" style="color: #d97706;">${fmtS} ${sUnit}</span>
-                                    </div>
-                                    <div class="art-sub-calc">Котельня на лушпинні</div>
-                                </div>` : ''}
                             </div>
                         </div>
                     `;
                 }
             }
         };
+
+        if (this.energyChart) {
+            try { this.energyChart.destroy(); } catch (e) {}
+            this.energyChart = null;
+        }
 
         this.energyChart = new ApexCharts(el, options);
         this.energyChart.render();
@@ -394,6 +338,197 @@ window.FactoryCharts = {
             if (noticeEl) noticeEl.style.display = "none";
             el.style.display = "block";
         }
+
+        // Автоматична ініціалізація окремого графіка води та пари
+        this.initWaterSteamChart(timelineData);
+    },
+
+    /**
+     * Окремий графік обліку води та технологічної пари
+     */
+    initWaterSteamChart: function (timelineData) {
+        const el = document.querySelector("#water-steam-timeline-chart");
+        if (!el) return;
+
+        timelineData = timelineData || this._currentEnergyTimeline || {};
+
+        const waterName = timelineData.water_name || 'Вода за добу по лічильнику (м³)';
+        const steamName = timelineData.steam_name || 'Технологічна пара за добу (т)';
+        const waterUnit = timelineData.water_unit || 'м³/д';
+        const steamUnit = timelineData.steam_unit || 'т/д';
+        const hasSteam  = Array.isArray(timelineData.steam) && timelineData.steam.length > 0;
+        const hasLabels = Array.isArray(timelineData.labels) && timelineData.labels.length > 0;
+
+        let noticeEl = document.querySelector("#water-steam-chart-no-data");
+        if (!hasLabels) {
+            if (!noticeEl) {
+                noticeEl = document.createElement("div");
+                noticeEl.id = "water-steam-chart-no-data";
+                noticeEl.innerHTML = `
+                    <div style="padding: 24px 20px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin: 10px 0;">
+                        <div style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">Дані щодо води та пари очікуються або ще не внесені</div>
+                        <div style="font-size: 11px; color: #64748b;">Фактичні подобові дані обліку доступні за Вересень 2026.</div>
+                    </div>
+                `;
+                el.parentNode.insertBefore(noticeEl, el.nextSibling);
+            }
+            noticeEl.style.display = "block";
+            el.style.display = "none";
+            return;
+        } else {
+            if (noticeEl) noticeEl.style.display = "none";
+            el.style.display = "block";
+        }
+
+        const seriesList = [
+            {
+                name: waterName,
+                type: 'line',
+                data: timelineData.water || []
+            }
+        ];
+        const colors = ['#10b981'];
+        const strokeWidths = [3.5];
+
+        if (hasSteam) {
+            seriesList.push({
+                name: steamName,
+                type: 'line',
+                data: timelineData.steam || []
+            });
+            colors.push('#f59e0b');
+            strokeWidths.push(3.5);
+        }
+
+        const yaxes = [
+            {
+                title: {
+                    text: waterUnit,
+                    style: { color: '#059669', fontSize: '11px', fontWeight: 700 }
+                },
+                labels: {
+                    style: { colors: '#059669', fontSize: '11px', fontWeight: 600 },
+                    formatter: function (v) {
+                        if (v === undefined || v === null || isNaN(v)) return '0';
+                        return v < 20 ? Number(v).toFixed(1) : Math.round(v).toLocaleString('uk-UA');
+                    }
+                },
+                min: 0
+            }
+        ];
+
+        if (hasSteam) {
+            yaxes.push({
+                opposite: true,
+                title: {
+                    text: steamUnit,
+                    style: { color: '#d97706', fontSize: '11px', fontWeight: 700 }
+                },
+                labels: {
+                    style: { colors: '#d97706', fontSize: '11px', fontWeight: 600 },
+                    formatter: function (v) {
+                        if (v === undefined || v === null || isNaN(v)) return '0';
+                        return Number(v).toFixed(0);
+                    }
+                },
+                min: 0
+            });
+        }
+
+        const options = {
+            series: seriesList,
+            chart: {
+                height: 250,
+                type: 'line',
+                fontFamily: 'inherit',
+                toolbar: { show: false },
+                animations: { enabled: true, speed: 500 }
+            },
+            stroke: {
+                width: strokeWidths,
+                curve: 'smooth'
+            },
+            markers: {
+                size: 4,
+                hover: { sizeOffset: 3 }
+            },
+            fill: {
+                type: 'solid'
+            },
+            colors: colors,
+            grid: {
+                borderColor: '#f1f5f9',
+                strokeDashArray: 4
+            },
+            legend: {
+                position: 'top',
+                horizontalAlign: 'right',
+                fontSize: '12px',
+                fontWeight: 600,
+                labels: { colors: '#334155' }
+            },
+            xaxis: {
+                categories: timelineData.labels || [],
+                axisBorder: { show: false },
+                axisTicks: { show: false },
+                labels: {
+                    style: { colors: '#64748b', fontSize: '11px', fontWeight: 600 }
+                }
+            },
+            yaxis: yaxes,
+            tooltip: {
+                shared: true,
+                intersect: false,
+                custom: function ({ series, seriesIndex, dataPointIndex, w }) {
+                    const tl = window.FactoryCharts._currentEnergyTimeline || {};
+                    const labels = tl.labels || (w.globals && w.globals.categoryLabels) || [];
+                    const pointLabel = labels[dataPointIndex] || '';
+
+                    const wVal = Number(tl.water && tl.water[dataPointIndex] !== undefined ? tl.water[dataPointIndex] : 0) || 0;
+                    const sVal = Number(tl.steam && tl.steam[dataPointIndex] !== undefined ? tl.steam[dataPointIndex] : 0) || 0;
+
+                    const wUnit = tl.water_unit || 'м³/д';
+                    const sUnit = tl.steam_unit || 'т/д';
+
+                    const fmtW = wVal.toLocaleString('uk-UA', { minimumFractionDigits: wVal < 20 ? 1 : 0, maximumFractionDigits: 2 });
+                    const fmtS = sVal.toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
+
+                    return `
+                        <div class="apex-rich-tooltip bar-tooltip-box">
+                            <div class="art-header bar-head">
+                                <span class="art-title">💧💨 Дата / період: ${pointLabel}</span>
+                                <span class="art-pill" style="background: #ecfdf5; color: #047857;">Вода &bull; Пара</span>
+                            </div>
+                            <div class="art-body">
+                                <div class="art-row" style="border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.04);">
+                                    <div class="art-row-main">
+                                        <span class="art-lbl">💧 <b>Вода (лічильник заводу):</b></span>
+                                        <span class="art-val bold" style="color: #059669; font-size: 13px;">${fmtW} ${wUnit}</span>
+                                    </div>
+                                    <div class="art-sub-calc">Питома витрата: ~${(wVal / 596.8).toFixed(3)} м³/т переробленого насіння</div>
+                                </div>
+                                ${sVal > 0 ? `
+                                <div class="art-row" style="border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.04);">
+                                    <div class="art-row-main">
+                                        <span class="art-lbl">💨 <b>Технологічна пара:</b></span>
+                                        <span class="art-val bold" style="color: #d97706; font-size: 13px;">${fmtS} ${sUnit}</span>
+                                    </div>
+                                    <div class="art-sub-calc">Котельня на лушпинні &bull; Питома: ~${(sVal / 596.8).toFixed(3)} т/т насіння</div>
+                                </div>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        };
+
+        if (this.waterSteamChart) {
+            try { this.waterSteamChart.destroy(); } catch (e) {}
+            this.waterSteamChart = null;
+        }
+
+        this.waterSteamChart = new ApexCharts(el, options);
+        this.waterSteamChart.render();
     },
 
     /**
@@ -903,67 +1038,36 @@ window.FactoryCharts = {
                     strokeWidths.push(4.0); // Жирна лінія для реактивної енергії
                 }
 
-                seriesList.push({
-                    name: wName,
-                    type: 'line',
-                    data: tl.water || []
-                });
-                colors.push('#10b981');
-                strokeWidths.push(2.0);
-
-                if (hasSteam) {
-                    seriesList.push({
-                        name: sName,
-                        type: 'line',
-                        data: tl.steam || []
-                    });
-                    colors.push('#f59e0b');
-                    strokeWidths.push(2.0);
-                }
-
                 this.energyChart.updateOptions({
                     colors: colors,
                     stroke: { width: strokeWidths, curve: 'smooth' },
                     fill: { type: 'solid' },
                     markers: {
-                        size: strokeWidths.map(w => w >= 4 ? 4 : 2),
+                        size: 4,
                         hover: { sizeOffset: 3 }
                     },
                     xaxis: {
                         categories: tl.labels || []
                     },
-                    yaxis: [
-                        {
-                            title: {
-                                text: hasReactive ? `${pUnit} / ${rUnit}` : pUnit,
-                                style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
-                            },
-                            labels: {
-                                style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
-                                formatter: function (v) {
-                                    if (v === undefined || v === null || isNaN(v)) return '0';
-                                    return v >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
-                                }
-                            }
+                    yaxis: {
+                        title: {
+                            text: hasReactive ? `${pUnit} / ${rUnit}` : pUnit,
+                            style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
                         },
-                        {
-                            opposite: true,
-                            title: {
-                                text: hasSteam ? `${wUnit} / ${sUnit}` : wUnit,
-                                style: { color: '#10b981', fontSize: '11px', fontWeight: 700 }
-                            },
-                            labels: {
-                                style: { colors: '#10b981', fontSize: '11px', fontWeight: 600 },
-                                formatter: function (v) {
-                                    if (v === undefined || v === null || isNaN(v)) return '0';
-                                    return v < 20 ? Number(v).toFixed(1) : Math.round(v).toLocaleString('uk-UA');
-                                }
+                        labels: {
+                            style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
+                            formatter: function (v) {
+                                if (v === undefined || v === null || isNaN(v)) return '0';
+                                return v >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
                             }
                         }
-                    ],
+                    },
                     series: seriesList
                 }, true, true);
             }
+
+            // Оновлення окремого графіка води та пари
+            this.initWaterSteamChart(tl);
 
             if (tl) {
                 this.initPlantPowerChart(tl, this._currentPlantPowerUnit || 'kwh');

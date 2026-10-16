@@ -850,12 +850,31 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div id="plant-daily-power-chart"></div>
             </div>
 
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; margin-bottom: 6px;">
-                <span style="font-size: 12px; font-weight: 700; color: #334155;">📊 Комплексний баланс: Електроенергія (кВт), Вода (м³) та Технологічна пара (т)</span>
-                <span style="font-size: 11px; color: #64748b;">(Наведіть на графік для перегляду розрахунку на 1 т переробленого насіння)</span>
+            <!-- Графік 1: Баланс електроенергії заводу (Активна та Реактивна) -->
+            <div class="card-panel-inner" style="background: #ffffff; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 14px 16px; margin-top: 14px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="zap" style="width: 16px; height: 16px; color: #0284c7;"></i>
+                        <span style="font-weight: 700; font-size: 13px; color: #1e293b;">⚡ Баланс електроенергії: Активна (кВт) та Реактивна (кВАр·год)</span>
+                        <span class="section-badge badge-blue">Жирні лінії</span>
+                    </div>
+                    <span style="font-size: 11px; color: #64748b;">(Синя лінія — активна, фіолетова — реактивна. Наведіть для розрахунку cos φ)</span>
+                </div>
+                <div id="energy-timeline-chart"></div>
             </div>
-            <!-- Інтерактивний графік електроенергії та води -->
-            <div id="energy-timeline-chart"></div>
+
+            <!-- Графік 2: Окремий графік обліку води та технологічної пари -->
+            <div class="card-panel-inner" style="background: #ffffff; border: 1px solid var(--border-color, #e2e8f0); border-radius: 8px; padding: 14px 16px; margin-top: 14px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="droplet" style="width: 16px; height: 16px; color: #10b981;"></i>
+                        <span style="font-weight: 700; font-size: 13px; color: #1e293b;">💧💨 Баланс води та технологічної пари: Вода (м³) та Пара котельні (т)</span>
+                        <span class="section-badge badge-green" style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px;">Окремий облік</span>
+                    </div>
+                    <span style="font-size: 11px; color: #64748b;">(Смарагдова лінія — вода за лічильником, помаранчева — пара котельні на лушпинні)</span>
+                </div>
+                <div id="water-steam-timeline-chart"></div>
+            </div>
 
             <!-- Розподіл за структурними підрозділами та помісячний баланс року -->
             <div class="energy-details-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px;">
