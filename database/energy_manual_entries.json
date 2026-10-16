@@ -1,1 +1,167 @@
-{}
+{
+  "2026-10-01": {
+    "date": "2026-10-01",
+    "power_kwh": 29400,
+    "reactive_kvarh": 9400,
+    "water_m3": 165.0,
+    "steam_t": 122.71,
+    "steam_pressure_bar": 11.2,
+    "note": "Фактичні дані обліку",
+    "author": "energo",
+    "updated_at": "2026-10-01 20:00:00"
+  },
+  "2026-10-02": {
+    "date": "2026-10-02",
+    "power_kwh": 30100,
+    "reactive_kvarh": 9600,
+    "water_m3": 106.0,
+    "steam_t": 125.53,
+    "steam_pressure_bar": 11.3,
+    "note": "Фактичні дані обліку",
+    "author": "energo",
+    "updated_at": "2026-10-02 20:00:00"
+  },
+  "2026-10-03": {
+    "date": "2026-10-03",
+    "power_kwh": 30800,
+    "reactive_kvarh": 9850,
+    "water_m3": 140.0,
+    "steam_t": 128.99,
+    "steam_pressure_bar": 11.3,
+    "note": "Фактичні дані обліку",
+    "author": "energo",
+    "updated_at": "2026-10-03 20:00:00"
+  },
+  "2026-10-04": {
+    "date": "2026-10-04",
+    "power_kwh": 30500,
+    "reactive_kvarh": 9760,
+    "water_m3": 140.0,
+    "steam_t": 125.31,
+    "steam_pressure_bar": 11.2,
+    "note": "Фактичні дані обліку",
+    "author": "energo",
+    "updated_at": "2026-10-04 20:00:00"
+  },
+  "2026-10-05": {
+    "date": "2026-10-05",
+    "power_kwh": 30200,
+    "reactive_kvarh": 9660,
+    "water_m3": 140.0,
+    "steam_t": 127.31,
+    "steam_pressure_bar": 11.4,
+    "note": "Фактичні дані обліку",
+    "author": "energo",
+    "updated_at": "2026-10-05 20:00:00"
+  },
+  "2026-10-06": {
+    "date": "2026-10-06",
+    "power_kwh": 31100,
+    "reactive_kvarh": 9950,
+    "water_m3": 159.0,
+    "steam_t": 136.89,
+    "steam_pressure_bar": 11.5,
+    "note": "Фактичні дані обліку",
+    "author": "energo",
+    "updated_at": "2026-10-06 20:00:00"
+  },
+  "2026-10-07": {
+    "date": "2026-10-07",
+    "power_kwh": 12500,
+    "reactive_kvarh": 4000,
+    "water_m3": 129.0,
+    "steam_t": 54.1,
+    "steam_pressure_bar": 10.5,
+    "note": "Зниження навантаження МЕЗ",
+    "author": "energo",
+    "updated_at": "2026-10-07 20:00:00"
+  },
+  "2026-10-08": {
+    "date": "2026-10-08",
+    "power_kwh": 2100,
+    "reactive_kvarh": 650,
+    "water_m3": 52.0,
+    "steam_t": 0.0,
+    "steam_pressure_bar": 0.0,
+    "note": "Простій заводу (0 переробка)",
+    "author": "energo",
+    "updated_at": "2026-10-08 20:00:00"
+  },
+  "2026-10-09": {
+    "date": "2026-10-09",
+    "power_kwh": 1950,
+    "reactive_kvarh": 600,
+    "water_m3": 52.0,
+    "steam_t": 0.0,
+    "steam_pressure_bar": 0.0,
+    "note": "Простій заводу (0 переробка)",
+    "author": "energo",
+    "updated_at": "2026-10-09 20:00:00"
+  },
+  "2026-10-10": {
+    "date": "2026-10-10",
+    "power_kwh": 2200,
+    "reactive_kvarh": 700,
+    "water_m3": 33.7,
+    "steam_t": 0.0,
+    "steam_pressure_bar": 0.0,
+    "note": "Простій заводу (0 переробка)",
+    "author": "energo",
+    "updated_at": "2026-10-10 20:00:00"
+  },
+  "2026-10-11": {
+    "date": "2026-10-11",
+    "power_kwh": 2300,
+    "reactive_kvarh": 730,
+    "water_m3": 33.7,
+    "steam_t": 0.0,
+    "steam_pressure_bar": 0.0,
+    "note": "Простій заводу (0 переробка)",
+    "author": "energo",
+    "updated_at": "2026-10-11 20:00:00"
+  },
+  "2026-10-12": {
+    "date": "2026-10-12",
+    "power_kwh": 14200,
+    "reactive_kvarh": 4500,
+    "water_m3": 33.6,
+    "steam_t": 27.98,
+    "steam_pressure_bar": 10.8,
+    "note": "Пуск котельні та розігрів цехів",
+    "author": "energo",
+    "updated_at": "2026-10-12 20:00:00"
+  },
+  "2026-10-13": {
+    "date": "2026-10-13",
+    "power_kwh": 31200,
+    "reactive_kvarh": 10100,
+    "water_m3": 106.0,
+    "steam_t": 119.57,
+    "steam_pressure_bar": 11.3,
+    "note": "Виробництво 521,0 т насіння",
+    "author": "energo",
+    "updated_at": "2026-10-13 20:00:00"
+  },
+  "2026-10-14": {
+    "date": "2026-10-14",
+    "power_kwh": 31800,
+    "reactive_kvarh": 10350,
+    "water_m3": 95.0,
+    "steam_t": 133.28,
+    "steam_pressure_bar": 11.5,
+    "note": "Виробництво 596,8 т насіння",
+    "author": "energo",
+    "updated_at": "2026-10-14 20:00:00"
+  },
+  "2026-10-15": {
+    "date": "2026-10-15",
+    "power_kwh": 24500,
+    "reactive_kvarh": 7850,
+    "water_m3": 117.0,
+    "steam_t": 80.96,
+    "steam_pressure_bar": 11.2,
+    "note": "Виробництво 309,0 т насіння",
+    "author": "energo",
+    "updated_at": "2026-10-15 20:00:00"
+  }
+}

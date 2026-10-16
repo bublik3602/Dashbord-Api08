@@ -1019,23 +1019,28 @@ class MetricsCalculator {
 
         // Оновлюємо рядок Жовтня в річній таблиці 12 місяців
         if (!empty($manualEntries)) {
-            $monthly12[9] = [
-                'month'          => 'Жовтень 2026',
-                'short'          => 'Жов',
-                'active_kwh'     => round($octSumPower, 4),
-                'reactive_kvarh' => round($octSumPower * 0.32, 1),
-                'gas_m3'         => 0.0,
-                'water_m3'       => round($octSumWater, 0),
-                'sewage_m3'      => round($octSumWater * 0.56, 0),
-                'daily_water_m3' => count($tlWater) > 0 ? round($octSumWater / count($tlWater), 1) : 0,
-                'press_kwh'      => round($octSumPower * 0.557, 4),
-                'extr_kwh'       => round($octSumPower * 0.218, 4),
-                'elev_kwh'       => round($octSumPower * 0.155, 4),
-                'boiler_kwh'     => round($octSumPower * 0.062, 4),
-                'specific_kwh'   => 53.28,
-                'has_data'       => true,
-                'note'           => 'Фактичні дані за звітні доби Жовтня',
-            ];
+            foreach ($monthly12 as $idx => $mRow) {
+                if (strpos($mRow['month'], 'Жовтень 2026') !== false) {
+                    $monthly12[$idx] = [
+                        'month'          => 'Жовтень 2026',
+                        'short'          => 'Жов\'26',
+                        'active_kwh'     => round($octSumPower, 4),
+                        'reactive_kvarh' => round($octSumPower * 0.32, 1),
+                        'gas_m3'         => 0.0,
+                        'water_m3'       => round($octSumWater, 0),
+                        'sewage_m3'      => round($octSumWater * 0.56, 0),
+                        'daily_water_m3' => count($tlWater) > 0 ? round($octSumWater / count($tlWater), 1) : 0,
+                        'press_kwh'      => round($octSumPower * 0.557, 4),
+                        'extr_kwh'       => round($octSumPower * 0.218, 4),
+                        'elev_kwh'       => round($octSumPower * 0.155, 4),
+                        'boiler_kwh'     => round($octSumPower * 0.062, 4),
+                        'specific_kwh'   => 53.28,
+                        'has_data'       => true,
+                        'note'           => 'Фактичні дані за звітні доби Жовтня',
+                    ];
+                    break;
+                }
+            }
         }
 
         switch ($period) {
@@ -1283,17 +1288,17 @@ class MetricsCalculator {
                             'specific_subtext'           => $hasPower ? "Середня питома за {$powDays} діб переробки у Жовтні" : "Показники електроенергії ще не внесені",
                             'boiler_water_m3'            => $hasWater ? round($octSumWater * 0.408, 0) : null,
                             'extraction_water_m3'        => $hasWater ? round($octSumWater * 0.217, 0) : null,
-                            'steam_boiler_tonnes'        => $hasSteam ? round($octSumSteam, 1) : null,
-                            'steam_production_tonnes'    => $hasSteam ? round($octSumSteam * 0.931, 1) : null,
-                            'steam_extraction_tonnes'    => $hasSteam ? round($octSumSteam * 0.544, 1) : null,
-                            'steam_prep_tonnes'          => $hasSteam ? round($octSumSteam * 0.383, 1) : null,
-                            'steam_elevator_tonnes'      => $hasSteam ? round($octSumSteam * 0.003, 1) : null,
-                            'steam_heating_tonnes'       => $hasSteam ? round($octSumSteam * 0.001, 1) : null,
-                            'steam_sn_tonnes'            => $hasSteam ? round($octSumSteam * 0.069, 1) : null,
-                            'steam_specific_kg_per_tonne'=> $hasSteam ? round(($octSumSteam * 1000) / ($seedProc * $stmDays), 1) : null,
-                            'steam_subtext'              => $hasSteam ? ("Жовтень 2026: " . number_format($octSumSteam, 1, ',', ' ') . " т пари") : "Показники пари ще не внесені",
-                            'steam_distrib_subtext'      => $hasSteam ? ("Екстракція: " . number_format($octSumSteam * 0.544, 1, ',', ' ') . " т • Підготовка: " . number_format($octSumSteam * 0.383, 1, ',', ' ') . " т") : "",
-                            'steam_daily_table'          => array_reverse($steamDailyRows),
+                            'steam_boiler_tonnes'        => $hasSteam ? (float)($steamDb['october_summary']['boiler_t'] ?? round($octSumSteam, 1)) : null,
+                            'steam_production_tonnes'    => $hasSteam ? (float)($steamDb['october_summary']['prod_t'] ?? round($octSumSteam * 0.931, 1)) : null,
+                            'steam_extraction_tonnes'    => $hasSteam ? (float)($steamDb['october_summary']['extr_t'] ?? round($octSumSteam * 0.544, 1)) : null,
+                            'steam_prep_tonnes'          => $hasSteam ? (float)($steamDb['october_summary']['prep_t'] ?? round($octSumSteam * 0.383, 1)) : null,
+                            'steam_elevator_tonnes'      => $hasSteam ? (float)($steamDb['october_summary']['elev_t'] ?? round($octSumSteam * 0.003, 1)) : null,
+                            'steam_heating_tonnes'       => $hasSteam ? (float)($steamDb['october_summary']['heating_t'] ?? round($octSumSteam * 0.001, 1)) : null,
+                            'steam_sn_tonnes'            => $hasSteam ? (float)($steamDb['october_summary']['sn_t'] ?? round($octSumSteam * 0.069, 1)) : null,
+                            'steam_specific_kg_per_tonne'=> $hasSteam ? round((($steamDb['october_summary']['boiler_t'] ?? $octSumSteam) * 1000) / ($seedProc * $stmDays), 1) : null,
+                            'steam_subtext'              => $hasSteam ? ("Жовтень 2026: " . number_format(($steamDb['october_summary']['boiler_t'] ?? $octSumSteam), 1, ',', ' ') . " т пари") : "Показники пари ще не внесені",
+                            'steam_distrib_subtext'      => $hasSteam ? ("Екстракція: " . number_format(($steamDb['october_summary']['extr_t'] ?? ($octSumSteam * 0.544)), 1, ',', ' ') . " т • Підготовка: " . number_format(($steamDb['october_summary']['prep_t'] ?? ($octSumSteam * 0.383)), 1, ',', ' ') . " т") : "",
+                            'steam_daily_table'          => !empty($steamDb['daily_oct26']) ? $steamDb['daily_oct26'] : array_reverse($steamDailyRows),
                             'steam_monthly_history'      => $steamMonthly,
                             'period_note'                => "Жовтень 2026: факт за {$daysCnt} діб переробки (внесено енергетиком)",
                             'departments'                => [
@@ -1372,7 +1377,7 @@ class MetricsCalculator {
                         'steam_specific_kg_per_tonne'=> $specStm,
                         'steam_subtext'              => $hasSteam ? ("Виробництво: " . number_format($curSteam, 1, ',', ' ') . " т • Тиск: {$curBar} бар") : "Показники пари ще не внесені",
                         'steam_distrib_subtext'      => $hasSteam ? ("Екстракція: " . number_format($curSteam * 0.544, 1, ',', ' ') . " т • Підготовка: " . number_format($curSteam * 0.383, 1, ',', ' ') . " т") : "",
-                        'steam_daily_table'          => array_reverse($steamDailyRows),
+                        'steam_daily_table'          => !empty($steamDb['daily_oct26']) ? $steamDb['daily_oct26'] : array_reverse($steamDailyRows),
                         'steam_monthly_history'      => $steamMonthly,
                         'period_note'                => "Доба: " . date('d.m.Y', strtotime($latest['date'])) . " (фактичні дані енергетика)",
                         'departments'                => [

@@ -299,8 +299,28 @@ try {
                 fclose($handle);
             }
             $sheetsData['CSV_Дані'] = $csvRows;
+        } elseif ($ext === 'xls') {
+            $parsedJson = null;
+            $scriptPath = __DIR__ . '/../scripts/parse_xls.py';
+            if (file_exists($scriptPath)) {
+                $pyCmds = ['python3', 'python'];
+                foreach ($pyCmds as $py) {
+                    $cmd = escapeshellcmd($py) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($tmpPath) . ' 2>&1';
+                    $out = @shell_exec($cmd);
+                    if ($out && ($decoded = json_decode($out, true)) && is_array($decoded) && !empty($decoded)) {
+                        $parsedJson = $decoded;
+                        break;
+                    }
+                }
+            }
+            if ($parsedJson) {
+                $sheetsData = $parsedJson;
+            } else {
+                $details[] = "Файл «{$filename}»: старий бінарний формат XLS (Excel 97-2003). Рекомендується перезберегти як «Книга Excel (.xlsx)» або .csv в Excel та завантажити знову.";
+                continue;
+            }
         } else {
-            $details[] = "Файл «{$filename}»: старий формат XLS. Збережіть файл у форматі XLSX та завантажте знову.";
+            $details[] = "Файл «{$filename}»: непідтримуваний формат файлу.";
             continue;
         }
 
@@ -1348,7 +1368,7 @@ try {
         }
 
         // -------------------------------------------------------------
-        // 6. АРКУШ: ЕЛЕКТРОЕНЕРГІЯ, ВОДОПОСТАЧАННЯ ТА ПАРА («РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ 2026.xlsx», «АГРОПРОІНВЕСТ 08(28).xlsx», «Облік води.xlsx», «Учет пара.xlsx»)
+        // 6. АРКУШ: ЕЛЕКТРОЕНЕРГІЯ, ВОДОПОСТАЧАННЯ ТА ПАРА («Облік води.xlsx», «Учет пара.xlsx», «РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ.xlsx»)
         // -------------------------------------------------------------
         $isEnergyReport = false;
         if (strpos($fnLower, 'энергоносител') !== false || strpos($fnLower, 'енергоносі') !== false || strpos($fnLower, 'агропроінвест') !== false || strpos($fnLower, 'агропроинвест') !== false || strpos($fnLower, 'вод') !== false || strpos($fnLower, 'пар') !== false) {
@@ -1357,7 +1377,7 @@ try {
         if (!$isEnergyReport) {
             foreach ($sheetsData as $sName => $rows) {
                 $sLow = mb_strtolower($sName, 'UTF-8');
-                if (strpos($sLow, 'ел. енергія') !== false || strpos($sLow, 'эл. энергия') !== false || strpos($sLow, 'пар') !== false) {
+                if (strpos($sLow, 'ел. енергія') !== false || strpos($sLow, 'эл. энергия') !== false || strpos($sLow, 'пар') !== false || strpos($sLow, 'вод') !== false) {
                     $isEnergyReport = true;
                     break;
                 }
@@ -1372,32 +1392,332 @@ try {
         }
 
         if ($isEnergyReport) {
-            $energyDaysCount = 0;
+            $energyManualFile = __DIR__ . '/../database/energy_manual_entries.json';
+            $steamDbFile = __DIR__ . '/../database/steam_data.json';
+            
+            $energyManualEntries = [];
+            if (file_exists($energyManualFile)) {
+                $raw = @file_get_contents($energyManualFile);
+                if ($raw) {
+                    $energyManualEntries = json_decode($raw, true) ?: [];
+                }
+            }
+
+            $steamDb = [];
+            if (file_exists($steamDbFile)) {
+                $rawS = @file_get_contents($steamDbFile);
+                if ($rawS) {
+                    $steamDb = json_decode($rawS, true) ?: [];
+                }
+            }
+
+            $waterUpdatedDays = 0;
+            $steamUpdatedDays = 0;
+            $powerUpdatedDays = 0;
+
+            // Допоміжна функція визначення дати з Excel (серійний номер або рядок)
+            $excelDateToIso = function($val): ?string {
+                if ($val === null || $val === '') return null;
+                if (is_numeric($val) && $val >= 35000 && $val <= 65000) {
+                    $ts = ($val - 25569) * 86400;
+                    return gmdate('Y-m-d', (int)round($ts));
+                }
+                $str = trim((string)$val);
+                if (preg_match('/^(\d{4})-(\d{2})-(\d{2})/', $str, $m)) {
+                    return "{$m[1]}-{$m[2]}-{$m[3]}";
+                }
+                if (preg_match('/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/', $str, $m)) {
+                    return sprintf('%04d-%02d-%02d', (int)$m[3], (int)$m[2], (int)$m[1]);
+                }
+                return null;
+            };
+
+            // Допоміжна функція визначення місяця та року з тексту заголовка або назви аркуша
+            $resolveMonthYear = function(string $txt): array {
+                $t = mb_strtolower($txt, 'UTF-8');
+                $mMap = [
+                    'січ' => 1, 'янв' => 1, 'лют' => 2, 'фев' => 2,
+                    'бер' => 3, 'мар' => 3, 'кві' => 4, 'апр' => 4,
+                    'тра' => 5, 'май' => 5, 'мая' => 5, 'чер' => 6, 'июн' => 6,
+                    'лип' => 7, 'июл' => 7, 'сер' => 8, 'авг' => 8,
+                    'вер' => 9, 'сен' => 9, 'жов' => 10, 'окт' => 10,
+                    'лис' => 11, 'ноя' => 11, 'гру' => 12, 'дек' => 12,
+                ];
+                $month = null;
+                foreach ($mMap as $k => $mNum) {
+                    if (strpos($t, $k) !== false) {
+                        $month = $mNum;
+                        break;
+                    }
+                }
+                $year = null;
+                if (preg_match('/(20\d{2})/', $t, $ym)) {
+                    $year = (int)$ym[1];
+                } elseif (preg_match('/_(\d{2})\b/', $t, $ym2)) {
+                    $year = 2000 + (int)$ym2[1];
+                } elseif (preg_match('/\b(\d{2})$/', $t, $ym3)) {
+                    $year = 2000 + (int)$ym3[1];
+                }
+                return [$month ?: (int)date('n'), $year ?: (int)date('Y')];
+            };
+
             foreach ($sheetsData as $sName => $rows) {
+                $sLow = mb_strtolower($sName, 'UTF-8');
+
+                // ---------------------------------------------------------
+                // A. ОБЛІК ВОДИ (Горизонтальна або вертикальна таблиця)
+                // ---------------------------------------------------------
+                $dateRowIdx = -1;
+                $dateCols = [];
+                for ($r = 0; $r < min(10, count($rows)); $r++) {
+                    $rRow = $rows[$r] ?? [];
+                    $dCols = [];
+                    foreach ($rRow as $cIdx => $cellVal) {
+                        $iso = $excelDateToIso($cellVal);
+                        if ($iso) {
+                            $dCols[$cIdx] = $iso;
+                        }
+                    }
+                    if (count($dCols) >= 2) {
+                        $dateRowIdx = $r;
+                        $dateCols = $dCols;
+                        break;
+                    }
+                }
+
+                if ($dateRowIdx >= 0 && !empty($dateCols)) {
+                    // Знайдено горизонтальний рядок дат (як у «Облік води»)
+                    for ($r = $dateRowIdx + 1; $r < min($dateRowIdx + 18, count($rows)); $r++) {
+                        $rLabel = mb_strtolower(implode(' ', array_slice(array_filter($rows[$r] ?? [], 'is_string'), 0, 7)), 'UTF-8');
+                        if (strpos($rLabel, 'вхідний') !== false || strpos($rLabel, 'ввод') !== false || strpos($rLabel, 'витрата') !== false) {
+                            $targetFlowRow = $rows[$r];
+                            if (strpos($rLabel, 'пок') !== false && isset($rows[$r + 1])) {
+                                $nextLabel = mb_strtolower(implode(' ', array_slice(array_filter($rows[$r + 1] ?? [], 'is_string'), 0, 7)), 'UTF-8');
+                                if (strpos($nextLabel, 'витрата') !== false || strpos($nextLabel, 'расход') !== false) {
+                                    $targetFlowRow = $rows[$r + 1];
+                                }
+                            }
+                            $prevDate = null;
+                            foreach ($dateCols as $cIdx => $currDate) {
+                                $val = $targetFlowRow[$cIdx] ?? null;
+                                if ($val !== null && is_numeric($val) && (float)$val > 0) {
+                                    $flow = (float)$val;
+                                    $spanDays = 1;
+                                    if ($prevDate) {
+                                        $diffSec = strtotime($currDate) - strtotime($prevDate);
+                                        $days = (int)round($diffSec / 86400);
+                                        if ($days > 1 && $days <= 5) {
+                                            $spanDays = $days;
+                                        }
+                                    }
+                                    $dailyWater = round($flow / $spanDays, 2);
+                                    for ($offset = 0; $offset < $spanDays; $offset++) {
+                                        $dTarget = date('Y-m-d', strtotime($currDate) - ($offset * 86400));
+                                        if (!isset($energyManualEntries[$dTarget])) {
+                                            $energyManualEntries[$dTarget] = ['date' => $dTarget];
+                                        }
+                                        $energyManualEntries[$dTarget]['water_m3'] = $dailyWater;
+                                        $energyManualEntries[$dTarget]['author']   = 'import';
+                                        $energyManualEntries[$dTarget]['note']     = 'Імпортовано з обліку води';
+                                        $energyManualEntries[$dTarget]['updated_at'] = date('Y-m-d H:i:s');
+                                        $waterUpdatedDays++;
+                                    }
+                                }
+                                $prevDate = $currDate;
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // ---------------------------------------------------------
+                // B. ОБЛІК ПАРИ («Учет пара на ООО Агропроинвест 08»)
+                // ---------------------------------------------------------
+                $isSteamSheet = (strpos($sLow, 'пар') !== false || strpos($sLow, 'котел') !== false);
+                $sheetTitle = '';
+                foreach (array_slice($rows, 0, 5) as $topR) {
+                    $tStr = implode(' ', array_filter($topR, 'is_string'));
+                    if (mb_stripos($tStr, 'учет пара') !== false || mb_stripos($tStr, 'облік пари') !== false) {
+                        $isSteamSheet = true;
+                        $sheetTitle = $tStr;
+                        break;
+                    }
+                }
+
+                if ($isSteamSheet) {
+                    [$mNum, $yr] = $resolveMonthYear($sheetTitle !== '' ? $sheetTitle : $sName);
+                    $headerRowIdx = -1;
+                    $cBoiler = 1; $cProd = 2; $cSN = 3; $cExtr = 4; $cPrep = 5; $cElev = 6; $cHeat = 8;
+                    for ($r = 0; $r < min(10, count($rows)); $r++) {
+                        $rRow = $rows[$r] ?? [];
+                        $rStr = mb_strtolower(implode(' ', array_filter($rRow, 'is_string')), 'UTF-8');
+                        if (strpos($rStr, 'день') !== false || strpos($rStr, 'котел') !== false) {
+                            $headerRowIdx = $r;
+                            foreach ($rRow as $ci => $cv) {
+                                $cvLow = mb_strtolower((string)$cv, 'UTF-8');
+                                if (strpos($cvLow, 'котел') !== false) $cBoiler = $ci;
+                                elseif (strpos($cvLow, 'пр-во') !== false || strpos($cvLow, 'вироб') !== false) $cProd = $ci;
+                                elseif (strpos($cvLow, 'сн') !== false) $cSN = $ci;
+                                elseif (strpos($cvLow, 'экс') !== false || strpos($cvLow, 'екс') !== false) $cExtr = $ci;
+                                elseif (strpos($cvLow, 'под') !== false || strpos($cvLow, 'під') !== false) $cPrep = $ci;
+                                elseif (strpos($cvLow, 'эл') !== false || strpos($cvLow, 'ел') !== false) $cElev = $ci;
+                                elseif (strpos($cvLow, 'отоп') !== false || strpos($cvLow, 'опал') !== false) $cHeat = $ci;
+                            }
+                            break;
+                        }
+                    }
+
+                    if ($headerRowIdx >= 0) {
+                        $monthDailyRecords = [];
+                        $sumBoiler = 0.0; $sumProd = 0.0; $sumSN = 0.0; $sumExtr = 0.0; $sumPrep = 0.0; $sumElev = 0.0; $sumHeat = 0.0;
+                        for ($r = $headerRowIdx + 1; $r < count($rows); $r++) {
+                            $rRow = $rows[$r] ?? [];
+                            $dayVal = $rRow[0] ?? $rRow[1] ?? null;
+                            if ($dayVal !== null && is_numeric($dayVal) && (int)$dayVal >= 1 && (int)$dayVal <= 31) {
+                                $day = (int)$dayVal;
+                                $isoDate = sprintf('%04d-%02d-%02d', $yr, $mNum, $day);
+                                $boiler = isset($rRow[$cBoiler]) && is_numeric($rRow[$cBoiler]) ? (float)$rRow[$cBoiler] : 0.0;
+                                $prod   = isset($rRow[$cProd]) && is_numeric($rRow[$cProd]) ? (float)$rRow[$cProd] : 0.0;
+                                $sn     = isset($rRow[$cSN]) && is_numeric($rRow[$cSN]) ? (float)$rRow[$cSN] : 0.0;
+                                $extr   = isset($rRow[$cExtr]) && is_numeric($rRow[$cExtr]) ? (float)$rRow[$cExtr] : 0.0;
+                                $prep   = isset($rRow[$cPrep]) && is_numeric($rRow[$cPrep]) ? (float)$rRow[$cPrep] : 0.0;
+                                $elev   = isset($rRow[$cElev]) && is_numeric($rRow[$cElev]) ? (float)$rRow[$cElev] : 0.0;
+                                $heat   = isset($rRow[$cHeat]) && is_numeric($rRow[$cHeat]) ? (float)$rRow[$cHeat] : 0.0;
+
+                                $monthDailyRecords[] = [
+                                    'day'       => $day,
+                                    'date'      => sprintf('%02d.%02d.%04d', $day, $mNum, $yr),
+                                    'boiler_t'  => $boiler,
+                                    'prod_t'    => $prod,
+                                    'sn_t'      => $sn,
+                                    'extr_t'    => $extr,
+                                    'prep_t'    => $prep,
+                                    'elev_t'    => $elev,
+                                    'heating_t' => $heat,
+                                ];
+                                $sumBoiler += $boiler;
+                                $sumProd   += $prod;
+                                $sumSN     += $sn;
+                                $sumExtr   += $extr;
+                                $sumPrep   += $prep;
+                                $sumElev   += $elev;
+                                $sumHeat   += $heat;
+
+                                if ($boiler > 0 || $prod > 0) {
+                                    if (!isset($energyManualEntries[$isoDate])) {
+                                        $energyManualEntries[$isoDate] = ['date' => $isoDate];
+                                    }
+                                    $energyManualEntries[$isoDate]['steam_t'] = $boiler;
+                                    $energyManualEntries[$isoDate]['author']  = 'import';
+                                    $energyManualEntries[$isoDate]['note']    = 'Імпортовано з обліку пари';
+                                    $energyManualEntries[$isoDate]['updated_at'] = date('Y-m-d H:i:s');
+                                    $steamUpdatedDays++;
+                                }
+                            }
+                        }
+
+                        if (!empty($monthDailyRecords)) {
+                            if ($mNum === 10 && $yr === 2026) {
+                                $steamDb['daily_oct26'] = $monthDailyRecords;
+                                $steamDb['october_summary'] = [
+                                    'month'     => 'Жовтень 2026',
+                                    'boiler_t'  => round($sumBoiler, 2),
+                                    'prod_t'    => round($sumProd, 2),
+                                    'sn_t'      => round($sumSN, 2),
+                                    'extr_t'    => round($sumExtr, 2),
+                                    'prep_t'    => round($sumPrep, 2),
+                                    'elev_t'    => round($sumElev, 2),
+                                    'heating_t' => round($sumHeat, 2),
+                                ];
+                            } elseif ($mNum === 9 && $yr === 2026) {
+                                $steamDb['daily_sep26'] = $monthDailyRecords;
+                            }
+                        }
+                    }
+                }
+
+                // ---------------------------------------------------------
+                // C. ТРАДИЦІЙНИЙ ВЕРТИКАЛЬНИЙ ЗВІТ ЕНЕРГЕТИКА (Дата в колонці 0)
+                // ---------------------------------------------------------
                 foreach ($rows as $r) {
                     $dStr = trim((string)($r[0] ?? ''));
                     if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $dStr, $em)) {
                         $isoD = "{$em[3]}-{$em[2]}-{$em[1]}";
                         $waterDelta = isset($r[2]) && is_numeric($r[2]) ? (float)$r[2] : 0.0;
-                        $sewageVal  = isset($r[13]) && is_numeric($r[13]) ? (float)$r[13] : round($waterDelta * 0.56, 1);
-                        if ($waterDelta > 0) {
-                            $energyDaysCount++;
-                            try {
-                                $chkE = $db->prepare("SELECT id FROM energy_readings WHERE recorded_at LIKE ?");
-                                $chkE->execute(["{$isoD}%"]);
-                                $exE = $chkE->fetch(PDO::FETCH_ASSOC);
-                                if ($exE) {
-                                    $updE = $db->prepare("UPDATE energy_readings SET report_date = ?, water_m3_delta = ?, water_flow_m3_hour = ?, sewage_m3 = ? WHERE id = ?");
-                                    $updE->execute([$dStr, $waterDelta, round($waterDelta / 24, 2), $sewageVal, $exE['id']]);
-                                }
-                            } catch (Throwable $e) {}
+                        $powerDelta = isset($r[1]) && is_numeric($r[1]) ? (float)$r[1] : 0.0;
+                        if ($waterDelta > 0 || $powerDelta > 0) {
+                            if (!isset($energyManualEntries[$isoD])) {
+                                $energyManualEntries[$isoD] = ['date' => $isoD];
+                            }
+                            if ($waterDelta > 0) {
+                                $energyManualEntries[$isoD]['water_m3'] = $waterDelta;
+                                $waterUpdatedDays++;
+                            }
+                            if ($powerDelta > 0) {
+                                $energyManualEntries[$isoD]['power_kwh'] = $powerDelta;
+                                $energyManualEntries[$isoD]['reactive_kvarh'] = round($powerDelta * 0.32, 1);
+                                $powerUpdatedDays++;
+                            }
+                            $energyManualEntries[$isoD]['author'] = 'import';
+                            $energyManualEntries[$isoD]['updated_at'] = date('Y-m-d H:i:s');
                         }
                     }
                 }
             }
+
+            // ---------------------------------------------------------
+            // ЗБЕРЕЖЕННЯ В JSON ТА БАЗУ ДАНИХ
+            // ---------------------------------------------------------
+            if (!empty($energyManualEntries)) {
+                ksort($energyManualEntries);
+                @file_put_contents($energyManualFile, json_encode($energyManualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+
+                // Оновлення SQL таблиці energy_readings
+                foreach ($energyManualEntries as $dStr => $entry) {
+                    if ($dStr < '2026-09-01') continue;
+                    $wVal = (float)($entry['water_m3'] ?? 0.0);
+                    $sVal = (float)($entry['steam_t'] ?? 0.0);
+                    $pVal = (float)($entry['power_kwh'] ?? 0.0);
+                    $rVal = (float)($entry['reactive_kvarh'] ?? ($pVal > 0 ? round($pVal * 0.32, 1) : 0.0));
+                    $dFmt = date('d.m.Y', strtotime($dStr));
+                    try {
+                        $chkE = $db->prepare("SELECT id FROM energy_readings WHERE recorded_at LIKE ? OR report_date = ?");
+                        $chkE->execute(["{$dStr}%", $dFmt]);
+                        $exE = $chkE->fetch(PDO::FETCH_ASSOC);
+                        if ($exE) {
+                            $updE = $db->prepare("
+                                UPDATE energy_readings 
+                                SET report_date = ?, 
+                                    water_m3_delta = CASE WHEN ? > 0 THEN ? ELSE water_m3_delta END,
+                                    water_flow_m3_hour = CASE WHEN ? > 0 THEN ? ELSE water_flow_m3_hour END,
+                                    power_kwh_delta = CASE WHEN ? > 0 THEN ? ELSE power_kwh_delta END,
+                                    reactive_kvarh = CASE WHEN ? > 0 THEN ? ELSE reactive_kvarh END
+                                WHERE id = ?
+                            ");
+                            $updE->execute([$dFmt, $wVal, $wVal, round($wVal/24, 2), round($wVal/24, 2), $pVal, $pVal, $rVal, $rVal, $exE['id']]);
+                        } else if ($wVal > 0 || $pVal > 0 || $sVal > 0) {
+                            $insE = $db->prepare("
+                                INSERT INTO energy_readings (recorded_at, report_date, power_kw, power_kwh_delta, reactive_kvarh, water_flow_m3_hour, water_m3_delta, sewage_m3, steam_pressure_bar)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 11.2)
+                            ");
+                            $insE->execute(["{$dStr} 20:00:00", $dFmt, round($pVal/24, 4), $pVal, $rVal, round($wVal/24, 2), $wVal, round($wVal*0.56, 1)]);
+                        }
+                    } catch (Throwable $e) {}
+                }
+            }
+
+            if (!empty($steamDb)) {
+                @file_put_contents($steamDbFile, json_encode($steamDb, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+            }
+
             $processedReports[] = 'energy';
             $sheetListStr = implode('», «', array_slice(array_keys($sheetsData), 0, 5));
-            $details[] = "✅ «Енергоносії та Водопостачання» ({$filename}): оновлено дані електроенергії та води (вкладки «{$sheetListStr}»" . ($energyDaysCount > 0 ? ", {$energyDaysCount} добових записів лічильника" : "") . ").";
+            $summaryParts = [];
+            if ($waterUpdatedDays > 0) $summaryParts[] = "{$waterUpdatedDays} діб води";
+            if ($steamUpdatedDays > 0) $summaryParts[] = "{$steamUpdatedDays} діб пари";
+            if ($powerUpdatedDays > 0) $summaryParts[] = "{$powerUpdatedDays} діб електроенергії";
+            $sumTxt = !empty($summaryParts) ? implode(', ', $summaryParts) : "показники оновлено";
+            $details[] = "✅ «Енергоносії, Вода та Пара» ({$filename}): успішно імпортовано та оновлено графіки ({$sumTxt}, вкладки «{$sheetListStr}»).";
             $fileHadProcessedReport = true;
         }
 

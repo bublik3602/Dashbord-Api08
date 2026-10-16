@@ -25,12 +25,12 @@ def create_archive():
         'cron',
         'database',
         'includes',
+        'scripts',
     ]
     
     exclude_extensions = ['.pyc', '.git', '.tmp', '.log', '.txt', '.sqlite', '.sqlite-journal']
     exclude_files = [
         'hestiacp_dashboard_zavod.zip',
-        'energy_manual_entries.json',
         'dashboard_demo.sqlite'
     ]
     
