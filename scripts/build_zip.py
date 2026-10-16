@@ -31,7 +31,6 @@ def create_archive():
     exclude_files = [
         'hestiacp_dashboard_zavod.zip',
         'energy_manual_entries.json',
-        'changes_history.json',
         'dashboard_demo.sqlite'
     ]
     
