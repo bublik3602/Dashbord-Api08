@@ -417,15 +417,15 @@ class MetricsCalculator {
                 'seed_plan'     => 4200.0,
             ],
             'month_aug' => [
-                // Серпень 2026: ППР, прийомка 207,96 т (8 авто, 2 дні приймання), переробка 0 т
+                // Серпень 2026: ППР заводу, прийомка 207,96 т (8 авто, 2 дні приймання), переробка 0 т
                 'seed_in_plant' => 207.96,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
                 'cond_loss_pct' => 0.00,
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
-                'husk_out'      => 5.91,
-                'seed_plan'     => 600.0,
+                'husk_out'      => 0.00,
+                'seed_plan'     => 0.0,
             ],
             'month_sep' => [
                 // Вересень 2026 (з «Сент.26» та «СВОДНАЯ 2026-27»): працював 16 діб переробки (15.09-30.09)
@@ -1528,16 +1528,16 @@ class MetricsCalculator {
             case 'month_aug':
                 return [
                     'seed_stock_tonnes'            => 883.40,
-                    'seed_stock_accounting_tonnes' => 883.40,
+                    'seed_stock_accounting_tonnes' => 757.58,
                     'oil_stock_tonnes'             => 15.35,
                     'meal_stock_tonnes'            => 362.60,
                     'husk_stock_tonnes'            => 0.00,
                     'husk_boiler_spent_tonnes'     => 6.85,
                     'days_seed_reserve'            => 1.5,
-                    'oil_shipped_tonnes'           => 76.64,
+                    'oil_shipped_tonnes'           => 153.28,
                     'meal_shipped_tonnes'          => 1390.54,
                     'husk_shipped_tonnes'          => 78.60,
-                    'report_date'                  => '01.09.2026 08:00',
+                    'report_date'                  => '31.08.2026 20:00 (Серпень 2026)',
                 ];
             case 'month_sep':
                 return [
@@ -1743,12 +1743,13 @@ class MetricsCalculator {
                     'oil_yield_pct'      => 0.00,
                     'meal_out'           => 0.00,
                     'meal_yield_pct'     => 0.00,
-                    'husk_out'           => 5.91,
-                    'oil_shipped'        => 76.64,
+                    'husk_out'           => 0.00,
+                    'oil_shipped'        => 153.28,
                     'meal_shipped'       => 1390.54,
                     'husk_shipped'       => 78.60,
                     'trucks_count'       => 8,
                     'seed_stock'         => 883.40,
+                    'seed_stock_accounting' => 757.58,
                     'oil_stock'          => 15.35,
                     'meal_stock'         => 362.60,
                     'husk_stock'         => 0.00,
