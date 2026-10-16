@@ -993,7 +993,7 @@ try {
         $prodMonthSheets = [];
         foreach ($sheetsData as $sheetName => $rows) {
             $sLower = mb_strtolower($sheetName, 'UTF-8');
-            if (strpos($sLower, 'октябр') !== false || strpos($sLower, 'сент') !== false || strpos($sLower, 'жовт') !== false || strpos($sLower, 'верес') !== false || strpos($sLower, 'переработ') !== false || strpos($sLower, 'перероб') !== false) {
+            if (strpos($sLower, 'окт') !== false || strpos($sLower, 'жовт') !== false || strpos($sLower, 'сент') !== false || strpos($sLower, 'верес') !== false || strpos($sLower, 'нояб') !== false || strpos($sLower, 'лист') !== false || strpos($sLower, 'дек') !== false || strpos($sLower, 'груд') !== false || strpos($sLower, 'переработ') !== false || strpos($sLower, 'перероб') !== false || strpos($sLower, 'справка') !== false || strpos($sLower, 'інформац') !== false || strpos($sLower, 'информац') !== false) {
                 $prodMonthSheets[$sheetName] = $rows;
             }
         }
@@ -1152,28 +1152,89 @@ try {
         }
 
         // -------------------------------------------------------------
-        // 4.1. СЕКЦІЯ: БАЛАНС МАСЛА ПО ВЫХОДАМ («Справка по переработке», «Октябрь26», «СВОДНАЯ»)
+        // 4.1. СЕКЦІЯ: БАЛАНС МАСЛА ПО ВЫХОДАМ ТА % ВИХОДУ («Справка по переработке», «Октябрь26», «СВОДНАЯ»)
         // Автоматичне оновлення виробничих та неврахованих втрат олії з виробничого звіту
         // -------------------------------------------------------------
-        $oilCandidateSheets = !empty($prodMonthSheets) ? $prodMonthSheets : $sheetsData;
+        $oilCandidateSheets = [];
+        $priorityKeywords = ['окт', 'жовт', 'нояб', 'лист', 'дек', 'сент', 'верес', 'переработ', 'перероб', 'справка', 'информац', 'інформац'];
+        foreach ($priorityKeywords as $kw) {
+            foreach ($sheetsData as $sName => $rows) {
+                if (strpos(mb_strtolower($sName, 'UTF-8'), $kw) !== false && !isset($oilCandidateSheets[$sName])) {
+                    $oilCandidateSheets[$sName] = $rows;
+                }
+            }
+        }
+        foreach ($sheetsData as $sName => $rows) {
+            if (!isset($oilCandidateSheets[$sName])) {
+                $oilCandidateSheets[$sName] = $rows;
+            }
+        }
+
         foreach ($oilCandidateSheets as $sName => $rows) {
-            $foundBalanceRow = -1;
+            $bestBlock = null;
+
+            // 1. Пошук фактичного блоку «Баланс масла по выходам», де під заголовком є числові підсумки > 500 000
             foreach ($rows as $rIdx => $r) {
-                $rowStr = mb_strtolower(implode(' ', array_filter($r, 'is_scalar')), 'UTF-8');
-                if (strpos($rowStr, 'баланс масла') !== false || strpos($rowStr, 'потери масла') !== false) {
-                    $foundBalanceRow = $rIdx;
-                    break;
+                foreach ($r as $cIdx => $val) {
+                    $s = mb_strtolower(trim((string)$val), 'UTF-8');
+                    if (strpos($s, 'баланс масла по выходам') !== false || strpos($s, 'баланс олії') !== false) {
+                        for ($cCheck = $cIdx; $cCheck < min(count($rows[$rIdx + 1] ?? []), $cIdx + 25); $cCheck++) {
+                            $v1 = $rows[$rIdx + 1][$cCheck] ?? null;
+                            $v2 = $rows[$rIdx + 2][$cCheck] ?? null;
+                            if (is_numeric($v1) && (float)$v1 > 500000 && is_numeric($v2) && (float)$v2 > 500000) {
+                                $bestBlock = [$rIdx, $cIdx, $cCheck];
+                                break 2;
+                            }
+                        }
+                    }
                 }
             }
 
-            if ($foundBalanceRow >= 0) {
-                $oilLossKg   = null;
-                $oilLossPct  = null;
-                $oilUnaccKg  = null;
+            if ($bestBlock !== null) {
+                list($balRow, $labelCol, $numCol) = $bestBlock;
+
+                $balanceCalcKg = round((float)$rows[$balRow + 1][$numCol], 1);
+                $balanceFactKg = round((float)$rows[$balRow + 2][$numCol], 0);
+                $oilOutKg      = round((float)$rows[$balRow + 3][$numCol], 0);
+                $oilLossKg     = round((float)$rows[$balRow + 4][$numCol], 0);
+                $oilLossPct    = null;
+                for ($c = $numCol + 1; $c <= $numCol + 5; $c++) {
+                    $v = $rows[$balRow + 4][$c] ?? null;
+                    if (is_numeric($v)) {
+                        $nv = (float)$v;
+                        $oilLossPct = (abs($nv) < 1 && abs($nv) > 0) ? round($nv * 100, 2) : round($nv, 2);
+                        break;
+                    }
+                }
+
+                $oilMealKg   = round((float)$rows[$balRow + 5][$numCol], 1);
+                $oilHuskKg   = round((float)$rows[$balRow + 6][$numCol], 0);
+                $oilUnaccKg  = round((float)$rows[$balRow + 7][$numCol], 0);
                 $oilUnaccPct = null;
-                $oilOutKg    = null;
-                $oilMealKg   = null;
-                $oilHuskKg   = null;
+                for ($c = $numCol + 1; $c <= $numCol + 5; $c++) {
+                    $v = $rows[$balRow + 7][$c] ?? null;
+                    if (is_numeric($v)) {
+                        $nv = (float)$v;
+                        $oilUnaccPct = (abs($nv) < 1 && abs($nv) > 0) ? round($nv * 100, 2) : round($nv, 2);
+                        break;
+                    }
+                }
+
+                // Витягуємо показники виходу продукції та олійності
+                $yieldCol = $numCol - 1;
+                $oilCol = null;
+                for ($rScan = max(0, $balRow - 12); $rScan < $balRow; $rScan++) {
+                    foreach ($rows[$rScan] ?? [] as $cIdx => $cVal) {
+                        $cStr = mb_strtolower(trim((string)$cVal), 'UTF-8');
+                        if (strpos($cStr, 'масличност') !== false || strpos($cStr, 'олійніст') !== false) {
+                            if ($cIdx >= $numCol) {
+                                $oilCol = $cIdx;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+                if ($oilCol === null) $oilCol = $numCol + 7;
 
                 $sunflowerOilPct = null;
                 $yieldOilPct     = null;
@@ -1182,195 +1243,82 @@ try {
                 $yieldHuskPct    = null;
                 $huskOilPct      = null;
                 $processLossPct  = null;
-                $balanceCalcKg   = null;
-                $balanceFactKg   = null;
 
-                // Скануємо до 12 рядків вище або на рівні знайденого рядка балансу
-                $preScanStart = max(0, $foundBalanceRow - 12);
-                for ($pri = $preScanStart; $pri <= $foundBalanceRow + 4; $pri++) {
-                    $r = $rows[$pri] ?? [];
-                    $rowNums = [];
-                    foreach ($r as $val) {
-                        if (is_numeric($val)) $rowNums[] = (float)$val;
-                    }
+                for ($rScan = max(0, $balRow - 10); $rScan < $balRow; $rScan++) {
+                    $rowCells = $rows[$rScan] ?? [];
+                    $rowText = mb_strtolower(implode(' ', array_filter($rowCells, 'is_scalar')), 'UTF-8');
 
-                    // Перевірка чисел балансу (напр. 2 298 106.1 та 2 303 590)
-                    foreach ($rowNums as $rn) {
-                        if ($rn > 1000000 && $rn < 20000000) {
-                            if ($balanceCalcKg === null) {
-                                $balanceCalcKg = round($rn, 1);
-                            } elseif ($balanceFactKg === null && abs($rn - $balanceCalcKg) > 100) {
-                                $balanceFactKg = round($rn, 0);
-                            }
+                    if (strpos($rowText, 'подсолнечник') !== false || strpos($rowText, 'соняшник') !== false) {
+                        $v = $rowCells[$oilCol] ?? null;
+                        if (is_numeric($v)) {
+                            $nv = (float)$v;
+                            $sunflowerOilPct = ($nv < 1 && $nv > 0) ? round($nv * 100, 1) : round($nv, 1);
                         }
-                    }
-
-                    foreach ($r as $ci => $cellVal) {
-                        $cStr = mb_strtolower(trim((string)$cellVal), 'UTF-8');
-                        if ($cStr === 'подсолнечник' || $cStr === 'соняшник') {
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 25); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v)) {
-                                    $num = (float)$v;
-                                    if ($num > 0 && $num < 1) $sunflowerOilPct = round($num * 100, 1);
-                                    elseif ($num >= 20 && $num <= 65) $sunflowerOilPct = round($num, 1);
-                                }
-                            }
-                        } elseif ($cStr === 'масло' || $cStr === 'олія') {
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 25); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v)) {
-                                    $num = (float)$v;
-                                    if ($num > 0 && $num < 1) $yieldOilPct = round($num * 100, 2);
-                                    elseif ($num >= 20 && $num <= 65) $yieldOilPct = round($num, 2);
-                                    break;
-                                }
-                            }
-                        } elseif ($cStr === 'шрот') {
-                            $fNums = [];
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 25); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v)) $fNums[] = (float)$v;
-                            }
-                            foreach ($fNums as $fn) {
-                                if (($fn > 0 && $fn < 1 && $fn > 0.2) || ($fn >= 20 && $fn <= 65)) {
-                                    if ($yieldMealPct === null) $yieldMealPct = ($fn < 1) ? round($fn * 100, 2) : round($fn, 2);
-                                } elseif (($fn > 0 && $fn < 0.1) || ($fn >= 0.1 && $fn <= 5.0)) {
-                                    if ($mealOilPct === null) $mealOilPct = ($fn < 0.1) ? round($fn * 100, 2) : round($fn, 2);
-                                }
-                            }
-                        } elseif ($cStr === 'лузга') {
-                            $fNums = [];
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 25); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v)) $fNums[] = (float)$v;
-                            }
-                            foreach ($fNums as $fn) {
-                                if (($fn > 0 && $fn < 1 && $fn > 0.05) || ($fn >= 5 && $fn <= 30)) {
-                                    if ($yieldHuskPct === null) $yieldHuskPct = ($fn < 1) ? round($fn * 100, 2) : round($fn, 2);
-                                } elseif (($fn > 0 && $fn < 0.1) || ($fn >= 0.5 && $fn <= 10.0)) {
-                                    if ($huskOilPct === null) $huskOilPct = ($fn < 0.1) ? round($fn * 100, 2) : round($fn, 2);
-                                }
-                            }
-                        } elseif ($cStr === 'потери' || $cStr === 'втрати') {
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 25); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v)) {
-                                    $num = (float)$v;
-                                    if (abs($num) < 1 && abs($num) > 0) $processLossPct = round($num * 100, 2);
-                                    elseif (abs($num) >= 0.1 && abs($num) <= 15) $processLossPct = round($num, 2);
-                                    break;
-                                }
-                            }
+                    } elseif (strpos($rowText, 'масло') !== false || strpos($rowText, 'олія') !== false) {
+                        $v = $rowCells[$yieldCol] ?? null;
+                        if (is_numeric($v)) {
+                            $nv = (float)$v;
+                            $yieldOilPct = ($nv < 1 && $nv > 0) ? round($nv * 100, 2) : round($nv, 2);
+                        }
+                    } elseif (strpos($rowText, 'шрот') !== false) {
+                        $vy = $rowCells[$yieldCol] ?? null;
+                        if (is_numeric($vy)) {
+                            $nvy = (float)$vy;
+                            $yieldMealPct = ($nvy < 1 && $nvy > 0) ? round($nvy * 100, 2) : round($nvy, 2);
+                        }
+                        $vo = $rowCells[$oilCol] ?? null;
+                        if (is_numeric($vo)) {
+                            $nvo = (float)$vo;
+                            $mealOilPct = ($nvo < 1 && $nvo > 0) ? round($nvo * 100, 2) : round($nvo, 2);
+                        }
+                    } elseif (strpos($rowText, 'лузга') !== false) {
+                        $vy = $rowCells[$yieldCol] ?? null;
+                        if (is_numeric($vy)) {
+                            $nvy = (float)$vy;
+                            $yieldHuskPct = ($nvy < 1 && $nvy > 0) ? round($nvy * 100, 2) : round($nvy, 2);
+                        }
+                        $vo = $rowCells[$oilCol] ?? null;
+                        if (is_numeric($vo)) {
+                            $nvo = (float)$vo;
+                            $huskOilPct = ($nvo < 1 && $nvo > 0) ? round($nvo * 100, 2) : round($nvo, 2);
+                        }
+                    } elseif (strpos($rowText, 'потери') !== false || strpos($rowText, 'втрати') !== false) {
+                        $v = $rowCells[$yieldCol] ?? null;
+                        if (is_numeric($v)) {
+                            $nv = (float)$v;
+                            $processLossPct = (abs($nv) < 1 && abs($nv) > 0) ? round($nv * 100, 2) : round($nv, 2);
                         }
                     }
                 }
 
-                $scanLimit = min(count($rows), $foundBalanceRow + 25);
-                for ($ri = $foundBalanceRow; $ri < $scanLimit; $ri++) {
-                    $r = $rows[$ri];
-                    foreach ($r as $ci => $cellVal) {
-                        $cStr = mb_strtolower(trim((string)$cellVal), 'UTF-8');
+                $oilDataFile = __DIR__ . '/../database/production_oil_losses.json';
+                $existingOilData = file_exists($oilDataFile) ? (json_decode((string)file_get_contents($oilDataFile), true) ?: []) : [];
 
-                        // 1. Виробничі втрати олії
-                        if (strpos($cStr, 'производств') !== false && strpos($cStr, 'потер') !== false && strpos($cStr, 'масл') !== false) {
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 25); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v)) {
-                                    $num = (float)$v;
-                                    if (abs($num) >= 10 && $oilLossKg === null) {
-                                        $oilLossKg = round($num, 0);
-                                    } elseif (abs($num) < 1 && abs($num) > 0 && $oilLossPct === null) {
-                                        $oilLossPct = round($num * 100, 2);
-                                    } elseif (abs($num) >= 0.01 && abs($num) <= 15 && $oilLossPct === null) {
-                                        $oilLossPct = round($num, 2);
-                                    }
-                                }
-                            }
-                        }
-
-                        // 2. Невраховані втрати олії
-                        if (strpos($cStr, 'неучтен') !== false && strpos($cStr, 'потер') !== false && strpos($cStr, 'масл') !== false) {
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 25); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v)) {
-                                    $num = (float)$v;
-                                    if (abs($num) >= 10 && $oilUnaccKg === null) {
-                                        $oilUnaccKg = round($num, 0);
-                                    } elseif (abs($num) < 1 && abs($num) > 0 && $oilUnaccPct === null) {
-                                        $oilUnaccPct = round($num * 100, 2);
-                                    } elseif (abs($num) >= 0.01 && abs($num) <= 15 && $oilUnaccPct === null) {
-                                        $oilUnaccPct = round($num, 2);
-                                    }
-                                }
-                            }
-                        }
-
-                        // 3. Вихід олії
-                        if (strpos($cStr, 'выход масла') !== false && $oilOutKg === null) {
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 20); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v) && (float)$v > 1000) {
-                                    $oilOutKg = round((float)$v, 0);
-                                    break;
-                                }
-                            }
-                        }
-
-                        // 4. Вміст олії у шротах
-                        if (strpos($cStr, 'шрот') !== false && strpos($cStr, 'масл') !== false && $oilMealKg === null) {
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 20); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v) && (float)$v > 100) {
-                                    $oilMealKg = round((float)$v, 1);
-                                    break;
-                                }
-                            }
-                        }
-
-                        // 5. Вміст олії в луззі
-                        if (strpos($cStr, 'лузг') !== false && strpos($cStr, 'масл') !== false && $oilHuskKg === null) {
-                            for ($subCi = $ci + 1; $subCi < min(count($r), $ci + 20); $subCi++) {
-                                $v = $r[$subCi] ?? null;
-                                if (is_numeric($v) && (float)$v > 100) {
-                                    $oilHuskKg = round((float)$v, 0);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if ($oilLossKg !== null || $oilUnaccKg !== null) {
-                    $oilDataFile = __DIR__ . '/../database/production_oil_losses.json';
-                    $existingOilData = file_exists($oilDataFile) ? (json_decode((string)file_get_contents($oilDataFile), true) ?: []) : [];
-
-                    $newOilData = [
-                        'sunflower_oil_pct'        => $sunflowerOilPct ?? ($existingOilData['sunflower_oil_pct'] ?? 45.3),
-                        'yield_oil_pct'            => $yieldOilPct ?? ($existingOilData['yield_oil_pct'] ?? 44.59),
-                        'yield_meal_pct'           => $yieldMealPct ?? ($existingOilData['yield_meal_pct'] ?? 41.54),
-                        'meal_oil_pct'             => $mealOilPct ?? ($existingOilData['meal_oil_pct'] ?? 0.77),
-                        'yield_husk_pct'           => $yieldHuskPct ?? ($existingOilData['yield_husk_pct'] ?? 15.06),
-                        'husk_oil_pct'             => $huskOilPct ?? ($existingOilData['husk_oil_pct'] ?? 3.27),
-                        'process_loss_pct'         => $processLossPct ?? ($existingOilData['process_loss_pct'] ?? -1.20),
-                        'balance_oil_calc_kg'      => $balanceCalcKg ?? ($existingOilData['balance_oil_calc_kg'] ?? 2298106.1),
-                        'balance_oil_fact_kg'      => $balanceFactKg ?? ($existingOilData['balance_oil_fact_kg'] ?? 2303590),
-                        'oil_loss_kg'              => $oilLossKg ?? ($existingOilData['oil_loss_kg'] ?? 41258),
-                        'oil_loss_pct'             => $oilLossPct ?? ($existingOilData['oil_loss_pct'] ?? 0.81),
-                        'oil_unaccounted_loss_kg'  => $oilUnaccKg ?? ($existingOilData['oil_unaccounted_loss_kg'] ?? -5484),
-                        'oil_unaccounted_loss_pct' => $oilUnaccPct ?? ($existingOilData['oil_unaccounted_loss_pct'] ?? -0.11),
-                        'oil_out_kg'               => $oilOutKg ?? ($existingOilData['oil_out_kg'] ?? 2262332),
-                        'oil_in_meal_kg'           => $oilMealKg ?? ($existingOilData['oil_in_meal_kg'] ?? 16260.9),
-                        'oil_in_husk_kg'           => $oilHuskKg ?? ($existingOilData['oil_in_husk_kg'] ?? 24997),
-                        'sheet_name'               => $sName,
-                        'source_file'              => $filename,
-                        'updated_at'               => date('Y-m-d H:i:s'),
-                    ];
-                    @file_put_contents($oilDataFile, json_encode($newOilData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
-                    $details[] = "✅ «Баланс масла по выходам» ({$sName}): виробничі втрати " . number_format($newOilData['oil_loss_kg'], 0, '', ' ') . " кг ({$newOilData['oil_loss_pct']}%), невраховані втрати " . ($newOilData['oil_unaccounted_loss_kg'] < 0 ? '- ' : '') . number_format(abs($newOilData['oil_unaccounted_loss_kg']), 0, '', ' ') . " кг ({$newOilData['oil_unaccounted_loss_pct']}%)";
-                    $fileHadProcessedReport = true;
-                    break;
-                }
+                $newOilData = [
+                    'sunflower_oil_pct'        => $sunflowerOilPct ?? ($existingOilData['sunflower_oil_pct'] ?? 45.3),
+                    'yield_oil_pct'            => $yieldOilPct ?? ($existingOilData['yield_oil_pct'] ?? 44.59),
+                    'yield_meal_pct'           => $yieldMealPct ?? ($existingOilData['yield_meal_pct'] ?? 41.54),
+                    'meal_oil_pct'             => $mealOilPct ?? ($existingOilData['meal_oil_pct'] ?? 0.77),
+                    'yield_husk_pct'           => $yieldHuskPct ?? ($existingOilData['yield_husk_pct'] ?? 15.06),
+                    'husk_oil_pct'             => $huskOilPct ?? ($existingOilData['husk_oil_pct'] ?? 3.27),
+                    'process_loss_pct'         => $processLossPct ?? ($existingOilData['process_loss_pct'] ?? -1.20),
+                    'balance_oil_calc_kg'      => $balanceCalcKg ?? ($existingOilData['balance_oil_calc_kg'] ?? 2298106.1),
+                    'balance_oil_fact_kg'      => $balanceFactKg ?? ($existingOilData['balance_oil_fact_kg'] ?? 2303590),
+                    'oil_loss_kg'              => $oilLossKg ?? ($existingOilData['oil_loss_kg'] ?? 41258),
+                    'oil_loss_pct'             => $oilLossPct ?? ($existingOilData['oil_loss_pct'] ?? 0.81),
+                    'oil_unaccounted_loss_kg'  => $oilUnaccKg ?? ($existingOilData['oil_unaccounted_loss_kg'] ?? -5484),
+                    'oil_unaccounted_loss_pct' => $oilUnaccPct ?? ($existingOilData['oil_unaccounted_loss_pct'] ?? -0.11),
+                    'oil_out_kg'               => $oilOutKg ?? ($existingOilData['oil_out_kg'] ?? 2262332),
+                    'oil_in_meal_kg'           => $oilMealKg ?? ($existingOilData['oil_in_meal_kg'] ?? 16260.9),
+                    'oil_in_husk_kg'           => $oilHuskKg ?? ($existingOilData['oil_in_husk_kg'] ?? 24997),
+                    'sheet_name'               => $sName,
+                    'source_file'              => $filename,
+                    'updated_at'               => date('Y-m-d H:i:s'),
+                ];
+                @file_put_contents($oilDataFile, json_encode($newOilData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+                $details[] = "✅ «Баланс масла по выходам та % виходу продукції» ({$sName}): вихід олії {$newOilData['yield_oil_pct']}%, шроту {$newOilData['yield_meal_pct']}%, лузги {$newOilData['yield_husk_pct']}%, втрати ваги {$newOilData['process_loss_pct']}%, виробничі втрати олії " . number_format($newOilData['oil_loss_kg'], 0, '', ' ') . " кг ({$newOilData['oil_loss_pct']}%), невраховані втрати " . ($newOilData['oil_unaccounted_loss_kg'] < 0 ? '- ' : '') . number_format(abs($newOilData['oil_unaccounted_loss_kg']), 0, '', ' ') . " кг ({$newOilData['oil_unaccounted_loss_pct']}%)";
+                $fileHadProcessedReport = true;
+                break;
             }
         }
 

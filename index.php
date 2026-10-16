@@ -393,48 +393,36 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <table class="balance-sub-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
                         <thead>
                             <tr style="background: #f8fafc; border-bottom: 1px solid #cbd5e1;">
-                                <th style="text-align: left; padding: 4px 6px; color: #475569; font-weight: 700;">Продукція / сировина</th>
-                                <th style="text-align: right; padding: 4px 6px; color: #7c3aed; font-weight: 700;">% виходу факт.</th>
-                                <th style="text-align: right; padding: 4px 6px; color: #94a3b8; font-weight: 600;">бюджет</th>
-                                <th style="text-align: right; padding: 4px 6px; color: #0284c7; font-weight: 700;">Олійність факт.</th>
-                                <th style="text-align: right; padding: 4px 6px; color: #94a3b8; font-weight: 600;">бюджет</th>
+                                <th style="text-align: left; padding: 5px 8px; color: #475569; font-weight: 700;">Продукція / сировина</th>
+                                <th style="text-align: right; padding: 5px 8px; color: #7c3aed; font-weight: 700;">% виходу продукції</th>
+                                <th style="text-align: right; padding: 5px 8px; color: #0284c7; font-weight: 700;">Олійність (масличность)</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr style="border-bottom: 1px solid #f1f5f9; font-weight: 600;">
-                                <td style="padding: 3px 6px; color: #1e293b;">🌻 соняшник</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #7c3aed; font-weight: 700;" id="table-sunflower-oil"><?= number_format($prodLab['sunflower_oil_pct'] ?? 45.3, 1, ',', ' ') ?>%</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="padding: 4px 8px; color: #1e293b;">🌻 соняшник</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #7c3aed; font-weight: 700;" id="table-sunflower-oil"><?= number_format($prodLab['sunflower_oil_pct'] ?? 45.3, 1, ',', ' ') ?>%</td>
                             </tr>
                             <tr style="border-bottom: 1px solid #f1f5f9;">
-                                <td style="padding: 3px 6px 3px 14px; color: #0284c7; font-weight: 600;">💧 масло (олія)</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #0284c7; font-weight: 700;" id="table-yield-oil"><?= number_format($prodLab['yield_oil_pct'] ?? 44.59, 2, ',', ' ') ?>%</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="padding: 4px 8px 4px 16px; color: #0284c7; font-weight: 600;">💧 масло (олія)</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #0284c7; font-weight: 700;" id="table-yield-oil"><?= number_format($prodLab['yield_oil_pct'] ?? 44.59, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #94a3b8;">—</td>
                             </tr>
                             <tr style="border-bottom: 1px solid #f1f5f9;">
-                                <td style="padding: 3px 6px 3px 14px; color: #d97706; font-weight: 600;">🌾 шрот</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #d97706; font-weight: 700;" id="table-yield-meal"><?= number_format($prodLab['yield_meal_pct'] ?? 41.54, 2, ',', ' ') ?>%</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #475569; font-weight: 600;" id="table-meal-oil"><?= number_format($prodLab['meal_oil_pct'] ?? 0.77, 2, ',', ' ') ?>%</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="padding: 4px 8px 4px 16px; color: #d97706; font-weight: 600;">🌾 шрот</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #d97706; font-weight: 700;" id="table-yield-meal"><?= number_format($prodLab['yield_meal_pct'] ?? 41.54, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #475569; font-weight: 600;" id="table-meal-oil"><?= number_format($prodLab['meal_oil_pct'] ?? 0.77, 2, ',', ' ') ?>%</td>
                             </tr>
                             <tr style="border-bottom: 1px solid #f1f5f9;">
-                                <td style="padding: 3px 6px 3px 14px; color: #64748b; font-weight: 600;">🍂 лузга</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #475569; font-weight: 700;" id="table-yield-husk"><?= number_format($prodLab['yield_husk_pct'] ?? 15.06, 2, ',', ' ') ?>%</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #475569; font-weight: 600;" id="table-husk-oil"><?= number_format($prodLab['husk_oil_pct'] ?? 3.27, 2, ',', ' ') ?>%</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="padding: 4px 8px 4px 16px; color: #64748b; font-weight: 600;">🍂 лузга</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #475569; font-weight: 700;" id="table-yield-husk"><?= number_format($prodLab['yield_husk_pct'] ?? 15.06, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #475569; font-weight: 600;" id="table-husk-oil"><?= number_format($prodLab['husk_oil_pct'] ?? 3.27, 2, ',', ' ') ?>%</td>
                             </tr>
                             <tr style="border-bottom: 1px solid #e2e8f0;">
-                                <td style="padding: 3px 6px 3px 14px; color: #b91c1c; font-weight: 600;">⚠️ потери (втрати ваги)</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #b91c1c; font-weight: 700;" id="table-process-loss"><?= number_format($prodLab['process_loss_pct'] ?? -1.20, 2, ',', ' ') ?>%</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
-                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="padding: 4px 8px 4px 16px; color: #b91c1c; font-weight: 600;">⚠️ потери (втрати ваги)</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #b91c1c; font-weight: 700;" id="table-process-loss"><?= number_format($prodLab['process_loss_pct'] ?? -1.20, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 4px 8px; color: #94a3b8;">—</td>
                             </tr>
                         </tbody>
                     </table>
