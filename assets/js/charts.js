@@ -149,32 +149,54 @@ window.FactoryCharts = {
         timelineData = timelineData || {};
         this._currentEnergyTimeline = timelineData;
 
-        const powerName = timelineData.power_name || 'Електроенергія за добу (кВт)';
-        const waterName = timelineData.water_name || 'Вода за добу по лічильнику (м³)';
-        const steamName = timelineData.steam_name || 'Технологічна пара за добу (т)';
-        const powerUnit = timelineData.power_unit || 'кВт';
-        const waterUnit = timelineData.water_unit || 'м³/д';
-        const steamUnit = timelineData.steam_unit || 'т/д';
-        const hasSteam  = Array.isArray(timelineData.steam) && timelineData.steam.length > 0;
+        const powerName    = timelineData.power_name || 'Активна електроенергія (кВт)';
+        const reactiveName = timelineData.reactive_name || 'Реактивна електроенергія (кВАр·год)';
+        const waterName    = timelineData.water_name || 'Вода за добу по лічильнику (м³)';
+        const steamName    = timelineData.steam_name || 'Технологічна пара за добу (т)';
+        const powerUnit    = timelineData.power_unit || 'кВт';
+        const reactiveUnit = timelineData.reactive_unit || 'кВАр·год';
+        const waterUnit    = timelineData.water_unit || 'м³/д';
+        const steamUnit    = timelineData.steam_unit || 'т/д';
+        const hasReactive  = Array.isArray(timelineData.reactive) && timelineData.reactive.length > 0;
+        const hasSteam     = Array.isArray(timelineData.steam) && timelineData.steam.length > 0;
 
+        // Серії: активна та реактивна електроенергія виводяться ЖИРНИМИ лініями
         const seriesList = [
             {
                 name: powerName,
-                type: 'area',
-                data: timelineData.power || [29400, 31200, 31800, 30950, 31210, 31930, 11450, 4820, 4410, 4650, 4520, 4032]
-            },
-            {
-                name: waterName,
                 type: 'line',
-                data: timelineData.water || [211, 152, 235, 198, 206, 206, 141, 193, 151, 226, 164, 154]
+                data: timelineData.power || [29400, 31200, 31800, 30950, 31210, 31930, 11450, 4820, 4410, 4650, 4520, 4032]
             }
         ];
+        const colors = ['#0284c7'];
+        const strokeWidths = [4.5]; // Жирна лінія для активної енергії
+
+        if (hasReactive) {
+            seriesList.push({
+                name: reactiveName,
+                type: 'line',
+                data: timelineData.reactive
+            });
+            colors.push('#8b5cf6');
+            strokeWidths.push(4.0); // Жирна лінія для реактивної енергії
+        }
+
+        seriesList.push({
+            name: waterName,
+            type: 'line',
+            data: timelineData.water || [211, 152, 235, 198, 206, 206, 141, 193, 151, 226, 164, 154]
+        });
+        colors.push('#10b981');
+        strokeWidths.push(2.0);
+
         if (hasSteam) {
             seriesList.push({
                 name: steamName,
                 type: 'line',
                 data: timelineData.steam
             });
+            colors.push('#f59e0b');
+            strokeWidths.push(2.0);
         }
 
         const options = {
@@ -192,27 +214,19 @@ window.FactoryCharts = {
                 }
             },
             stroke: {
-                width: hasSteam ? [2.5, 2.5, 3] : [2.5, 3],
+                width: strokeWidths,
                 curve: 'smooth'
             },
             markers: {
-                size: hasSteam ? [3, 3, 4] : [3, 4],
+                size: strokeWidths.map(w => w >= 4 ? 4 : 2),
                 hover: {
-                    sizeOffset: 2
+                    sizeOffset: 3
                 }
             },
             fill: {
-                type: hasSteam ? ['gradient', 'solid', 'solid'] : ['gradient', 'solid'],
-                gradient: {
-                    shade: 'light',
-                    type: "vertical",
-                    shadeIntensity: 0.25,
-                    opacityFrom: 0.38,
-                    opacityTo: 0.05,
-                    stops: [0, 90, 100]
-                }
+                type: 'solid'
             },
-            colors: hasSteam ? ['#0284c7', '#10b981', '#f59e0b'] : ['#0284c7', '#10b981'],
+            colors: colors,
             dataLabels: {
                 enabled: false
             },
@@ -235,7 +249,7 @@ window.FactoryCharts = {
             yaxis: [
                 {
                     title: {
-                        text: powerUnit,
+                        text: hasReactive ? `${powerUnit} / ${reactiveUnit}` : powerUnit,
                         style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
                     },
                     labels: {
@@ -281,36 +295,57 @@ window.FactoryCharts = {
                     const tl = window.FactoryCharts._currentEnergyTimeline || {};
                     const labels = tl.labels || (w.globals && w.globals.categoryLabels) || [];
                     const pointLabel = labels[dataPointIndex] || '';
-                    const pVal = Number(series[0] ? series[0][dataPointIndex] : 0) || 0;
-                    const wVal = Number(series[1] ? series[1][dataPointIndex] : 0) || 0;
-                    const sVal = series[2] ? (Number(series[2][dataPointIndex]) || 0) : 0;
+
+                    const pVal = Number(tl.power && tl.power[dataPointIndex] !== undefined ? tl.power[dataPointIndex] : 0) || 0;
+                    const rVal = Number(tl.reactive && tl.reactive[dataPointIndex] !== undefined ? tl.reactive[dataPointIndex] : 0) || 0;
+                    const wVal = Number(tl.water && tl.water[dataPointIndex] !== undefined ? tl.water[dataPointIndex] : 0) || 0;
+                    const sVal = Number(tl.steam && tl.steam[dataPointIndex] !== undefined ? tl.steam[dataPointIndex] : 0) || 0;
+
                     const pUnit = tl.power_unit || 'кВт';
+                    const rUnit = tl.reactive_unit || 'кВАр·год';
                     const wUnit = tl.water_unit || 'м³/д';
                     const sUnit = tl.steam_unit || 'т/д';
 
-                    const pSum = (series[0] || []).reduce((a, b) => a + (Number(b) || 0), 0);
-                    const wSum = (series[1] || []).reduce((a, b) => a + (Number(b) || 0), 0);
+                    const pSum = (tl.power || []).reduce((a, b) => a + (Number(b) || 0), 0);
+                    const wSum = (tl.water || []).reduce((a, b) => a + (Number(b) || 0), 0);
                     const pShare = pSum > 0 ? ((pVal / pSum) * 100).toFixed(1) : '0.0';
                     const wShare = wSum > 0 ? ((wVal / wSum) * 100).toFixed(1) : '0.0';
 
-                    const fmtP = pVal.toLocaleString('uk-UA', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+                    const fmtP = pVal.toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 3 });
+                    const fmtR = rVal.toLocaleString('uk-UA', { minimumFractionDigits: 1, maximumFractionDigits: 2 });
                     const fmtW = wVal.toLocaleString('uk-UA', { minimumFractionDigits: wVal < 20 ? 1 : 0, maximumFractionDigits: 2 });
                     const fmtS = sVal.toLocaleString('uk-UA', { maximumFractionDigits: 1 });
+
+                    let cosPhiStr = '';
+                    if (pVal > 0 && rVal > 0) {
+                        const sTotal = Math.sqrt(pVal * pVal + rVal * rVal);
+                        const cosPhi = sTotal > 0 ? (pVal / sTotal).toFixed(3) : '1.000';
+                        const tgPhi = (rVal / pVal).toFixed(3);
+                        cosPhiStr = ` &bull; cos φ: ${cosPhi} (tg φ: ${tgPhi})`;
+                    }
 
                     return `
                         <div class="apex-rich-tooltip bar-tooltip-box">
                             <div class="art-header bar-head">
                                 <span class="art-title">⚡💧💨 Дата / період: ${pointLabel}</span>
-                                <span class="art-pill">Енергоносії &bull; Пара</span>
+                                <span class="art-pill">Енергоносії &bull; Баланс</span>
                             </div>
                             <div class="art-body">
-                                <div class="art-row" style="border-left: 3px solid #0284c7;">
+                                <div class="art-row" style="border-left: 4px solid #0284c7; background: rgba(2, 132, 199, 0.04);">
                                     <div class="art-row-main">
-                                        <span class="art-lbl">⚡ Споживання заводу:</span>
-                                        <span class="art-val bold" style="color: #0284c7;">${fmtP} ${pUnit} (${(pVal / 1000).toFixed(3)} МВт)</span>
+                                        <span class="art-lbl">⚡ <b>Активна ел-енергія:</b></span>
+                                        <span class="art-val bold" style="color: #0284c7; font-size: 13px;">${fmtP} ${pUnit} (${(pVal / 1000).toFixed(3)} МВт)</span>
                                     </div>
-                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Питома: ~${(pVal / 596.8).toFixed(3)} кВт/т насіння</div>
+                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Частка: ${pShare}%</div>
                                 </div>
+                                ${rVal > 0 ? `
+                                <div class="art-row" style="border-left: 4px solid #8b5cf6; background: rgba(139, 92, 246, 0.04);">
+                                    <div class="art-row-main">
+                                        <span class="art-lbl">🟣 <b>Реактивна ел-енергія:</b></span>
+                                        <span class="art-val bold" style="color: #7c3aed; font-size: 13px;">${fmtR} ${rUnit}</span>
+                                    </div>
+                                    <div class="art-sub-calc">Реактивна складова${cosPhiStr}</div>
+                                </div>` : ''}
                                 <div class="art-row" style="border-left: 3px solid #10b981;">
                                     <div class="art-row-main">
                                         <span class="art-lbl">💧 Вода (лічильник):</span>
@@ -318,7 +353,7 @@ window.FactoryCharts = {
                                     </div>
                                     <div class="art-sub-calc">Частка у вибірці: ${wShare}%</div>
                                 </div>
-                                ${series[2] ? `
+                                ${sVal > 0 ? `
                                 <div class="art-row" style="border-left: 3px solid #f59e0b;">
                                     <div class="art-row-main">
                                         <span class="art-lbl">💨 Технологічна пара:</span>
@@ -812,12 +847,15 @@ window.FactoryCharts = {
         if (this.energyChart && data.energy && data.energy.timeline) {
             const tl = data.energy.timeline;
             this._currentEnergyTimeline = tl;
-            const pName = tl.power_name || 'Електроенергія за добу (кВт)';
+            const pName = tl.power_name || 'Активна електроенергія (кВт)';
+            const rName = tl.reactive_name || 'Реактивна електроенергія (кВАр·год)';
             const wName = tl.water_name || 'Вода за добу по лічильнику (м³)';
             const sName = tl.steam_name || 'Технологічна пара за добу (т)';
             const pUnit = tl.power_unit || 'кВт';
+            const rUnit = tl.reactive_unit || 'кВАр·год';
             const wUnit = tl.water_unit || 'м³/д';
             const sUnit = tl.steam_unit || 'т/д';
+            const hasReactive = Array.isArray(tl.reactive) && tl.reactive.length > 0;
             const hasSteam = Array.isArray(tl.steam) && tl.steam.length > 0;
             const hasLabels = Array.isArray(tl.labels) && tl.labels.length > 0;
 
@@ -848,34 +886,56 @@ window.FactoryCharts = {
                 const seriesList = [
                     {
                         name: pName,
-                        type: 'area',
-                        data: tl.power || []
-                    },
-                    {
-                        name: wName,
                         type: 'line',
-                        data: tl.water || []
+                        data: tl.power || []
                     }
                 ];
+                const colors = ['#0284c7'];
+                const strokeWidths = [4.5]; // Жирна лінія для активної енергії
+
+                if (hasReactive) {
+                    seriesList.push({
+                        name: rName,
+                        type: 'line',
+                        data: tl.reactive || []
+                    });
+                    colors.push('#8b5cf6');
+                    strokeWidths.push(4.0); // Жирна лінія для реактивної енергії
+                }
+
+                seriesList.push({
+                    name: wName,
+                    type: 'line',
+                    data: tl.water || []
+                });
+                colors.push('#10b981');
+                strokeWidths.push(2.0);
+
                 if (hasSteam) {
                     seriesList.push({
                         name: sName,
                         type: 'line',
-                        data: tl.steam
+                        data: tl.steam || []
                     });
+                    colors.push('#f59e0b');
+                    strokeWidths.push(2.0);
                 }
 
                 this.energyChart.updateOptions({
-                    colors: hasSteam ? ['#0284c7', '#10b981', '#f59e0b'] : ['#0284c7', '#10b981'],
-                    stroke: { width: hasSteam ? [2.5, 2.5, 3] : [2.5, 3], curve: 'smooth' },
-                    fill: { type: hasSteam ? ['gradient', 'solid', 'solid'] : ['gradient', 'solid'] },
+                    colors: colors,
+                    stroke: { width: strokeWidths, curve: 'smooth' },
+                    fill: { type: 'solid' },
+                    markers: {
+                        size: strokeWidths.map(w => w >= 4 ? 4 : 2),
+                        hover: { sizeOffset: 3 }
+                    },
                     xaxis: {
                         categories: tl.labels || []
                     },
                     yaxis: [
                         {
                             title: {
-                                text: pUnit,
+                                text: hasReactive ? `${pUnit} / ${rUnit}` : pUnit,
                                 style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
                             },
                             labels: {

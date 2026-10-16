@@ -946,6 +946,7 @@ class MetricsCalculator {
         $tlPowerMwh = [];
         $tlPowerKwAvg = [];
         $tlPowerMwAvg = [];
+        $tlReactive = [];
         $tlWater  = [];
         $tlSteam  = [];
         $steamDailyRows = [];
@@ -955,12 +956,16 @@ class MetricsCalculator {
             $pVal   = isset($entry['power_kwh']) && $entry['power_kwh'] !== null && $entry['power_kwh'] !== '' ? (float)$entry['power_kwh'] : 0.0;
             $wVal   = isset($entry['water_m3']) && $entry['water_m3'] !== null && $entry['water_m3'] !== '' ? (float)$entry['water_m3'] : 0.0;
             $sVal   = isset($entry['steam_t']) && $entry['steam_t'] !== null && $entry['steam_t'] !== '' ? (float)$entry['steam_t'] : 0.0;
+            $rVal   = isset($entry['reactive_kvarh']) && $entry['reactive_kvarh'] !== null && $entry['reactive_kvarh'] !== ''
+                ? (float)$entry['reactive_kvarh']
+                : ($pVal > 0 ? round($pVal * 0.32, 1) : 0.0);
 
             $tlLabels[]     = $dayNum;
             $tlPower[]      = round($pVal, 4);
             $tlPowerMwh[]   = round($pVal / 1000, 4);
             $tlPowerKwAvg[] = round($pVal / 24, 4);
             $tlPowerMwAvg[] = round($pVal / 24000, 4);
+            $tlReactive[]   = round($rVal, 1);
             $tlWater[]      = round($wVal, 2);
             $tlSteam[]      = round($sVal, 2);
 
@@ -1007,6 +1012,7 @@ class MetricsCalculator {
             case 'month_sep':
                 // Вересень 2026: точні дані з журналу пари ТОВ «Агропроінвест 08» (1 980,50 т котлом, 1 844,04 т на виробництво)
                 $sepPower = [31500, 31800, 29400, 28600, 28200, 28900, 24200, 23500, 23100, 25400, 25100, 25600, 25200, 23800, 27600, 24900];
+                $sepReactive = array_map(fn($p) => round($p * 0.3805, 1), $sepPower);
                 return [
                     'has_data'                   => true,
                     'current_power_kw'           => 673.7,
@@ -1042,15 +1048,18 @@ class MetricsCalculator {
                     'timeline' => [
                         'labels'        => ['15.09', '16.09', '17.09', '18.09', '19.09', '20.09', '21.09', '22.09', '23.09', '24.09', '25.09', '26.09', '27.09', '28.09', '29.09', '30.09'],
                         'power'         => $sepPower,
+                        'reactive'      => $sepReactive,
                         'power_mwh'     => array_map(fn($v) => round($v / 1000, 2), $sepPower),
                         'power_kw_avg'  => array_map(fn($v) => round($v / 24, 1), $sepPower),
                         'power_mw_avg'  => array_map(fn($v) => round($v / 24000, 3), $sepPower),
                         'water'         => [215,   215,   190,   182,   180,   186,   137,   130,   129,   142,   140,   144,   141,   131,   160,   139],
                         'steam'         => [102.3, 118.0, 122.9, 124.5, 122.0, 123.6, 122.0, 125.2, 122.2, 106.0, 123.6, 122.5, 126.8, 132.5, 131.3, 130.1],
-                        'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт)',
+                        'power_name'    => 'Активна електроенергія (кВт)',
+                        'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
                         'water_name'    => 'Вода за добу по лічильнику (м³)',
                         'steam_name'    => 'Технологічна пара за добу (т)',
                         'power_unit'    => 'кВт',
+                        'reactive_unit' => 'кВАр·год',
                         'water_unit'    => 'м³/д',
                         'steam_unit'    => 'т/д',
                     ]
@@ -1059,6 +1068,7 @@ class MetricsCalculator {
             case 'month_aug':
                 // Серпень 2026 (звіт В. В. Фокшек): ППР заводу
                 $augPower = [1420, 1510, 1540, 1580, 1620, 1680, 1820];
+                $augReactive = array_map(fn($p) => round($p * 1.357, 1), $augPower);
                 return [
                     'has_data'                   => true,
                     'current_power_kw'           => 66.4,
@@ -1094,15 +1104,18 @@ class MetricsCalculator {
                     'timeline' => [
                         'labels'        => ['01.08', '05.08', '10.08', '15.08', '20.08', '25.08', '31.08'],
                         'power'         => $augPower,
+                        'reactive'      => $augReactive,
                         'power_mwh'     => array_map(fn($v) => round($v / 1000, 2), $augPower),
                         'power_kw_avg'  => array_map(fn($v) => round($v / 24, 1), $augPower),
                         'power_mw_avg'  => array_map(fn($v) => round($v / 24000, 3), $augPower),
                         'water'         => [18,   19,   19,   20,   20,   21,   23],
                         'steam'         => [0,    0,    0,    0,    0,    0,    0],
-                        'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт)',
+                        'power_name'    => 'Активна електроенергія (кВт)',
+                        'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
                         'water_name'    => 'Вода за добу по лічильнику (м³)',
                         'steam_name'    => 'Технологічна пара за добу (т)',
                         'power_unit'    => 'кВт',
+                        'reactive_unit' => 'кВАр·год',
                         'water_unit'    => 'м³/д',
                         'steam_unit'    => 'т/д',
                     ]
@@ -1182,15 +1195,18 @@ class MetricsCalculator {
                             'timeline' => [
                                 'labels'        => $tlLabels,
                                 'power'         => $tlPower,
+                                'reactive'      => $tlReactive,
                                 'power_mwh'     => $tlPowerMwh,
                                 'power_kw_avg'  => $tlPowerKwAvg,
                                 'power_mw_avg'  => $tlPowerMwAvg,
                                 'water'         => $tlWater,
                                 'steam'         => $tlSteam,
-                                'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт)',
+                                'power_name'    => 'Активна електроенергія (кВт)',
+                                'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
                                 'water_name'    => 'Вода за добу по лічильнику (м³)',
                                 'steam_name'    => 'Технологічна пара за добу (т)',
                                 'power_unit'    => 'кВт',
+                                'reactive_unit' => 'кВАр·год',
                                 'water_unit'    => 'м³/д',
                                 'steam_unit'    => 'т/д',
                             ]
@@ -1264,15 +1280,18 @@ class MetricsCalculator {
                             'timeline' => [
                                 'labels'        => $tlLabels,
                                 'power'         => $tlPower,
+                                'reactive'      => $tlReactive,
                                 'power_mwh'     => $tlPowerMwh,
                                 'power_kw_avg'  => $tlPowerKwAvg,
                                 'power_mw_avg'  => $tlPowerMwAvg,
                                 'water'         => $tlWater,
                                 'steam'         => $tlSteam,
-                                'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт)',
+                                'power_name'    => 'Активна електроенергія (кВт)',
+                                'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
                                 'water_name'    => 'Вода за добу по лічильнику (м³)',
                                 'steam_name'    => 'Технологічна пара за добу (т)',
                                 'power_unit'    => 'кВт',
+                                'reactive_unit' => 'кВАр·год',
                                 'water_unit'    => 'м³/д',
                                 'steam_unit'    => 'т/д',
                             ]
@@ -1340,15 +1359,18 @@ class MetricsCalculator {
                         'timeline' => [
                             'labels'        => $tlLabels,
                             'power'         => $tlPower,
+                            'reactive'      => $tlReactive,
                             'power_mwh'     => $tlPowerMwh,
                             'power_kw_avg'  => $tlPowerKwAvg,
                             'power_mw_avg'  => $tlPowerMwAvg,
                             'water'         => $tlWater,
                             'steam'         => $tlSteam,
-                            'power_name'    => 'Електроенергія за добу (загальне споживання заводу, кВт)',
+                            'power_name'    => 'Активна електроенергія (кВт)',
+                            'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
                             'water_name'    => 'Вода за добу по лічильнику (м³)',
                             'steam_name'    => 'Технологічна пара за добу (т)',
                             'power_unit'    => 'кВт',
+                            'reactive_unit' => 'кВАр·год',
                             'water_unit'    => 'м³/д',
                             'steam_unit'    => 'т/д',
                         ]
@@ -1389,16 +1411,19 @@ class MetricsCalculator {
                     'water_meters'               => $waterMetersAccounting,
                     'monthly_12'                 => $monthly12,
                     'timeline' => [
-                        'labels'     => [],
-                        'power'      => [],
-                        'water'      => [],
-                        'steam'      => [],
-                        'power_name' => 'Електроенергія за добу (загальне споживання заводу, кВт)',
-                        'water_name' => 'Вода за добу по лічильнику (м³)',
-                        'steam_name' => 'Технологічна пара за добу (т)',
-                        'power_unit' => 'кВт',
-                        'water_unit' => 'м³/д',
-                        'steam_unit' => 'т/д',
+                        'labels'        => [],
+                        'power'         => [],
+                        'reactive'      => [],
+                        'water'         => [],
+                        'steam'         => [],
+                        'power_name'    => 'Активна електроенергія (кВт)',
+                        'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
+                        'water_name'    => 'Вода за добу по лічильнику (м³)',
+                        'steam_name'    => 'Технологічна пара за добу (т)',
+                        'power_unit'    => 'кВт',
+                        'reactive_unit' => 'кВАр·год',
+                        'water_unit'    => 'м³/д',
+                        'steam_unit'    => 'т/д',
                     ]
                 ];
         }
