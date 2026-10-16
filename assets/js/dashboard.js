@@ -336,28 +336,38 @@ document.addEventListener('DOMContentLoaded', function () {
             if (valAsrEl) {
                 valAsrEl.innerHTML = `Товарна олійність (за ${oilDate}): <strong>${formatNumber(oilVal, 2)}%</strong> (а.с.р. ${formatNumber(oilAsrVal, 2)}%)`;
             }
-            const valOilLossEl = document.querySelector('#val-prod-oil-loss');
-            if (valOilLossEl) {
-                valOilLossEl.innerHTML = `
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: #fefce8; border: 1px solid #fef08a; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
-                        <span style="color: #854d0e; font-weight: 600;">Виробн. втрати олії:</span>
-                        <div>
-                            <strong style="color: #713f12;">${formatNumber(oilLossKg, 0)} кг</strong>
-                            <span class="badge-discount" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;">${formatNumber(oilLossPct, 2)}%</span>
-                        </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: ${unaccBg}; border: 1px solid ${unaccBorder}; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
-                        <span style="color: ${unaccTxtColor}; font-weight: 600;">Невраховані втрати:</span>
-                        <div>
-                            <strong style="color: ${unaccValColor};">${unaccFormattedKg} кг</strong>
-                            <span class="${unaccBadge}" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;">${formatNumber(oilUnaccLossPct, 2)}%</span>
-                        </div>
-                    </div>
-                `;
-            }
             const noteOilEl = document.querySelector('#note-prod-oil');
             if (noteOilEl) {
                 noteOilEl.textContent = (plq.oil_note || `Фактична товарна олійність за ${oilDate} як у звіті МЕЗ`) + ' • Справка по переработке';
+            }
+
+            // Оновлення таблиці балансу виходу продукції та втрат олії
+            setElementText('#badge-prod-oil-balance-date', `за ${oilDate} • Справка по переработке`);
+            setElementText('#table-sunflower-oil', `${formatNumber(plq.sunflower_oil_pct !== undefined ? plq.sunflower_oil_pct : 45.3, 1)}%`);
+            setElementText('#table-yield-oil', `${formatNumber(plq.yield_oil_pct !== undefined ? plq.yield_oil_pct : 44.59, 2)}%`);
+            setElementText('#table-yield-meal', `${formatNumber(plq.yield_meal_pct !== undefined ? plq.yield_meal_pct : 41.54, 2)}%`);
+            setElementText('#table-meal-oil', `${formatNumber(plq.meal_oil_pct !== undefined ? plq.meal_oil_pct : 0.77, 2)}%`);
+            setElementText('#table-yield-husk', `${formatNumber(plq.yield_husk_pct !== undefined ? plq.yield_husk_pct : 15.06, 2)}%`);
+            setElementText('#table-husk-oil', `${formatNumber(plq.husk_oil_pct !== undefined ? plq.husk_oil_pct : 3.27, 2)}%`);
+            setElementText('#table-process-loss', `${formatNumber(plq.process_loss_pct !== undefined ? plq.process_loss_pct : -1.20, 2)}%`);
+
+            setElementText('#table-balance-calc', `${formatNumber(plq.balance_oil_calc_kg !== undefined ? plq.balance_oil_calc_kg : 2298106.1, 1)}`);
+            setElementText('#table-balance-fact', `${formatNumber(plq.balance_oil_fact_kg !== undefined ? plq.balance_oil_fact_kg : 2303590, 0)}`);
+            setElementText('#table-oil-out-kg', `${formatNumber(plq.oil_out_kg !== undefined ? plq.oil_out_kg : 2262332, 0)} кг`);
+            setElementText('#table-oil-loss-kg', `${formatNumber(oilLossKg, 0)} кг`);
+            setElementText('#table-oil-loss-pct', `${formatNumber(oilLossPct, 2)}%`);
+            setElementText('#table-oil-meal-kg', `${formatNumber(plq.oil_in_meal_kg !== undefined ? plq.oil_in_meal_kg : 16260.9, 1)} кг`);
+            setElementText('#table-oil-husk-kg', `${formatNumber(plq.oil_in_husk_kg !== undefined ? plq.oil_in_husk_kg : 24997, 0)} кг`);
+            
+            const unaccKgEl = document.querySelector('#table-unacc-kg');
+            if (unaccKgEl) {
+                unaccKgEl.textContent = `${unaccFormattedKg} кг`;
+                unaccKgEl.style.color = unaccValColor;
+            }
+            const unaccPctEl = document.querySelector('#table-unacc-pct');
+            if (unaccPctEl) {
+                unaccPctEl.textContent = `${formatNumber(oilUnaccLossPct, 2)}%`;
+                unaccPctEl.className = unaccBadge;
             }
 
             const moistBadge = document.querySelector('#badge-prod-moisture');

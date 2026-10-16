@@ -3027,6 +3027,25 @@ class MetricsCalculator {
         $defaultOilUnaccountedLossKg = isset($oilLossData['oil_unaccounted_loss_kg']) ? (float)$oilLossData['oil_unaccounted_loss_kg'] : -5484;
         $defaultOilUnaccountedLossPct = isset($oilLossData['oil_unaccounted_loss_pct']) ? (float)$oilLossData['oil_unaccounted_loss_pct'] : -0.11;
 
+        $balanceDefaults = [
+            'sunflower_oil_pct'   => 45.3,
+            'yield_oil_pct'       => 44.59,
+            'yield_meal_pct'      => 41.54,
+            'meal_oil_pct'        => 0.77,
+            'yield_husk_pct'      => 15.06,
+            'husk_oil_pct'        => 3.27,
+            'process_loss_pct'    => -1.20,
+            'balance_oil_calc_kg' => 2298106.1,
+            'balance_oil_fact_kg' => 2303590,
+            'oil_out_kg'          => 2262332,
+            'oil_in_meal_kg'      => 16260.9,
+            'oil_in_husk_kg'      => 24997,
+            'oil_loss_kg'         => $defaultOilLossKg,
+            'oil_loss_pct'        => $defaultOilLossPct,
+            'oil_unaccounted_loss_kg' => $defaultOilUnaccountedLossKg,
+            'oil_unaccounted_loss_pct' => $defaultOilUnaccountedLossPct,
+        ];
+
         $dyn = $this->getHistoricalSeasonMetrics();
         $dOct = $dyn['oct'];
         $dSeason = $dyn['season'];
@@ -3242,7 +3261,7 @@ class MetricsCalculator {
                     }
                 } catch (Throwable $e) {}
 
-                return [
+                return array_merge($balanceDefaults, $oilLossData, [
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
@@ -3260,7 +3279,7 @@ class MetricsCalculator {
                     'plan_fulfillment_pct'        => round(($seedProc / $seedPlan) * 100, 1),
                     'report_date'                 => "{$repDateStr} (Звіт виробництва — цех екстракції)",
                     'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
-                ];
+                ]);
         }
     }
 

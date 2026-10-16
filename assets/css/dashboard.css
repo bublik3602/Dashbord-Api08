@@ -1249,6 +1249,15 @@ body {
     .gauges-grid { grid-template-columns: 1fr; }
 }
 
+.balance-table-card {
+    grid-column: span 2;
+}
+@media (max-width: 640px) {
+    .balance-table-card {
+        grid-column: span 1 !important;
+    }
+}
+
 .gauge-card {
     background: #ffffff;
     border: 1px solid var(--border-color);

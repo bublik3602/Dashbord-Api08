@@ -374,63 +374,120 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div id="chart-gauge-prod-oil" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
                     <div class="gauge-sub" id="val-prod-oil-asr">Товарна олійність (за <?= htmlspecialchars($prodLab['oil_date'] ?? '13.10') ?>): <strong><?= number_format($prodLab['oil_content_pct'] ?? 44.49, 2, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 48.30, 2, ',', ' ') ?>%)</div>
-                    <div class="gauge-oil-loss-container" id="val-prod-oil-loss" style="margin-top: 6px; display: flex; flex-direction: column; gap: 4px; width: 100%;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: #fefce8; border: 1px solid #fef08a; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
-                            <span style="color: #854d0e; font-weight: 600;">Виробн. втрати олії:</span>
-                            <div>
-                                <strong style="color: #713f12;"><?= number_format($prodLab['oil_loss_kg'] ?? 41258, 0, '', ' ') ?> кг</strong>
-                                <span class="badge-discount" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;"><?= number_format($prodLab['oil_loss_pct'] ?? 0.81, 2, ',', ' ') ?>%</span>
-                            </div>
-                        </div>
-                        <?php
-                            $unaccKg = (float)($prodLab['oil_unaccounted_loss_kg'] ?? -5484);
-                            $unaccPct = (float)($prodLab['oil_unaccounted_loss_pct'] ?? -0.11);
-                            $isUnaccNeg = $unaccKg < 0;
-                            $unaccBg = $isUnaccNeg ? '#f0fdf4' : '#fff1f2';
-                            $unaccBorder = $isUnaccNeg ? '#bbf7d0' : '#fecdd3';
-                            $unaccTxtColor = $isUnaccNeg ? '#166534' : '#9f1239';
-                            $unaccValColor = $isUnaccNeg ? '#15803d' : '#881337';
-                            $unaccBadge = $isUnaccNeg ? 'badge-bonus' : 'badge-discount';
-                        ?>
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: <?= $unaccBg ?>; border: 1px solid <?= $unaccBorder ?>; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
-                            <span style="color: <?= $unaccTxtColor ?>; font-weight: 600;">Невраховані втрати:</span>
-                            <div>
-                                <strong style="color: <?= $unaccValColor ?>;"><?= ($unaccKg < 0 ? '- ' : '') . number_format(abs($unaccKg), 0, '', ' ') ?> кг</strong>
-                                <span class="<?= $unaccBadge ?>" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;"><?= number_format($unaccPct, 2, ',', ' ') ?>%</span>
-                            </div>
-                        </div>
-                    </div>
                     <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична товарна олійність за 13.10 як у звіті МЕЗ') ?> • Справка по переработке</div>
                 </div>
             </div>
 
-            <!-- 2. Графік: Вологість у цех -->
-            <div class="gauge-card">
-                <div class="gauge-header">
-                    <span class="gauge-title">💧 Вологість у цех</span>
-                    <span class="gauge-badge <?= ($prodLab['moisture_pct'] ?? 6.0) <= 7.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-prod-moisture">
-                        <?= ($prodLab['moisture_pct'] ?? 6.0) <= 7.0 ? 'В нормі (' . number_format($prodLab['moisture_pct'] ?? 6.0, 1, ',', ' ') . '%)' : 'Перевищення' ?>
+            <!-- 2-3. ТАБЛИЦЯ: БАЛАНС МАСЛА ПО ВИХОДАХ ТА % ВИХОДУ ПРОДУКЦІЇ -->
+            <div class="gauge-card balance-table-card" style="grid-column: span 2; padding: 12px 14px; width: 100%; align-items: stretch; justify-content: flex-start; text-align: left;">
+                <div class="gauge-header" style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">
+                    <span class="gauge-title" style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #0f172a;">
+                        <span style="font-size: 15px;">⚖️</span>
+                        <span>Баланс виходу продукції та втрат олії</span>
                     </span>
+                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-balance-date" style="font-weight: 700;">за <?= htmlspecialchars($prodLab['oil_date'] ?? '16.10') ?> • Справка по переработке</span>
                 </div>
-                <div id="chart-gauge-prod-moisture" class="gauge-chart-container"></div>
-                <div class="gauge-footer">
-                    <div class="gauge-sub">Техн. норма: <strong>5.50% — 7.00%</strong></div>
-                    <div class="gauge-note">Оптимум для вальців та жаровень</div>
-                </div>
-            </div>
 
-            <!-- 3. Графік: Смітна домішка після очищення -->
-            <div class="gauge-card">
-                <div class="gauge-header">
-                    <span class="gauge-title">🌾 Смітна домішка (сор після БІС)</span>
-                    <span class="gauge-badge <?= ($prodLab['impurity_pct'] ?? 2.0) <= 2.0 ? 'badge-bonus' : 'badge-discount' ?>" id="badge-prod-impurity">
-                        <?= ($prodLab['impurity_pct'] ?? 2.0) <= 2.0 ? 'В нормі (≤ 2.0%)' : 'Перевищення' ?>
-                    </span>
+                <!-- БЛОК 1: % ВИХОДУ ПРОДУКЦІЇ ТА ОЛІЙНІСТЬ -->
+                <div class="table-responsive" style="width: 100%; overflow-x: auto;">
+                    <table class="balance-sub-table" style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                        <thead>
+                            <tr style="background: #f8fafc; border-bottom: 1px solid #cbd5e1;">
+                                <th style="text-align: left; padding: 4px 6px; color: #475569; font-weight: 700;">Продукція / сировина</th>
+                                <th style="text-align: right; padding: 4px 6px; color: #7c3aed; font-weight: 700;">% виходу факт.</th>
+                                <th style="text-align: right; padding: 4px 6px; color: #94a3b8; font-weight: 600;">бюджет</th>
+                                <th style="text-align: right; padding: 4px 6px; color: #0284c7; font-weight: 700;">Олійність факт.</th>
+                                <th style="text-align: right; padding: 4px 6px; color: #94a3b8; font-weight: 600;">бюджет</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-bottom: 1px solid #f1f5f9; font-weight: 600;">
+                                <td style="padding: 3px 6px; color: #1e293b;">🌻 соняшник</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #7c3aed; font-weight: 700;" id="table-sunflower-oil"><?= number_format($prodLab['sunflower_oil_pct'] ?? 45.3, 1, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 3px 6px 3px 14px; color: #0284c7; font-weight: 600;">💧 масло (олія)</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #0284c7; font-weight: 700;" id="table-yield-oil"><?= number_format($prodLab['yield_oil_pct'] ?? 44.59, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 3px 6px 3px 14px; color: #d97706; font-weight: 600;">🌾 шрот</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #d97706; font-weight: 700;" id="table-yield-meal"><?= number_format($prodLab['yield_meal_pct'] ?? 41.54, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #475569; font-weight: 600;" id="table-meal-oil"><?= number_format($prodLab['meal_oil_pct'] ?? 0.77, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                <td style="padding: 3px 6px 3px 14px; color: #64748b; font-weight: 600;">🍂 лузга</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #475569; font-weight: 700;" id="table-yield-husk"><?= number_format($prodLab['yield_husk_pct'] ?? 15.06, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #475569; font-weight: 600;" id="table-husk-oil"><?= number_format($prodLab['husk_oil_pct'] ?? 3.27, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #e2e8f0;">
+                                <td style="padding: 3px 6px 3px 14px; color: #b91c1c; font-weight: 600;">⚠️ потери (втрати ваги)</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #b91c1c; font-weight: 700;" id="table-process-loss"><?= number_format($prodLab['process_loss_pct'] ?? -1.20, 2, ',', ' ') ?>%</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                                <td style="text-align: right; padding: 3px 6px; color: #94a3b8;">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div id="chart-gauge-prod-impurity" class="gauge-chart-container"></div>
-                <div class="gauge-footer">
-                    <div class="gauge-sub">Норма цеху: <strong>до 2.00%</strong></div>
-                    <div class="gauge-note">Очищення сепаратором БІС</div>
+
+                <!-- БЛОК 2: БАЛАНС МАСЛА ПО ВЫХОДАМ -->
+                <div style="margin-top: 8px; border: 1px solid #cbd5e1; border-radius: 6px; overflow: hidden; width: 100%;">
+                    <div style="background: #e0f2fe; padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 700; color: #0369a1; border-bottom: 1px solid #bfdbfe;">
+                        <span>Баланс масла по выходам</span>
+                        <div style="display: flex; gap: 10px; font-size: 10.5px;">
+                            <span title="Розрахунковий баланс олії" style="color: #0284c7;">Баланс: <strong id="table-balance-calc"><?= number_format($prodLab['balance_oil_calc_kg'] ?? 2298106.1, 1, ',', ' ') ?></strong> кг</span>
+                            <span title="Фактична олія в насінні" style="color: #b91c1c;">Факт: <strong id="table-balance-fact"><?= number_format($prodLab['balance_oil_fact_kg'] ?? 2303590, 0, '', ' ') ?></strong> кг</span>
+                        </div>
+                    </div>
+                    <table style="width: 100%; border-collapse: collapse; font-size: 11px; background: #fff;">
+                        <tbody>
+                            <!-- Вихід олії -->
+                            <tr style="background: #fefce8; border-bottom: 1px solid #fef08a;">
+                                <td style="padding: 3px 8px; color: #854d0e; font-weight: 700;">💧 выход масла (факт)</td>
+                                <td style="text-align: right; padding: 3px 8px; color: #713f12; font-weight: 700;" id="table-oil-out-kg"><?= number_format($prodLab['oil_out_kg'] ?? 2262332, 0, '', ' ') ?> кг</td>
+                                <td style="text-align: right; padding: 3px 8px; width: 65px; color: #94a3b8;">—</td>
+                            </tr>
+                            <!-- Виробничі втрати олії -->
+                            <tr style="background: #fefce8; border-bottom: 1px solid #fef08a;">
+                                <td style="padding: 3px 8px; color: #854d0e; font-weight: 700;">⚠️ производств. потери масла</td>
+                                <td style="text-align: right; padding: 3px 8px; color: #713f12; font-weight: 700;" id="table-oil-loss-kg"><?= number_format($prodLab['oil_loss_kg'] ?? 41258, 0, '', ' ') ?> кг</td>
+                                <td style="text-align: right; padding: 3px 8px; width: 65px;"><span class="badge-discount" id="table-oil-loss-pct" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px;"><?= number_format($prodLab['oil_loss_pct'] ?? 0.81, 2, ',', ' ') ?>%</span></td>
+                            </tr>
+                            <!-- Вміст олії у шротах -->
+                            <tr style="border-bottom: 1px solid #f1f5f9; font-size: 10.5px;">
+                                <td style="padding: 2px 8px 2px 18px; color: #64748b;">↳ содержание масла в шротах +жмых 1</td>
+                                <td style="text-align: right; padding: 2px 8px; color: #475569;" id="table-oil-meal-kg"><?= number_format($prodLab['oil_in_meal_kg'] ?? 16260.9, 1, ',', ' ') ?> кг</td>
+                                <td style="text-align: right; padding: 2px 8px; width: 65px; color: #94a3b8;">—</td>
+                            </tr>
+                            <!-- Вміст олії в луззі -->
+                            <tr style="border-bottom: 1px solid #f1f5f9; font-size: 10.5px;">
+                                <td style="padding: 2px 8px 2px 18px; color: #64748b;">↳ содержание масла в лузге</td>
+                                <td style="text-align: right; padding: 2px 8px; color: #475569;" id="table-oil-husk-kg"><?= number_format($prodLab['oil_in_husk_kg'] ?? 24997, 0, '', ' ') ?> кг</td>
+                                <td style="text-align: right; padding: 2px 8px; width: 65px; color: #94a3b8;">—</td>
+                            </tr>
+                            <!-- Невраховані втрати -->
+                            <?php
+                                $unaccVal = (float)($prodLab['oil_unaccounted_loss_kg'] ?? -5484);
+                                $unaccPct = (float)($prodLab['oil_unaccounted_loss_pct'] ?? -0.11);
+                                $isUnaccNeg = $unaccVal < 0;
+                            ?>
+                            <tr style="background: #fefce8;" id="table-row-unacc">
+                                <td style="padding: 3px 8px; color: #854d0e; font-weight: 700;">📉 неучтенные потери масла</td>
+                                <td style="text-align: right; padding: 3px 8px; color: <?= $isUnaccNeg ? '#15803d' : '#881337' ?>; font-weight: 700;" id="table-unacc-kg"><?= ($unaccVal < 0 ? '- ' : '') . number_format(abs($unaccVal), 0, '', ' ') ?> кг</td>
+                                <td style="text-align: right; padding: 3px 8px; width: 65px;"><span class="<?= $isUnaccNeg ? 'badge-bonus' : 'badge-discount' ?>" id="table-unacc-pct" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px;"><?= number_format($unaccPct, 2, ',', ' ') ?>%</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
