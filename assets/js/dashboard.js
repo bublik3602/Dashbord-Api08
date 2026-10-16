@@ -532,24 +532,45 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (hasData) {
-                setElementText('#val-total-kwh', formatNumber(en.total_kwh, 0) + ' кВт');
-                setElementText('#val-current-power', `Потужність: ${formatNumber(en.current_power_kw, 1)} кВт • Реакт.: ${formatNumber(en.reactive_kvarh || 0, 0)} кВАр·год`);
+                // 1. Електроенергія (3 знаки після коми / крапки)
+                if (en.has_power && en.total_kwh !== null && en.total_kwh !== undefined) {
+                    setElementText('#val-total-kwh', formatNumber(en.total_kwh, 3) + ' кВт');
+                    setElementText('#val-current-power', `Потужність: ${formatNumber(en.current_power_kw, 3)} кВт • Реакт.: ${formatNumber(en.reactive_kvarh || 0, 1)} кВАр·год`);
+                    setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 3) + ' кВт/т');
+                    setElementText('#val-specific-sub', en.specific_subtext || 'Розраховано від насіння у переробці');
+                } else {
+                    setElementText('#val-total-kwh', 'Не внесено');
+                    setElementText('#val-current-power', 'Очікується показник лічильника кВт');
+                    setElementText('#val-specific-kwh', '—');
+                    setElementText('#val-specific-sub', 'Електроенергія ще не внесена');
+                }
 
-                setElementText('#val-water-total', formatNumber(en.total_water_m3, 1) + ' м³');
-                setElementText('#val-water-flow', `Потік: ${formatNumber(en.current_water_m3_hour, 2)} м³/год (${formatNumber(en.daily_water_m3 || en.total_water_m3, 1)} м³/добу)`);
+                // 2. Вода
+                if (en.has_water && en.total_water_m3 !== null && en.total_water_m3 !== undefined) {
+                    setElementText('#val-water-total', formatNumber(en.total_water_m3, 1) + ' м³');
+                    setElementText('#val-water-flow', `Потік: ${formatNumber(en.current_water_m3_hour, 2)} м³/год (${formatNumber(en.daily_water_m3 || en.total_water_m3, 1)} м³/добу)`);
+                    setElementText('#val-sewage-total', `Стоки: ${formatNumber(en.sewage_m3 || 0, 1)} м³`);
+                    setElementText('#val-boiler-water', `Котельня: ${formatNumber(en.boiler_water_m3 || 0, 0)} м³ • Екстракція: ${formatNumber(en.extraction_water_m3 || 0, 0)} м³`);
+                } else {
+                    setElementText('#val-water-total', 'Не внесено');
+                    setElementText('#val-water-flow', 'Очікується показник водоміра');
+                    setElementText('#val-sewage-total', 'Стоки: —');
+                    setElementText('#val-boiler-water', 'Вода ще не внесена');
+                }
 
-                setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 2) + ' кВт/т');
-                setElementText('#val-specific-sub', en.specific_subtext || 'Прес: 60,93 + Екстр: 23,90 кВт/т');
-
-                setElementText('#val-sewage-total', `Стоки: ${formatNumber(en.sewage_m3 || 0, 1)} м³`);
-                setElementText('#val-boiler-water', `Котельня: ${formatNumber(en.boiler_water_m3 || 0, 0)} м³ • Екстракція: ${formatNumber(en.extraction_water_m3 || 0, 0)} м³`);
-
-                // Пара котельні та розподіл
-                setElementText('#val-steam-total', formatNumber(en.steam_boiler_tonnes || 0, 1) + ' т');
-                setElementText('#val-steam-sub', en.steam_subtext || 'Котельня на лушпинні');
-                const specificSteam = Number(en.steam_specific_kg_per_tonne || 0);
-                setElementText('#val-steam-specific', specificSteam > 0 ? (formatNumber(specificSteam, 1) + ' кг/т') : '—');
-                setElementText('#val-steam-distrib', en.steam_distrib_subtext || '');
+                // 3. Пара
+                if (en.has_steam && en.steam_boiler_tonnes !== null && en.steam_boiler_tonnes !== undefined) {
+                    setElementText('#val-steam-total', formatNumber(en.steam_boiler_tonnes || 0, 1) + ' т');
+                    setElementText('#val-steam-sub', en.steam_subtext || 'Котельня на лушпинні');
+                    const specificSteam = Number(en.steam_specific_kg_per_tonne || 0);
+                    setElementText('#val-steam-specific', specificSteam > 0 ? (formatNumber(specificSteam, 1) + ' кг/т') : '—');
+                    setElementText('#val-steam-distrib', en.steam_distrib_subtext || '');
+                } else {
+                    setElementText('#val-steam-total', 'Не внесено');
+                    setElementText('#val-steam-sub', 'Очікується журнал котельні');
+                    setElementText('#val-steam-specific', '—');
+                    setElementText('#val-steam-distrib', 'Пара ще не внесена');
+                }
             } else {
                 setElementText('#val-total-kwh', 'Жовтень: немає даних');
                 setElementText('#val-current-power', 'Звіт головного енергетика очікується');
@@ -596,9 +617,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     deptTbody.innerHTML = en.departments.map(d => `
                         <tr>
                             <td class="bold">${d.name}</td>
-                            <td class="bold" style="color: #0284c7;">${formatNumber(d.active_kwh, 0)}</td>
+                            <td class="bold" style="color: #0284c7;">${formatNumber(d.active_kwh, 3)}</td>
                             <td>${formatNumber(d.reactive_kvarh, 1)}</td>
-                            <td>${Number(d.specific_kwh) > 0 ? formatNumber(d.specific_kwh, 2) : '—'}</td>
+                            <td>${Number(d.specific_kwh) > 0 ? formatNumber(d.specific_kwh, 3) : '—'}</td>
                             <td class="bold" style="color: #059669;">${formatNumber(d.water_m3, 0)}</td>
                             <td>${formatNumber(d.sewage_m3, 0)}</td>
                         </tr>
@@ -1239,6 +1260,37 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Допоміжна функція автопідстановки збережених значень для обраної дати
+    function fillFormForDate(dateStr) {
+        const entry = (window._energyHistoryEntries || []).find(x => x.date === dateStr);
+        const kwhInput   = document.getElementById('energy-form-kwh');
+        const waterInput = document.getElementById('energy-form-water');
+        const steamInput = document.getElementById('energy-form-steam');
+        const pressInput = document.getElementById('energy-form-pressure');
+        const reactInput = document.getElementById('energy-form-reactive');
+        const noteInput  = document.getElementById('energy-form-note');
+
+        if (entry) {
+            if (kwhInput)   kwhInput.value   = (entry.power_kwh !== null && entry.power_kwh !== undefined) ? entry.power_kwh : '';
+            if (waterInput) waterInput.value = (entry.water_m3 !== null && entry.water_m3 !== undefined) ? entry.water_m3 : '';
+            if (steamInput) steamInput.value = (entry.steam_t !== null && entry.steam_t !== undefined) ? entry.steam_t : '';
+            if (pressInput && entry.steam_pressure_bar) pressInput.value = entry.steam_pressure_bar;
+            if (reactInput && entry.reactive_kvarh)     reactInput.value = entry.reactive_kvarh;
+            if (noteInput && entry.note)               noteInput.value  = entry.note;
+        } else {
+            if (kwhInput)   kwhInput.value   = '';
+            if (waterInput) waterInput.value = '';
+            if (steamInput) steamInput.value = '';
+        }
+    }
+
+    const inputEnergyDate = document.getElementById('energy-form-date');
+    if (inputEnergyDate) {
+        inputEnergyDate.addEventListener('change', function () {
+            fillFormForDate(this.value);
+        });
+    }
+
     // Завантаження історії записів енергетика
     async function loadEnergyHistory() {
         if (!energyHistoryTbody) return;
@@ -1247,22 +1299,48 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch('api/save_energy_entry.php', { cache: 'no-store' });
             const json = await res.json();
             if (json.status === 'success' && Array.isArray(json.entries) && json.entries.length > 0) {
-                energyHistoryTbody.innerHTML = json.entries.map(e => `
-                    <tr>
-                        <td class="bold">${e.date}</td>
-                        <td class="bold" style="color: #0284c7;">${formatNumber(e.power_kwh, 1)} кВт</td>
-                        <td style="color: #059669;">${formatNumber(e.water_m3, 1)} м³</td>
-                        <td style="color: #d97706;">${formatNumber(e.steam_t, 1)} т</td>
-                        <td><span style="font-size: 10px; color: #64748b;">${escapeHtml(e.author || 'energo')}</span></td>
-                        <td>
-                            <button type="button" class="btn-delete-energy-entry" data-date="${e.date}" title="Видалити запис" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 13px; font-weight: 700; padding: 2px 6px;">&times;</button>
-                        </td>
-                    </tr>
-                `).join('');
+                window._energyHistoryEntries = json.entries;
+                energyHistoryTbody.innerHTML = json.entries.map(e => {
+                    const kwhTxt = (e.power_kwh !== null && e.power_kwh !== undefined && e.power_kwh !== '')
+                        ? `${formatNumber(e.power_kwh, 3)} кВт`
+                        : `<span style="color:#94a3b8;">—</span>`;
+                    const watTxt = (e.water_m3 !== null && e.water_m3 !== undefined && e.water_m3 !== '')
+                        ? `${formatNumber(e.water_m3, 1)} м³`
+                        : `<span style="color:#94a3b8;">—</span>`;
+                    const stmTxt = (e.steam_t !== null && e.steam_t !== undefined && e.steam_t !== '')
+                        ? `${formatNumber(e.steam_t, 1)} т`
+                        : `<span style="color:#94a3b8;">—</span>`;
+
+                    return `
+                        <tr class="energy-history-row" data-date="${e.date}" style="cursor: pointer;" title="Клікніть для підстановки показників у форму">
+                            <td class="bold">${e.date}</td>
+                            <td class="bold" style="color: #0284c7;">${kwhTxt}</td>
+                            <td style="color: #059669;">${watTxt}</td>
+                            <td style="color: #d97706;">${stmTxt}</td>
+                            <td><span style="font-size: 10px; color: #64748b;">${escapeHtml(e.author || 'energo')}</span></td>
+                            <td>
+                                <button type="button" class="btn-delete-energy-entry" data-date="${e.date}" title="Видалити запис" style="background: none; border: none; color: #ef4444; cursor: pointer; font-size: 13px; font-weight: 700; padding: 2px 6px;">&times;</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+
+                // Клік по рядку підставляє дату та збережені дані у форму
+                document.querySelectorAll('.energy-history-row').forEach(row => {
+                    row.addEventListener('click', function (ev) {
+                        if (ev.target.closest('.btn-delete-energy-entry')) return;
+                        const dateStr = this.getAttribute('data-date');
+                        if (inputEnergyDate) {
+                            inputEnergyDate.value = dateStr;
+                            fillFormForDate(dateStr);
+                        }
+                    });
+                });
 
                 // Навішуємо обробник видалення
                 document.querySelectorAll('.btn-delete-energy-entry').forEach(btn => {
-                    btn.addEventListener('click', async function () {
+                    btn.addEventListener('click', async function (ev) {
+                        ev.stopPropagation();
                         const d = this.getAttribute('data-date');
                         if (!confirm(`Ви дійсно бажаєте видалити збережені показники за дату ${d}?`)) return;
                         try {
@@ -1285,6 +1363,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     });
                 });
             } else {
+                window._energyHistoryEntries = [];
                 energyHistoryTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 10px;">Записів ще немає. Введіть перший показник вище.</td></tr>';
             }
         } catch (err) {
@@ -1298,12 +1377,25 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             const btnSubmit = document.getElementById('btn-submit-energy-entry');
             const dateVal     = document.getElementById('energy-form-date').value;
-            const kwhVal      = document.getElementById('energy-form-kwh').value;
-            const waterVal    = document.getElementById('energy-form-water').value;
-            const steamVal    = document.getElementById('energy-form-steam').value;
+            const kwhVal      = (document.getElementById('energy-form-kwh').value || '').trim();
+            const waterVal    = (document.getElementById('energy-form-water').value || '').trim();
+            const steamVal    = (document.getElementById('energy-form-steam').value || '').trim();
             const pressureVal = document.getElementById('energy-form-pressure') ? document.getElementById('energy-form-pressure').value : 11.2;
             const reactiveVal = document.getElementById('energy-form-reactive') ? document.getElementById('energy-form-reactive').value : '';
             const noteVal     = document.getElementById('energy-form-note') ? document.getElementById('energy-form-note').value : '';
+
+            // Перевіряємо, чи введено хоча б одне поле
+            if (!kwhVal && !waterVal && !steamVal) {
+                if (energyFormAlert) {
+                    energyFormAlert.style.display = 'block';
+                    energyFormAlert.style.background = '#fee2e2';
+                    energyFormAlert.style.color = '#991b1b';
+                    energyFormAlert.style.border = '1px solid #fca5a5';
+                    energyFormAlert.innerHTML = `<strong>⚠️ Увага:</strong> Будь ласка, вкажіть хоча б один показник: електроенергію (кВт), воду (м³) або пару (т).`;
+                }
+                showToast('Введіть хоча б один показник: світло, воду або пару', true);
+                return;
+            }
 
             if (btnSubmit) {
                 btnSubmit.disabled = true;

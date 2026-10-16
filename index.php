@@ -737,43 +737,43 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <!-- 1. Активна електроенергія -->
                 <div class="energy-card-mini" style="border-top: 3px solid #0284c7;">
                     <div class="mini-title">⚡ Активна електроенергія за добу</div>
-                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= !empty($en['has_data']) ? (number_format($en['total_kwh'], 0, ',', ' ') . ' кВт') : 'Жовтень: немає даних' ?></div>
-                    <div class="mini-sub" id="val-current-power"><?= !empty($en['has_data']) ? ('Потужність: ' . number_format($en['current_power_kw'], 1, ',', ' ') . ' кВт &bull; Реакт.: ' . number_format($en['reactive_kvarh'] ?? 0, 0, ',', ' ') . ' кВАр·год') : 'Звіт головного енергетика очікується' ?></div>
+                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= (!empty($en['has_data']) && !empty($en['has_power']) && $en['total_kwh'] !== null) ? (number_format($en['total_kwh'], 3, ',', ' ') . ' кВт') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
+                    <div class="mini-sub" id="val-current-power"><?= (!empty($en['has_data']) && !empty($en['has_power']) && $en['current_power_kw'] !== null) ? ('Потужність: ' . number_format($en['current_power_kw'], 3, ',', ' ') . ' кВт &bull; Реакт.: ' . number_format($en['reactive_kvarh'] ?? 0, 1, ',', ' ') . ' кВАр·год') : (!empty($en['has_data']) ? 'Очікується показник лічильника' : 'Звіт головного енергетика очікується') ?></div>
                 </div>
 
                 <!-- 2. Споживання води -->
                 <div class="energy-card-mini" style="border-top: 3px solid #10b981;">
                     <div class="mini-title">💧 Споживання води (вхідний ліч.)</div>
-                    <div class="mini-number" id="val-water-total" style="color: #059669;"><?= !empty($en['has_data']) ? (number_format($en['total_water_m3'], 1, ',', ' ') . ' м³') : 'Жовтень: немає даних' ?></div>
-                    <div class="mini-sub" id="val-water-flow"><?= !empty($en['has_data']) ? ('Потік: ' . number_format($en['current_water_m3_hour'], 2, ',', ' ') . ' м³/год (' . number_format($en['daily_water_m3'] ?? 0, 1, ',', ' ') . ' м³/добу)') : 'Журнал лічильника очікується' ?></div>
+                    <div class="mini-number" id="val-water-total" style="color: #059669;"><?= (!empty($en['has_data']) && !empty($en['has_water']) && $en['total_water_m3'] !== null) ? (number_format($en['total_water_m3'], 1, ',', ' ') . ' м³') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
+                    <div class="mini-sub" id="val-water-flow"><?= (!empty($en['has_data']) && !empty($en['has_water']) && $en['current_water_m3_hour'] !== null) ? ('Потік: ' . number_format($en['current_water_m3_hour'], 2, ',', ' ') . ' м³/год (' . number_format($en['daily_water_m3'] ?? 0, 1, ',', ' ') . ' м³/добу)') : (!empty($en['has_data']) ? 'Очікується показник водоміра' : 'Журнал лічильника очікується') ?></div>
                 </div>
 
                 <!-- 3. Технологічна пара котельні -->
                 <div class="energy-card-mini" style="border-top: 3px solid #f59e0b;">
                     <div class="mini-title">💨 Технологічна пара котельні</div>
-                    <div class="mini-number" id="val-steam-total" style="color: #d97706;"><?= !empty($en['has_data']) ? (number_format($en['steam_boiler_tonnes'] ?? 0, 1, ',', ' ') . ' т') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-number" id="val-steam-total" style="color: #d97706;"><?= (!empty($en['has_data']) && !empty($en['has_steam']) && ($en['steam_boiler_tonnes'] ?? null) !== null) ? (number_format($en['steam_boiler_tonnes'], 1, ',', ' ') . ' т') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
                     <div class="mini-sub" id="val-steam-sub"><?= htmlspecialchars($en['steam_subtext'] ?? 'Жовтень: немає даних') ?></div>
                 </div>
 
                 <!-- 4. Розподіл пари по цехах & питома норма -->
                 <div class="energy-card-mini" style="border-top: 3px solid #ea580c;">
                     <div class="mini-title">⚖️ Питома пара на 1 т насіння</div>
-                    <div class="mini-number" id="val-steam-specific" style="color: #c2410c;"><?= !empty($en['has_data']) && ($en['steam_specific_kg_per_tonne'] ?? 0) > 0 ? (number_format($en['steam_specific_kg_per_tonne'], 1, ',', ' ') . ' кг/т') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-number" id="val-steam-specific" style="color: #c2410c;"><?= (!empty($en['has_data']) && !empty($en['has_steam']) && ($en['steam_specific_kg_per_tonne'] ?? 0) > 0) ? (number_format($en['steam_specific_kg_per_tonne'], 1, ',', ' ') . ' кг/т') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
                     <div class="mini-sub" id="val-steam-distrib"><?= htmlspecialchars($en['steam_distrib_subtext'] ?? 'Оберіть «Вересень» для перегляду') ?></div>
                 </div>
 
                 <!-- 5. Питома витрата електроенергії -->
                 <div class="energy-card-mini" style="border-top: 3px solid #6366f1;">
                     <div class="mini-title">⚙️ Питома ел.енергія на 1 т</div>
-                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= !empty($en['has_data']) && ($en['specific_kwh_per_tonne'] ?? 0) > 0 ? (number_format($en['specific_kwh_per_tonne'], 2, ',', ' ') . ' кВт/т') : 'Жовтень: немає даних' ?></div>
+                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= (!empty($en['has_data']) && !empty($en['has_power']) && ($en['specific_kwh_per_tonne'] ?? 0) > 0) ? (number_format($en['specific_kwh_per_tonne'], 3, ',', ' ') . ' кВт/т') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
                     <div class="mini-sub" id="val-specific-sub"><?= htmlspecialchars($en['specific_subtext'] ?? 'Звіт очікується') ?></div>
                 </div>
 
                 <!-- 6. Котельня, екстракція та стоки -->
                 <div class="energy-card-mini" style="border-top: 3px solid #8b5cf6;">
                     <div class="mini-title">🔥 Котельня, екстракція та стоки</div>
-                    <div class="mini-number" id="val-sewage-total" style="color: #6d28d9;"><?= !empty($en['has_data']) ? ('Стоки: ' . number_format($en['sewage_m3'] ?? 0, 1, ',', ' ') . ' м³') : 'Жовтень: немає даних' ?></div>
-                    <div class="mini-sub" id="val-boiler-water"><?= !empty($en['has_data']) ? ('Котельня: ' . number_format($en['boiler_water_m3'] ?? 0, 0, ',', ' ') . ' м³ &bull; Екстракція: ' . number_format($en['extraction_water_m3'] ?? 0, 0, ',', ' ') . ' м³') : 'Оберіть «Вересень» для перегляду' ?></div>
+                    <div class="mini-number" id="val-sewage-total" style="color: #6d28d9;"><?= (!empty($en['has_data']) && !empty($en['has_water']) && ($en['sewage_m3'] ?? null) !== null) ? ('Стоки: ' . number_format($en['sewage_m3'], 1, ',', ' ') . ' м³') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
+                    <div class="mini-sub" id="val-boiler-water"><?= (!empty($en['has_data']) && !empty($en['has_water']) && ($en['boiler_water_m3'] ?? null) !== null) ? ('Котельня: ' . number_format($en['boiler_water_m3'], 0, ',', ' ') . ' м³ &bull; Екстракція: ' . number_format($en['extraction_water_m3'] ?? 0, 0, ',', ' ') . ' м³') : 'Оберіть «Вересень» для перегляду' ?></div>
                 </div>
             </div>
 
@@ -1657,15 +1657,19 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <div style="font-size: 11px; color: #64748b; margin-top: 4px;">Показники записуються за повну робочу добу заводу (24 години).</div>
                 </div>
 
+                <div style="font-size: 11.5px; color: #334155; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px;">
+                    💡 <strong>Гнучкий ввід:</strong> можна внести та зберегти <em>тільки воду</em>, <em>тільки пару</em> або <em>тільки електроенергію</em>. Непотрібні на цей момент поля залишайте порожніми (попередньо внесені дані за цю добу не зітруться). Для електроенергії підтримується 3 знаки після коми / крапки.
+                </div>
+
                 <!-- 3 основні показники в рядку -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px;">
                     <!-- 1. Електроенергія -->
                     <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px;">
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 6px;">
-                            ⚡ Споживання електроенергії (кВт за добу):
+                            ⚡ Споживання електроенергії (кВт):
                         </label>
-                        <input type="number" step="0.1" min="0" id="energy-form-kwh" placeholder="напр. 31200" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #7dd3fc; border-radius: 6px; color: #0284c7; background: #fff;" required>
-                        <div style="font-size: 10.5px; color: #0284c7; margin-top: 4px;">Кількість кіловат (кВт) споживання заводу за добу</div>
+                        <input type="number" step="0.001" min="0" id="energy-form-kwh" placeholder="напр. 31200.000" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #7dd3fc; border-radius: 6px; color: #0284c7; background: #fff;">
+                        <div style="font-size: 10.5px; color: #0284c7; margin-top: 4px;">3 знаки після коми (напр. 31800,125 або 31,800)</div>
                     </div>
 
                     <!-- 2. Вода -->
@@ -1673,8 +1677,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #15803d; margin-bottom: 6px;">
                             💧 Витрата води (м³):
                         </label>
-                        <input type="number" step="0.1" min="0" id="energy-form-water" placeholder="напр. 185.0" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #86efac; border-radius: 6px; color: #16a34a; background: #fff;" required>
-                        <div style="font-size: 10.5px; color: #15803d; margin-top: 4px;">Вхідний лічильник водопроводу МЕЗ</div>
+                        <input type="number" step="0.01" min="0" id="energy-form-water" placeholder="напр. 185.0" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #86efac; border-radius: 6px; color: #16a34a; background: #fff;">
+                        <div style="font-size: 10.5px; color: #15803d; margin-top: 4px;">Вхідний лічильник водопроводу МЕЗ (необов'язково)</div>
                     </div>
 
                     <!-- 3. Технологічна пара -->
@@ -1682,8 +1686,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #b45309; margin-bottom: 6px;">
                             ♨️ Кількість пари (т):
                         </label>
-                        <input type="number" step="0.1" min="0" id="energy-form-steam" placeholder="напр. 124.5" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #fcd34d; border-radius: 6px; color: #d97706; background: #fff;" required>
-                        <div style="font-size: 10.5px; color: #b45309; margin-top: 4px;">Виробіток котельні на лушпинні</div>
+                        <input type="number" step="0.01" min="0" id="energy-form-steam" placeholder="напр. 124.5" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #fcd34d; border-radius: 6px; color: #d97706; background: #fff;">
+                        <div style="font-size: 10.5px; color: #b45309; margin-top: 4px;">Виробіток котельні на лушпинні (необов'язково)</div>
                     </div>
                 </div>
 

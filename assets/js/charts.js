@@ -293,7 +293,7 @@ window.FactoryCharts = {
                     const pShare = pSum > 0 ? ((pVal / pSum) * 100).toFixed(1) : '0.0';
                     const wShare = wSum > 0 ? ((wVal / wSum) * 100).toFixed(1) : '0.0';
 
-                    const fmtP = pVal.toLocaleString('uk-UA', { maximumFractionDigits: 1 });
+                    const fmtP = pVal.toLocaleString('uk-UA', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
                     const fmtW = wVal.toLocaleString('uk-UA', { minimumFractionDigits: wVal < 20 ? 1 : 0, maximumFractionDigits: 2 });
                     const fmtS = sVal.toLocaleString('uk-UA', { maximumFractionDigits: 1 });
 
@@ -307,9 +307,9 @@ window.FactoryCharts = {
                                 <div class="art-row" style="border-left: 3px solid #0284c7;">
                                     <div class="art-row-main">
                                         <span class="art-lbl">⚡ Споживання заводу:</span>
-                                        <span class="art-val bold" style="color: #0284c7;">${fmtP} ${pUnit} (${(pVal / 1000).toFixed(2)} МВт)</span>
+                                        <span class="art-val bold" style="color: #0284c7;">${fmtP} ${pUnit} (${(pVal / 1000).toFixed(3)} МВт)</span>
                                     </div>
-                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Питома: ~${(pVal / 596.8).toFixed(2)} кВт/т насіння</div>
+                                    <div class="art-sub-calc">Загальне добове споживання МЕЗ &bull; Питома: ~${(pVal / 596.8).toFixed(3)} кВт/т насіння</div>
                                 </div>
                                 <div class="art-row" style="border-left: 3px solid #10b981;">
                                     <div class="art-row-main">
@@ -466,10 +466,11 @@ window.FactoryCharts = {
                 custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                     const rawKwh = Number(rawPowers[dataPointIndex] || (unit === 'mwh' ? Number(seriesData[dataPointIndex]) * 1000 : 0)) || 0;
                     const pointLabel = labels[dataPointIndex] || '';
-                    const mwhVal = (rawKwh / 1000).toFixed(2);
-                    const avgKw  = (rawKwh / 24).toFixed(1);
+                    const mwhVal = (rawKwh / 1000).toFixed(3);
+                    const avgKw  = (rawKwh / 24).toFixed(3);
                     const avgMw  = (rawKwh / 24000).toFixed(3);
-                    const specKwh = (rawKwh / 596.8).toFixed(2);
+                    const specKwh = (rawKwh / 596.8).toFixed(3);
+                    const fmtRawKwh = rawKwh.toLocaleString('uk-UA', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
                     return `
                         <div class="apex-rich-tooltip bar-tooltip-box" style="padding: 10px 14px; min-width: 250px;">
@@ -480,7 +481,7 @@ window.FactoryCharts = {
                             <div class="art-body" style="font-size: 11.5px; line-height: 1.5;">
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                     <span style="color: #64748b;">Споживання (кВт):</span>
-                                    <strong style="color: #0284c7;">${Math.round(rawKwh).toLocaleString('uk-UA')} кВт</strong>
+                                    <strong style="color: #0284c7;">${fmtRawKwh} кВт</strong>
                                 </div>
                                 <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                     <span style="color: #64748b;">Споживання (МВт):</span>

@@ -105,45 +105,76 @@ try {
         $date = date('Y-m-d');
     }
 
-    $powerKwh = isset($postData['power_kwh']) ? (float)str_replace(',', '.', (string)$postData['power_kwh']) : null;
-    $waterM3  = isset($postData['water_m3'])  ? (float)str_replace(',', '.', (string)$postData['water_m3'])  : null;
-    $steamT   = isset($postData['steam_t'])   ? (float)str_replace(',', '.', (string)$postData['steam_t'])   : null;
-
-    if ($powerKwh === null || $powerKwh < 0) {
-        throw new InvalidArgumentException('Вкажіть коректне споживання електроенергії (кВт за добу >= 0).');
-    }
-    if ($waterM3 === null || $waterM3 < 0) {
-        throw new InvalidArgumentException('Вкажіть коректні витрати води (м³ >= 0).');
-    }
-    if ($steamT === null || $steamT < 0) {
-        throw new InvalidArgumentException('Вкажіть коректну кількість технологічної пари (т >= 0).');
-    }
-
-    $steamPressureBar = isset($postData['steam_pressure_bar']) ? (float)str_replace(',', '.', (string)$postData['steam_pressure_bar']) : 11.2;
-    $reactiveKvarh    = isset($postData['reactive_kvarh']) ? (float)str_replace(',', '.', (string)$postData['reactive_kvarh']) : round($powerKwh * 0.32, 1);
-    $note             = trim((string)($postData['note'] ?? ''));
-
     $entries = loadEnergyEntries($dataFile);
+    $existing = $entries[$date] ?? [];
 
-    $entries[$date] = [
+    $rawKwh   = isset($postData['power_kwh']) ? trim((string)$postData['power_kwh']) : '';
+    $rawWater = isset($postData['water_m3'])  ? trim((string)$postData['water_m3'])  : '';
+    $rawSteam = isset($postData['steam_t'])   ? trim((string)$postData['steam_t'])   : '';
+
+    // Перевіряємо, чи введено хоча б один показник, або чи вже є збережений запис
+    if ($rawKwh === '' && $rawWater === '' && $rawSteam === '' && empty($existing)) {
+        throw new InvalidArgumentException('Вкажіть хоча б один показник: електроенергію (кВт), воду (м³) або пару (т).');
+    }
+
+    // Якщо поле передано — оновлюємо, якщо порожньо — зберігаємо попередньо внесене значення (якщо було), або залишаємо null
+    $powerKwh = ($rawKwh !== '')
+        ? (float)str_replace(',', '.', $rawKwh)
+        : (isset($existing['power_kwh']) && $existing['power_kwh'] !== null ? (float)$existing['power_kwh'] : null);
+
+    $waterM3  = ($rawWater !== '')
+        ? (float)str_replace(',', '.', $rawWater)
+        : (isset($existing['water_m3']) && $existing['water_m3'] !== null ? (float)$existing['water_m3'] : null);
+
+    $steamT   = ($rawSteam !== '')
+        ? (float)str_replace(',', '.', $rawSteam)
+        : (isset($existing['steam_t']) && $existing['steam_t'] !== null ? (float)$existing['steam_t'] : null);
+
+    if ($powerKwh !== null && $powerKwh < 0) {
+        throw new InvalidArgumentException('Споживання електроенергії не може бути менше 0.');
+    }
+    if ($waterM3 !== null && $waterM3 < 0) {
+        throw new InvalidArgumentException('Витрати води не можуть бути менше 0.');
+    }
+    if ($steamT !== null && $steamT < 0) {
+        throw new InvalidArgumentException('Кількість технологічної пари не може бути менше 0.');
+    }
+
+    $rawPressure = isset($postData['steam_pressure_bar']) ? trim((string)$postData['steam_pressure_bar']) : '';
+    $steamPressureBar = ($rawPressure !== '')
+        ? (float)str_replace(',', '.', $rawPressure)
+        : ($existing['steam_pressure_bar'] ?? 11.2);
+
+    $rawReactive = isset($postData['reactive_kvarh']) ? trim((string)$postData['reactive_kvarh']) : '';
+    $reactiveKvarh = ($rawReactive !== '')
+        ? (float)str_replace(',', '.', $rawReactive)
+        : ($existing['reactive_kvarh'] ?? ($powerKwh !== null ? round($powerKwh * 0.32, 1) : null));
+
+    $note = trim((string)($postData['note'] ?? ''));
+    if ($note === '' && !empty($existing['note'])) {
+        $note = $existing['note'];
+    }
+
+    $savedEntry = [
         'date'               => $date,
-        'power_kwh'          => round($powerKwh, 1),
-        'water_m3'           => round($waterM3, 2),
-        'steam_t'            => round($steamT, 2),
+        'power_kwh'          => $powerKwh !== null ? round($powerKwh, 3) : null,
+        'water_m3'           => $waterM3 !== null ? round($waterM3, 2) : null,
+        'steam_t'            => $steamT !== null ? round($steamT, 2) : null,
         'steam_pressure_bar' => round($steamPressureBar, 2),
-        'reactive_kvarh'     => round($reactiveKvarh, 1),
+        'reactive_kvarh'     => $reactiveKvarh !== null ? round($reactiveKvarh, 1) : null,
         'note'               => $note ?: 'Внесено черговим енергетиком',
         'author'             => $currentUser['username'] ?? 'energo',
         'updated_at'         => date('Y-m-d H:i:s'),
     ];
 
+    $entries[$date] = $savedEntry;
     saveEnergyEntries($dataFile, $entries);
 
     // Спроба продублювати запис у таблицю energy_readings БД (якщо активна)
     try {
         $db = Database::getInstance();
-        $calcPowerKw = round($powerKwh / 24, 2);
-        $calcWaterFlow = round($waterM3 / 24, 2);
+        $calcPowerKw = $powerKwh !== null ? round($powerKwh / 24, 3) : 0.0;
+        $calcWaterFlow = $waterM3 !== null ? round($waterM3 / 24, 2) : 0.0;
         $stmt = $db->prepare("
             INSERT INTO energy_readings (recorded_at, power_kw, power_kwh_delta, water_flow_m3_hour, water_m3_delta, steam_pressure_bar)
             VALUES (?, ?, ?, ?, ?, ?)
@@ -151,20 +182,26 @@ try {
         $stmt->execute([
             $date . ' 12:00:00',
             $calcPowerKw,
-            $powerKwh,
+            $powerKwh ?? 0.0,
             $calcWaterFlow,
-            $waterM3,
+            $waterM3 ?? 0.0,
             $steamPressureBar
         ]);
     } catch (Throwable $dbErr) {
         // Локальний JSON вже надійно зберіг дані, помилка SQL не блокує користувача
     }
 
+    $details = [];
+    if ($powerKwh !== null) $details[] = number_format($powerKwh, 3, ',', ' ') . ' кВт';
+    if ($waterM3 !== null)  $details[] = number_format($waterM3, 1, ',', ' ') . ' м³ води';
+    if ($steamT !== null)   $details[] = number_format($steamT, 1, ',', ' ') . ' т пари';
+    $detailsStr = !empty($details) ? implode(', ', $details) : 'дані оновлено';
+
     $fmtDate = date('d.m.Y', strtotime($date));
     echo json_encode([
         'status'  => 'success',
-        'message' => "Показники за добу {$fmtDate} успішно збережено: {$powerKwh} кВт за добу, {$waterM3} м³ води, {$steamT} т пари.",
-        'entry'   => $entries[$date],
+        'message' => "Показники за добу {$fmtDate} успішно збережено: {$detailsStr}.",
+        'entry'   => $savedEntry,
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {
