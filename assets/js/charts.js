@@ -150,18 +150,51 @@ window.FactoryCharts = {
         timelineData = timelineData || {};
         this._currentEnergyTimeline = timelineData;
 
+        // Автоматична ініціалізація окремого графіка води та пари (вони можуть бути внесені, навіть коли електроенергія відсутня)
+        this.initWaterSteamChart(timelineData);
+
         const powerName    = timelineData.power_name || 'Активна електроенергія (кВт)';
         const reactiveName = timelineData.reactive_name || 'Реактивна електроенергія (кВАр·год)';
         const powerUnit    = timelineData.power_unit || 'кВт';
         const reactiveUnit = timelineData.reactive_unit || 'кВАр·год';
-        const hasReactive  = Array.isArray(timelineData.reactive) && timelineData.reactive.length > 0;
+        const hasPowers    = Array.isArray(timelineData.power) && timelineData.power.some(v => v !== null && v > 0);
+        const hasReactive  = Array.isArray(timelineData.reactive) && timelineData.reactive.some(v => v !== null && v > 0);
+        const hasElectricity = hasPowers || hasReactive;
+
+        let noticeEl = document.querySelector("#energy-chart-no-data");
+        if (!hasElectricity) {
+            if (this.energyChart) {
+                try { this.energyChart.destroy(); } catch (e) {}
+                this.energyChart = null;
+            }
+            if (!noticeEl) {
+                noticeEl = document.createElement("div");
+                noticeEl.id = "energy-chart-no-data";
+                noticeEl.innerHTML = `
+                    <div style="padding: 28px 20px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin: 10px 0;">
+                        <div style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 4px;">⚡ Дані електроенергії (активна / реактивна) за цей період ще не внесені</div>
+                        <div style="font-size: 11px; color: #64748b; margin-bottom: 12px;">Показники лічильників електроенергії очікуються від енергетика. Фактичні добові дані доступні за Вересень 2026.</div>
+                        <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #ffffff; border: none; padding: 6px 14px; border-radius: 6px; font-weight: 700; font-size: 11px; cursor: pointer;">
+                            📅 Переглянути за Вересень 2026 (факт)
+                        </button>
+                    </div>
+                `;
+                el.parentNode.insertBefore(noticeEl, el.nextSibling);
+            }
+            noticeEl.style.display = "block";
+            el.style.display = "none";
+            return;
+        } else {
+            if (noticeEl) noticeEl.style.display = "none";
+            el.style.display = "block";
+        }
 
         // Серії: тільки активна та реактивна електроенергія ЖИРНИМИ лініями
         const seriesList = [
             {
                 name: powerName,
                 type: 'line',
-                data: timelineData.power || [29400, 31200, 31800, 30950, 31210, 31930, 11450, 4820, 4410, 4650, 4520, 4032]
+                data: timelineData.power || []
             }
         ];
         const colors = ['#0284c7'];
@@ -314,33 +347,6 @@ window.FactoryCharts = {
 
         this.energyChart = new ApexCharts(el, options);
         this.energyChart.render();
-
-        const hasLabels = Array.isArray(timelineData.labels) && timelineData.labels.length > 0;
-        let noticeEl = document.querySelector("#energy-chart-no-data");
-        if (!hasLabels) {
-            if (!noticeEl) {
-                noticeEl = document.createElement("div");
-                noticeEl.id = "energy-chart-no-data";
-                noticeEl.innerHTML = `
-                    <div style="padding: 32px 20px; text-align: center; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; margin: 10px 0;">
-                        <div style="font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 6px;">Жовтень 2026: дані графіків відсутні (звіт енергетика та котельні очікується)</div>
-                        <div style="font-size: 12px; color: #64748b; margin-bottom: 14px;">Поточний місяць триває. Фактичні добові дані споживання електроенергії, води та пари доступні за Вересень 2026.</div>
-                        <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #ffffff; border: none; padding: 7px 16px; border-radius: 6px; font-weight: 700; font-size: 12px; cursor: pointer; box-shadow: 0 2px 4px rgba(2,132,199,0.25);">
-                            📅 Переглянути графіки за Вересень 2026 (факт)
-                        </button>
-                    </div>
-                `;
-                el.parentNode.insertBefore(noticeEl, el.nextSibling);
-            }
-            noticeEl.style.display = "block";
-            el.style.display = "none";
-        } else {
-            if (noticeEl) noticeEl.style.display = "none";
-            el.style.display = "block";
-        }
-
-        // Автоматична ініціалізація окремого графіка води та пари
-        this.initWaterSteamChart(timelineData);
     },
 
     /**
@@ -544,14 +550,18 @@ window.FactoryCharts = {
         this._currentPlantPowerUnit = unit;
 
         const labels = timelineData.labels || [];
-        if (!labels.length) {
-            el.innerHTML = '<div style="padding: 24px; text-align: center; color: #64748b; font-size: 12px; font-style: italic;">Дані подобового споживання заводу очікуються або ще не внесені</div>';
+        const rawPowers = Array.isArray(timelineData.power) ? timelineData.power.filter(v => v !== null && v > 0) : [];
+        if (!labels.length || !rawPowers.length) {
+            if (this.plantPowerChart) {
+                try { this.plantPowerChart.destroy(); } catch (e) {}
+                this.plantPowerChart = null;
+            }
+            el.innerHTML = '<div style="padding: 24px; text-align: center; color: #64748b; font-size: 12px; font-style: italic;">⚡ Подобові дані споживання електроенергії за цей період ще не внесені (очікуються від енергетика)</div>';
             return;
         }
 
         let seriesName = 'Споживання електроенергії заводу (кВт)';
-        let rawPowers  = timelineData.power || [];
-        let seriesData = rawPowers;
+        let seriesData = timelineData.power || [];
         let yaxisTitle = 'кВт';
 
         if (unit === 'mwh') {

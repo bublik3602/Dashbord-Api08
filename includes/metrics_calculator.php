@@ -983,19 +983,19 @@ class MetricsCalculator {
 
         foreach ($manualEntries as $dStr => $entry) {
             $dayNum = date('d.m', strtotime($dStr));
-            $pVal   = isset($entry['power_kwh']) && $entry['power_kwh'] !== null && $entry['power_kwh'] !== '' ? (float)$entry['power_kwh'] : 0.0;
+            $hasP   = isset($entry['power_kwh']) && $entry['power_kwh'] !== null && $entry['power_kwh'] !== '' && (float)$entry['power_kwh'] > 0;
+            $pVal   = $hasP ? (float)$entry['power_kwh'] : null;
             $wVal   = isset($entry['water_m3']) && $entry['water_m3'] !== null && $entry['water_m3'] !== '' ? (float)$entry['water_m3'] : 0.0;
             $sVal   = isset($entry['steam_t']) && $entry['steam_t'] !== null && $entry['steam_t'] !== '' ? (float)$entry['steam_t'] : 0.0;
-            $rVal   = isset($entry['reactive_kvarh']) && $entry['reactive_kvarh'] !== null && $entry['reactive_kvarh'] !== ''
-                ? (float)$entry['reactive_kvarh']
-                : ($pVal > 0 ? round($pVal * 0.32, 1) : 0.0);
+            $hasR   = isset($entry['reactive_kvarh']) && $entry['reactive_kvarh'] !== null && $entry['reactive_kvarh'] !== '' && (float)$entry['reactive_kvarh'] > 0;
+            $rVal   = $hasR ? (float)$entry['reactive_kvarh'] : ($pVal !== null ? round($pVal * 0.32, 1) : null);
 
             $tlLabels[]     = $dayNum;
-            $tlPower[]      = round($pVal, 4);
-            $tlPowerMwh[]   = round($pVal / 1000, 4);
-            $tlPowerKwAvg[] = round($pVal / 24, 4);
-            $tlPowerMwAvg[] = round($pVal / 24000, 4);
-            $tlReactive[]   = round($rVal, 1);
+            $tlPower[]      = $pVal !== null ? round($pVal, 4) : null;
+            $tlPowerMwh[]   = $pVal !== null ? round($pVal / 1000, 4) : null;
+            $tlPowerKwAvg[] = $pVal !== null ? round($pVal / 24, 4) : null;
+            $tlPowerMwAvg[] = $pVal !== null ? round($pVal / 24000, 4) : null;
+            $tlReactive[]   = $rVal !== null ? round($rVal, 1) : null;
             $tlWater[]      = round($wVal, 2);
             $tlSteam[]      = round($sVal, 2);
 
@@ -1013,7 +1013,9 @@ class MetricsCalculator {
             }
         }
 
-        $octSumPower = array_sum($tlPower);
+        $validPowers = array_values(array_filter($tlPower, fn($v) => $v !== null && $v > 0));
+        $hasOctPower = !empty($validPowers);
+        $octSumPower = $hasOctPower ? array_sum($validPowers) : null;
         $octSumWater = array_sum($tlWater);
         $octSumSteam = array_sum($tlSteam);
 
@@ -1024,19 +1026,19 @@ class MetricsCalculator {
                     $monthly12[$idx] = [
                         'month'          => 'Жовтень 2026',
                         'short'          => 'Жов\'26',
-                        'active_kwh'     => round($octSumPower, 4),
-                        'reactive_kvarh' => round($octSumPower * 0.32, 1),
+                        'active_kwh'     => $hasOctPower ? round($octSumPower, 4) : null,
+                        'reactive_kvarh' => $hasOctPower ? round($octSumPower * 0.32, 1) : null,
                         'gas_m3'         => 0.0,
                         'water_m3'       => round($octSumWater, 0),
                         'sewage_m3'      => round($octSumWater * 0.56, 0),
                         'daily_water_m3' => count($tlWater) > 0 ? round($octSumWater / count($tlWater), 1) : 0,
-                        'press_kwh'      => round($octSumPower * 0.557, 4),
-                        'extr_kwh'       => round($octSumPower * 0.218, 4),
-                        'elev_kwh'       => round($octSumPower * 0.155, 4),
-                        'boiler_kwh'     => round($octSumPower * 0.062, 4),
-                        'specific_kwh'   => 53.28,
+                        'press_kwh'      => $hasOctPower ? round($octSumPower * 0.557, 4) : null,
+                        'extr_kwh'       => $hasOctPower ? round($octSumPower * 0.218, 4) : null,
+                        'elev_kwh'       => $hasOctPower ? round($octSumPower * 0.155, 4) : null,
+                        'boiler_kwh'     => $hasOctPower ? round($octSumPower * 0.062, 4) : null,
+                        'specific_kwh'   => $hasOctPower ? 53.28 : null,
                         'has_data'       => true,
-                        'note'           => 'Фактичні дані за звітні доби Жовтня',
+                        'note'           => $hasOctPower ? 'Фактичні дані за звітні доби Жовтня' : 'Облік води та пари (електроенергія очікується)',
                     ];
                     break;
                 }
