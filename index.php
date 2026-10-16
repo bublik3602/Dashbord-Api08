@@ -1737,18 +1737,27 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     💡 <strong>Гнучкий ввід:</strong> можна внести та зберегти <em>тільки воду</em>, <em>тільки пару</em> або <em>тільки електроенергію</em>. Непотрібні на цей момент поля залишайте порожніми (попередньо внесені дані за цю добу не зітруться). Для електроенергії підтримується 4 знаки після коми / крапки.
                 </div>
 
-                <!-- 3 основні показники в рядку -->
+                <!-- 4 основні показники в рядку (Активна, Реактивна, Вода, Пара) -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 16px;">
-                    <!-- 1. Електроенергія -->
+                    <!-- 1. Активна електроенергія -->
                     <div style="background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 12px;">
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 6px;">
-                            ⚡ Споживання електроенергії (кВт):
+                            ⚡ Активна ел-енергія (кВт):
                         </label>
                         <input type="text" inputmode="decimal" id="energy-form-kwh" placeholder="напр. 31200.0000 або 31200,1234" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #7dd3fc; border-radius: 6px; color: #0284c7; background: #fff;">
                         <div style="font-size: 10.5px; color: #0284c7; margin-top: 4px;">4 знаки після коми чи крапки (напр. 31800,1234)</div>
                     </div>
 
-                    <!-- 2. Вода -->
+                    <!-- 2. Реактивна електроенергія (винесено поряд з електроенергією) -->
+                    <div style="background: #f5f3ff; border: 1px solid #ddd6fe; border-radius: 8px; padding: 12px;">
+                        <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #6d28d9; margin-bottom: 6px;">
+                            🟣 Реактивна енергія (кВАр·год):
+                        </label>
+                        <input type="text" inputmode="decimal" id="energy-form-reactive" placeholder="напр. 9900 або 9900,12" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #c4b5fd; border-radius: 6px; color: #7c3aed; background: #fff;">
+                        <div style="font-size: 10.5px; color: #7c3aed; margin-top: 4px;">Реактивна енергія за лічильником заводу</div>
+                    </div>
+
+                    <!-- 3. Вода -->
                     <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px;">
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #15803d; margin-bottom: 6px;">
                             💧 Витрата води (м³):
@@ -1757,7 +1766,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <div style="font-size: 10.5px; color: #15803d; margin-top: 4px;">Вхідний лічильник водопроводу МЕЗ (необов'язково)</div>
                     </div>
 
-                    <!-- 3. Технологічна пара -->
+                    <!-- 4. Технологічна пара -->
                     <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px;">
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #b45309; margin-bottom: 6px;">
                             ♨️ Кількість пари (т):
@@ -1767,24 +1776,20 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                 </div>
 
-                <!-- Додаткові поля (тиск, реактивна енергія, примітка) -->
+                <!-- Додаткові поля (тиск, примітка) -->
                 <details style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px;">
                     <summary style="font-size: 11.5px; font-weight: 700; color: #475569; cursor: pointer;">
-                        ⚙️ Додаткові параметри (тиск пари, реактивна енергія, примітка)
+                        ⚙️ Додаткові параметри (тиск пари в магістралі, примітка чергового)
                     </summary>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 10px;">
+                    <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 12px; margin-top: 10px;">
                         <div>
                             <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Тиск пари в магістралі (бар):</label>
                             <input type="number" step="0.1" id="energy-form-pressure" value="11.2" placeholder="11.2" style="width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px;">
                         </div>
                         <div>
-                            <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Реактивна енергія (кВАр·год):</label>
-                            <input type="number" step="0.1" id="energy-form-reactive" placeholder="напр. 9900" style="width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px;">
+                            <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Примітка чергового енергетика / зміни:</label>
+                            <input type="text" id="energy-form-note" placeholder="напр. Чергова зміна №1, нормальний режим переробки" style="width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px;">
                         </div>
-                    </div>
-                    <div style="margin-top: 8px;">
-                        <label style="display: block; font-size: 11px; font-weight: 600; color: #64748b; margin-bottom: 4px;">Примітка чергового енергетика / зміни:</label>
-                        <input type="text" id="energy-form-note" placeholder="напр. Чергова зміна №1, нормальний режим переробки" style="width: 100%; padding: 6px 10px; font-size: 12px; border: 1px solid #cbd5e1; border-radius: 5px;">
                     </div>
                 </details>
 
@@ -1799,7 +1804,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             <thead>
                                 <tr>
                                     <th>Дата</th>
-                                    <th>Електроенергія (кВт)</th>
+                                    <th>Активна (кВт)</th>
+                                    <th>Реактивна</th>
                                     <th>Вода</th>
                                     <th>Пара</th>
                                     <th>Автор</th>
@@ -1807,7 +1813,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 </tr>
                             </thead>
                             <tbody id="energy-history-tbody">
-                                <tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 10px;">Завантаження історії...</td></tr>
+                                <tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 10px;">Завантаження історії...</td></tr>
                             </tbody>
                         </table>
                     </div>

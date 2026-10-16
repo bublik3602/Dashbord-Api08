@@ -1298,8 +1298,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (noteInput && entry.note)               noteInput.value  = entry.note;
         } else {
             if (kwhInput)   kwhInput.value   = '';
+            if (reactInput) reactInput.value = '';
             if (waterInput) waterInput.value = '';
             if (steamInput) steamInput.value = '';
+            if (noteInput)  noteInput.value  = '';
         }
     }
 
@@ -1314,7 +1316,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadEnergyHistory() {
         if (!energyHistoryTbody) return;
         try {
-            energyHistoryTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 10px;">Завантаження...</td></tr>';
+            energyHistoryTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 10px;">Завантаження...</td></tr>';
             const res = await fetch('api/save_energy_entry.php', { cache: 'no-store' });
             const json = await res.json();
             if (json.status === 'success' && Array.isArray(json.entries) && json.entries.length > 0) {
@@ -1322,6 +1324,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 energyHistoryTbody.innerHTML = json.entries.map(e => {
                     const kwhTxt = (e.power_kwh !== null && e.power_kwh !== undefined && e.power_kwh !== '')
                         ? `${formatNumber(e.power_kwh, 4)} кВт`
+                        : `<span style="color:#94a3b8;">—</span>`;
+                    const rctTxt = (e.reactive_kvarh !== null && e.reactive_kvarh !== undefined && e.reactive_kvarh !== '')
+                        ? `${formatNumber(e.reactive_kvarh, 1)} кВАр`
                         : `<span style="color:#94a3b8;">—</span>`;
                     const watTxt = (e.water_m3 !== null && e.water_m3 !== undefined && e.water_m3 !== '')
                         ? `${formatNumber(e.water_m3, 1)} м³`
@@ -1334,6 +1339,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <tr class="energy-history-row" data-date="${e.date}" style="cursor: pointer;" title="Клікніть для підстановки показників у форму">
                             <td class="bold">${e.date}</td>
                             <td class="bold" style="color: #0284c7;">${kwhTxt}</td>
+                            <td style="color: #7c3aed; font-weight: 600;">${rctTxt}</td>
                             <td style="color: #059669;">${watTxt}</td>
                             <td style="color: #d97706;">${stmTxt}</td>
                             <td><span style="font-size: 10px; color: #64748b;">${escapeHtml(e.author || 'energo')}</span></td>
@@ -1404,15 +1410,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const noteVal     = document.getElementById('energy-form-note') ? document.getElementById('energy-form-note').value : '';
 
             // Перевіряємо, чи введено хоча б одне поле
-            if (!kwhVal && !waterVal && !steamVal) {
+            if (!kwhVal && !reactiveVal && !waterVal && !steamVal) {
                 if (energyFormAlert) {
                     energyFormAlert.style.display = 'block';
                     energyFormAlert.style.background = '#fee2e2';
                     energyFormAlert.style.color = '#991b1b';
                     energyFormAlert.style.border = '1px solid #fca5a5';
-                    energyFormAlert.innerHTML = `<strong>⚠️ Увага:</strong> Будь ласка, вкажіть хоча б один показник: електроенергію (кВт), воду (м³) або пару (т).`;
+                    energyFormAlert.innerHTML = `<strong>⚠️ Увага:</strong> Будь ласка, вкажіть хоча б один показник: електроенергію (кВт), реактивну енергію (кВАр·год), воду (м³) або пару (т).`;
                 }
-                showToast('Введіть хоча б один показник: світло, воду або пару', true);
+                showToast('Введіть хоча б один показник: світло, реактив, воду або пару', true);
                 return;
             }
 
