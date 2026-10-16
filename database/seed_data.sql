@@ -183,7 +183,7 @@ INSERT INTO `sync_logs` (`source`, `status`, `records_processed`, `message`) VAL
 INSERT INTO `warehouse_stocks` (`recorded_at`, `report_date`, `seed_stock_tonnes`, `seed_stock_accounting_tonnes`, `oil_stock_tonnes`, `meal_stock_tonnes`, `husk_stock_tonnes`, `husk_boiler_spent_tonnes`, `days_seed_reserve`, `oil_shipped_tonnes`, `meal_shipped_tonnes`, `husk_shipped_tonnes`) VALUES
 ('2026-08-31 20:00:00', '31.08.2026 20:00 (Серпень 2026)', 883.399, 757.575, 15.352, 362.601, 0.000, 6.853, 1.5, 153.280, 1390.540, 78.600),
 ('2026-09-30 20:00:00', '30.09.2026 20:00 (Вересень 2026)', 10982.439, 10982.439, 2736.708, 1713.467, 334.225, 409.170, 18.3, 1090.300, 2332.340, 490.660),
-('2026-10-15 20:00:00', '15.10.2026 20:00 (15 число)', 12980.633, 13659.618, 3495.720, 705.877, 162.667, 24.544, 22.8, 303.460, 125.120, 25.500);
+('2026-10-15 20:00:00', '15.10.2026 20:00 (15 число)', 12980.633, 13659.618, 3495.720, 705.877, 162.667, 363.307, 22.8, 303.460, 125.120, 25.500);
 
 -- 7. Показники якості лабораторії (реальні середньозважені з Листа погодження та Графіка завезення)
 INSERT INTO `lab_quality_logs` (`recorded_at`, `report_date`, `oil_content_pct`, `oil_content_base_pct`, `oil_deviation_pct`, `moisture_pct`, `impurity_pct`, `weight_discount_tonnes`) VALUES

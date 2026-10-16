@@ -1561,7 +1561,7 @@ class MetricsCalculator {
                     'oil_stock_tonnes'             => $oilStock,
                     'meal_stock_tonnes'            => $mealStock,
                     'husk_stock_tonnes'            => $huskStock,
-                    'husk_boiler_spent_tonnes'     => 294.17,
+                    'husk_boiler_spent_tonnes'     => 363.31,
                     'days_seed_reserve'            => $daysReserve,
                     'oil_shipped_tonnes'           => $monthOilShip,
                     'meal_shipped_tonnes'          => $monthMealShip,
@@ -1575,7 +1575,7 @@ class MetricsCalculator {
                     'oil_stock_tonnes'             => $oilStock,
                     'meal_stock_tonnes'            => $mealStock,
                     'husk_stock_tonnes'            => $huskStock,
-                    'husk_boiler_spent_tonnes'     => 710.19,
+                    'husk_boiler_spent_tonnes'     => 728.02,
                     'days_seed_reserve'            => $daysReserve,
                     'oil_shipped_tonnes'           => round(76.64 + 1090.30 + $monthOilShip, 2),
                     'meal_shipped_tonnes'          => round(1390.54 + 2332.34 + $monthMealShip, 2),
@@ -1803,7 +1803,7 @@ class MetricsCalculator {
                     'oil_stock'          => $oilStock,
                     'meal_stock'         => $mealStock,
                     'husk_stock'         => $huskStock,
-                    'boiler_husk'        => 294.17,
+                    'boiler_husk'        => 363.31,
                 ]
             ],
             'season_total' => [
