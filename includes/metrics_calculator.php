@@ -292,48 +292,49 @@ class MetricsCalculator {
     private function getPeriodDateFilter(string $period): string {
         switch ($period) {
             case 'day_today':
-                return "date(recorded_at) = '2026-10-12'";
+                return "date(recorded_at) = '2026-10-15'";
             case 'day_prev':
+                return "date(recorded_at) = '2026-10-14'";
             case 'day':
-                return "date(recorded_at) = '2026-10-11'";
+                return "date(recorded_at) = '2026-10-15'";
             case 'day_active':
-                return "date(recorded_at) = '2026-10-06'";
+                return "date(recorded_at) = '2026-10-15'";
             case 'shift':
                 return "recorded_at >= datetime('now', '-12 hours', 'localtime')";
             case 'week':
-                return "date(recorded_at) >= '2026-10-05' AND date(recorded_at) <= '2026-10-11'";
+                return "date(recorded_at) >= '2026-10-09' AND date(recorded_at) <= '2026-10-15'";
             case 'month_aug':
                 return "recorded_at >= '2026-08-01 08:00:00' AND recorded_at < '2026-09-01 08:00:00'";
             case 'month_sep':
                 return "recorded_at >= '2026-09-01 08:00:00' AND recorded_at < '2026-10-01 08:00:00'";
             case 'month_oct':
             case 'month':
-                return "recorded_at >= '2026-10-01 08:00:00' AND recorded_at < '2026-10-13 08:00:00'";
+                return "recorded_at >= '2026-10-01 08:00:00' AND recorded_at < '2026-10-16 08:00:00'";
             case 'season':
                 return "recorded_at >= '2026-08-01 08:00:00' AND recorded_at < '2027-08-01 08:00:00'";
             default:
-                return "date(recorded_at) = '2026-10-11'";
+                return "date(recorded_at) = '2026-10-15'";
         }
     }
 
     private function getPeriodLabel(string $period): string {
         $semenaStats = $this->getSemenaPeriodStats($period);
-        $lastDate = $semenaStats['last_date'] ?? '12.10.2026';
-        $seedIn = isset($semenaStats['seed_in_plant']) ? number_format($semenaStats['seed_in_plant'], 2, ',', ' ') : '471,85';
+        $lastDate = $semenaStats['last_date'] ?? '15.10.2026';
+        $seedIn = isset($semenaStats['seed_in_plant']) ? number_format($semenaStats['seed_in_plant'], 2, ',', ' ') : '436,53';
 
         switch ($period) {
-            case 'day_today':  return "Сьогодні (14.10.2026)";
-            case 'day_prev':   return "Минула доба (12.10.2026 — 0 т переробка)";
-            case 'day_active': return 'Остання доба переробки (13.10.2026 — 521,0 т)';
-            case 'shift':      return 'Поточна зміна (12 год • 260,5 т переробка)';
-            case 'week':       return 'За тиждень (2 доби переробки • 644,3 т)';
+            case 'day_today':  return "Сьогодні (16.10.2026)";
+            case 'day_prev':   return "Минула доба (14.10.2026 — 596,8 т переробка)";
+            case 'day_active': return 'Остання доба переробки (15.10.2026 — 309,0 т)';
+            case 'shift':      return 'Поточна зміна (12 год • 154,5 т переробка)';
+            case 'week':       return 'За тиждень (3 доби переробки • 1 526,8 т)';
             case 'month_aug':  return 'Серпень 2026 (0 діб переробки з 31 • ППР)';
             case 'month_sep':  return 'Вересень 2026 (працював 16 діб: 15.09–30.09 з 30)';
             case 'month_oct':
-            case 'month':      return 'Жовтень 2026 (працював 8 діб • 4 167,3 т перероблено)';
-            case 'season':     return 'Сезон 2026–2027 (01.08.2026 — 01.08.2027 • 24 доби переробки)';
+            case 'month':      return 'Жовтень 2026 (працював 10 діб • 5 073,1 т перероблено)';
+            case 'season':     return 'Сезон 2026–2027 (01.08.2026 — 01.08.2027 • 26 діб переробки)';
             case 'day':
-            default:           return "За добу 13.10.2026 (521,0 т перероблено • 210,4 т олії)";
+            default:           return "За добу 15.10.2026 (309,0 т перероблено • 149,3 т олії)";
         }
     }
 
@@ -345,31 +346,20 @@ class MetricsCalculator {
         // План приймання на добу = 600,0 т
         $verifiedPeriods = [
             'day_today' => [
-                // 14.10.2026: переробка на паузі
-                'seed_in_plant' => 563.57,
-                'trucks_count'  => 23,
-                'seed_in_prod'  => 0.00,
-                'cond_loss'     => 0.00,
-                'cond_loss_pct' => 0.00,
-                'oil_out'       => 0.00,
-                'meal_out'      => 0.00,
-                'husk_out'      => 0.00,
-                'seed_plan'     => 600.0,
+                // 15.10.2026 / 16.10.2026: прийомка 436,527 т, переробка 308,979 т
+                'seed_in_plant'    => 436.527,
+                'trucks_count'     => 17,
+                'seed_in_prod'     => 308.979,
+                'seed_in_prod_raw' => 313.551,
+                'cond_loss'        => 4.572,
+                'cond_loss_pct'    => 1.46,
+                'oil_out'          => 149.278,
+                'meal_out'         => 156.141,
+                'husk_out'         => 45.937,
+                'seed_plan'        => 600.0,
             ],
             'day_prev' => [
-                // 12.10.2026: прийомка 465,77 т з плану 600,0 т, переробка МЕЗ стояла (0,00 т)
-                'seed_in_plant' => 465.77,
-                'trucks_count'  => 18,
-                'seed_in_prod'  => 0.00,
-                'cond_loss'     => 0.00,
-                'cond_loss_pct' => 0.00,
-                'oil_out'       => 0.00,
-                'meal_out'      => 0.00,
-                'husk_out'      => 0.00,
-                'seed_plan'     => 600.0,
-            ],
-            'day' => [
-                // 14.10.2026: прийомка 318,66 т (13 авто), неочищене насіння у переробку 602,122 т (Ежедн.отчет2), очищене 596,805 т (довідка МЕЗ), вихід олії 256,489 т (42.98%), шроту 248,786 т (41.69%), лузги 87,020 т (14.58%)
+                // 14.10.2026: прийомка 318,66 т з плану 600,0 т, переробка 596,805 т
                 'seed_in_plant'    => 318.66,
                 'trucks_count'     => 13,
                 'seed_in_prod'     => 596.805,
@@ -379,39 +369,51 @@ class MetricsCalculator {
                 'oil_out'          => 256.489,
                 'meal_out'         => 248.786,
                 'husk_out'         => 87.020,
+                'seed_plan'        => 600.0,
+            ],
+            'day' => [
+                // 15.10.2026: прийомка 436,527 т (17 авто), неочищене насіння у переробку 313,551 т, очищене 308,979 т (довідка МЕЗ), вихід олії 149,278 т (48.31%), шроту 156,141 т (50.53%), лузги 45,937 т (14.87%)
+                'seed_in_plant'    => 436.527,
+                'trucks_count'     => 17,
+                'seed_in_prod'     => 308.979,
+                'seed_in_prod_raw' => 313.551,
+                'cond_loss'        => 4.572,
+                'cond_loss_pct'    => 1.46,
+                'oil_out'          => 149.278,
+                'meal_out'         => 156.141,
+                'husk_out'         => 45.937,
                 'seed_plan'        => 600.0,
             ],
             'day_active' => [
-                'seed_in_plant'    => 318.66,
-                'trucks_count'     => 13,
-                'seed_in_prod'     => 596.805,
-                'seed_in_prod_raw' => 602.122,
-                'cond_loss'        => 5.317,
-                'cond_loss_pct'    => 0.88,
-                'oil_out'          => 256.489,
-                'meal_out'         => 248.786,
-                'husk_out'         => 87.020,
+                'seed_in_plant'    => 436.527,
+                'trucks_count'     => 17,
+                'seed_in_prod'     => 308.979,
+                'seed_in_prod_raw' => 313.551,
+                'cond_loss'        => 4.572,
+                'cond_loss_pct'    => 1.46,
+                'oil_out'          => 149.278,
+                'meal_out'         => 156.141,
+                'husk_out'         => 45.937,
                 'seed_plan'        => 600.0,
             ],
             'shift' => [
-                'seed_in_plant' => 281.32,
-                'seed_in_prod'  => 260.50,
-                'cond_loss'     => 4.11,
-                'cond_loss_pct' => 1.55,
-                'oil_out'       => 105.21,
-                'meal_out'      => 90.47,
-                'husk_out'      => 38.19,
+                'seed_in_plant' => 218.26,
+                'seed_in_prod'  => 154.49,
+                'cond_loss'     => 2.29,
+                'cond_loss_pct' => 1.46,
+                'oil_out'       => 74.64,
+                'meal_out'      => 78.07,
+                'husk_out'      => 22.97,
                 'seed_plan'     => 300.0,
             ],
             'week' => [
-                // Тиждень 07.10 — 13.10: переробка 07.10 (123,4 т) + 13.10 (521,0 т) = 644,3 т
-                'seed_in_plant' => 3120.45,
-                'seed_in_prod'  => 644.35,
-                'cond_loss'     => 10.39,
-                'cond_loss_pct' => 1.59,
-                'oil_out'       => 279.86,
-                'meal_out'      => 267.64,
-                'husk_out'      => 95.31,
+                'seed_in_plant' => 3875.60,
+                'seed_in_prod'  => 1526.77,
+                'cond_loss'     => 20.28,
+                'cond_loss_pct' => 1.31,
+                'oil_out'       => 685.63,
+                'meal_out'      => 653.71,
+                'husk_out'      => 228.27,
                 'seed_plan'     => 4200.0,
             ],
             'month_aug' => [
@@ -437,36 +439,36 @@ class MetricsCalculator {
                 'seed_plan'     => 18000.0,
             ],
             'month_oct' => [
-                // Жовтень 2026 (01.10 — 13.10 з «ОКТЯБРЬ 2026»): 8 діб переробки, 4 167,34 т перероблено, 1 856,57 т олії (44.55%), 1 702,62 т шроту (40.86%), 631,25 т лузги (15.15%)
-                'seed_in_plant' => 7090.84,
-                'seed_in_prod'  => 4167.34,
-                'cond_loss'     => 63.24,
-                'cond_loss_pct' => 1.50,
-                'oil_out'       => 1856.57,
-                'meal_out'      => 1702.62,
-                'husk_out'      => 631.25,
-                'seed_plan'     => 7800.0,
+                // Жовтень 2026 (01.10 — 15.10 з «ОКТЯБРЬ 2026»): 10 діб переробки, 5 073,13 т перероблено, 2 262,33 т олії (44.59%), 2 107,55 т шроту (41.54%), 764,21 т лузги (15.06%)
+                'seed_in_plant' => 7838.25,
+                'seed_in_prod'  => 5073.13,
+                'cond_loss'     => 73.13,
+                'cond_loss_pct' => 1.44,
+                'oil_out'       => 2262.33,
+                'meal_out'      => 2107.55,
+                'husk_out'      => 764.21,
+                'seed_plan'     => 9000.0,
             ],
             'month' => [
-                'seed_in_plant' => 7090.84,
-                'seed_in_prod'  => 4167.34,
-                'cond_loss'     => 63.24,
-                'cond_loss_pct' => 1.50,
-                'oil_out'       => 1856.57,
-                'meal_out'      => 1702.62,
-                'husk_out'      => 631.25,
-                'seed_plan'     => 7800.0,
+                'seed_in_plant' => 7838.25,
+                'seed_in_prod'  => 5073.13,
+                'cond_loss'     => 73.13,
+                'cond_loss_pct' => 1.44,
+                'oil_out'       => 2262.33,
+                'meal_out'      => 2107.55,
+                'husk_out'      => 764.21,
+                'seed_plan'     => 9000.0,
             ],
             'season' => [
-                // Сезон 2026–2027 разом (Вересень + Жовтень 13 діб): 24 доби переробки • 12 991,00 т перероблено • 5 668,22 т олії • 5 385,83 т шроту • 1 892,48 т лузги
-                'seed_in_plant' => 26376.34,
-                'seed_in_prod'  => 12991.00,
-                'cond_loss'     => 157.99,
-                'cond_loss_pct' => 1.20,
-                'oil_out'       => 5668.22,
-                'meal_out'      => 5385.83,
-                'husk_out'      => 1892.48,
-                'seed_plan'     => 26400.0,
+                // Сезон 2026–2027 разом (Вересень + Жовтень 15 діб): 26 діб переробки • 13 896,79 т перероблено • 6 073,99 т олії • 5 790,76 т шроту • 2 025,44 т лузги
+                'seed_in_plant' => 27123.75,
+                'seed_in_prod'  => 13896.79,
+                'cond_loss'     => 167.87,
+                'cond_loss_pct' => 1.21,
+                'oil_out'       => 6073.99,
+                'meal_out'      => 5790.76,
+                'husk_out'      => 2025.44,
+                'seed_plan'     => 27000.0,
             ],
         ];
 
@@ -1365,20 +1367,20 @@ class MetricsCalculator {
      */
     private function loadLiveSvodStocks(): array {
         $defaults = [
-            'seed_stock_tonnes'            => 12857.66,
-            'seed_stock_accounting_tonnes' => 13310.97,
-            'seed_received_tonnes'         => 318.66,
-            'oil_stock_tonnes'             => 3650.10,
-            'oil_shipped_tonnes'           => 26.44,
-            'meal_stock_tonnes'            => 674.86,
-            'meal_shipped_tonnes'          => 282.40,
-            'husk_stock_tonnes'            => 166.77,
-            'husk_shipped_tonnes'          => 29.50,
-            'month_oil_shipped_tonnes'     => 1070.26,
-            'month_meal_shipped_tonnes'    => 2712.72,
-            'month_husk_shipped_tonnes'    => 533.82,
-            'sheet_title'                  => '14 число',
-            'updated_at'                   => '14.10.2026',
+            'seed_stock_tonnes'            => 12980.63,
+            'seed_stock_accounting_tonnes' => 13659.62,
+            'seed_received_tonnes'         => 436.53,
+            'oil_stock_tonnes'             => 3495.72,
+            'oil_shipped_tonnes'           => 303.46,
+            'meal_stock_tonnes'            => 705.88,
+            'meal_shipped_tonnes'          => 125.12,
+            'husk_stock_tonnes'            => 162.67,
+            'husk_shipped_tonnes'          => 25.50,
+            'month_oil_shipped_tonnes'     => 1503.32,
+            'month_meal_shipped_tonnes'    => 3115.14,
+            'month_husk_shipped_tonnes'    => 572.76,
+            'sheet_title'                  => '15 число',
+            'updated_at'                   => '15.10.2026',
         ];
 
         $svodJsonPath = __DIR__ . '/../database/svod_stocks.json';
@@ -1550,14 +1552,14 @@ class MetricsCalculator {
      * Повертає актуальні зведені показники переробки за Жовтень 2026 та Сезон 2026-2027 з бази даних
      */
     public function getHistoricalSeasonMetrics(): array {
-        $octSeedProc = 3646.35;
-        $octOilOut   = 1646.15;
-        $octMealOut  = 1521.68;
-        $octHuskOut  = 554.87;
-        $octWorkDays = 7;
+        $octSeedProc = 5073.13;
+        $octOilOut   = 2262.33;
+        $octMealOut  = 2107.55;
+        $octHuskOut  = 764.21;
+        $octWorkDays = 10;
         $octFirstD   = '01.10';
-        $octLastD    = '07.10';
-        $octElapsedDays = 12;
+        $octLastD    = '15.10';
+        $octElapsedDays = 15;
 
         try {
             $stmt = $this->db->query("
@@ -3191,9 +3193,9 @@ class MetricsCalculator {
             case 'month_oct':
                 $seedProc = $dOct['seed_processed'];
                 $seedPlan = $dOct['working_days'] * 600.0;
-                $oil = 44.49;
-                $oilAsr = 48.30;
-                $moist = 6.17;
+                $oil = 45.30;
+                $oilAsr = 49.11;
+                $moist = 6.18;
                 return [
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
@@ -3203,10 +3205,10 @@ class MetricsCalculator {
                     'oil_loss_pct'                => $defaultOilLossPct,
                     'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
                     'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
-                    'oil_date'                    => '13.10',
-                    'oil_note'                    => 'Фактична товарна олійність за 13.10 як у звіті МЕЗ',
+                    'oil_date'                    => '15.10',
+                    'oil_note'                    => 'Фактична товарна олійність за 15.10 як у звіті МЕЗ',
                     'moisture_pct'                => $moist,
-                    'impurity_pct'                => 1.62,
+                    'impurity_pct'                => 1.71,
                     'seed_processed_tonnes'       => $seedProc,
                     'seed_plan_tonnes'            => $seedPlan,
                     'plan_fulfillment_pct'        => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
@@ -3219,19 +3221,19 @@ class MetricsCalculator {
             case 'day_today':
             case 'shift':
             default:
-                $seedProc = 596.81;
+                $seedProc = 308.98;
                 $seedPlan = 600.0;
-                $oil = 44.49; // Товарна олійність за 13.10 (як у звіті)
-                $oilAsr = 48.30; // а.с.р. за 13.10 (як у звіті)
-                $oilDateStr = '13.10';
-                $moist = 6.00;
-                $imp = 2.00;
-                $repDateStr = '14.10.2026';
+                $oil = 45.30; // Товарна олійність за 15.10
+                $oilAsr = 48.35; // а.с.р. за 15.10
+                $oilDateStr = '15.10';
+                $moist = 6.30;
+                $imp = 1.96;
+                $repDateStr = '15.10.2026';
 
                 try {
                     $stmt = null;
                     if ($p === 'day_today') {
-                        $stmt = $this->db->query("SELECT * FROM material_balance_logs WHERE recorded_at >= '2026-10-14 00:00:00' ORDER BY (seed_in_production > 0) DESC, recorded_at DESC, id DESC LIMIT 1");
+                        $stmt = $this->db->query("SELECT * FROM material_balance_logs WHERE recorded_at >= '2026-10-15 00:00:00' ORDER BY (seed_in_production > 0) DESC, recorded_at DESC, id DESC LIMIT 1");
                     } else {
                         // Для 'day' та 'day_active' беремо останню активну добу переробки з бази даних
                         $stmt = $this->db->query("SELECT * FROM material_balance_logs WHERE seed_in_production > 0 ORDER BY recorded_at DESC, id DESC LIMIT 1");
@@ -3242,7 +3244,7 @@ class MetricsCalculator {
                         $repDateStr = !empty($latestMb['report_date']) ? $latestMb['report_date'] : date('d.m.Y', strtotime($latestMb['recorded_at']));
                     }
 
-                    // Перевіряємо фактичну якість: якщо на поточну добу (14.10) ще немає олійності в звіті, беремо фактичну товарну за 13.10 (44.49%)
+                    // Перевіряємо фактичну якість
                     $dateIso = date('Y-m-d', strtotime(str_replace('.', '-', $repDateStr)));
                     $chkLab = $this->db->prepare("SELECT oil_content_pct, moisture_pct, impurity_pct, report_date FROM lab_quality_logs WHERE (report_date = ? OR recorded_at LIKE ?) AND oil_content_pct > 10 ORDER BY id DESC LIMIT 1");
                     $chkLab->execute([$repDateStr, "{$dateIso}%"]);
@@ -3254,10 +3256,9 @@ class MetricsCalculator {
                         if ((float)($labRow['impurity_pct'] ?? 0) > 0) $imp = (float)$labRow['impurity_pct'];
                         $oilAsr = round($oil / (1 - ($moist / 100)), 2);
                     } else {
-                        // За 14.10 в довідці аналізу ще немає, тому фіксуємо товарну олійність за 13.10 (44.49% та а.с.р. 48.30%)
-                        $oil = 44.49;
-                        $oilAsr = 48.30;
-                        $oilDateStr = '13.10';
+                        $oil = 45.30;
+                        $oilAsr = 48.35;
+                        $oilDateStr = '15.10';
                     }
                 } catch (Throwable $e) {}
 

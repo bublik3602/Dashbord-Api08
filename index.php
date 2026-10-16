@@ -101,12 +101,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-select-wrapper">
                     <select id="select-other-months" class="month-dropdown-select" title="Обрати інший місяць або період">
                         <option value="" disabled selected>📅 Інші періоди / місяці...</option>
-                        <option value="day_active">⚡ Остання доба переробки (<?= htmlspecialchars(substr($prodLab['report_date'] ?? '14.10', 0, 5)) ?> — <?= number_format($prodLab['seed_processed_tonnes'] ?? 596.8, 1, ',', ' ') ?> т перероблено)</option>
-                        <option value="month_oct">Жовтень 2026 (працював <?= $mOct['working_days'] ?? 9 ?> діб з <?= $mOct['days_count'] ?? 14 ?> • <?= number_format($mOct['seed_processed'] ?? 4764.15, 1, ',', ' ') ?> т)</option>
+                        <option value="day_active">⚡ Остання доба переробки (<?= htmlspecialchars(substr($prodLab['report_date'] ?? '15.10', 0, 5)) ?> — <?= number_format($prodLab['seed_processed_tonnes'] ?? 308.98, 1, ',', ' ') ?> т перероблено)</option>
+                        <option value="month_oct">Жовтень 2026 (працював <?= $mOct['working_days'] ?? 10 ?> діб з <?= $mOct['days_count'] ?? 15 ?> • <?= number_format($mOct['seed_processed'] ?? 5073.13, 1, ',', ' ') ?> т)</option>
                         <option value="month_sep">Вересень 2026 (працював 16 діб з 30 • 8 823,7 т)</option>
                         <option value="month_aug">Серпень 2026 (0 діб переробки, ППР)</option>
-                        <option value="season">Сезон 2026–2027 (<?= $seasonTot['working_days'] ?? 25 ?> діб переробки • <?= number_format($seasonTot['seed_processed'] ?? 13587.81, 1, ',', ' ') ?> т)</option>
-                        <option value="day_prev">Минула доба (13.10 — перероблено 521,0 т)</option>
+                        <option value="season">Сезон 2026–2027 (<?= $seasonTot['working_days'] ?? 26 ?> діб переробки • <?= number_format($seasonTot['seed_processed'] ?? 13896.79, 1, ',', ' ') ?> т)</option>
+                        <option value="day_prev">Минула доба (14.10 — перероблено 596,8 т)</option>
                         <option value="day_today">Сьогодні (поточний оперативний стан)</option>
                     </select>
                 </div>
@@ -160,8 +160,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     $pInfo = $dashboardData['period_info'] ?? [];
     $activeRangeText = $pInfo['range_display'] ?? ("Виробнича доба (" . $bounds['label'] . ", з 08:00 до 08:00)");
     $labDate = $lab['report_date'] ?? '11.10.2026 (Лист погодження — по днях)';
-    $prodLabDate = $prodLab['report_date'] ?? '13.10.2026 (Звіт виробництва)';
-    $stocksDate = $stocks['report_date'] ?? 'Ежедн.отчет2 (14 число)';
+    $prodLabDate = $prodLab['report_date'] ?? '15.10.2026 (Звіт виробництва)';
+    $stocksDate = $stocks['report_date'] ?? 'Ежедн.отчет2 (15 число)';
     ?>
     <div class="active-period-banner" id="active-period-banner">
         <div class="banner-left">
@@ -369,12 +369,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="gauge-card">
                 <div class="gauge-header">
                     <span class="gauge-title">🧪 Товарна олійність у переробку</span>
-                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-asr">за <?= htmlspecialchars($prodLab['oil_date'] ?? '13.10') ?> • <?= number_format($prodLab['oil_content_pct'] ?? 44.49, 2, ',', ' ') ?>%</span>
+                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-asr">за <?= htmlspecialchars($prodLab['oil_date'] ?? '15.10') ?> • <?= number_format($prodLab['oil_content_pct'] ?? 45.30, 2, ',', ' ') ?>%</span>
                 </div>
                 <div id="chart-gauge-prod-oil" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
-                    <div class="gauge-sub" id="val-prod-oil-asr">Товарна олійність (за <?= htmlspecialchars($prodLab['oil_date'] ?? '13.10') ?>): <strong><?= number_format($prodLab['oil_content_pct'] ?? 44.49, 2, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 48.30, 2, ',', ' ') ?>%)</div>
-                    <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична товарна олійність за 13.10 як у звіті МЕЗ') ?> • Справка по переработке</div>
+                    <div class="gauge-sub" id="val-prod-oil-asr">Товарна олійність (за <?= htmlspecialchars($prodLab['oil_date'] ?? '15.10') ?>): <strong><?= number_format($prodLab['oil_content_pct'] ?? 45.30, 2, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 48.35, 2, ',', ' ') ?>%)</div>
+                    <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична товарна олійність за 15.10 як у звіті МЕЗ') ?> • Справка по переработке</div>
                 </div>
             </div>
 
