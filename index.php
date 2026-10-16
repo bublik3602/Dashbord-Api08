@@ -916,6 +916,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 <tr>
                                     <th>Вузол обліку води / стоків</th>
                                     <th>Відповідальний</th>
+                                    <th>Серпень (м³)</th>
                                     <th>Вересень (м³ / доб.)</th>
                                     <th>Жовтень</th>
                                     <th>Разом (м³)</th>
@@ -927,6 +928,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 <tr>
                                     <td class="bold"><?= htmlspecialchars($wm['node']) ?></td>
                                     <td><span class="kpi-badge badge-blue" style="font-size: 10px; padding: 2px 6px;"><?= htmlspecialchars($wm['responsible']) ?></span></td>
+                                    <td class="bold" style="color: #0d9488;"><?= isset($wm['aug_m3']) && $wm['aug_m3'] > 0 ? number_format($wm['aug_m3'], 0, ',', ' ') : '—' ?></td>
                                     <td><strong><?= number_format($wm['sep_m3'], 0, ',', ' ') ?></strong> <span style="color:#64748b;">(<?= number_format($wm['sep_daily'], 1, ',', '') ?>/д)</span></td>
                                     <td><?= $wm['oct_m3'] !== null ? ('<strong style="color: #059669;">' . number_format($wm['oct_m3'], 0, ',', ' ') . '</strong> <span style="color:#64748b;">(' . number_format($wm['oct_daily'], 1, ',', '') . '/д)</span>') : '<span style="color: #94a3b8; font-style: italic;">Немає даних</span>' ?></td>
                                     <td class="bold" style="color: #0284c7;"><?= number_format($wm['season_m3'], 0, ',', ' ') ?></td>
@@ -938,11 +940,11 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                 </details>
 
-                <!-- Таблиця 3: Помісячне зведення енергоносіїв за 12 місяців -->
+                <!-- Таблиця 3: Помісячне зведення енергоносіїв з 2025 по 2026 рр. -->
                 <details class="season-monthly-details">
                     <summary>
-                        <span><i data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Річний баланс: Електроенергія, Вода, Газ та Каналізація (12 місяців)</span>
-                        <span style="font-size: 11px; color: #64748b;">Січень — Грудень</span>
+                        <span><i data-lucide="calendar" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;"></i> Баланс енергоносіїв: Електроенергія, Вода, Газ та Каналізація (2025–2026 рр.)</span>
+                        <span style="font-size: 11px; color: #64748b;">Жовтень 2025 — Вересень 2026</span>
                     </summary>
                     <div class="season-monthly-table-wrap">
                         <table class="data-table-clean" style="font-size: 11px;">
