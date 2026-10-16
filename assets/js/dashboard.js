@@ -315,9 +315,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- Блок: Лабораторія якості - Подача на переробку (МЕЗ) ---
         if (data.production_lab_quality) {
             const plq = data.production_lab_quality;
-            const oilDate = plq.oil_date || '13.10';
-            const oilVal = (plq.oil_content_pct !== undefined && plq.oil_content_pct > 0) ? plq.oil_content_pct : 44.49;
-            const oilAsrVal = (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) ? plq.oil_asr_pct : 48.30;
+            const oilDate = plq.oil_date || '14.10';
+            const oilVal = (plq.oil_content_pct !== undefined && plq.oil_content_pct > 0) ? plq.oil_content_pct : 44.03;
+            const oilAsrVal = (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) ? plq.oil_asr_pct : 47.99;
 
             const oilLossKg = plq.oil_loss_kg !== undefined ? plq.oil_loss_kg : 41258;
             const oilLossPct = plq.oil_loss_pct !== undefined ? plq.oil_loss_pct : 0.81;
@@ -344,7 +344,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Оновлення таблиці балансу виходу продукції та втрат олії
             setElementText('#badge-prod-oil-balance-date', `за ${oilDate} • Справка по переработке`);
-            setElementText('#table-sunflower-oil', `${formatNumber(plq.sunflower_oil_pct !== undefined ? plq.sunflower_oil_pct : 45.3, 1)}%`);
+            setElementText('#table-sunflower-oil', `${formatNumber(plq.sunflower_oil_pct !== undefined ? plq.sunflower_oil_pct : 44.03, 2)}%`);
             setElementText('#table-yield-oil', `${formatNumber(plq.yield_oil_pct !== undefined ? plq.yield_oil_pct : 44.59, 2)}%`);
             setElementText('#table-yield-meal', `${formatNumber(plq.yield_meal_pct !== undefined ? plq.yield_meal_pct : 41.54, 2)}%`);
             setElementText('#table-meal-oil', `${formatNumber(plq.meal_oil_pct !== undefined ? plq.meal_oil_pct : 0.77, 2)}%`);

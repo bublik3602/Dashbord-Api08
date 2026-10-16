@@ -769,7 +769,7 @@ window.FactoryCharts = {
         // 1. Олійність на переробку
         const elProdOil = document.querySelector("#chart-gauge-prod-oil");
         if (elProdOil) {
-            const prodOilVal = parseFloat(prodLabData.oil_content_pct !== undefined ? prodLabData.oil_content_pct : 44.49);
+            const prodOilVal = parseFloat(prodLabData.oil_content_pct !== undefined ? prodLabData.oil_content_pct : 44.03);
             const prodOilColor = '#f59e0b';
             this.gaugeProdOilChart = new ApexCharts(elProdOil, makeGaugeOptions(prodOilVal, 30, 60, prodOilColor, 2));
             this.gaugeProdOilChart.render();
