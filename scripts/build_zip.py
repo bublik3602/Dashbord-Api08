@@ -31,7 +31,8 @@ def create_archive():
     exclude_extensions = ['.pyc', '.git', '.tmp', '.log', '.txt', '.sqlite', '.sqlite-journal']
     exclude_files = [
         'hestiacp_dashboard_zavod.zip',
-        'dashboard_demo.sqlite'
+        'dashboard_demo.sqlite',
+        'inspect_db.py'
     ]
     
     with zipfile.ZipFile(zip_path, 'w', compression=zipfile.ZIP_DEFLATED) as z:

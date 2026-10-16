@@ -923,21 +923,22 @@ class MetricsCalculator {
                 // Видаляємо старі тестові демо-рядки жовтня без вказаного report_date
                 $dbConn->exec("DELETE FROM energy_readings WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-12 23:59:59' AND (report_date IS NULL OR report_date = '')");
 
-                if (empty($manualEntries)) {
-                    $stmt = $dbConn->query("
-                        SELECT recorded_at, report_date, power_kw, power_kwh_delta, water_m3_delta, steam_pressure_bar, reactive_kvarh
-                        FROM energy_readings
-                        WHERE (report_date IS NOT NULL AND report_date != '')
-                          AND (power_kwh_delta > 0 OR water_m3_delta > 0)
-                        ORDER BY report_date ASC
-                    ");
-                    if ($stmt) {
-                        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                        foreach ($rows as $r) {
-                            $d = trim((string)$r['report_date']);
-                            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
-                                continue;
-                            }
+                $stmt = $dbConn->query("
+                    SELECT recorded_at, report_date, power_kw, power_kwh_delta, water_m3_delta, steam_pressure_bar, reactive_kvarh
+                    FROM energy_readings
+                    WHERE (report_date IS NOT NULL AND report_date != '')
+                      AND (power_kwh_delta > 0 OR water_m3_delta > 0 OR reactive_kvarh > 0)
+                    ORDER BY report_date ASC
+                ");
+                if ($stmt) {
+                    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    $hasDbUpdates = false;
+                    foreach ($rows as $r) {
+                        $d = trim((string)$r['report_date']);
+                        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                            continue;
+                        }
+                        if (!isset($manualEntries[$d])) {
                             $manualEntries[$d] = [
                                 'date'               => $d,
                                 'power_kwh'          => (float)$r['power_kwh_delta'] > 0 ? (float)$r['power_kwh_delta'] : null,
@@ -949,21 +950,25 @@ class MetricsCalculator {
                                 'author'             => 'energo',
                                 'updated_at'         => $r['recorded_at'],
                             ];
-                        }
-                        if (!empty($manualEntries)) {
-                            ksort($manualEntries);
-                            @file_put_contents($manualFile, json_encode($manualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+                            $hasDbUpdates = true;
+                        } else {
+                            // Якщо енергетик вніс електроенергію через веб-інтерфейс, зберігаємо її пріоритетно
+                            if ((float)$r['power_kwh_delta'] > 0 && ($manualEntries[$d]['power_kwh'] === null || (float)$manualEntries[$d]['power_kwh'] <= 0)) {
+                                $manualEntries[$d]['power_kwh'] = (float)$r['power_kwh_delta'];
+                                $hasDbUpdates = true;
+                            }
+                            if ((float)$r['reactive_kvarh'] > 0 && ($manualEntries[$d]['reactive_kvarh'] === null || (float)$manualEntries[$d]['reactive_kvarh'] <= 0)) {
+                                $manualEntries[$d]['reactive_kvarh'] = (float)$r['reactive_kvarh'];
+                                $hasDbUpdates = true;
+                            }
+                            if ((float)$r['water_m3_delta'] > 0 && empty($manualEntries[$d]['water_m3'])) {
+                                $manualEntries[$d]['water_m3'] = (float)$r['water_m3_delta'];
+                                $hasDbUpdates = true;
+                            }
                         }
                     }
-                } else {
-                    $cleaned = false;
-                    foreach ($manualEntries as $kDate => $kVal) {
-                        if (($kVal['note'] ?? '') === 'Відновлено з бази даних' && $kDate <= '2026-10-12') {
-                            unset($manualEntries[$kDate]);
-                            $cleaned = true;
-                        }
-                    }
-                    if ($cleaned) {
+                    if ($hasDbUpdates) {
+                        ksort($manualEntries);
                         @file_put_contents($manualFile, json_encode($manualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
                     }
                 }

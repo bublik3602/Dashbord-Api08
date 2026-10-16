@@ -58,21 +58,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             // Очищення старих демо-рядків жовтня без report_date
             $db->exec("DELETE FROM energy_readings WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-12 23:59:59' AND (report_date IS NULL OR report_date = '')");
 
-            if (empty($entries)) {
-                $stmt = $db->query("
-                    SELECT recorded_at, report_date, power_kw, power_kwh_delta, water_m3_delta, steam_pressure_bar, reactive_kvarh
-                    FROM energy_readings
-                    WHERE (report_date IS NOT NULL AND report_date != '')
-                      AND (power_kwh_delta > 0 OR water_m3_delta > 0)
-                    ORDER BY report_date DESC LIMIT 31
-                ");
-                if ($stmt) {
-                    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                    foreach ($rows as $r) {
-                        $d = trim((string)$r['report_date']);
-                        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
-                            continue;
-                        }
+            $stmt = $db->query("
+                SELECT recorded_at, report_date, power_kw, power_kwh_delta, water_m3_delta, steam_pressure_bar, reactive_kvarh
+                FROM energy_readings
+                WHERE (report_date IS NOT NULL AND report_date != '')
+                  AND (power_kwh_delta > 0 OR water_m3_delta > 0 OR reactive_kvarh > 0)
+                ORDER BY report_date DESC LIMIT 31
+            ");
+            if ($stmt) {
+                $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $hasDbUpdates = false;
+                foreach ($rows as $r) {
+                    $d = trim((string)$r['report_date']);
+                    if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                        continue;
+                    }
+                    if (!isset($entries[$d])) {
                         $entries[$d] = [
                             'date'               => $d,
                             'power_kwh'          => (float)$r['power_kwh_delta'] > 0 ? (float)$r['power_kwh_delta'] : null,
@@ -84,20 +85,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                             'author'             => 'energo',
                             'updated_at'         => $r['recorded_at'],
                         ];
-                    }
-                    if (!empty($entries)) {
-                        saveEnergyEntries($dataFile, $entries);
+                        $hasDbUpdates = true;
+                    } else {
+                        if ((float)$r['power_kwh_delta'] > 0 && ($entries[$d]['power_kwh'] === null || (float)$entries[$d]['power_kwh'] <= 0)) {
+                            $entries[$d]['power_kwh'] = (float)$r['power_kwh_delta'];
+                            $hasDbUpdates = true;
+                        }
+                        if ((float)$r['reactive_kvarh'] > 0 && ($entries[$d]['reactive_kvarh'] === null || (float)$entries[$d]['reactive_kvarh'] <= 0)) {
+                            $entries[$d]['reactive_kvarh'] = (float)$r['reactive_kvarh'];
+                            $hasDbUpdates = true;
+                        }
+                        if ((float)$r['water_m3_delta'] > 0 && empty($entries[$d]['water_m3'])) {
+                            $entries[$d]['water_m3'] = (float)$r['water_m3_delta'];
+                            $hasDbUpdates = true;
+                        }
                     }
                 }
-            } else {
-                $cleaned = false;
-                foreach ($entries as $kDate => $kVal) {
-                    if (($kVal['note'] ?? '') === 'Відновлено з бази даних' && $kDate <= '2026-10-12') {
-                        unset($entries[$kDate]);
-                        $cleaned = true;
-                    }
-                }
-                if ($cleaned) {
+                if ($hasDbUpdates) {
                     saveEnergyEntries($dataFile, $entries);
                 }
             }
