@@ -28,7 +28,7 @@ def create_archive():
     ]
     
     exclude_extensions = ['.pyc', '.git', '.tmp', '.log', '.txt']
-    exclude_files = ['hestiacp_dashboard_zavod.zip']
+    exclude_files = ['hestiacp_dashboard_zavod.zip', 'energy_manual_entries.json']
     
     with zipfile.ZipFile(zip_path, 'w', compression=zipfile.ZIP_DEFLATED) as z:
         for f in include_files:

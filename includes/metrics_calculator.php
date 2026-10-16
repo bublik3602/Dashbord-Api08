@@ -873,6 +873,45 @@ class MetricsCalculator {
             }
         }
 
+        // Якщо JSON порожній (наприклад, після оновлення архіву), спробувати відновити з БД
+        if (empty($manualEntries)) {
+            try {
+                $dbConn = $this->db ?? DashboardDB::getConnection();
+                if ($dbConn) {
+                    $stmt = $dbConn->query("
+                        SELECT recorded_at, report_date, power_kw, power_kwh_delta, water_m3_delta, steam_pressure_bar, reactive_kvarh
+                        FROM energy_readings
+                        WHERE (power_kwh_delta > 0 OR water_m3_delta > 0)
+                          AND (MONTH(recorded_at) = 10 OR report_date LIKE '2026-10-%')
+                        ORDER BY recorded_at ASC
+                    ");
+                    if ($stmt) {
+                        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                        foreach ($rows as $r) {
+                            $d = !empty($r['report_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $r['report_date'])
+                                ? $r['report_date']
+                                : date('Y-m-d', strtotime($r['recorded_at']));
+                            $manualEntries[$d] = [
+                                'date'               => $d,
+                                'power_kwh'          => (float)$r['power_kwh_delta'] > 0 ? (float)$r['power_kwh_delta'] : null,
+                                'water_m3'           => (float)$r['water_m3_delta'] > 0 ? (float)$r['water_m3_delta'] : null,
+                                'steam_t'            => null,
+                                'steam_pressure_bar' => (float)$r['steam_pressure_bar'] > 0 ? (float)$r['steam_pressure_bar'] : 11.2,
+                                'reactive_kvarh'     => (float)$r['reactive_kvarh'] > 0 ? (float)$r['reactive_kvarh'] : null,
+                                'note'               => 'Відновлено з бази даних',
+                                'author'             => 'energo',
+                                'updated_at'         => $r['recorded_at'],
+                            ];
+                        }
+                        if (!empty($manualEntries)) {
+                            ksort($manualEntries);
+                            @file_put_contents($manualFile, json_encode($manualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+                        }
+                    }
+                }
+            } catch (Throwable $dbEx) {}
+        }
+
         // Побудова timeline та добових рядків для Жовтня з ручних записів
         $tlLabels = [];
         $tlPower  = [];

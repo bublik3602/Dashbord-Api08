@@ -49,6 +49,42 @@ function saveEnergyEntries(string $file, array $entries): bool {
 // Обробка GET-запиту: повертає список останніх записів
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $entries = loadEnergyEntries($dataFile);
+
+    // Якщо файл порожній (наприклад, після перезаливки архіву), спробувати відновити з БД
+    if (empty($entries)) {
+        try {
+            $db = DashboardDB::getConnection();
+            if ($db) {
+                $stmt = $db->query("
+                    SELECT recorded_at, report_date, power_kw, power_kwh_delta, water_m3_delta, steam_pressure_bar, reactive_kvarh
+                    FROM energy_readings
+                    WHERE power_kwh_delta > 0 OR water_m3_delta > 0
+                    ORDER BY recorded_at DESC LIMIT 31
+                ");
+                if ($stmt) {
+                    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    foreach ($rows as $r) {
+                        $d = !empty($r['report_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $r['report_date']) ? $r['report_date'] : date('Y-m-d', strtotime($r['recorded_at']));
+                        $entries[$d] = [
+                            'date'               => $d,
+                            'power_kwh'          => (float)$r['power_kwh_delta'] > 0 ? (float)$r['power_kwh_delta'] : null,
+                            'water_m3'           => (float)$r['water_m3_delta'] > 0 ? (float)$r['water_m3_delta'] : null,
+                            'steam_t'            => null,
+                            'steam_pressure_bar' => (float)$r['steam_pressure_bar'] > 0 ? (float)$r['steam_pressure_bar'] : 11.2,
+                            'reactive_kvarh'     => (float)$r['reactive_kvarh'] > 0 ? (float)$r['reactive_kvarh'] : null,
+                            'note'               => 'Відновлено з бази даних',
+                            'author'             => 'energo',
+                            'updated_at'         => $r['recorded_at'],
+                        ];
+                    }
+                    if (!empty($entries)) {
+                        saveEnergyEntries($dataFile, $entries);
+                    }
+                }
+            }
+        } catch (Throwable $e) {}
+    }
+
     krsort($entries);
     echo json_encode([
         'status'  => 'success',
@@ -85,6 +121,13 @@ try {
         if (isset($entries[$date])) {
             unset($entries[$date]);
             saveEnergyEntries($dataFile, $entries);
+            try {
+                $db = DashboardDB::getConnection();
+                if ($db) {
+                    $delStmt = $db->prepare("DELETE FROM energy_readings WHERE report_date = ? OR DATE(recorded_at) = ?");
+                    $delStmt->execute([$date, $date]);
+                }
+            } catch (Throwable $e) {}
             echo json_encode([
                 'status'  => 'success',
                 'message' => "Показники за дату {$date} успішно видалено.",
@@ -172,21 +215,48 @@ try {
 
     // Спроба продублювати запис у таблицю energy_readings БД (якщо активна)
     try {
-        $db = Database::getInstance();
-        $calcPowerKw = $powerKwh !== null ? round($powerKwh / 24, 3) : 0.0;
-        $calcWaterFlow = $waterM3 !== null ? round($waterM3 / 24, 2) : 0.0;
-        $stmt = $db->prepare("
-            INSERT INTO energy_readings (recorded_at, power_kw, power_kwh_delta, water_flow_m3_hour, water_m3_delta, steam_pressure_bar)
-            VALUES (?, ?, ?, ?, ?, ?)
-        ");
-        $stmt->execute([
-            $date . ' 12:00:00',
-            $calcPowerKw,
-            $powerKwh ?? 0.0,
-            $calcWaterFlow,
-            $waterM3 ?? 0.0,
-            $steamPressureBar
-        ]);
+        $db = DashboardDB::getConnection();
+        if ($db) {
+            $calcPowerKw = $powerKwh !== null ? round($powerKwh / 24, 3) : 0.0;
+            $calcWaterFlow = $waterM3 !== null ? round($waterM3 / 24, 2) : 0.0;
+
+            $checkStmt = $db->prepare("SELECT id FROM energy_readings WHERE report_date = ? OR DATE(recorded_at) = ? LIMIT 1");
+            $checkStmt->execute([$date, $date]);
+            $existingRow = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($existingRow) {
+                $updStmt = $db->prepare("
+                    UPDATE energy_readings 
+                    SET power_kw = ?, power_kwh_delta = ?, reactive_kvarh = ?, water_flow_m3_hour = ?, water_m3_delta = ?, steam_pressure_bar = ?, recorded_at = ?
+                    WHERE id = ?
+                ");
+                $updStmt->execute([
+                    $calcPowerKw,
+                    $powerKwh ?? 0.0,
+                    $reactiveKvarh ?? 0.0,
+                    $calcWaterFlow,
+                    $waterM3 ?? 0.0,
+                    $steamPressureBar,
+                    $date . ' 20:00:00',
+                    $existingRow['id']
+                ]);
+            } else {
+                $insStmt = $db->prepare("
+                    INSERT INTO energy_readings (recorded_at, report_date, power_kw, power_kwh_delta, reactive_kvarh, water_flow_m3_hour, water_m3_delta, steam_pressure_bar)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ");
+                $insStmt->execute([
+                    $date . ' 20:00:00',
+                    $date,
+                    $calcPowerKw,
+                    $powerKwh ?? 0.0,
+                    $reactiveKvarh ?? 0.0,
+                    $calcWaterFlow,
+                    $waterM3 ?? 0.0,
+                    $steamPressureBar
+                ]);
+            }
+        }
     } catch (Throwable $dbErr) {
         // Локальний JSON вже надійно зберіг дані, помилка SQL не блокує користувача
     }
