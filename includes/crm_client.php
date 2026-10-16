@@ -149,6 +149,9 @@ class CRMClient {
             case 'month_sep':
                 $periodCondition = "MONTH(completed_at) = 9";
                 break;
+            case 'month_sep_2025':
+                $periodCondition = "YEAR(completed_at) = 2025 AND MONTH(completed_at) = 9";
+                break;
             case 'month_oct':
             case 'month':
                 $periodCondition = "MONTH(completed_at) = 10";

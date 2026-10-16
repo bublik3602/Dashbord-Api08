@@ -25,7 +25,7 @@ if (!Auth::check() || !Auth::hasAccess('dashboard')) {
 
 try {
     $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';
-    $validPeriods = ['shift', 'day', 'day_today', 'day_prev', 'day_active', 'week', 'month', 'month_oct', 'month_sep', 'month_aug', 'season'];
+    $validPeriods = ['shift', 'day', 'day_today', 'day_prev', 'day_active', 'week', 'month', 'month_oct', 'month_sep', 'month_aug', 'season', 'month_sep_2025'];
     if (!in_array($period, $validPeriods, true)) {
         $period = 'day';
     }

@@ -99,15 +99,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <button type="button" class="period-btn" data-period="week">Тиждень</button>
                 <button type="button" class="period-btn" data-period="month">Місяць</button>
                 <div class="month-select-wrapper">
-                    <select id="select-other-months" class="month-dropdown-select" title="Обрати інший місяць або період">
-                        <option value="" disabled selected>📅 Інші періоди / місяці...</option>
-                        <option value="day_active">⚡ Остання доба переробки (<?= htmlspecialchars(substr($prodLab['report_date'] ?? '15.10', 0, 5)) ?> — <?= number_format($prodLab['seed_processed_tonnes'] ?? 308.98, 1, ',', ' ') ?> т перероблено)</option>
-                        <option value="month_oct">Жовтень 2026 (працював <?= $mOct['working_days'] ?? 10 ?> діб з <?= $mOct['days_count'] ?? 15 ?> • <?= number_format($mOct['seed_processed'] ?? 5073.13, 1, ',', ' ') ?> т)</option>
-                        <option value="month_sep">Вересень 2026 (працював 16 діб з 30 • 8 823,7 т)</option>
-                        <option value="month_aug">Серпень 2026 (0 діб переробки, ППР)</option>
-                        <option value="season">Сезон 2026–2027 (<?= $seasonTot['working_days'] ?? 26 ?> діб переробки • <?= number_format($seasonTot['seed_processed'] ?? 13896.79, 1, ',', ' ') ?> т)</option>
-                        <option value="day_prev">Минула доба (14.10 — перероблено 596,8 т)</option>
-                        <option value="day_today">Сьогодні (поточний оперативний стан)</option>
+                    <select id="select-other-months" class="month-dropdown-select" title="Обрати місяць">
+                        <option value="" disabled selected>📅 Оберіть місяць...</option>
+                        <option value="month_oct">Жовтень 2026 року</option>
+                        <option value="month_sep">Вересень 2026 року</option>
+                        <option value="month_aug">Серпень 2026 року</option>
+                        <option value="month_sep_2025">Вересень 2025 року</option>
                     </select>
                 </div>
             </div>

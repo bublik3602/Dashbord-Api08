@@ -70,6 +70,20 @@ class MetricsCalculator {
                     }
                 }
                 break;
+            case 'month_sep_2025':
+                $filtered = [
+                    [
+                        'date'          => '30.09.2025',
+                        'trucks_count'  => 180,
+                        'delivered'     => 4470.82,
+                        'credit_weight' => 4350.15,
+                        'discount'      => 120.67,
+                        'oil_content'   => 42.93,
+                        'moisture'      => 7.68,
+                        'trash'         => 2.10,
+                    ]
+                ];
+                break;
             case 'month_oct':
             case 'month':
                 foreach ($dailyRows as $r) {
@@ -238,6 +252,9 @@ class MetricsCalculator {
             case 'month_sep':
                 $rangeDisplay = "Місяць Вересень 2026 (працював 16 діб переробки: 15.09–30.09 з 30 діб • перероблено 8 823,7 т)";
                 break;
+            case 'month_sep_2025':
+                $rangeDisplay = "Місяць Вересень 2025 року (10 діб роботи • перероблено 4 435,44 т, вироблено 1 865,62 т олії)";
+                break;
             case 'month_oct':
             case 'month':
                 $rangeDisplay = "Місяць Жовтень 2026 (" . ($octMetrics['working_days'] ?? 9) . " діб переробки • перероблено " . number_format($octMetrics['seed_processed'] ?? $seedProc, 1, ',', ' ') . " т, вироблено " . number_format($octMetrics['oil_out'] ?? $oilOut, 1, ',', ' ') . " т олії)";
@@ -330,6 +347,7 @@ class MetricsCalculator {
             case 'week':       return 'За тиждень (3 доби переробки • 1 526,8 т)';
             case 'month_aug':  return 'Серпень 2026 (0 діб переробки з 31 • ППР)';
             case 'month_sep':  return 'Вересень 2026 (працював 16 діб: 15.09–30.09 з 30)';
+            case 'month_sep_2025': return 'Вересень 2025 року (10 діб роботи • 4 435,4 т)';
             case 'month_oct':
             case 'month':      return 'Жовтень 2026 (працював 10 діб • 5 073,1 т перероблено)';
             case 'season':     return 'Сезон 2026–2027 (01.08.2026 — 01.08.2027 • 26 діб переробки)';
@@ -469,6 +487,18 @@ class MetricsCalculator {
                 'meal_out'      => 5790.76,
                 'husk_out'      => 2025.44,
                 'seed_plan'     => 27000.0,
+            ],
+            'month_sep_2025' => [
+                'seed_in_plant'    => 4470.82,
+                'trucks_count'     => 180,
+                'seed_in_prod'     => 4435.44,
+                'seed_in_prod_raw' => 4515.91,
+                'cond_loss'        => 80.47,
+                'cond_loss_pct'    => 1.81,
+                'oil_out'          => 1865.62,
+                'meal_out'         => 1869.21,
+                'husk_out'         => 620.13,
+                'seed_plan'        => 4500.0,
             ],
         ];
 
@@ -1548,47 +1578,74 @@ class MetricsCalculator {
                     'report_date'                  => "Ежедн.отчет2 ({$sheetTitle}, тиждень)",
                 ];
             case 'day_active':
-                // За останню повну добу переробки (06.10.2026 — аркуш «6 число»)
                 return [
-                    'seed_stock_tonnes'            => 11509.10,
-                    'seed_stock_accounting_tonnes' => 7534.54,
-                    'oil_stock_tonnes'             => 3810.90,
-                    'meal_stock_tonnes'            => 1593.02,
-                    'husk_stock_tonnes'            => 227.64,
+                    'seed_stock_tonnes'            => 12980.63,
+                    'seed_stock_accounting_tonnes' => 13659.62,
+                    'oil_stock_tonnes'             => 3495.72,
+                    'meal_stock_tonnes'            => 705.88,
+                    'husk_stock_tonnes'            => 162.67,
+                    'husk_boiler_spent_tonnes'     => 24.54,
+                    'days_seed_reserve'            => 21.6,
+                    'oil_shipped_tonnes'           => 303.46,
+                    'meal_shipped_tonnes'          => 125.12,
+                    'husk_shipped_tonnes'          => 25.50,
+                    'report_date'                  => 'Ежедн.отчет2 (15 число)',
+                ];
+            case 'day_prev':
+                return [
+                    'seed_stock_tonnes'            => 12857.66,
+                    'seed_stock_accounting_tonnes' => 13536.64,
+                    'oil_stock_tonnes'             => 3649.90,
+                    'meal_stock_tonnes'            => 674.86,
+                    'husk_stock_tonnes'            => 166.77,
                     'husk_boiler_spent_tonnes'     => 24.51,
-                    'days_seed_reserve'            => 19.2,
-                    'oil_shipped_tonnes'           => 74.46,
-                    'meal_shipped_tonnes'          => 294.66,
-                    'husk_shipped_tonnes'          => 69.36,
-                    'report_date'                  => '07.10.2026 08:00 (доба 06.10)',
+                    'days_seed_reserve'            => 21.4,
+                    'oil_shipped_tonnes'           => 277.30,
+                    'meal_shipped_tonnes'          => 277.30,
+                    'husk_shipped_tonnes'          => 13.44,
+                    'report_date'                  => 'Ежедн.отчет2 (14 число)',
                 ];
             case 'month_aug':
                 return [
-                    'seed_stock_tonnes'            => 883.40,
-                    'seed_stock_accounting_tonnes' => 757.58,
-                    'oil_stock_tonnes'             => 15.35,
-                    'meal_stock_tonnes'            => 362.60,
-                    'husk_stock_tonnes'            => 0.00,
-                    'husk_boiler_spent_tonnes'     => 6.85,
-                    'days_seed_reserve'            => 1.5,
-                    'oil_shipped_tonnes'           => 153.28,
-                    'meal_shipped_tonnes'          => 1390.54,
-                    'husk_shipped_tonnes'          => 78.60,
-                    'report_date'                  => '31.08.2026 20:00 (Серпень 2026)',
+                    'seed_stock_tonnes'            => 14583.15,
+                    'seed_stock_accounting_tonnes' => 14380.39,
+                    'oil_stock_tonnes'             => 2815.61,
+                    'meal_stock_tonnes'            => 1094.34,
+                    'husk_stock_tonnes'            => 1094.34,
+                    'husk_boiler_spent_tonnes'     => 0.00,
+                    'days_seed_reserve'            => 24.3,
+                    'oil_shipped_tonnes'           => 8499.14,
+                    'meal_shipped_tonnes'          => 4077.66,
+                    'husk_shipped_tonnes'          => 1100.36,
+                    'report_date'                  => '31.08.2026 20:00 (Серпень 2026, СВОД_авг.)',
                 ];
             case 'month_sep':
                 return [
-                    'seed_stock_tonnes'            => 10966.28,
-                    'seed_stock_accounting_tonnes' => 7319.80,
-                    'oil_stock_tonnes'             => 2736.71,
-                    'meal_stock_tonnes'            => 1713.47,
-                    'husk_stock_tonnes'            => 334.22,
-                    'husk_boiler_spent_tonnes'     => 409.17,
-                    'days_seed_reserve'            => 18.3,
-                    'oil_shipped_tonnes'           => 1090.30,
-                    'meal_shipped_tonnes'          => 2332.34,
-                    'husk_shipped_tonnes'          => 490.66,
-                    'report_date'                  => '30.09.2026 20:00',
+                    'seed_stock_tonnes'            => 18952.82,
+                    'seed_stock_accounting_tonnes' => 18164.77,
+                    'oil_stock_tonnes'             => 3436.08,
+                    'meal_stock_tonnes'            => 510.19,
+                    'husk_stock_tonnes'            => 87.84,
+                    'husk_boiler_spent_tonnes'     => 140.93,
+                    'days_seed_reserve'            => 31.6,
+                    'oil_shipped_tonnes'           => 5164.14,
+                    'meal_shipped_tonnes'          => 5720.12,
+                    'husk_shipped_tonnes'          => 1345.70,
+                    'report_date'                  => '30.09.2026 20:00 (Вересень 2026, СВОД_сент.)',
+                ];
+            case 'month_sep_2025':
+                return [
+                    'seed_stock_tonnes'            => 35.38,
+                    'seed_stock_accounting_tonnes' => 35.38,
+                    'oil_stock_tonnes'             => 420.50,
+                    'meal_stock_tonnes'            => 185.20,
+                    'husk_stock_tonnes'            => 45.10,
+                    'husk_boiler_spent_tonnes'     => 210.00,
+                    'days_seed_reserve'            => 0.1,
+                    'oil_shipped_tonnes'           => 1445.12,
+                    'meal_shipped_tonnes'          => 1684.01,
+                    'husk_shipped_tonnes'          => 410.13,
+                    'report_date'                  => '30.09.2025 20:00 (Вересень 2025)',
                 ];
             case 'month_oct':
             case 'month':
@@ -1875,9 +1932,9 @@ class MetricsCalculator {
                 'meal_out'       => [0.00, 3683.21, $dOct['meal_out']],
                 'husk_out'       => [5.91, 1261.23, $dOct['husk_out']],
                 'trucks'         => [8, 738, $octTrucks],
-                'oil_stocks'     => [15.35, 2736.71, $oilStock],
-                'meal_stocks'    => [362.60, 1713.47, $mealStock],
-                'seed_stocks'    => [883.40, 10966.28, $seedStock],
+                'oil_stocks'     => [2815.61, 3436.08, $oilStock],
+                'meal_stocks'    => [1094.34, 510.19, $mealStock],
+                'seed_stocks'    => [14583.15, 18952.82, $seedStock],
             ],
             'season_2025_comparison' => [
                 'name' => 'Сезон 2025–2026 рр. (01.08.2025 — 01.08.2026 • Офіційний звіт заводу)',
@@ -2090,7 +2147,9 @@ class MetricsCalculator {
      */
     public function getPeriodComparison(string $period = 'day'): array {
         $p = strtolower(trim($period));
-        if (in_array($p, ['day_active', 'active_day', 'work_day'], true)) {
+        if ($p === 'month_sep_2025') {
+            $norm = 'month_sep_2025';
+        } elseif (in_array($p, ['day_active', 'active_day', 'work_day'], true)) {
             $norm = 'day_active';
         } elseif (in_array($p, ['day', 'day_today', 'day_prev', 'shift'], true)) {
             $norm = 'day';
@@ -2108,11 +2167,14 @@ class MetricsCalculator {
         }
 
         $live = $this->loadLiveSvodStocks();
-        $seedStock = round((float)($live['seed_stock_tonnes'] ?? 13115.47), 2);
+        $seedStock = round((float)($live['seed_stock_tonnes'] ?? 12980.63), 2);
 
         // Дані з Листа погодження поточної вибірки
         $stats = $this->getSemenaPeriodStats($norm);
-        $labOil = !empty($stats['oil_content_pct']) ? (float)$stats['oil_content_pct'] : 48.00;
+
+        // Товарна олійність у переробку (вхід у цех) з виробничої довідки
+        $prodLab = $this->getProductionLabQuality($norm);
+        $labOil = !empty($prodLab['oil_content_pct']) ? (float)$prodLab['oil_content_pct'] : 44.03;
 
         // Перевіряємо чи є фактична переробка сьогодні в material_balance_logs
         $todaySeedInProd = 0.0;
@@ -2216,11 +2278,11 @@ class MetricsCalculator {
                         ],
                         [
                             'name'        => 'Середня олійність сировини (вхід у цех)',
-                            'val_2026'    => number_format($labOil, 2, ',', '') . '% (лаб. якість)',
+                            'val_2026'    => number_format($labOil, 2, ',', '') . '% (товарна олійність)',
                             'val_2025_an' => '45,29%',
                             'val_2025_yr' => '45,13%',
-                            'trend_text'  => '+' . number_format($labOil - 45.29, 2, ',', '') . '% якість',
-                            'trend_class' => 'trend-good',
+                            'trend_text'  => ($labOil >= 45.29 ? '+' : '') . number_format($labOil - 45.29, 2, ',', '') . '% якість',
+                            'trend_class' => ($labOil >= 45.29) ? 'trend-good' : 'trend-neutral',
                         ],
                         [
                             'name'        => 'Вихід олії (т / %)',
@@ -2325,11 +2387,11 @@ class MetricsCalculator {
                         ],
                         [
                             'name'        => 'Середня олійність сировини (вхід у цех)',
-                            'val_2026'    => number_format($labOil, 2, ',', '') . '% (лаб. якість)',
+                            'val_2026'    => number_format($labOil, 2, ',', '') . '% (товарна олійність)',
                             'val_2025_an' => '45,29%',
                             'val_2025_yr' => '45,13%',
-                            'trend_text'  => '+' . number_format($labOil - 45.29, 2, ',', '') . '% якість',
-                            'trend_class' => 'trend-good',
+                            'trend_text'  => ($labOil >= 45.29 ? '+' : '') . number_format($labOil - 45.29, 2, ',', '') . '% якість',
+                            'trend_class' => ($labOil >= 45.29) ? 'trend-good' : 'trend-neutral',
                         ],
                         [
                             'name'        => 'Вихід олії (т / %)',
@@ -2459,11 +2521,11 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Середня олійність сировини (вхід у цех)',
-                        'val_2026'    => number_format($labOil, 2, ',', '') . '% (лаб. якість)',
+                        'val_2026'    => number_format($labOil, 2, ',', '') . '% (товарна олійність)',
                         'val_2025_an' => '45,29%',
                         'val_2025_yr' => '45,13%',
-                        'trend_text'  => '+' . number_format($labOil - 45.29, 2, ',', '') . '% якість',
-                        'trend_class' => 'trend-good',
+                        'trend_text'  => ($labOil >= 45.29 ? '+' : '') . number_format($labOil - 45.29, 2, ',', '') . '% якість',
+                        'trend_class' => ($labOil >= 45.29) ? 'trend-good' : 'trend-neutral',
                     ],
                     [
                         'name'        => 'Вихід олії (т / %)',
@@ -2592,10 +2654,10 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Середня олійність сировини (вхід у цех)',
-                        'val_2026'    => number_format($labOil, 2, ',', '') . '% (лаб.)',
+                        'val_2026'    => number_format($labOil, 2, ',', '') . '% (товарна олійність)',
                         'val_2025_an' => '45,29%',
                         'val_2025_yr' => '45,13%',
-                        'trend_text'  => '+2.71% якість',
+                        'trend_text'  => ($labOil >= 45.29 ? '+' : '') . number_format($labOil - 45.29, 2, ',', '') . '% якість',
                         'trend_class' => 'trend-good',
                     ],
                     [
@@ -2724,10 +2786,10 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Середня олійність сировини (вхід у цех)',
-                        'val_2026'    => '42,93%',
+                        'val_2026'    => '44,05% (товарна олійність)',
                         'val_2025_an' => '42,93%',
                         'val_2025_yr' => '45,13%',
-                        'trend_text'  => 'Точний збіг',
+                        'trend_text'  => '+1,12% якість',
                         'trend_class' => 'trend-good',
                     ],
                     [
@@ -2780,10 +2842,134 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Залишок насіння на складі заводу',
-                        'val_2026'    => '10 966,3 т',
+                        'val_2026'    => '18 952,8 т',
                         'val_2025_an' => '35,4 т',
                         'val_2025_yr' => '510,4 т',
                         'trend_text'  => 'Склад заповнений',
+                        'trend_class' => 'trend-good',
+                    ],
+                ]
+            ];
+        } elseif ($norm === 'month_sep_2025') {
+            return [
+                'period'       => 'month_sep_2025',
+                'badge_label'  => 'Вересень 2025 (Офіційний звіт попереднього сезону)',
+                'kpis' => [
+                    'seed_processed' => [
+                        'title'        => '⚙️ Переробка насіння',
+                        'badge'        => '10 діб роботи',
+                        'number'       => '4 435,4',
+                        'unit'         => 'т (Вересень 2025)',
+                        'subtext'      => 'Офіційний звіт: <strong>4 435,44 т</strong> перероблено &bull; Завезено: <strong>4 470,82 т</strong>',
+                        'progress_pct' => 100.0,
+                        'color'        => '#10b981',
+                    ],
+                    'oil_yield' => [
+                        'title'        => '💧 Вихід Олії',
+                        'badge'        => '42,06% факт',
+                        'number'       => '42,06%',
+                        'unit'         => 'Вересень 2025 (1 865,6 т)',
+                        'subtext'      => 'Вироблено: <strong>1 865,62 т</strong> соняшникової олії',
+                        'progress_pct' => 42.1,
+                        'color'        => '#f59e0b',
+                    ],
+                    'meal_yield' => [
+                        'title'        => '🌾 Вихід Шроту',
+                        'badge'        => '42,14% факт',
+                        'number'       => '42,14%',
+                        'unit'         => 'Вересень 2025 (1 869,2 т)',
+                        'subtext'      => 'Вироблено: <strong>1 869,21 т</strong> шроту',
+                        'progress_pct' => 42.1,
+                        'color'        => '#2563eb',
+                    ],
+                    'oil_meal_sum' => [
+                        'title'        => '⚖️ Олія + Шрот',
+                        'badge'        => '84,20%',
+                        'number'       => '84,20%',
+                        'unit'         => 'Вересень 2025 (3 734,8 т)',
+                        'subtext'      => 'Сумарний вихід готової продукції (без лузги)',
+                        'progress_pct' => 84.2,
+                        'color'        => '#8b5cf6',
+                    ],
+                ],
+                'headers' => [
+                    'col_indicator'   => 'Показник виробництва',
+                    'col_2026'        => 'Вересень 2025 (фактично)',
+                    'col_2025_analog' => 'Сезон 2025–2026',
+                    'col_2025_year'   => 'Вересень 2026 (порівняння)',
+                    'col_trend'       => 'Статус',
+                ],
+                'rows' => [
+                    [
+                        'name'        => 'Завезено насіння (авто/елеватор)',
+                        'val_2026'    => '4 470,8 т',
+                        'val_2025_an' => '62 403,3 т',
+                        'val_2025_yr' => '19 077,5 т (вер. 2026)',
+                        'trend_text'  => '180 авто',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Перероблено соняшнику (очищене)',
+                        'val_2026'    => '4 435,4 т (10 діб)',
+                        'val_2025_an' => '61 892,9 т',
+                        'val_2025_yr' => '8 823,7 т (вер. 2026)',
+                        'trend_text'  => '10 діб',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Середня олійність сировини (вхід у цех)',
+                        'val_2026'    => '42,93% (товарна олійність)',
+                        'val_2025_an' => '45,13%',
+                        'val_2025_yr' => '44,05% (вер. 2026)',
+                        'trend_text'  => 'Еталон 2025',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід олії (т / %)',
+                        'val_2026'    => '1 865,6 т (42,06%)',
+                        'val_2025_an' => '27 416,9 т (44,30%)',
+                        'val_2025_yr' => '3 811,7 т (43,20%)',
+                        'trend_text'  => '42,06%',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід шроту (т / %)',
+                        'val_2026'    => '1 869,2 т (42,14%)',
+                        'val_2025_an' => '25 790,4 т (41,67%)',
+                        'val_2025_yr' => '3 683,2 т (41,74%)',
+                        'trend_text'  => '42,14%',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Вихід лузги (т / %)',
+                        'val_2026'    => '620,1 т (13,98%)',
+                        'val_2025_an' => '8 662,5 т (14,00%)',
+                        'val_2025_yr' => '1 261,2 т (14,29%)',
+                        'trend_text'  => '13,98%',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Виробничі втрати переробки',
+                        'val_2026'    => '80,5 т (1,81%)',
+                        'val_2025_an' => '23,1 т (0,04%)',
+                        'val_2025_yr' => '94,7 т (1,06%)',
+                        'trend_text'  => '1,81%',
+                        'trend_class' => 'trend-neutral',
+                    ],
+                    [
+                        'name'        => 'Сума Олія + Шрот (%)',
+                        'val_2026'    => '84,20%',
+                        'val_2025_an' => '85,97%',
+                        'val_2025_yr' => '84,94%',
+                        'trend_text'  => '84,20%',
+                        'trend_class' => 'trend-good',
+                    ],
+                    [
+                        'name'        => 'Залишок насіння на складі заводу',
+                        'val_2026'    => '35,4 т',
+                        'val_2025_an' => '510,4 т',
+                        'val_2025_yr' => '18 952,8 т',
+                        'trend_text'  => 'Кінець місяця',
                         'trend_class' => 'trend-good',
                     ],
                 ]
@@ -2862,7 +3048,7 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Середня олійність сировини (вхід у цех)',
-                        'val_2026'    => '44,69% (лаб. 49,19%)',
+                        'val_2026'    => '44,69% (товарна олійність)',
                         'val_2025_an' => '44,79%',
                         'val_2025_yr' => '45,13%',
                         'trend_text'  => 'В межах норми',
@@ -3001,10 +3187,10 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Середня олійність сировини (вхід у цех)',
-                        'val_2026'    => '44,69% (лаб. 49,19%)',
+                        'val_2026'    => '45,30% (товарна олійність)',
                         'val_2025_an' => '45,29%',
                         'val_2025_yr' => '45,13%',
-                        'trend_text'  => 'В межах норми',
+                        'trend_text'  => '+0,01% якість',
                         'trend_class' => 'trend-good',
                     ],
                     [
@@ -3228,6 +3414,39 @@ class MetricsCalculator {
                     'processed_note'              => '16 діб переробки (15.09 — 30.09.2026)',
                 ];
 
+            case 'month_sep_2025':
+                return [
+                    'sunflower_oil_pct'           => 42.93,
+                    'yield_oil_pct'               => 42.06,
+                    'yield_meal_pct'              => 42.14,
+                    'meal_oil_pct'                => 0.75,
+                    'yield_husk_pct'              => 13.98,
+                    'husk_oil_pct'                => 3.20,
+                    'process_loss_pct'            => 1.81,
+                    'balance_oil_calc_kg'         => 1904134.4,
+                    'balance_oil_fact_kg'         => 1900000,
+                    'oil_out_kg'                  => 1865620,
+                    'oil_loss_kg'                 => 38514,
+                    'oil_loss_pct'                => 0.87,
+                    'oil_in_meal_kg'              => 14019.0,
+                    'oil_in_husk_kg'              => 19844,
+                    'oil_unaccounted_loss_kg'     => 4134,
+                    'oil_unaccounted_loss_pct'    => 0.09,
+                    'oil_content_pct'             => 42.93,
+                    'oil_content_base_pct'        => $basePct,
+                    'oil_deviation_pct'           => round(42.93 - $basePct, 2),
+                    'oil_asr_pct'                 => 46.50,
+                    'oil_date'                    => '09.2025',
+                    'oil_note'                    => 'Фактична товарна олійність за Вересень 2025 (звіт заводу)',
+                    'moisture_pct'                => 7.68,
+                    'impurity_pct'                => 2.10,
+                    'seed_processed_tonnes'       => 4435.44,
+                    'seed_plan_tonnes'            => 4500.0,
+                    'plan_fulfillment_pct'        => 98.6,
+                    'report_date'                 => 'Вересень 2025 (виробничий звіт)',
+                    'processed_note'              => 'Перероблено у вересні 2025: 4 435,4 т',
+                ];
+
             case 'season':
                 $seedProc = $dSeason['seed_processed'];
                 $seedPlan = $dSeason['working_days'] * 600.0;
@@ -3354,14 +3573,14 @@ class MetricsCalculator {
             case 'day_today':
             case 'shift':
             default:
-                $seedProc = 308.98;
+                $seedProc = 596.81;
                 $seedPlan = 600.0;
-                $oil = 45.30; // Товарна олійність за 15.10
-                $oilAsr = 48.35; // а.с.р. за 15.10
-                $oilDateStr = '15.10';
-                $moist = 6.30;
-                $imp = 1.96;
-                $repDateStr = '15.10.2026';
+                $oil = 44.03; // Товарна олійність за 14.10 на справці
+                $oilAsr = 47.99; // а.с.р. за 14.10
+                $oilDateStr = '14.10';
+                $moist = 6.20;
+                $imp = 2.18;
+                $repDateStr = '14.10.2026';
 
                 try {
                     $stmt = null;
@@ -3389,13 +3608,20 @@ class MetricsCalculator {
                         if ((float)($labRow['impurity_pct'] ?? 0) > 0) $imp = (float)$labRow['impurity_pct'];
                         $oilAsr = round($oil / (1 - ($moist / 100)), 2);
                     } else {
-                        $oil = 45.30;
-                        $oilAsr = 48.35;
-                        $oilDateStr = '15.10';
+                        $oil = 44.03;
+                        $oilAsr = 47.99;
+                        $oilDateStr = '14.10';
+                        $moist = 6.20;
+                        $imp = 2.18;
                     }
                 } catch (Throwable $e) {}
 
                 return array_merge($balanceDefaults, $oilLossData, [
+                    'sunflower_oil_pct'           => $oil,
+                    'yield_oil_pct'               => 42.98,
+                    'yield_meal_pct'              => 41.69,
+                    'yield_husk_pct'              => 14.58,
+                    'process_loss_pct'            => 0.76,
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
