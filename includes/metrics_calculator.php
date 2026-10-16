@@ -929,10 +929,10 @@ class MetricsCalculator {
             $sVal   = isset($entry['steam_t']) && $entry['steam_t'] !== null && $entry['steam_t'] !== '' ? (float)$entry['steam_t'] : 0.0;
 
             $tlLabels[]     = $dayNum;
-            $tlPower[]      = round($pVal, 3);
-            $tlPowerMwh[]   = round($pVal / 1000, 3);
-            $tlPowerKwAvg[] = round($pVal / 24, 3);
-            $tlPowerMwAvg[] = round($pVal / 24000, 3);
+            $tlPower[]      = round($pVal, 4);
+            $tlPowerMwh[]   = round($pVal / 1000, 4);
+            $tlPowerKwAvg[] = round($pVal / 24, 4);
+            $tlPowerMwAvg[] = round($pVal / 24000, 4);
             $tlWater[]      = round($wVal, 2);
             $tlSteam[]      = round($sVal, 2);
 
@@ -959,16 +959,16 @@ class MetricsCalculator {
             $monthly12[9] = [
                 'month'          => 'Жовтень 2026',
                 'short'          => 'Жов',
-                'active_kwh'     => round($octSumPower, 3),
+                'active_kwh'     => round($octSumPower, 4),
                 'reactive_kvarh' => round($octSumPower * 0.32, 1),
                 'gas_m3'         => 0.0,
                 'water_m3'       => round($octSumWater, 0),
                 'sewage_m3'      => round($octSumWater * 0.56, 0),
                 'daily_water_m3' => count($tlWater) > 0 ? round($octSumWater / count($tlWater), 1) : 0,
-                'press_kwh'      => round($octSumPower * 0.557, 3),
-                'extr_kwh'       => round($octSumPower * 0.218, 3),
-                'elev_kwh'       => round($octSumPower * 0.155, 3),
-                'boiler_kwh'     => round($octSumPower * 0.062, 3),
+                'press_kwh'      => round($octSumPower * 0.557, 4),
+                'extr_kwh'       => round($octSumPower * 0.218, 4),
+                'elev_kwh'       => round($octSumPower * 0.155, 4),
+                'boiler_kwh'     => round($octSumPower * 0.062, 4),
                 'specific_kwh'   => 53.28,
                 'has_data'       => true,
                 'note'           => 'Фактичні дані за звітні доби Жовтня',
@@ -1114,8 +1114,8 @@ class MetricsCalculator {
                             'has_power'                  => $hasPower,
                             'has_water'                  => $hasWater,
                             'has_steam'                  => $hasSteam,
-                            'current_power_kw'           => $hasPower ? round($wPower / ($powDays * 24), 3) : null,
-                            'total_kwh'                  => $hasPower ? round($wPower, 3) : null,
+                            'current_power_kw'           => $hasPower ? round($wPower / ($powDays * 24), 4) : null,
+                            'total_kwh'                  => $hasPower ? round($wPower, 4) : null,
                             'reactive_kvarh'             => $hasPower ? round($wPower * 0.32, 1) : null,
                             'current_water_m3_hour'      => $hasWater ? round($wWater / ($watDays * 24), 2) : null,
                             'daily_water_m3'             => $hasWater ? round($wWater / $watDays, 1) : null,
@@ -1123,7 +1123,7 @@ class MetricsCalculator {
                             'sewage_m3'                  => $hasWater ? round($wWater * 0.56, 1) : null,
                             'gas_m3'                     => 0.0,
                             'steam_pressure_bar'         => 11.3,
-                            'specific_kwh_per_tonne'     => $hasPower ? round($wPower / ($seedProc * $powDays), 3) : null,
+                            'specific_kwh_per_tonne'     => $hasPower ? round($wPower / ($seedProc * $powDays), 4) : null,
                             'specific_subtext'           => $hasPower ? "Середня питома за {$powDays} діб тижня (МЕЗ)" : "Показники електроенергії ще не внесені",
                             'boiler_water_m3'            => $hasWater ? round($wWater * 0.408, 0) : null,
                             'extraction_water_m3'        => $hasWater ? round($wWater * 0.217, 0) : null,
@@ -1141,13 +1141,13 @@ class MetricsCalculator {
                             'steam_monthly_history'      => $steamMonthly,
                             'period_note'                => "Тиждень: факт за останні {$daysCnt} діб (" . date('d.m', strtotime(reset($weekEntries)['date'])) . " — " . date('d.m', strtotime(end($weekEntries)['date'])) . ")",
                             'departments'                => [
-                                ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 3), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
-                                ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 3), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
-                                ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 3), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
-                                ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 3), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
-                                ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 3), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
-                                ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 3), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
-                                ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 3), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
+                                ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 4), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
+                                ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 4), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
+                                ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 4), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
+                                ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 4), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
+                                ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                                ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                                ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
                             ],
                             'water_meters'               => $waterMetersAccounting,
                             'monthly_12'                 => $monthly12,
@@ -1196,8 +1196,8 @@ class MetricsCalculator {
                             'has_power'                  => $hasPower,
                             'has_water'                  => $hasWater,
                             'has_steam'                  => $hasSteam,
-                            'current_power_kw'           => $hasPower ? round($octSumPower / ($powDays * 24), 3) : null,
-                            'total_kwh'                  => $hasPower ? round($octSumPower, 3) : null,
+                            'current_power_kw'           => $hasPower ? round($octSumPower / ($powDays * 24), 4) : null,
+                            'total_kwh'                  => $hasPower ? round($octSumPower, 4) : null,
                             'reactive_kvarh'             => $hasPower ? round($octSumPower * 0.32, 1) : null,
                             'current_water_m3_hour'      => $hasWater ? round($octSumWater / ($watDays * 24), 2) : null,
                             'daily_water_m3'             => $hasWater ? round($octSumWater / $watDays, 1) : null,
@@ -1205,7 +1205,7 @@ class MetricsCalculator {
                             'sewage_m3'                  => $hasWater ? round($octSumWater * 0.56, 1) : null,
                             'gas_m3'                     => 0.0,
                             'steam_pressure_bar'         => 11.3,
-                            'specific_kwh_per_tonne'     => $hasPower ? round($octSumPower / ($seedProc * $powDays), 3) : null,
+                            'specific_kwh_per_tonne'     => $hasPower ? round($octSumPower / ($seedProc * $powDays), 4) : null,
                             'specific_subtext'           => $hasPower ? "Середня питома за {$powDays} діб переробки у Жовтні" : "Показники електроенергії ще не внесені",
                             'boiler_water_m3'            => $hasWater ? round($octSumWater * 0.408, 0) : null,
                             'extraction_water_m3'        => $hasWater ? round($octSumWater * 0.217, 0) : null,
@@ -1223,13 +1223,13 @@ class MetricsCalculator {
                             'steam_monthly_history'      => $steamMonthly,
                             'period_note'                => "Жовтень 2026: факт за {$daysCnt} діб переробки (внесено енергетиком)",
                             'departments'                => [
-                                ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 3), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
-                                ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 3), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
-                                ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 3), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
-                                ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 3), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
-                                ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 3), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
-                                ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 3), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
-                                ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 3), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
+                                ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 4), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
+                                ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 4), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
+                                ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 4), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
+                                ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 4), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
+                                ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                                ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                                ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
                             ],
                             'water_meters'               => $waterMetersAccounting,
                             'monthly_12'                 => $monthly12,
@@ -1261,7 +1261,7 @@ class MetricsCalculator {
                     $curSteam = $hasSteam ? (float)$latest['steam_t'] : null;
                     $curBar   = (float)($latest['steam_pressure_bar'] ?? 11.2);
                     $curReact = $hasPower ? (float)($latest['reactive_kvarh'] ?? round($curKwh * 0.32, 1)) : null;
-                    $specKwh  = $hasPower ? round($curKwh / $seedProc, 3) : null;
+                    $specKwh  = $hasPower ? round($curKwh / $seedProc, 4) : null;
                     $specStm  = $hasSteam ? round(($curSteam * 1000) / $seedProc, 1) : null;
 
                     $deptPowerBase = $hasPower ? $curKwh : 0.0;
@@ -1272,8 +1272,8 @@ class MetricsCalculator {
                         'has_power'                  => $hasPower,
                         'has_water'                  => $hasWater,
                         'has_steam'                  => $hasSteam,
-                        'current_power_kw'           => $hasPower ? round($curKwh / 24, 3) : null,
-                        'total_kwh'                  => $hasPower ? round($curKwh, 3) : null,
+                        'current_power_kw'           => $hasPower ? round($curKwh / 24, 4) : null,
+                        'total_kwh'                  => $hasPower ? round($curKwh, 4) : null,
                         'reactive_kvarh'             => $hasPower ? round($curReact, 1) : null,
                         'current_water_m3_hour'      => $hasWater ? round($curWater / 24, 2) : null,
                         'daily_water_m3'             => $hasWater ? round($curWater, 1) : null,
@@ -1299,13 +1299,13 @@ class MetricsCalculator {
                         'steam_monthly_history'      => $steamMonthly,
                         'period_note'                => "Доба: " . date('d.m.Y', strtotime($latest['date'])) . " (фактичні дані енергетика)",
                         'departments'                => [
-                            ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 3), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
-                            ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 3), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
-                            ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 3), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
-                            ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 3), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
-                            ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 3), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
-                            ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 3), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
-                            ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 3), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
+                            ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 4), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
+                            ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 4), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
+                            ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 4), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
+                            ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 4), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
+                            ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                            ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                            ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
                         ],
                         'water_meters'               => $waterMetersAccounting,
                         'monthly_12'                 => $monthly12,
@@ -3061,6 +3061,22 @@ class MetricsCalculator {
         $oilLossData = [];
         if (file_exists($oilLossJsonPath)) {
             $oilLossData = json_decode((string)file_get_contents($oilLossJsonPath), true) ?: [];
+        }
+
+        if (empty($oilLossData)) {
+            try {
+                $dbConn = $this->db ?? DashboardDB::getConnection();
+                if ($dbConn) {
+                    $st = $dbConn->query("SELECT data_json FROM dashboard_state WHERE key_name = 'production_oil_losses' LIMIT 1");
+                    if ($st && ($row = $st->fetch(PDO::FETCH_ASSOC))) {
+                        $dbData = json_decode((string)$row['data_json'], true);
+                        if (is_array($dbData) && !empty($dbData)) {
+                            $oilLossData = $dbData;
+                            @file_put_contents($oilLossJsonPath, json_encode($oilLossData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+                        }
+                    }
+                }
+            } catch (Throwable $e) {}
         }
 
         $defaultOilLossKg = isset($oilLossData['oil_loss_kg']) ? (float)$oilLossData['oil_loss_kg'] : 41258;

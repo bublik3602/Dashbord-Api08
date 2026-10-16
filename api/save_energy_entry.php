@@ -200,7 +200,7 @@ try {
 
     $savedEntry = [
         'date'               => $date,
-        'power_kwh'          => $powerKwh !== null ? round($powerKwh, 3) : null,
+        'power_kwh'          => $powerKwh !== null ? round($powerKwh, 4) : null,
         'water_m3'           => $waterM3 !== null ? round($waterM3, 2) : null,
         'steam_t'            => $steamT !== null ? round($steamT, 2) : null,
         'steam_pressure_bar' => round($steamPressureBar, 2),
@@ -217,7 +217,11 @@ try {
     try {
         $db = DashboardDB::getConnection();
         if ($db) {
-            $calcPowerKw = $powerKwh !== null ? round($powerKwh / 24, 3) : 0.0;
+            try {
+                $db->exec("ALTER TABLE `energy_readings` MODIFY COLUMN `power_kw` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000, MODIFY COLUMN `power_kwh_delta` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000");
+            } catch (Throwable $e) {}
+
+            $calcPowerKw = $powerKwh !== null ? round($powerKwh / 24, 4) : 0.0;
             $calcWaterFlow = $waterM3 !== null ? round($waterM3 / 24, 2) : 0.0;
 
             $checkStmt = $db->prepare("SELECT id FROM energy_readings WHERE report_date = ? OR DATE(recorded_at) = ? LIMIT 1");
@@ -262,7 +266,7 @@ try {
     }
 
     $details = [];
-    if ($powerKwh !== null) $details[] = number_format($powerKwh, 3, ',', ' ') . ' кВт';
+    if ($powerKwh !== null) $details[] = number_format($powerKwh, 4, ',', ' ') . ' кВт';
     if ($waterM3 !== null)  $details[] = number_format($waterM3, 1, ',', ' ') . ' м³ води';
     if ($steamT !== null)   $details[] = number_format($steamT, 1, ',', ' ') . ' т пари';
     $detailsStr = !empty($details) ? implode(', ', $details) : 'дані оновлено';

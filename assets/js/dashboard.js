@@ -550,11 +550,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (hasData) {
-                // 1. Електроенергія (3 знаки після коми / крапки)
+                // 1. Електроенергія (4 знаки після коми / крапки)
                 if (en.has_power && en.total_kwh !== null && en.total_kwh !== undefined) {
-                    setElementText('#val-total-kwh', formatNumber(en.total_kwh, 3) + ' кВт');
-                    setElementText('#val-current-power', `Потужність: ${formatNumber(en.current_power_kw, 3)} кВт • Реакт.: ${formatNumber(en.reactive_kvarh || 0, 1)} кВАр·год`);
-                    setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 3) + ' кВт/т');
+                    setElementText('#val-total-kwh', formatNumber(en.total_kwh, 4) + ' кВт');
+                    setElementText('#val-current-power', `Потужність: ${formatNumber(en.current_power_kw, 4)} кВт • Реакт.: ${formatNumber(en.reactive_kvarh || 0, 1)} кВАр·год`);
+                    setElementText('#val-specific-kwh', formatNumber(en.specific_kwh_per_tonne, 4) + ' кВт/т');
                     setElementText('#val-specific-sub', en.specific_subtext || 'Розраховано від насіння у переробці');
                 } else {
                     setElementText('#val-total-kwh', 'Не внесено');
@@ -1320,7 +1320,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 window._energyHistoryEntries = json.entries;
                 energyHistoryTbody.innerHTML = json.entries.map(e => {
                     const kwhTxt = (e.power_kwh !== null && e.power_kwh !== undefined && e.power_kwh !== '')
-                        ? `${formatNumber(e.power_kwh, 3)} кВт`
+                        ? `${formatNumber(e.power_kwh, 4)} кВт`
                         : `<span style="color:#94a3b8;">—</span>`;
                     const watTxt = (e.water_m3 !== null && e.water_m3 !== undefined && e.water_m3 !== '')
                         ? `${formatNumber(e.water_m3, 1)} м³`

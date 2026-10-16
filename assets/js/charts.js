@@ -466,11 +466,11 @@ window.FactoryCharts = {
                 custom: function ({ series, seriesIndex, dataPointIndex, w }) {
                     const rawKwh = Number(rawPowers[dataPointIndex] || (unit === 'mwh' ? Number(seriesData[dataPointIndex]) * 1000 : 0)) || 0;
                     const pointLabel = labels[dataPointIndex] || '';
-                    const mwhVal = (rawKwh / 1000).toFixed(3);
-                    const avgKw  = (rawKwh / 24).toFixed(3);
-                    const avgMw  = (rawKwh / 24000).toFixed(3);
-                    const specKwh = (rawKwh / 596.8).toFixed(3);
-                    const fmtRawKwh = rawKwh.toLocaleString('uk-UA', { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+                    const mwhVal = (rawKwh / 1000).toFixed(4);
+                    const avgKw  = (rawKwh / 24).toFixed(4);
+                    const avgMw  = (rawKwh / 24000).toFixed(4);
+                    const specKwh = (rawKwh / 596.8).toFixed(4);
+                    const fmtRawKwh = rawKwh.toLocaleString('uk-UA', { minimumFractionDigits: 4, maximumFractionDigits: 4 });
 
                     return `
                         <div class="apex-rich-tooltip bar-tooltip-box" style="padding: 10px 14px; min-width: 250px;">

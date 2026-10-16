@@ -130,8 +130,8 @@ function ensureSchemaExists(PDO $db): void {
                     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                     `recorded_at` DATETIME NOT NULL,
                     `report_date` VARCHAR(50) DEFAULT NULL,
-                    `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
-                    `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                    `power_kw` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
+                    `power_kwh_delta` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
                     `reactive_kvarh` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
                     `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
                     `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -150,8 +150,8 @@ function ensureSchemaExists(PDO $db): void {
         try {
             $db->exec("
                 ALTER TABLE `energy_readings`
-                    MODIFY COLUMN `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
-                    MODIFY COLUMN `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                    MODIFY COLUMN `power_kw` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
+                    MODIFY COLUMN `power_kwh_delta` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
                     MODIFY COLUMN `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
                     MODIFY COLUMN `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00
             ");
@@ -1316,6 +1316,22 @@ try {
                     'updated_at'               => date('Y-m-d H:i:s'),
                 ];
                 @file_put_contents($oilDataFile, json_encode($newOilData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+                try {
+                    $db->exec("
+                        CREATE TABLE IF NOT EXISTS `dashboard_state` (
+                            `key_name` VARCHAR(100) PRIMARY KEY,
+                            `data_json` LONGTEXT NOT NULL,
+                            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    ");
+                    $stateStmt = $db->prepare("
+                        INSERT INTO `dashboard_state` (`key_name`, `data_json`, `updated_at`)
+                        VALUES ('production_oil_losses', ?, NOW())
+                        ON DUPLICATE KEY UPDATE `data_json` = VALUES(`data_json`), `updated_at` = NOW()
+                    ");
+                    $stateStmt->execute([json_encode($newOilData, JSON_UNESCAPED_UNICODE)]);
+                } catch (Throwable $e) {}
+
                 $details[] = "✅ «Баланс масла по выходам та % виходу продукції» ({$sName}): вихід олії {$newOilData['yield_oil_pct']}%, шроту {$newOilData['yield_meal_pct']}%, лузги {$newOilData['yield_husk_pct']}%, втрати ваги {$newOilData['process_loss_pct']}%, виробничі втрати олії " . number_format($newOilData['oil_loss_kg'], 0, '', ' ') . " кг ({$newOilData['oil_loss_pct']}%), невраховані втрати " . ($newOilData['oil_unaccounted_loss_kg'] < 0 ? '- ' : '') . number_format(abs($newOilData['oil_unaccounted_loss_kg']), 0, '', ' ') . " кг ({$newOilData['oil_unaccounted_loss_pct']}%)";
                 $fileHadProcessedReport = true;
                 break;

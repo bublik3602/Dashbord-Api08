@@ -792,8 +792,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <!-- 1. Активна електроенергія -->
                 <div class="energy-card-mini" style="border-top: 3px solid #0284c7;">
                     <div class="mini-title">⚡ Активна електроенергія за добу</div>
-                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= (!empty($en['has_data']) && !empty($en['has_power']) && $en['total_kwh'] !== null) ? (number_format($en['total_kwh'], 3, ',', ' ') . ' кВт') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
-                    <div class="mini-sub" id="val-current-power"><?= (!empty($en['has_data']) && !empty($en['has_power']) && $en['current_power_kw'] !== null) ? ('Потужність: ' . number_format($en['current_power_kw'], 3, ',', ' ') . ' кВт &bull; Реакт.: ' . number_format($en['reactive_kvarh'] ?? 0, 1, ',', ' ') . ' кВАр·год') : (!empty($en['has_data']) ? 'Очікується показник лічильника' : 'Звіт головного енергетика очікується') ?></div>
+                    <div class="mini-number" id="val-total-kwh" style="color: #0284c7;"><?= (!empty($en['has_data']) && !empty($en['has_power']) && $en['total_kwh'] !== null) ? (number_format($en['total_kwh'], 4, ',', ' ') . ' кВт') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
+                    <div class="mini-sub" id="val-current-power"><?= (!empty($en['has_data']) && !empty($en['has_power']) && $en['current_power_kw'] !== null) ? ('Потужність: ' . number_format($en['current_power_kw'], 4, ',', ' ') . ' кВт &bull; Реакт.: ' . number_format($en['reactive_kvarh'] ?? 0, 1, ',', ' ') . ' кВАр·год') : (!empty($en['has_data']) ? 'Очікується показник лічильника' : 'Звіт головного енергетика очікується') ?></div>
                 </div>
 
                 <!-- 2. Споживання води -->
@@ -820,7 +820,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <!-- 5. Питома витрата електроенергії -->
                 <div class="energy-card-mini" style="border-top: 3px solid #6366f1;">
                     <div class="mini-title">⚙️ Питома ел.енергія на 1 т</div>
-                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= (!empty($en['has_data']) && !empty($en['has_power']) && ($en['specific_kwh_per_tonne'] ?? 0) > 0) ? (number_format($en['specific_kwh_per_tonne'], 3, ',', ' ') . ' кВт/т') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
+                    <div class="mini-number" id="val-specific-kwh" style="color: #4f46e5;"><?= (!empty($en['has_data']) && !empty($en['has_power']) && ($en['specific_kwh_per_tonne'] ?? 0) > 0) ? (number_format($en['specific_kwh_per_tonne'], 4, ',', ' ') . ' кВт/т') : (!empty($en['has_data']) ? 'Не внесено' : 'Жовтень: немає даних') ?></div>
                     <div class="mini-sub" id="val-specific-sub"><?= htmlspecialchars($en['specific_subtext'] ?? 'Звіт очікується') ?></div>
                 </div>
 
@@ -1713,7 +1713,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 </div>
 
                 <div style="font-size: 11.5px; color: #334155; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 6px; padding: 8px 12px; margin-bottom: 14px;">
-                    💡 <strong>Гнучкий ввід:</strong> можна внести та зберегти <em>тільки воду</em>, <em>тільки пару</em> або <em>тільки електроенергію</em>. Непотрібні на цей момент поля залишайте порожніми (попередньо внесені дані за цю добу не зітруться). Для електроенергії підтримується 3 знаки після коми / крапки.
+                    💡 <strong>Гнучкий ввід:</strong> можна внести та зберегти <em>тільки воду</em>, <em>тільки пару</em> або <em>тільки електроенергію</em>. Непотрібні на цей момент поля залишайте порожніми (попередньо внесені дані за цю добу не зітруться). Для електроенергії підтримується 4 знаки після коми / крапки.
                 </div>
 
                 <!-- 3 основні показники в рядку -->
@@ -1723,8 +1723,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <label style="display: flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 6px;">
                             ⚡ Споживання електроенергії (кВт):
                         </label>
-                        <input type="number" step="0.001" min="0" id="energy-form-kwh" placeholder="напр. 31200.000" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #7dd3fc; border-radius: 6px; color: #0284c7; background: #fff;">
-                        <div style="font-size: 10.5px; color: #0284c7; margin-top: 4px;">3 знаки після коми (напр. 31800,125 або 31,800)</div>
+                        <input type="text" inputmode="decimal" id="energy-form-kwh" placeholder="напр. 31200.0000 або 31200,1234" style="width: 100%; padding: 8px 10px; font-size: 15px; font-weight: 800; border: 1px solid #7dd3fc; border-radius: 6px; color: #0284c7; background: #fff;">
+                        <div style="font-size: 10.5px; color: #0284c7; margin-top: 4px;">4 знаки після коми чи крапки (напр. 31800,1234)</div>
                     </div>
 
                     <!-- 2. Вода -->

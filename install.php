@@ -101,8 +101,8 @@ CREATE TABLE IF NOT EXISTS `energy_readings` (
     `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `recorded_at` DATETIME NOT NULL,
     `report_date` VARCHAR(50) DEFAULT NULL,
-    `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
-    `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `power_kw` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
+    `power_kwh_delta` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
     `reactive_kvarh` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
@@ -242,8 +242,8 @@ SET FOREIGN_KEY_CHECKS = 1;
             try {
                 $pdo->exec("
                     ALTER TABLE `energy_readings`
-                        MODIFY COLUMN `power_kw` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
-                        MODIFY COLUMN `power_kwh_delta` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+                        MODIFY COLUMN `power_kw` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
+                        MODIFY COLUMN `power_kwh_delta` DECIMAL(14, 4) NOT NULL DEFAULT 0.0000,
                         MODIFY COLUMN `water_flow_m3_hour` DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
                         MODIFY COLUMN `water_m3_delta` DECIMAL(10, 2) NOT NULL DEFAULT 0.00
                 ");
