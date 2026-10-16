@@ -378,15 +378,25 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <div style="display: flex; justify-content: space-between; align-items: center; background: #fefce8; border: 1px solid #fef08a; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
                             <span style="color: #854d0e; font-weight: 600;">Виробн. втрати олії:</span>
                             <div>
-                                <strong style="color: #713f12;"><?= number_format($prodLab['oil_loss_kg'] ?? 38654, 0, '', ' ') ?> кг</strong>
+                                <strong style="color: #713f12;"><?= number_format($prodLab['oil_loss_kg'] ?? 41258, 0, '', ' ') ?> кг</strong>
                                 <span class="badge-discount" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;"><?= number_format($prodLab['oil_loss_pct'] ?? 0.81, 2, ',', ' ') ?>%</span>
                             </div>
                         </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
-                            <span style="color: #9f1239; font-weight: 600;">Невраховані втрати:</span>
+                        <?php
+                            $unaccKg = (float)($prodLab['oil_unaccounted_loss_kg'] ?? -5484);
+                            $unaccPct = (float)($prodLab['oil_unaccounted_loss_pct'] ?? -0.11);
+                            $isUnaccNeg = $unaccKg < 0;
+                            $unaccBg = $isUnaccNeg ? '#f0fdf4' : '#fff1f2';
+                            $unaccBorder = $isUnaccNeg ? '#bbf7d0' : '#fecdd3';
+                            $unaccTxtColor = $isUnaccNeg ? '#166534' : '#9f1239';
+                            $unaccValColor = $isUnaccNeg ? '#15803d' : '#881337';
+                            $unaccBadge = $isUnaccNeg ? 'badge-bonus' : 'badge-discount';
+                        ?>
+                        <div style="display: flex; justify-content: space-between; align-items: center; background: <?= $unaccBg ?>; border: 1px solid <?= $unaccBorder ?>; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
+                            <span style="color: <?= $unaccTxtColor ?>; font-weight: 600;">Невраховані втрати:</span>
                             <div>
-                                <strong style="color: #881337;"><?= number_format($prodLab['oil_unaccounted_loss_kg'] ?? 15094, 0, '', ' ') ?> кг</strong>
-                                <span class="badge-discount" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;"><?= number_format($prodLab['oil_unaccounted_loss_pct'] ?? 0.32, 2, ',', ' ') ?>%</span>
+                                <strong style="color: <?= $unaccValColor ?>;"><?= ($unaccKg < 0 ? '- ' : '') . number_format(abs($unaccKg), 0, '', ' ') ?> кг</strong>
+                                <span class="<?= $unaccBadge ?>" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;"><?= number_format($unaccPct, 2, ',', ' ') ?>%</span>
                             </div>
                         </div>
                     </div>

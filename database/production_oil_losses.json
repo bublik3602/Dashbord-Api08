@@ -1,0 +1,13 @@
+{
+    "oil_loss_kg": 41258,
+    "oil_loss_pct": 0.81,
+    "oil_unaccounted_loss_kg": -5484,
+    "oil_unaccounted_loss_pct": -0.11,
+    "oil_out_kg": 2262332,
+    "oil_in_meal_kg": 16260.9,
+    "oil_in_husk_kg": 24997,
+    "balance_oil_calc_kg": 2298106.1,
+    "balance_oil_fact_kg": 2303590,
+    "report_date": "16.10",
+    "updated_at": "2026-10-16 11:30:00"
+}

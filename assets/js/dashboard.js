@@ -318,10 +318,18 @@ document.addEventListener('DOMContentLoaded', function () {
             const oilVal = (plq.oil_content_pct !== undefined && plq.oil_content_pct > 0) ? plq.oil_content_pct : 44.49;
             const oilAsrVal = (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) ? plq.oil_asr_pct : 48.30;
 
-            const oilLossKg = plq.oil_loss_kg !== undefined ? plq.oil_loss_kg : 38654;
+            const oilLossKg = plq.oil_loss_kg !== undefined ? plq.oil_loss_kg : 41258;
             const oilLossPct = plq.oil_loss_pct !== undefined ? plq.oil_loss_pct : 0.81;
-            const oilUnaccLossKg = plq.oil_unaccounted_loss_kg !== undefined ? plq.oil_unaccounted_loss_kg : 15094;
-            const oilUnaccLossPct = plq.oil_unaccounted_loss_pct !== undefined ? plq.oil_unaccounted_loss_pct : 0.32;
+            const oilUnaccLossKg = plq.oil_unaccounted_loss_kg !== undefined ? plq.oil_unaccounted_loss_kg : -5484;
+            const oilUnaccLossPct = plq.oil_unaccounted_loss_pct !== undefined ? plq.oil_unaccounted_loss_pct : -0.11;
+
+            const isUnaccNeg = Number(oilUnaccLossKg) < 0;
+            const unaccBg = isUnaccNeg ? '#f0fdf4' : '#fff1f2';
+            const unaccBorder = isUnaccNeg ? '#bbf7d0' : '#fecdd3';
+            const unaccTxtColor = isUnaccNeg ? '#166534' : '#9f1239';
+            const unaccValColor = isUnaccNeg ? '#15803d' : '#881337';
+            const unaccBadge = isUnaccNeg ? 'badge-bonus' : 'badge-discount';
+            const unaccFormattedKg = (Number(oilUnaccLossKg) < 0 ? '- ' : '') + formatNumber(Math.abs(Number(oilUnaccLossKg)), 0);
 
             setElementText('#badge-prod-oil-asr', `за ${oilDate} • ${formatNumber(oilVal, 2)}%`);
             const valAsrEl = document.querySelector('#val-prod-oil-asr');
@@ -338,11 +346,11 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span class="badge-discount" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;">${formatNumber(oilLossPct, 2)}%</span>
                         </div>
                     </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: #fff1f2; border: 1px solid #fecdd3; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
-                        <span style="color: #9f1239; font-weight: 600;">Невраховані втрати:</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: ${unaccBg}; border: 1px solid ${unaccBorder}; border-radius: 4px; padding: 2px 7px; font-size: 11px;">
+                        <span style="color: ${unaccTxtColor}; font-weight: 600;">Невраховані втрати:</span>
                         <div>
-                            <strong style="color: #881337;">${formatNumber(oilUnaccLossKg, 0)} кг</strong>
-                            <span class="badge-discount" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;">${formatNumber(oilUnaccLossPct, 2)}%</span>
+                            <strong style="color: ${unaccValColor};">${unaccFormattedKg} кг</strong>
+                            <span class="${unaccBadge}" style="padding: 1px 5px; font-size: 10px; font-weight: 700; border-radius: 4px; margin-left: 4px;">${formatNumber(oilUnaccLossPct, 2)}%</span>
                         </div>
                     </div>
                 `;

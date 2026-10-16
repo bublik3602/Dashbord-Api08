@@ -3015,10 +3015,17 @@ class MetricsCalculator {
     public function getProductionLabQuality(string $period = 'day'): array {
         $p = strtolower(trim($period));
         $basePct = 48.00;
-        $defaultOilLossKg = 38654;
-        $defaultOilLossPct = 0.81;
-        $defaultOilUnaccountedLossKg = 15094;
-        $defaultOilUnaccountedLossPct = 0.32;
+
+        $oilLossJsonPath = __DIR__ . '/../database/production_oil_losses.json';
+        $oilLossData = [];
+        if (file_exists($oilLossJsonPath)) {
+            $oilLossData = json_decode((string)file_get_contents($oilLossJsonPath), true) ?: [];
+        }
+
+        $defaultOilLossKg = isset($oilLossData['oil_loss_kg']) ? (float)$oilLossData['oil_loss_kg'] : 41258;
+        $defaultOilLossPct = isset($oilLossData['oil_loss_pct']) ? (float)$oilLossData['oil_loss_pct'] : 0.81;
+        $defaultOilUnaccountedLossKg = isset($oilLossData['oil_unaccounted_loss_kg']) ? (float)$oilLossData['oil_unaccounted_loss_kg'] : -5484;
+        $defaultOilUnaccountedLossPct = isset($oilLossData['oil_unaccounted_loss_pct']) ? (float)$oilLossData['oil_unaccounted_loss_pct'] : -0.11;
 
         $dyn = $this->getHistoricalSeasonMetrics();
         $dOct = $dyn['oct'];
@@ -3054,10 +3061,10 @@ class MetricsCalculator {
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
                     'oil_asr_pct'                 => round($oil / (1 - ($moist / 100)), 2),
-                    'oil_loss_kg'                 => $defaultOilLossKg,
-                    'oil_loss_pct'                => $defaultOilLossPct,
-                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
-                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
+                    'oil_loss_kg'                 => 70758,
+                    'oil_loss_pct'                => 0.80,
+                    'oil_unaccounted_loss_kg'     => 4732,
+                    'oil_unaccounted_loss_pct'    => 0.05,
                     'moisture_pct'                => $moist,
                     'impurity_pct'                => 1.85,
                     'seed_processed_tonnes'       => $seedProc,
