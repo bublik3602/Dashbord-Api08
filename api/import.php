@@ -1315,7 +1315,7 @@ try {
                 $existingOilData = file_exists($oilDataFile) ? (json_decode((string)file_get_contents($oilDataFile), true) ?: []) : [];
 
                 $newOilData = [
-                    'sunflower_oil_pct'        => $sunflowerOilPct ?? ($existingOilData['sunflower_oil_pct'] ?? 45.3),
+                    'sunflower_oil_pct'        => $sunflowerOilPct ?? ($existingOilData['sunflower_oil_pct'] ?? 44.03),
                     'yield_oil_pct'            => $yieldOilPct ?? ($existingOilData['yield_oil_pct'] ?? 44.59),
                     'yield_meal_pct'           => $yieldMealPct ?? ($existingOilData['yield_meal_pct'] ?? 41.54),
                     'meal_oil_pct'             => $mealOilPct ?? ($existingOilData['meal_oil_pct'] ?? 0.77),

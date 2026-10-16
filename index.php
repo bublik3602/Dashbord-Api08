@@ -157,7 +157,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     $pInfo = $dashboardData['period_info'] ?? [];
     $activeRangeText = $pInfo['range_display'] ?? ("Виробнича доба (" . $bounds['label'] . ", з 08:00 до 08:00)");
     $labDate = $lab['report_date'] ?? '11.10.2026 (Лист погодження — по днях)';
-    $prodLabDate = $prodLab['report_date'] ?? '14.10.2026 (Звіт виробництва МЕЗ)';
+    $prodLabDate = $prodLab['report_date'] ?? '15.10.2026 (Звіт виробництва МЕЗ)';
     $stocksDate = $stocks['report_date'] ?? 'Ежедн.отчет2 (15 число)';
     ?>
     <div class="active-period-banner" id="active-period-banner">
@@ -366,12 +366,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="gauge-card">
                 <div class="gauge-header">
                     <span class="gauge-title">🧪 Товарна олійність у переробку</span>
-                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-asr">за <?= htmlspecialchars($prodLab['oil_date'] ?? '14.10') ?> • <?= number_format($prodLab['oil_content_pct'] ?? 44.03, 2, ',', ' ') ?>%</span>
+                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-asr">за <?= htmlspecialchars($prodLab['oil_date'] ?? '15.10') ?> • <?= number_format($prodLab['oil_content_pct'] ?? 44.03, 2, ',', ' ') ?>%</span>
                 </div>
                 <div id="chart-gauge-prod-oil" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
-                    <div class="gauge-sub" id="val-prod-oil-asr">Товарна олійність (за <?= htmlspecialchars($prodLab['oil_date'] ?? '14.10') ?>): <strong><?= number_format($prodLab['oil_content_pct'] ?? 44.03, 2, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 47.99, 2, ',', ' ') ?>%)</div>
-                    <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична товарна олійність за 14.10 як у звіті МЕЗ') ?> • Справка по переработке</div>
+                    <div class="gauge-sub" id="val-prod-oil-asr">Товарна олійність (за <?= htmlspecialchars($prodLab['oil_date'] ?? '15.10') ?>): <strong><?= number_format($prodLab['oil_content_pct'] ?? 44.03, 2, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 47.00, 2, ',', ' ') ?>%)</div>
+                    <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична товарна олійність за 15.10 як у звіті МЕЗ') ?> • Справка по переработке</div>
                 </div>
             </div>
 
@@ -382,7 +382,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <span style="font-size: 15px;">⚖️</span>
                         <span>Баланс виходу продукції та втрат олії</span>
                     </span>
-                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-balance-date" style="font-weight: 700;">за <?= htmlspecialchars($prodLab['oil_date'] ?? '14.10') ?> • Справка по переработке</span>
+                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-balance-date" style="font-weight: 700;">за <?= htmlspecialchars($prodLab['oil_date'] ?? '15.10') ?> • Справка по переработке</span>
                 </div>
 
                 <!-- БЛОК 1: % ВИХОДУ ПРОДУКЦІЇ ТА ОЛІЙНІСТЬ -->
