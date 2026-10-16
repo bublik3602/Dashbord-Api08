@@ -874,23 +874,28 @@ class MetricsCalculator {
         }
 
         // Якщо JSON порожній (наприклад, після оновлення архіву), спробувати відновити з БД
-        if (empty($manualEntries)) {
-            try {
-                $dbConn = $this->db ?? DashboardDB::getConnection();
-                if ($dbConn) {
+        // Відновлюємо ТІЛЬКИ записи, де report_date IS NOT NULL (реально внесені енергетиком), а не старі демо-записи
+        try {
+            $dbConn = $this->db ?? DashboardDB::getConnection();
+            if ($dbConn) {
+                // Видаляємо старі тестові демо-рядки жовтня без вказаного report_date
+                $dbConn->exec("DELETE FROM energy_readings WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-12 23:59:59' AND (report_date IS NULL OR report_date = '')");
+
+                if (empty($manualEntries)) {
                     $stmt = $dbConn->query("
                         SELECT recorded_at, report_date, power_kw, power_kwh_delta, water_m3_delta, steam_pressure_bar, reactive_kvarh
                         FROM energy_readings
-                        WHERE (power_kwh_delta > 0 OR water_m3_delta > 0)
-                          AND (MONTH(recorded_at) = 10 OR report_date LIKE '2026-10-%')
-                        ORDER BY recorded_at ASC
+                        WHERE (report_date IS NOT NULL AND report_date != '')
+                          AND (power_kwh_delta > 0 OR water_m3_delta > 0)
+                        ORDER BY report_date ASC
                     ");
                     if ($stmt) {
                         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         foreach ($rows as $r) {
-                            $d = !empty($r['report_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $r['report_date'])
-                                ? $r['report_date']
-                                : date('Y-m-d', strtotime($r['recorded_at']));
+                            $d = trim((string)$r['report_date']);
+                            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                                continue;
+                            }
                             $manualEntries[$d] = [
                                 'date'               => $d,
                                 'power_kwh'          => (float)$r['power_kwh_delta'] > 0 ? (float)$r['power_kwh_delta'] : null,
@@ -898,7 +903,7 @@ class MetricsCalculator {
                                 'steam_t'            => null,
                                 'steam_pressure_bar' => (float)$r['steam_pressure_bar'] > 0 ? (float)$r['steam_pressure_bar'] : 11.2,
                                 'reactive_kvarh'     => (float)$r['reactive_kvarh'] > 0 ? (float)$r['reactive_kvarh'] : null,
-                                'note'               => 'Відновлено з бази даних',
+                                'note'               => 'Внесено енергетиком',
                                 'author'             => 'energo',
                                 'updated_at'         => $r['recorded_at'],
                             ];
@@ -908,9 +913,20 @@ class MetricsCalculator {
                             @file_put_contents($manualFile, json_encode($manualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
                         }
                     }
+                } else {
+                    $cleaned = false;
+                    foreach ($manualEntries as $kDate => $kVal) {
+                        if (($kVal['note'] ?? '') === 'Відновлено з бази даних' && $kDate <= '2026-10-12') {
+                            unset($manualEntries[$kDate]);
+                            $cleaned = true;
+                        }
+                    }
+                    if ($cleaned) {
+                        @file_put_contents($manualFile, json_encode($manualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+                    }
                 }
-            } catch (Throwable $dbEx) {}
-        }
+            }
+        } catch (Throwable $dbEx) {}
 
         // Побудова timeline та добових рядків для Жовтня з ручних записів
         $tlLabels = [];

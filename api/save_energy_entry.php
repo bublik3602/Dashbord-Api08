@@ -51,20 +51,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $entries = loadEnergyEntries($dataFile);
 
     // Якщо файл порожній (наприклад, після перезаливки архіву), спробувати відновити з БД
-    if (empty($entries)) {
-        try {
-            $db = DashboardDB::getConnection();
-            if ($db) {
+    // Відновлюємо ТІЛЬКИ записи, явно внесені користувачем/енергетиком (report_date IS NOT NULL)
+    try {
+        $db = DashboardDB::getConnection();
+        if ($db) {
+            // Очищення старих демо-рядків жовтня без report_date
+            $db->exec("DELETE FROM energy_readings WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-12 23:59:59' AND (report_date IS NULL OR report_date = '')");
+
+            if (empty($entries)) {
                 $stmt = $db->query("
                     SELECT recorded_at, report_date, power_kw, power_kwh_delta, water_m3_delta, steam_pressure_bar, reactive_kvarh
                     FROM energy_readings
-                    WHERE power_kwh_delta > 0 OR water_m3_delta > 0
-                    ORDER BY recorded_at DESC LIMIT 31
+                    WHERE (report_date IS NOT NULL AND report_date != '')
+                      AND (power_kwh_delta > 0 OR water_m3_delta > 0)
+                    ORDER BY report_date DESC LIMIT 31
                 ");
                 if ($stmt) {
                     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     foreach ($rows as $r) {
-                        $d = !empty($r['report_date']) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $r['report_date']) ? $r['report_date'] : date('Y-m-d', strtotime($r['recorded_at']));
+                        $d = trim((string)$r['report_date']);
+                        if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                            continue;
+                        }
                         $entries[$d] = [
                             'date'               => $d,
                             'power_kwh'          => (float)$r['power_kwh_delta'] > 0 ? (float)$r['power_kwh_delta'] : null,
@@ -72,7 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                             'steam_t'            => null,
                             'steam_pressure_bar' => (float)$r['steam_pressure_bar'] > 0 ? (float)$r['steam_pressure_bar'] : 11.2,
                             'reactive_kvarh'     => (float)$r['reactive_kvarh'] > 0 ? (float)$r['reactive_kvarh'] : null,
-                            'note'               => 'Відновлено з бази даних',
+                            'note'               => 'Внесено енергетиком',
                             'author'             => 'energo',
                             'updated_at'         => $r['recorded_at'],
                         ];
@@ -81,9 +89,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                         saveEnergyEntries($dataFile, $entries);
                     }
                 }
+            } else {
+                $cleaned = false;
+                foreach ($entries as $kDate => $kVal) {
+                    if (($kVal['note'] ?? '') === 'Відновлено з бази даних' && $kDate <= '2026-10-12') {
+                        unset($entries[$kDate]);
+                        $cleaned = true;
+                    }
+                }
+                if ($cleaned) {
+                    saveEnergyEntries($dataFile, $entries);
+                }
             }
-        } catch (Throwable $e) {}
-    }
+        }
+    } catch (Throwable $e) {}
+}
 
     krsort($entries);
     echo json_encode([
