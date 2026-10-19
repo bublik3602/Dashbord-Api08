@@ -1513,6 +1513,7 @@ try {
                                     $dailyWater = round($flow / $spanDays, 2);
                                     for ($offset = 0; $offset < $spanDays; $offset++) {
                                         $dTarget = date('Y-m-d', strtotime($currDate) - ($offset * 86400));
+                                        if ($dTarget < '2026-10-01') continue;
                                         if (!isset($energyManualEntries[$dTarget])) {
                                             $energyManualEntries[$dTarget] = ['date' => $dTarget];
                                         }
@@ -1604,6 +1605,7 @@ try {
                                 $sumHeat   += $heat;
 
                                 if ($boiler > 0 || $prod > 0) {
+                                    if ($isoDate < '2026-10-01') continue;
                                     if (!isset($energyManualEntries[$isoDate])) {
                                         $energyManualEntries[$isoDate] = ['date' => $isoDate];
                                     }
@@ -1643,6 +1645,7 @@ try {
                     $dStr = trim((string)($r[0] ?? ''));
                     if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $dStr, $em)) {
                         $isoD = "{$em[3]}-{$em[2]}-{$em[1]}";
+                        if ($isoD < '2026-10-01') continue;
                         $waterDelta = isset($r[2]) && is_numeric($r[2]) ? (float)$r[2] : 0.0;
                         $powerDelta = isset($r[1]) && is_numeric($r[1]) ? (float)$r[1] : 0.0;
                         if ($waterDelta > 0 || $powerDelta > 0) {
@@ -1666,15 +1669,20 @@ try {
             }
 
             // ---------------------------------------------------------
-            // ЗБЕРЕЖЕННЯ В JSON ТА БАЗУ ДАНИХ
+            // ЗБЕРЕЖЕННЯ В JSON ТА БАЗУ ДАНИХ (Жовтень 2026 і далі)
             // ---------------------------------------------------------
             if (!empty($energyManualEntries)) {
+                foreach ($energyManualEntries as $dStr => $entry) {
+                    if ($dStr < '2026-10-01') {
+                        unset($energyManualEntries[$dStr]);
+                    }
+                }
                 ksort($energyManualEntries);
                 @file_put_contents($energyManualFile, json_encode($energyManualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
 
                 // Оновлення SQL таблиці energy_readings
                 foreach ($energyManualEntries as $dStr => $entry) {
-                    if ($dStr < '2026-09-01') continue;
+                    if ($dStr < '2026-10-01') continue;
                     $wVal = (float)($entry['water_m3'] ?? 0.0);
                     $sVal = (float)($entry['steam_t'] ?? 0.0);
                     $pVal = (float)($entry['power_kwh'] ?? 0.0);

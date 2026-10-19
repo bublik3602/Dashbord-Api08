@@ -991,6 +991,7 @@ class MetricsCalculator {
                     FROM energy_readings
                     WHERE (report_date IS NOT NULL AND report_date != '')
                       AND (power_kwh_delta > 0 OR water_m3_delta > 0 OR reactive_kvarh > 0)
+                      AND (recorded_at >= '2026-10-01 00:00:00' OR report_date >= '2026-10-01' OR report_date LIKE '%.10.2026%')
                     ORDER BY report_date ASC
                 ");
                 if ($stmt) {
@@ -998,7 +999,13 @@ class MetricsCalculator {
                     $hasDbUpdates = false;
                     foreach ($rows as $r) {
                         $d = trim((string)$r['report_date']);
+                        if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $d, $dm)) {
+                            $d = "{$dm[3]}-{$dm[2]}-{$dm[1]}";
+                        }
                         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
+                            continue;
+                        }
+                        if ($d < '2026-10-01') {
                             continue;
                         }
                         if (!isset($manualEntries[$d])) {
@@ -1037,6 +1044,18 @@ class MetricsCalculator {
                 }
             }
         } catch (Throwable $dbEx) {}
+
+        // Забезпечуємо очищення випадково занесених записів до 2026-10-01 (Серпень/Вересень мають окремі офіційні звіти)
+        $cleanedPreOct = false;
+        foreach ($manualEntries as $dStr => $entry) {
+            if ($dStr < '2026-10-01') {
+                unset($manualEntries[$dStr]);
+                $cleanedPreOct = true;
+            }
+        }
+        if ($cleanedPreOct) {
+            @file_put_contents($manualFile, json_encode($manualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+        }
 
         // Побудова timeline та добових рядків для Жовтня з ручних записів
         $tlLabels = [];
@@ -1298,14 +1317,14 @@ class MetricsCalculator {
                             'water_meters'               => $waterMetersAccounting,
                             'monthly_12'                 => $monthly12,
                             'timeline' => [
-                                'labels'        => $tlLabels,
-                                'power'         => $tlPower,
-                                'reactive'      => $tlReactive,
-                                'power_mwh'     => $tlPowerMwh,
-                                'power_kw_avg'  => $tlPowerKwAvg,
-                                'power_mw_avg'  => $tlPowerMwAvg,
-                                'water'         => $tlWater,
-                                'steam'         => $tlSteam,
+                                'labels'        => array_slice($tlLabels, -7),
+                                'power'         => array_slice($tlPower, -7),
+                                'reactive'      => array_slice($tlReactive, -7),
+                                'power_mwh'     => array_slice($tlPowerMwh, -7),
+                                'power_kw_avg'  => array_slice($tlPowerKwAvg, -7),
+                                'power_mw_avg'  => array_slice($tlPowerMwAvg, -7),
+                                'water'         => array_slice($tlWater, -7),
+                                'steam'         => array_slice($tlSteam, -7),
                                 'power_name'    => 'Активна електроенергія (кВт)',
                                 'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
                                 'water_name'    => 'Вода за добу по лічильнику (м³)',

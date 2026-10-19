@@ -250,6 +250,9 @@ window.FactoryCharts = {
                     show: false
                 },
                 labels: {
+                    rotate: (timelineData.labels || []).length > 16 ? -45 : 0,
+                    rotateAlways: false,
+                    hideOverlappingLabels: true,
                     style: {
                         colors: '#64748b',
                         fontSize: '11px',
@@ -478,6 +481,9 @@ window.FactoryCharts = {
                 axisBorder: { show: false },
                 axisTicks: { show: false },
                 labels: {
+                    rotate: (timelineData.labels || []).length > 16 ? -45 : 0,
+                    rotateAlways: false,
+                    hideOverlappingLabels: true,
                     style: { colors: '#64748b', fontSize: '11px', fontWeight: 600 }
                 }
             },
@@ -603,6 +609,7 @@ window.FactoryCharts = {
             dataLabels: {
                 enabled: true,
                 formatter: function (val) {
+                    if (val === null || val === undefined || Number(val) <= 0) return '';
                     if (unit === 'mwh') return val.toFixed(1) + ' МВт';
                     if (unit === 'mw') return val.toFixed(2) + ' МВт';
                     return val >= 1000 ? Math.round(val / 1000) + 'k' : Math.round(val);
@@ -619,6 +626,9 @@ window.FactoryCharts = {
                 axisBorder: { show: false },
                 axisTicks: { show: false },
                 labels: {
+                    rotate: labels.length > 16 ? -45 : 0,
+                    rotateAlways: false,
+                    hideOverlappingLabels: true,
                     style: { colors: '#64748b', fontSize: '11px', fontWeight: 600 }
                 }
             },
