@@ -778,10 +778,23 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <button type="button" class="period-btn energy-period-btn" data-period="month" style="padding: 4px 10px; font-size: 11px; font-weight: 700;">📆 Місяць</button>
                     </div>
 
-                    <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #ffffff; border: none; padding: 5px 11px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
-                        <i data-lucide="calendar" style="width: 12px; height: 12px;"></i>
-                        <span>📅 Вересень (факт)</span>
-                    </button>
+                    <!-- Інтерактивний випадаючий список місяців електроенергії (Архів 2026) -->
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: #f0f9ff; border: 1.5px solid #0284c7; padding: 3px 10px; border-radius: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.15);">
+                        <i data-lucide="zap" style="width: 14px; height: 14px; color: #0284c7;"></i>
+                        <label for="energy-header-month-select" style="font-size: 11px; font-weight: 700; color: #0369a1; margin: 0; white-space: nowrap;">Місяць ел.енергії:</label>
+                        <select id="energy-header-month-select" class="form-select form-select-sm" style="font-size: 11.5px; font-weight: 700; color: #0284c7; padding: 2px 8px; height: 28px; border-radius: 4px; border: 1px solid #7dd3fc; background: #ffffff; cursor: pointer;">
+                            <option value="2026-10">Жовтень 2026 (Поточний факт)</option>
+                            <option value="2026-09" selected>Вересень 2026 (Архів факту)</option>
+                            <option value="2026-08">Серпень 2026 (ППР)</option>
+                            <option value="2026-07">Липень 2026</option>
+                            <option value="2026-06">Червень 2026</option>
+                            <option value="2026-05">Травень 2026</option>
+                            <option value="2026-04">Квітень 2026</option>
+                            <option value="2026-03">Березень 2026</option>
+                            <option value="2026-02">Лютий 2026</option>
+                            <option value="2026-01">Січень 2026</option>
+                        </select>
+                    </div>
 
                     <!-- Кнопка вводу показників енергетика -->
                     <button type="button" id="btn-open-energy-entry" style="background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; border: 1px solid #047857; padding: 5px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(16,185,129,0.35);">

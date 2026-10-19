@@ -165,6 +165,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (sel && sel.value !== key) {
             sel.value = key;
         }
+        const headerSel = document.getElementById('energy-header-month-select');
+        if (headerSel && headerSel.value !== key) {
+            headerSel.value = key;
+        }
         const en = (window.INITIAL_DASHBOARD_DATA && window.INITIAL_DASHBOARD_DATA.energy) || {};
         const archive = en.energy_departments_archive || {};
         const monthData = archive[key];
@@ -227,10 +231,52 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
+    const periodMapFromKey = {
+        '2026-10': 'month_oct',
+        '2026-09': 'month_sep',
+        '2026-08': 'month_aug',
+        '2026-07': 'month_jul',
+        '2026-06': 'month_jun',
+        '2026-05': 'month_may',
+        '2026-04': 'month_apr',
+        '2026-03': 'month_mar',
+        '2026-02': 'month_feb',
+        '2026-01': 'month_jan'
+    };
+
+    const energyHeaderSel = document.getElementById('energy-header-month-select');
+    if (energyHeaderSel) {
+        energyHeaderSel.addEventListener('change', function () {
+            const key = this.value;
+            window.selectEnergyMonth(key);
+            const p = periodMapFromKey[key];
+            if (p && p !== currentPeriod) {
+                const monthDropdown = document.getElementById('select-other-months');
+                if (monthDropdown) monthDropdown.value = p;
+                periodButtons.forEach(b => b.classList.remove('active'));
+                currentPeriod = p;
+                updateExportLink();
+                fetchDashboardData(true);
+            }
+        });
+    }
+
     const energyMonthSel = document.getElementById('energy-month-select');
     if (energyMonthSel) {
         energyMonthSel.addEventListener('change', function () {
-            window.selectEnergyMonth(this.value);
+            const key = this.value;
+            window.selectEnergyMonth(key);
+            const headerSel = document.getElementById('energy-header-month-select');
+            if (headerSel) headerSel.value = key;
+            const p = periodMapFromKey[key];
+            if (p && p !== currentPeriod) {
+                const monthDropdown = document.getElementById('select-other-months');
+                if (monthDropdown) monthDropdown.value = p;
+                periodButtons.forEach(b => b.classList.remove('active'));
+                currentPeriod = p;
+                updateExportLink();
+                fetchDashboardData(true);
+            }
         });
     }
 
@@ -778,8 +824,25 @@ document.addEventListener('DOMContentLoaded', function () {
                 window.INITIAL_DASHBOARD_DATA.energy.energy_departments_archive = en.energy_departments_archive;
             }
 
+            const reversePeriodMap = {
+                'month_oct': '2026-10',
+                'month': '2026-10',
+                'month_sep': '2026-09',
+                'month_aug': '2026-08',
+                'month_jul': '2026-07',
+                'month_jun': '2026-06',
+                'month_may': '2026-05',
+                'month_apr': '2026-04',
+                'month_mar': '2026-03',
+                'month_feb': '2026-02',
+                'month_jan': '2026-01'
+            };
             const energyMonthSelEl = document.getElementById('energy-month-select');
-            const selectedEnergyMonthKey = energyMonthSelEl ? energyMonthSelEl.value : '2026-09';
+            const headerMonthSelEl = document.getElementById('energy-header-month-select');
+            const selectedEnergyMonthKey = reversePeriodMap[currentPeriod] || (headerMonthSelEl ? headerMonthSelEl.value : (energyMonthSelEl ? energyMonthSelEl.value : '2026-09'));
+
+            if (headerMonthSelEl && selectedEnergyMonthKey) headerMonthSelEl.value = selectedEnergyMonthKey;
+            if (energyMonthSelEl && selectedEnergyMonthKey) energyMonthSelEl.value = selectedEnergyMonthKey;
 
             if (selectedEnergyMonthKey && window.INITIAL_DASHBOARD_DATA?.energy?.energy_departments_archive?.[selectedEnergyMonthKey]) {
                 window.selectEnergyMonth(selectedEnergyMonthKey);
