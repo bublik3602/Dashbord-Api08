@@ -123,6 +123,10 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <span>🌻 СЕМЕНА</span>
                 </a>
                 <?php endif; ?>
+                <a href="presentation.html" target="_blank" class="btn-action" id="btn-open-presentation" title="Відкрити презентацію для керівництва (Слайди, 10 розділів)" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: 1px solid #0284c7; font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+                    <i data-lucide="presentation" style="width: 14px; height: 14px;"></i>
+                    <span>📊 Презентація</span>
+                </a>
                 <button type="button" class="btn-action btn-import" id="btn-open-import" title="<?= $isEnergo ? 'Імпортувати звіти енергетики (РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ, АГРОПРОІНВЕСТ 08, Облік води, Учет пара)' : 'Імпортувати щоденні звіти завода (Лист погодження, СВОД, Баланс)' ?>">
                     <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
                     <span>Імпорт Excel</span>

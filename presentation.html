@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Презентація для керівництва: Ситуаційний Центр МЕЗ • ТОВ «Агропроінвест 08»</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #ffffff;
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --emerald: #10b981;
+            --emerald-dark: #059669;
+            --amber: #f59e0b;
+            --orange: #ea580c;
+            --violet: #8b5cf6;
+            --slate-800: #1e293b;
+            --slate-600: #475569;
+            --slate-400: #94a3b8;
+            --slate-100: #f1f5f9;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #090d16;
+            color: var(--slate-800);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Presentation Wrapper */
+        .deck-wrapper {
+            width: 100vw;
+            height: 100vh;
+            max-width: 1366px;
+            max-height: 768px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (max-width: 1366px) or (max-height: 768px) {
+            .deck-wrapper {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+
+        /* Top Navbar */
+        .deck-header {
+            background: var(--bg-dark);
+            color: #ffffff;
+            padding: 12px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--emerald));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .brand-title {
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: var(--slate-400);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-ctrl {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-ctrl:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--emerald), var(--emerald-dark));
+            border: none;
+            color: #fff;
+        }
+
+        .btn-download:hover {
+            background: linear-gradient(135deg, var(--emerald-dark), #047857);
+        }
+
+        /* Slides Container */
+        .slides-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 36px 48px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(30px);
+            transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        /* Dark Slide (Title, Conclusion) */
+        .slide-dark {
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: #ffffff;
+            justify-content: center;
+        }
+
+        .slide-dark .slide-title {
+            color: #ffffff;
+        }
+
+        .slide-dark .slide-sub {
+            color: #cbd5e1;
+        }
+
+        /* Slide Typography */
+        .slide-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(2, 132, 199, 0.12);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            width: fit-content;
+        }
+
+        .slide-title {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--slate-800);
+            margin-bottom: 6px;
+            line-height: 1.25;
+        }
+
+        .slide-sub {
+            font-size: 13.5px;
+            color: var(--slate-600);
+            margin-bottom: 24px;
+        }
+
+        /* Grids & Cards */
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            flex: 1;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+            flex: 1;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            flex: 1;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            position: relative;
+        }
+
+        .card-header-bar {
+            height: 4px;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate-800);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            margin-bottom: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .card-subtext {
+            font-size: 11.5px;
+            color: var(--slate-600);
+            line-height: 1.45;
+        }
+
+        .list-items {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .list-items li {
+            font-size: 12px;
+            line-height: 1.45;
+            color: var(--slate-800);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .list-items li i {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* Bottom Controls */
+        .deck-footer {
+            background: #ffffff;
+            border-top: 1px solid var(--border);
+            padding: 10px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .deck-progress {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .progress-dot.active {
+            background: var(--primary);
+            width: 22px;
+            border-radius: 4px;
+        }
+
+        .nav-btns {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-nav {
+            background: var(--slate-100);
+            color: var(--slate-800);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Keyboard hint */
+        .key-hint {
+            font-size: 11px;
+            color: var(--slate-400);
+            font-weight: 500;
+        }
+
+        kbd {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Print Style */
+        @media print {
+            body {
+                background: #fff;
+            }
+            .deck-wrapper {
+                width: 100%;
+                height: auto;
+                max-width: none;
+                max-height: none;
+                box-shadow: none;
+            }
+            .deck-header, .deck-footer {
+                display: none;
+            }
+            .slide {
+                position: relative;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                page-break-after: always;
+                height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="deck-wrapper">
+    <!-- Header -->
+    <header class="deck-header">
+        <div class="header-brand">
+            <div class="brand-icon">
+                <i data-lucide="activity"></i>
+            </div>
+            <div>
+                <div class="brand-title">ТОВ «Агропроінвест 08» • Ситуаційний Центр МЕЗ</div>
+                <div class="brand-sub">Звіт для Ради Директорів та Керівництва заводу</div>
+            </div>
+        </div>
+        <div class="header-controls">
+            <span class="key-hint">Клавіші: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> або <kbd>Пробіл</kbd></span>
+            <a href="Презентація_Дашборд_МЕЗ_Керівництву.pptx" download class="btn-ctrl btn-download" title="Завантажити у форматі Microsoft PowerPoint">
+                <i data-lucide="download"></i>
+                <span>Завантажити .PPTX</span>
+            </a>
+            <button type="button" class="btn-ctrl" onclick="toggleFullScreen()" title="Повноекранний режим">
+                <i data-lucide="maximize" id="fs-icon"></i>
+            </button>
+            <a href="index.php" class="btn-ctrl" title="Повернутися на Дашборд">
+                <i data-lucide="arrow-left"></i>
+                <span>На Дашборд</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Slides Container -->
+    <main class="slides-container">
+
+        <!-- SLIDE 1: Title (Dark) -->
+        <section class="slide slide-dark active" data-slide="1">
+            <div style="max-width: 900px; margin-left: 20px;">
+                <div class="slide-badge" style="background: rgba(2, 132, 199, 0.25); color: #38bdf8;">
+                    <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                    Виробничий Сезон 2026–2027
+                </div>
+                <h1 class="slide-title" style="font-size: 38px; line-height: 1.15; margin-bottom: 14px;">
+                    СИТУАЦІЙНИЙ ЦЕНТР ТА<br>ЦИФРОВИЙ ДАШБОРД МЕЗ
+                </h1>
+                <p class="slide-sub" style="font-size: 16px; margin-bottom: 32px; max-width: 800px;">
+                    Комплексна цифрова платформа оперативного та стратегічного управління олійноекстракційним заводом: матеріальний баланс, якість насіння, логістика черги CRM та енергоресурси.
+                </p>
+                <div style="display: flex; gap: 24px; font-size: 12px; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 18px;">
+                    <div><strong>Локація:</strong> dash-api08.dniprovska.net</div>
+                    <div><strong>Оновлення даних:</strong> Кожні 30 секунд онлайн</div>
+                    <div><strong>Аудит:</strong> 12 років ретроспективи пари (2015–2026)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: 4 Pillars of Architecture -->
+        <section class="slide" data-slide="2">
+            <div class="slide-badge">Архітектура рішення</div>
+            <h2 class="slide-title">4 контури цифрового управління підприємством</h2>
+            <p class="slide-sub">Єдиний центр прийняття управлінських рішень замість десятків розрізнених файлів Excel</p>
+            
+            <div class="grid-4">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div class="card-title">
+                        <i data-lucide="factory" style="color: var(--primary);"></i>
+                        Блок А: Виробництво
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check" style="color: var(--primary);"></i> Матеріальний баланс екстракції</li>
+                        <li><i data-lucide="check" style="color: var(--primary);"></i> Вихід Олії (48,31%), Шроту, Лузги</li>
+                        <li><i data-lucide="check" style="color: var(--primary);"></i> Товарна олійність (44,03%)</li>
+                        <li><i data-lucide="check" style="color: var(--primary);"></i> Баланс неврахованих втрат олії</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div class="card-title">
+                        <i data-lucide="truck" style="color: var(--emerald);"></i>
+                        Блок Б: Логістика CRM
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check" style="color: var(--emerald);"></i> Електронна черга авто в реальному часі</li>
+                        <li><i data-lucide="check" style="color: var(--emerald);"></i> Розподіл: Насіння, Олія, Шрот, Лузга</li>
+                        <li><i data-lucide="check" style="color: var(--emerald);"></i> Контроль часу перебування (&lt; 120 хв)</li>
+                        <li><i data-lucide="check" style="color: var(--emerald);"></i> Складські залишки готової продукції</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--amber);"></div>
+                    <div class="card-title">
+                        <i data-lucide="zap" style="color: var(--amber);"></i>
+                        Блок В: Енергетика
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check" style="color: var(--amber);"></i> 12-річний повний архів пари (2015–2026)</li>
+                        <li><i data-lucide="check" style="color: var(--amber);"></i> Помісячний архів ел.енергії за 2026 рік</li>
+                        <li><i data-lucide="check" style="color: var(--amber);"></i> Розподіл кВт, води, стоків та газу по цехах</li>
+                        <li><i data-lucide="check" style="color: var(--amber);"></i> Питомі норми витрат на тону</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--violet);"></div>
+                    <div class="card-title">
+                        <i data-lucide="trending-up" style="color: var(--violet);"></i>
+                        Блок Г: Бенчмаркінг
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check" style="color: var(--violet);"></i> Зіставлення фактів 2026 vs 2025 років</li>
+                        <li><i data-lucide="check" style="color: var(--violet);"></i> Доба, Тиждень, Місяць, Повний сезон</li>
+                        <li><i data-lucide="check" style="color: var(--violet);"></i> Виконання контрактів та довіз насіння</li>
+                        <li><i data-lucide="check" style="color: var(--violet);"></i> Автоматичні попередження про ризики</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: Material Balance & Yields -->
+        <section class="slide" data-slide="3">
+            <div class="slide-badge">Блок А • Виробництво</div>
+            <h2 class="slide-title">Матеріальний баланс цеху екстракції та вихід продукції</h2>
+            <p class="slide-sub">Фактичні результати роботи за активну добу переробки (15.10.2026, звіт виробництва МЕЗ)</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title" style="color: var(--primary);">
+                        <i data-lucide="pie-chart"></i> Фактичний вихід готової продукції
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 11px; color: #166534; font-weight: 700;">💧 Олія нерафінована</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #15803d;">48,31%</div>
+                            <div style="font-size: 11px; color: #166534;">149,28 т • +3,86% до 2025 р.</div>
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 11px; color: #1e40af; font-weight: 700;">🌾 Шрот соняшниковий</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #1d4ed8;">50,53%</div>
+                            <div style="font-size: 11px; color: #1e40af;">156,13 т • +8,77% до 2025 р.</div>
+                        </div>
+                        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 11px; color: #92400e; font-weight: 700;">🪵 Лузга суха</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #b45309;">14,87%</div>
+                            <div style="font-size: 11px; color: #92400e;">45,95 т • Паливо котельні</div>
+                        </div>
+                        <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 11px; color: #6b21a8; font-weight: 700;">⚖️ Олія + Шрот</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #7e22ce;">98,84%</div>
+                            <div style="font-size: 11px; color: #6b21a8;">+12,63% максимальна якість</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--slate-600); line-height: 1.5; border-top: 1px solid var(--border); padding-top: 10px;">
+                        <strong>Балансове перевищення:</strong> Сумарний вихід продукції становить <strong>113,72%</strong> (+13,72% баланс +) завдяки високій олійності та ефективній екстракції.
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" style="color: var(--emerald-dark);">
+                        <i data-lucide="check-circle-2"></i> Впроваджені алгоритми та бізнес-правила
+                    </div>
+                    <ul class="list-items" style="gap: 12px;">
+                        <li>
+                            <i data-lucide="shield-alert" style="color: var(--amber);"></i>
+                            <div>
+                                <strong>Режим простою/паузи заводу (16–18 жовтня):</strong><br>
+                                <span style="color: var(--slate-600); font-size: 11px;">Коли переробка 0 т, система відображає статус «Переробка на паузі», не ламаючи графіки та не генеруючи помилок ділення на нуль.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i data-lucide="layers" style="color: var(--primary);"></i>
+                            <div>
+                                <strong>Розмежування елеватора та МЕЗ:</strong><br>
+                                <span style="color: var(--slate-600); font-size: 11px;">Втрати підробки насіння на елеваторі (1,45%) відокремлені від виробничих втрат екстракції для персональної відповідальності начальників цехів.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i data-lucide="gauge" style="color: var(--emerald);"></i>
+                            <div>
+                                <strong>Контроль добового плану (600 т):</strong><br>
+                                <span style="color: var(--slate-600); font-size: 11px;">14.10 перероблено 596,81 т (99,5% плану), 15.10 — 308,98 т (активна зміна).</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: Lab Quality & Losses -->
+        <section class="slide" data-slide="4">
+            <div class="slide-badge">Блок А • Лабораторія</div>
+            <h2 class="slide-title">Контроль якості сировини та аудит втрат олії</h2>
+            <p class="slide-sub">Вхідні показники лабораторії та перевірка нормативних втрат у шроті й луззі</p>
+
+            <div class="grid-3" style="max-height: 120px; margin-bottom: 18px;">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">🧪 Товарна олійність</div>
+                    <div class="card-value" style="font-size: 26px;">44,03%</div>
+                    <div class="card-subtext">на а.с.р. 47,00% — 47,99%</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">💧 Вологість соняшнику</div>
+                    <div class="card-value" style="color: var(--emerald); font-size: 26px;">6,20% — 6,30%</div>
+                    <div class="card-subtext">В межах норми (&lt; 8,0%)</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--amber);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">🍂 Смітна домішка</div>
+                    <div class="card-value" style="color: var(--amber); font-size: 26px;">1,71% — 2,18%</div>
+                    <div class="card-subtext">Базовий норматив 2,0%</div>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-title" style="color: var(--primary-dark);">
+                    <i data-lucide="file-text"></i> Баланс втрат олії («Справка по переработке цеху екстракції»)
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 12px; margin-bottom: 6px;">Втрати у відходах виробництва:</div>
+                        <ul class="list-items">
+                            <li>
+                                <i data-lucide="chevron-right" style="color: var(--primary);"></i>
+                                <span><strong>Втрати олії в шроті (олійність 0,77%):</strong> 1 202,3 кг (15.10) • 16 260,9 кг (місяць). Нижче технологічної межі регламенту (до 1,0%).</span>
+                            </li>
+                            <li>
+                                <i data-lucide="chevron-right" style="color: var(--primary);"></i>
+                                <span><strong>Втрати олії в луззі (олійність 3,27%):</strong> 1 502,1 кг (15.10) • 24 997,0 кг (місяць). Ефективна робота насіннєвійок.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 12px; margin-bottom: 6px;">Невраховані втрати та підсумок:</div>
+                        <ul class="list-items">
+                            <li>
+                                <i data-lucide="chevron-right" style="color: var(--emerald);"></i>
+                                <span><strong>Враховані технологічні втрати:</strong> 2 704,4 кг (0,87% від сировини) — суворо в межах нормативу.</span>
+                            </li>
+                            <li>
+                                <i data-lucide="chevron-right" style="color: var(--emerald);"></i>
+                                <span><strong>Невраховані втрати олії: -15 936,5 кг (-5,16%):</strong> Негативні втрати підтверджують додатковий приріст товарної олії понад лабораторний розрахунок.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: Logistics & Stocks -->
+        <section class="slide" data-slide="5">
+            <div class="slide-badge">Блок Б • Логістика & Склади</div>
+            <h2 class="slide-title">Воронка електронної черги та складські запаси</h2>
+            <p class="slide-sub">Пряма інтеграція з базою даних apgk_api08 (режим Read-Only) та звіт СВОД</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title" style="color: var(--primary);">
+                        <i data-lucide="truck"></i> Електронна черга автотранспорту
+                    </div>
+                    <ul class="list-items" style="gap: 12px; margin-bottom: 14px;">
+                        <li>
+                            <i data-lucide="clock" style="color: var(--emerald);"></i>
+                            <div>
+                                <strong>Насіння (приймання): ~115 хв</strong><br>
+                                <span style="font-size: 11px; color: var(--slate-600);">Зважування, аналіз лабораторії, розвантаження на завальну яму.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i data-lucide="clock" style="color: var(--emerald);"></i>
+                            <div>
+                                <strong>Олія (автоцистерни): ~95 хв</strong><br>
+                                <span style="font-size: 11px; color: var(--slate-600);">Налив з резервуарного парку та оформлення ТТН.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i data-lucide="clock" style="color: var(--amber);"></i>
+                            <div>
+                                <strong>Шрот (відвантаження): ~130 хв</strong><br>
+                                <span style="font-size: 11px; color: var(--slate-600);">Насип у зерновози зі складу підлогового зберігання.</span>
+                            </div>
+                        </li>
+                    </ul>
+                    <div style="background: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-size: 11px; color: var(--slate-600);">
+                        🛡️ <strong>Безпека:</strong> Підключення в режимі «Тільки читання» виключає будь-який вплив дашборда на роботу вагових та CRM.
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" style="color: var(--emerald-dark);">
+                        <i data-lucide="database"></i> Складські залишки готової продукції (СВОД)
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="background: #f8fafc; border-left: 4px solid var(--primary); padding: 10px 14px; border-radius: 4px;">
+                            <div style="font-size: 11px; color: var(--slate-600); font-weight: 600;">💧 Олія в резервуарах</div>
+                            <div style="font-size: 20px; font-weight: 800; color: var(--primary);">3 650,10 т</div>
+                            <div style="font-size: 11px; color: var(--slate-600);">Місткість: 5 000 т • Заповнення: 73%</div>
+                        </div>
+                        <div style="background: #f8fafc; border-left: 4px solid var(--emerald); padding: 10px 14px; border-radius: 4px;">
+                            <div style="font-size: 11px; color: var(--slate-600); font-weight: 600;">🌾 Шрот на складі</div>
+                            <div style="font-size: 20px; font-weight: 800; color: var(--emerald-dark);">674,86 т</div>
+                            <div style="font-size: 11px; color: var(--slate-600);">Місткість: 1 500 т • Заповнення: 45%</div>
+                        </div>
+                        <div style="background: #f8fafc; border-left: 4px solid var(--amber); padding: 10px 14px; border-radius: 4px;">
+                            <div style="font-size: 11px; color: var(--slate-600); font-weight: 600;">🪵 Лузга на складі</div>
+                            <div style="font-size: 20px; font-weight: 800; color: var(--amber);">166,77 т</div>
+                            <div style="font-size: 11px; color: var(--slate-600);">Витрата на котельню забезпечує 100% автономію по парі</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: 12-Year Steam Archive -->
+        <section class="slide" data-slide="6">
+            <div class="slide-badge">Блок В • Енергетика</div>
+            <h2 class="slide-title">12-річний повний архів технологічної пари (2015–2026 рр.)</h2>
+            <p class="slide-sub">Оцифровано всі місяці та доби обліку котельні («Учет пара на ООО “Агропроинвест 08”»)</p>
+
+            <div class="grid-4" style="margin-bottom: 20px;">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--amber);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">💨 Екстракція (МЕЗ)</div>
+                    <div class="card-value" style="color: var(--amber); font-size: 24px;">1 076,80 т</div>
+                    <div class="card-subtext">58,4% споживання пари</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">🏭 Підготовчий цех</div>
+                    <div class="card-value" style="color: var(--emerald); font-size: 24px;">758,39 т</div>
+                    <div class="card-subtext">41,1% споживання пари</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">⚙️ Власні потреби (СН)</div>
+                    <div class="card-value" style="color: var(--primary); font-size: 24px;">136,46 т</div>
+                    <div class="card-subtext">6,9% на деаерацію котлів</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--orange);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">⚖️ Питома норма</div>
+                    <div class="card-value" style="color: var(--orange); font-size: 24px;">208,9 кг/т</div>
+                    <div class="card-subtext">на 1 т переробленого соняшнику</div>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-title" style="color: var(--primary-dark);">
+                    <i data-lucide="layers"></i> Можливості інтерактивного журналу пари для керівника
+                </div>
+                <ul class="list-items" style="gap: 10px;">
+                    <li>
+                        <i data-lucide="check" style="color: var(--emerald);"></i>
+                        <span><strong>Інтерактивний селектор місяця:</strong> Керівник може вибрати будь-який місяць з 2015 по 2026 рік зі списку й миттєво побачити подобову відомість без перезавантаження.</span>
+                    </li>
+                    <li>
+                        <i data-lucide="check" style="color: var(--emerald);"></i>
+                        <span><strong>Подобова деталізація:</strong> Котельня, виробництво, СН, екстракція, підготовка, елеватор та опалення по кожному дню місяця.</span>
+                    </li>
+                    <li>
+                        <i data-lucide="check" style="color: var(--emerald);"></i>
+                        <span><strong>Оперативне виявлення перепалів:</strong> Порівняння питомої норми (кг/т) з еталонними значеннями для контролю технологічної дисципліни кочегарів.</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SLIDE 7: Electricity & Departments 2026 -->
+        <section class="slide" data-slide="7">
+            <div class="slide-badge">Блок В • Енергоресурси</div>
+            <h2 class="slide-title">Помісячний баланс електроенергії, води та газу (2026 рік)</h2>
+            <p class="slide-sub">Архів розподілу витрат за структурними підрозділами заводу з січня по жовтень 2026 року</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title" style="color: var(--primary);">
+                        <i data-lucide="cpu"></i> Електроенергія та підрозділи заводу
+                    </div>
+                    <ul class="list-items" style="gap: 10px; margin-bottom: 12px;">
+                        <li>
+                            <i data-lucide="check" style="color: var(--primary);"></i>
+                            <span><strong>Повний помісячний архів:</strong> Січень, Лютий, Березень, Квітень, Травень, Червень, Липень, Серпень (ППР), Вересень, Жовтень.</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--primary);"></i>
+                            <span><strong>Зручний вибір місяця:</strong> Розміщений прямо у шапці Блоку В для миттєвого перегляду директором.</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--primary);"></i>
+                            <span><strong>Питома витрата заводу:</strong> 54,97 кВт/т (Пресовий цех: ~60,9 кВт/т, Дільниця екстракції: ~23,9 кВт/т).</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--primary);"></i>
+                            <span><strong>Облік природного газу:</strong> Окрема графа для газової котельні у холодні та перехідні місяці року.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" style="color: var(--emerald-dark);">
+                        <i data-lucide="droplet"></i> Вода, каналізація та реактивна енергія
+                    </div>
+                    <ul class="list-items" style="gap: 10px; margin-bottom: 12px;">
+                        <li>
+                            <i data-lucide="check" style="color: var(--emerald);"></i>
+                            <span><strong>Водопостачання заводу:</strong> 1 645,0 м³/місяць (~54,8 м³/добу за лічильником другого підйому).</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--emerald);"></i>
+                            <span><strong>Розподіл води:</strong> Котельня (1 023 м³ на пароутворення), Екстракція (544 м³ на охолодження).</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--emerald);"></i>
+                            <span><strong>Скидання стоків:</strong> 1 150,0 м³/місяць через власні очисні споруди.</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--emerald);"></i>
+                            <span><strong>Контроль реактивної потужності:</strong> Розрахунок cos φ запобігає штрафам від енергопостачальної компанії.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 8: Strategic Benchmarking -->
+        <section class="slide" data-slide="8">
+            <div class="slide-badge">Блок Г • Бенчмаркінг</div>
+            <h2 class="slide-title">Стратегічне порівняння сезонів: 2026–2027 vs 2025–2026</h2>
+            <p class="slide-sub">Об'єктивне зіставлення ключових KPI заводу з еталонними показниками минулого року</p>
+
+            <div class="grid-4" style="margin-bottom: 20px;">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">⚙️ Переробка сировини</div>
+                    <div class="card-value" style="font-size: 24px;">309,0 т</div>
+                    <div class="card-subtext">Аналог 2025: 538,1 т • Запуск сезону</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">💧 Вихід олії</div>
+                    <div class="card-value" style="color: var(--emerald); font-size: 24px;">48,31%</div>
+                    <div class="card-subtext"><strong>+3,86%</strong> вище за еталон 2025 (44,45%)</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--violet);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">🌾 Вихід шроту</div>
+                    <div class="card-value" style="color: var(--violet); font-size: 24px;">50,53%</div>
+                    <div class="card-subtext"><strong>+8,77%</strong> вище за еталон 2025 (41,76%)</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--amber);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">⚖️ Олія + Шрот</div>
+                    <div class="card-value" style="color: var(--amber); font-size: 24px;">98,84%</div>
+                    <div class="card-subtext"><strong>+12,63%</strong> максимальна віддача насіння</div>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-title" style="color: var(--primary-dark);">
+                    <i data-lucide="award"></i> Головні висновки для Ради Директорів
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px; color: var(--slate-800);">
+                    <div>
+                        <strong>1. Технологічна перевага сезону 2026:</strong><br>
+                        <span style="color: var(--slate-600);">Завдяки оптимізації режимів жаровень та екстрактора вихід товарної олії з кожної тони соняшнику зріс майже на 4%, що забезпечує прямий додатковий прибуток.</span>
+                    </div>
+                    <div>
+                        <strong>2. Стабільність сировинного забезпечення:</strong><br>
+                        <span style="color: var(--slate-600);">Сформований запас насіння на елеваторі гарантує понад 21 добу автономної роботи заводу на повній потужності без ризику зупинки виробництва.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 9: Technology & Security -->
+        <section class="slide" data-slide="9">
+            <div class="slide-badge">Надійність • IT-Інфраструктура</div>
+            <h2 class="slide-title">Технічна архітектура та інформаційна безпека</h2>
+            <p class="slide-sub">Відповідність сучасним корпоративним стандартам надійності та швидкодії</p>
+
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div class="card-title">
+                        <i data-lucide="zap" style="color: var(--primary);"></i> Швидкодія та легкість
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check"></i> PHP 8.2 + MySQL / JSON State</li>
+                        <li><i data-lucide="check"></i> Час генерації сторінки &lt; 200 мс</li>
+                        <li><i data-lucide="check"></i> Чистий Vanilla JS без важких бібліотек</li>
+                        <li><i data-lucide="check"></i> Автономність без зовнішніх залежностей</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div class="card-title">
+                        <i data-lucide="shield-check" style="color: var(--emerald);"></i> Безпека та ізоляція
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check"></i> Рольовий доступ (RBAC) співробітників</li>
+                        <li><i data-lucide="check"></i> Виробнича база CRM строго в Read-Only</li>
+                        <li><i data-lucide="check"></i> Повна ізоляція системних паролів</li>
+                        <li><i data-lucide="check"></i> Журналювання дій та змін показників</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--violet);"></div>
+                    <div class="card-title">
+                        <i data-lucide="refresh-cw" style="color: var(--violet);"></i> Автоматизація
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check"></i> Автооновлення кожні 30 с з лічильником</li>
+                        <li><i data-lucide="check"></i> Експорт звітів в Excel, PDF, CSV</li>
+                        <li><i data-lucide="check"></i> Готовий дистрибутив HestiaCP (ZIP)</li>
+                        <li><i data-lucide="check"></i> Контроль версій у репозиторії GitHub</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 10: Conclusion (Dark) -->
+        <section class="slide slide-dark" data-slide="10">
+            <div style="max-width: 900px; margin-left: 20px;">
+                <div class="slide-badge" style="background: rgba(16, 185, 129, 0.25); color: #34d399;">
+                    <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                    Підсумки та Ефект
+                </div>
+                <h2 class="slide-title" style="font-size: 34px; line-height: 1.2; margin-bottom: 20px;">
+                    Економічний ефект та наступні кроки розвитку
+                </h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+                    <div style="background: rgba(255,255,255,0.06); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+                        <div style="font-weight: 700; color: #38bdf8; margin-bottom: 6px; font-size: 14px;">1. Прозорість управління</div>
+                        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Керівництво контролює завод в один клік — від тоннажу соняшнику до кубометрів води та тиску пари в реальному часі.</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.06); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+                        <div style="font-weight: 700; color: #34d399; margin-bottom: 6px; font-size: 14px;">2. Економія часу інженерів</div>
+                        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Звільнення керівників цехів від ручного складання щоденних Excel-звірок (економія до 3-4 год робочого часу на добу).</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.06); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+                        <div style="font-weight: 700; color: #fbbf24; margin-bottom: 6px; font-size: 14px;">3. Захист від втрат олії</div>
+                        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Миттєве виявлення відхилень олійності шроту або лузги дозволяє ліквідувати втрати сировини за лічені години.</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.06); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+                        <div style="font-weight: 700; color: #c084fc; margin-bottom: 6px; font-size: 14px;">4. Наступний етап розвитку</div>
+                        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Підключення датчиків SCADA/Zabbix, прямий збір даних з витратомірів та предикативна аналітика на базі ШІ.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 14px;">
+                    <a href="index.php" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; text-decoration: none; padding: 10px 22px; border-radius: 6px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;">
+                        <i data-lucide="layout-dashboard"></i>
+                        <span>Відкрити Дашборд МЕЗ</span>
+                    </a>
+                    <a href="Презентація_Дашборд_МЕЗ_Керівництву.pptx" download style="background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; padding: 10px 22px; border-radius: 6px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                        <i data-lucide="download"></i>
+                        <span>Завантажити PowerPoint (.pptx)</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Navigation -->
+    <footer class="deck-footer">
+        <div class="deck-progress" id="progress-dots">
+            <!-- Dots generated by JS -->
+        </div>
+
+        <div style="font-size: 12px; color: var(--slate-600); font-weight: 600;">
+            Слайд <span id="current-slide-num">1</span> з <span id="total-slides-num">10</span>
+        </div>
+
+        <div class="nav-btns">
+            <button type="button" class="btn-nav" id="btn-prev" onclick="changeSlide(-1)">
+                <i data-lucide="chevron-left"></i> Назад
+            </button>
+            <button type="button" class="btn-nav" id="btn-next" onclick="changeSlide(1)">
+                Вперед <i data-lucide="chevron-right"></i>
+            </button>
+        </div>
+    </footer>
+</div>
+
+<script>
+    let currentSlide = 1;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const dotsContainer = document.getElementById('progress-dots');
+    const currentNumEl = document.getElementById('current-slide-num');
+    const totalNumEl = document.getElementById('total-slides-num');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+
+    totalNumEl.textContent = totalSlides;
+
+    // Build dots
+    slides.forEach((_, idx) => {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot' + (idx === 0 ? ' active' : '');
+        dot.title = `Слайд ${idx + 1}`;
+        dot.addEventListener('click', () => goToSlide(idx + 1));
+        dotsContainer.appendChild(dot);
+    });
+
+    const dots = document.querySelectorAll('.progress-dot');
+
+    function updateSlide() {
+        slides.forEach((slide, idx) => {
+            slide.classList.toggle('active', (idx + 1) === currentSlide);
+        });
+        dots.forEach((dot, idx) => {
+            dot.classList.toggle('active', (idx + 1) === currentSlide);
+        });
+
+        currentNumEl.textContent = currentSlide;
+        btnPrev.disabled = (currentSlide === 1);
+        btnNext.disabled = (currentSlide === totalSlides);
+    }
+
+    function changeSlide(direction) {
+        goToSlide(currentSlide + direction);
+    }
+
+    function goToSlide(slideNum) {
+        if (slideNum < 1 || slideNum > totalSlides) return;
+        currentSlide = slideNum;
+        updateSlide();
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+            e.preventDefault();
+            changeSlide(1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            e.preventDefault();
+            changeSlide(-1);
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            goToSlide(1);
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            goToSlide(totalSlides);
+        } else if (e.key === 'f' || e.key === 'F') {
+            toggleFullScreen();
+        }
+    });
+
+    // Full screen toggle
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.warn('Fullscreen error:', err);
+            });
+            document.getElementById('fs-icon').setAttribute('data-lucide', 'minimize');
+        } else {
+            document.exitFullscreen();
+            document.getElementById('fs-icon').setAttribute('data-lucide', 'maximize');
+        }
+        lucide.createIcons();
+    }
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+    updateSlide();
+</script>
+
+</body>
+</html>

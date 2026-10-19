@@ -17,6 +17,8 @@ def create_archive():
         'logout.php',
         'semena.php',
         'energo.php',
+        'presentation.html',
+        'Презентація_Дашборд_МЕЗ_Керівництву.pptx',
     ]
     
     include_dirs = [
