@@ -63,8 +63,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                 FROM energy_readings
                 WHERE (report_date IS NOT NULL AND report_date != '')
                   AND (power_kwh_delta > 0 OR water_m3_delta > 0 OR reactive_kvarh > 0)
-                  AND (recorded_at >= '2026-10-01 00:00:00' OR report_date >= '2026-10-01' OR report_date LIKE '%.10.2026%')
-                ORDER BY report_date DESC LIMIT 31
+                  AND (recorded_at >= '2026-09-01 00:00:00' OR report_date >= '2026-09-01' OR report_date LIKE '%.09.2026%' OR report_date LIKE '%.10.2026%')
+                ORDER BY report_date DESC LIMIT 60
             ");
             if ($stmt) {
                 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                     if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
                         continue;
                     }
-                    if ($d < '2026-10-01') {
+                    if ($d < '2026-09-01') {
                         continue;
                     }
                     if (!isset($entries[$d])) {

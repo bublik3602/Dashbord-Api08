@@ -991,7 +991,7 @@ class MetricsCalculator {
                     FROM energy_readings
                     WHERE (report_date IS NOT NULL AND report_date != '')
                       AND (power_kwh_delta > 0 OR water_m3_delta > 0 OR reactive_kvarh > 0)
-                      AND (recorded_at >= '2026-10-01 00:00:00' OR report_date >= '2026-10-01' OR report_date LIKE '%.10.2026%')
+                      AND (recorded_at >= '2026-09-01 00:00:00' OR report_date >= '2026-09-01' OR report_date LIKE '%.09.2026%' OR report_date LIKE '%.10.2026%')
                     ORDER BY report_date ASC
                 ");
                 if ($stmt) {
@@ -1005,7 +1005,7 @@ class MetricsCalculator {
                         if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $d)) {
                             continue;
                         }
-                        if ($d < '2026-10-01') {
+                        if ($d < '2026-09-01') {
                             continue;
                         }
                         if (!isset($manualEntries[$d])) {
@@ -1045,16 +1045,27 @@ class MetricsCalculator {
             }
         } catch (Throwable $dbEx) {}
 
-        // Забезпечуємо очищення випадково занесених записів до 2026-10-01 (Серпень/Вересень мають окремі офіційні звіти)
-        $cleanedPreOct = false;
+        // Забезпечуємо очищення випадково занесених записів до 2026-09-01 (Серпень ППР)
+        $cleanedPreSep = false;
         foreach ($manualEntries as $dStr => $entry) {
-            if ($dStr < '2026-10-01') {
+            if ($dStr < '2026-09-01') {
                 unset($manualEntries[$dStr]);
-                $cleanedPreOct = true;
+                $cleanedPreSep = true;
             }
         }
-        if ($cleanedPreOct) {
+        if ($cleanedPreSep) {
             @file_put_contents($manualFile, json_encode($manualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+        }
+
+        // Відокремлюємо записи за місяцями (Жовтень та Вересень):
+        $octEntries = [];
+        $sepManualEntries = [];
+        foreach ($manualEntries as $dStr => $entry) {
+            if (strpos($dStr, '2026-10') === 0) {
+                $octEntries[$dStr] = $entry;
+            } elseif (strpos($dStr, '2026-09') === 0) {
+                $sepManualEntries[$dStr] = $entry;
+            }
         }
 
         // Побудова timeline та добових рядків для Жовтня з ручних записів
@@ -1068,7 +1079,7 @@ class MetricsCalculator {
         $tlSteam  = [];
         $steamDailyRows = [];
 
-        foreach ($manualEntries as $dStr => $entry) {
+        foreach ($octEntries as $dStr => $entry) {
             $dayNum = date('d.m', strtotime($dStr));
             $hasP   = isset($entry['power_kwh']) && $entry['power_kwh'] !== null && $entry['power_kwh'] !== '' && (float)$entry['power_kwh'] > 0;
             $pVal   = $hasP ? (float)$entry['power_kwh'] : null;
@@ -1135,8 +1146,30 @@ class MetricsCalculator {
         switch ($period) {
             case 'month_sep':
                 // Вересень 2026: точні дані з журналу пари ТОВ «Агропроінвест 08» (1 980,50 т котлом, 1 844,04 т на виробництво)
+                $sepLabels = ['15.09', '16.09', '17.09', '18.09', '19.09', '20.09', '21.09', '22.09', '23.09', '24.09', '25.09', '26.09', '27.09', '28.09', '29.09', '30.09'];
                 $sepPower = [31500, 31800, 29400, 28600, 28200, 28900, 24200, 23500, 23100, 25400, 25100, 25600, 25200, 23800, 27600, 24900];
                 $sepReactive = array_map(fn($p) => round($p * 0.3805, 1), $sepPower);
+                $sepWater = [215, 215, 190, 182, 180, 186, 137, 130, 129, 142, 140, 144, 141, 131, 160, 139];
+
+                if (!empty($sepManualEntries)) {
+                    $cLabels = [];
+                    $cPower = [];
+                    $cReactive = [];
+                    $cWater = [];
+                    foreach ($sepManualEntries as $dStr => $e) {
+                        $cLabels[] = date('d.m', strtotime($dStr));
+                        $cPower[] = isset($e['power_kwh']) && (float)$e['power_kwh'] > 0 ? (float)$e['power_kwh'] : null;
+                        $cReactive[] = isset($e['reactive_kvarh']) && (float)$e['reactive_kvarh'] > 0 ? (float)$e['reactive_kvarh'] : (isset($e['power_kwh']) ? round((float)$e['power_kwh'] * 0.32, 1) : null);
+                        $cWater[] = isset($e['water_m3']) ? (float)$e['water_m3'] : 0.0;
+                    }
+                    if (count($cLabels) >= 10) {
+                        $sepLabels = $cLabels;
+                        $sepPower = $cPower;
+                        $sepReactive = $cReactive;
+                        $sepWater = $cWater;
+                    }
+                }
+
                 return [
                     'has_data'                   => true,
                     'current_power_kw'           => 673.7,
@@ -1170,13 +1203,13 @@ class MetricsCalculator {
                     'water_meters'               => $waterMetersAccounting,
                     'monthly_12'                 => $monthly12,
                     'timeline' => [
-                        'labels'        => ['15.09', '16.09', '17.09', '18.09', '19.09', '20.09', '21.09', '22.09', '23.09', '24.09', '25.09', '26.09', '27.09', '28.09', '29.09', '30.09'],
+                        'labels'        => $sepLabels,
                         'power'         => $sepPower,
                         'reactive'      => $sepReactive,
-                        'power_mwh'     => array_map(fn($v) => round($v / 1000, 2), $sepPower),
-                        'power_kw_avg'  => array_map(fn($v) => round($v / 24, 1), $sepPower),
-                        'power_mw_avg'  => array_map(fn($v) => round($v / 24000, 3), $sepPower),
-                        'water'         => [215,   215,   190,   182,   180,   186,   137,   130,   129,   142,   140,   144,   141,   131,   160,   139],
+                        'power_mwh'     => array_map(fn($v) => $v !== null ? round($v / 1000, 2) : null, $sepPower),
+                        'power_kw_avg'  => array_map(fn($v) => $v !== null ? round($v / 24, 1) : null, $sepPower),
+                        'power_mw_avg'  => array_map(fn($v) => $v !== null ? round($v / 24000, 3) : null, $sepPower),
+                        'water'         => $sepWater,
                         'steam'         => [102.3, 118.0, 122.9, 124.5, 122.0, 123.6, 122.0, 125.2, 122.2, 106.0, 123.6, 122.5, 126.8, 132.5, 131.3, 130.1],
                         'power_name'    => 'Активна електроенергія (кВт)',
                         'reactive_name' => 'Реактивна електроенергія (кВАр·год)',

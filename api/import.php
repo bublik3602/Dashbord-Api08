@@ -1669,11 +1669,11 @@ try {
             }
 
             // ---------------------------------------------------------
-            // ЗБЕРЕЖЕННЯ В JSON ТА БАЗУ ДАНИХ (Жовтень 2026 і далі)
+            // ЗБЕРЕЖЕННЯ В JSON ТА БАЗУ ДАНИХ (Вересень — Жовтень 2026 і далі)
             // ---------------------------------------------------------
             if (!empty($energyManualEntries)) {
                 foreach ($energyManualEntries as $dStr => $entry) {
-                    if ($dStr < '2026-10-01') {
+                    if ($dStr < '2026-09-01') {
                         unset($energyManualEntries[$dStr]);
                     }
                 }
@@ -1682,7 +1682,7 @@ try {
 
                 // Оновлення SQL таблиці energy_readings
                 foreach ($energyManualEntries as $dStr => $entry) {
-                    if ($dStr < '2026-10-01') continue;
+                    if ($dStr < '2026-09-01') continue;
                     $wVal = (float)($entry['water_m3'] ?? 0.0);
                     $sVal = (float)($entry['steam_t'] ?? 0.0);
                     $pVal = (float)($entry['power_kwh'] ?? 0.0);
