@@ -9,6 +9,10 @@ OUTPUT_FILENAME = "ALL_PROJECT_CODE_AND_DOCUMENTATION.txt"
 EXCLUDE_EXTENSIONS = {".zip", ".xlsx", ".xls", ".pyc", ".png", ".jpg", ".jpeg", ".ico"}
 EXCLUDE_FILES = {
     OUTPUT_FILENAME,
+    # SECURITY: never bundle credentials / password data
+    "config.php",
+    ".env",
+    os.path.join("database", "users.json"),
     os.path.join("database", "semena_data.json"), # 1.3 MB raw json dump
     os.path.join("database", "steam_data.json"),  # 780 KB raw json dump
     os.path.join("database", "semena_raw_prihod.json"), # 335 KB raw json dump
@@ -64,10 +68,11 @@ DOCUMENTATION_HEADER = """======================================================
      * Воронка автотранспорту по категоріях: «Всі», «Насіння», «Олія», «Шрот», «Лузга».
      * Розрахунок середнього часу перебування машин на території заводу.
      * Відображення кількості авто в черзі, на завантаженні/розвантаженні та виїхавших.
-   - Складські залишки (СВОД):
-     * Олія (резервуари): факт залишку ~3 650 т, відвантаження за добу.
-     * Шрот на складі: ~674 т.
-     * Лузга на складі: ~166 т.
+   - Складські залишки (СВОД, database/svod_stocks.json; нижче — резервні значення в index.php,
+     якщо файл відсутній):
+     * Олія (резервуари): 3 650,10 т.
+     * Шрот на складі: 674,86 т.
+     * Лузга на складі: 166,77 т.
      * Витрата лузги на котельню: автоматичний облік використання як палива.
 
 3. БЛОК В: ЕНЕРГОРЕСУРСИ ЗАВОДУ (ЕЛЕКТРОЕНЕРГІЯ, ВОДА, ПАРА, СТОКИ, ГАЗ)
@@ -79,25 +84,10 @@ DOCUMENTATION_HEADER = """======================================================
      * Інтерактивний випадаючий список вибору місяця без перезавантаження сторінки.
    - Інтерактивний архів електроенергії за 2026 рік (Січень — Жовтень):
      * Помісячний випадаючий список розміщено безпосередньо у шапці Блоку В та в таблиці цехів.
-     * Розподіл електроенергії (активна кВт, реактивна кВАр·год, питома кВт/т) по 17 підрозділах:
-       1) Силовий тр-р ТМ-1000/10 (Пресовий цех)
-       2) Силовий тр-р ТМ-1000/10 (Екстракція)
-       3) Силовий тр-р ТМ-630/10 (Підготовчий цех, ПЕТ)
-       4) Силовий тр-р ТМ-400/10 (Маслобакове господарство)
-       5) Силовий тр-р ТМ-400/10 (ПАТ «Дніпровська»)
-       6) Елеватор №1
-       7) Елеватор №2
-       8) Котельня на лушпинні
-       9) Водозабір та станція насосів
-       10) Очисні споруди та стоки
-       11) Лабораторія
-       12) АБК (Адмінкорпус)
-       13) Мехмайстерні та гараж
-       14) Вагова (авто + ж/д)
-       15) Освітлення території заводу
-       16) Газова котельня (газ м³)
-       17) Інші допоміжні споруди
-     * Додано колонку «Природний газ» (газова котельня в січні-березні та червні-липні).
+     * Розподіл електроенергії (активна кВт, реактивна кВАр·год, питома кВт/т, вода, стоки, газ)
+       по підрозділах — список згенеровано автоматично з database/energy_departments_archive.json:
+{departments}
+     * Колонка «Природний газ» — дані з архіву (Котельня природного газу).
      * Автоматичний підсумковий рядок «РАЗОМ (Місяць Рік)» з сумами та середньою нормою.
    - Форма збереження показників енергетика:
      * Модальне вікно внесення показників за лічильниками (активна, реактивна, вода, пара).
@@ -168,7 +158,7 @@ def get_project_files(root_dir):
     existing_priority = []
     for rel_path in priority_order:
         full_path = os.path.join(root_dir, rel_path)
-        if os.path.isfile(full_path):
+        if os.path.isfile(full_path) and rel_path not in EXCLUDE_FILES:
             existing_priority.append(rel_path)
 
     # Collect other relevant files
@@ -189,6 +179,27 @@ def get_project_files(root_dir):
 
     return existing_priority + sorted(other_files)
 
+def build_departments_text(root_dir):
+    import json
+    path = os.path.join(root_dir, "database", "energy_departments_archive.json")
+    try:
+        with open(path, encoding="utf-8") as f:
+            arch = json.load(f)
+    except Exception as e:
+        return f"       (не вдалося прочитати архів: {e})"
+    names = []
+    per_month = []
+    for key in sorted(arch.keys()):
+        m = arch[key]
+        depts = m.get("departments", [])
+        per_month.append(f"{key}: {len(depts)}")
+        for d in depts:
+            if d.get("name") and d["name"] not in names:
+                names.append(d["name"])
+    lines = [f"       {i}) {n}" for i, n in enumerate(names, 1)]
+    lines.append("       Кількість підрозділів по місяцях: " + ", ".join(per_month))
+    return "\n".join(lines)
+
 def generate_bundle(root_dir, output_file):
     files = get_project_files(root_dir)
     print(f"Total files to bundle: {len(files)}")
@@ -196,7 +207,7 @@ def generate_bundle(root_dir, output_file):
     with open(output_file, "w", encoding="utf-8") as out:
         # Write Header
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        out.write(DOCUMENTATION_HEADER.format(date=now_str))
+        out.write(DOCUMENTATION_HEADER.format(date=now_str, departments=build_departments_text(root_dir)))
         
         # Write File Index
         for idx, rel in enumerate(files, 1):
