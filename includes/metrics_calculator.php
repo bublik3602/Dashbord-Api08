@@ -788,7 +788,8 @@ class MetricsCalculator {
     private function calculateEnergyMetrics(string $dateFilter, string $period): array {
         $steamDb = $this->getSteamData();
         $steamDaily = $steamDb['daily_sep26'] ?? [];
-        $steamMonthly = array_slice($steamDb['monthly_summary'] ?? [], 0, 12);
+        $steamMonthly = $steamDb['monthly_summary'] ?? [];
+        $steamDailyArchive = $steamDb['daily_archive'] ?? [];
 
         // Помісячне зведення (з «Розподіл енергоносіїв за структурними підрозділами» та відомостей підстанції ТП)
         // Включає фактичні дані за 2025 рік (Жовтень — Грудень) та за весь 2026 рік по Вересень включно
@@ -1198,6 +1199,7 @@ class MetricsCalculator {
                     'steam_distrib_subtext'      => 'Екстракція: 1 076,8 т • Підготовка: 758,4 т • Елеватор: 5,8 т',
                     'steam_daily_table'          => $steamDaily,
                     'steam_monthly_history'      => $steamMonthly,
+                    'steam_daily_archive'        => $steamDailyArchive,
                     'period_note'                => 'Вересень 2026 (фактичні дані за звітний місяць)',
                     'departments'                => $departmentsSep,
                     'water_meters'               => $waterMetersAccounting,
@@ -1254,6 +1256,7 @@ class MetricsCalculator {
                     'steam_distrib_subtext'      => 'Виробництво пари: 0,0 т',
                     'steam_daily_table'          => [],
                     'steam_monthly_history'      => $steamMonthly,
+                    'steam_daily_archive'        => $steamDailyArchive,
                     'period_note'                => 'Серпень 2026 (ППР заводу)',
                     'departments'                => $departmentsAug,
                     'water_meters'               => $waterMetersAccounting,
@@ -1337,6 +1340,7 @@ class MetricsCalculator {
                             'steam_distrib_subtext'      => $hasSteam ? ("Екстракція: " . number_format($wSteam * 0.544, 1, ',', ' ') . " т • Підготовка: " . number_format($wSteam * 0.383, 1, ',', ' ') . " т") : "",
                             'steam_daily_table'          => array_reverse($steamDailyRows),
                             'steam_monthly_history'      => $steamMonthly,
+                            'steam_daily_archive'        => $steamDailyArchive,
                             'period_note'                => "Тиждень: факт за останні {$daysCnt} діб (" . date('d.m', strtotime(reset($weekEntries)['date'])) . " — " . date('d.m', strtotime(end($weekEntries)['date'])) . ")",
                             'departments'                => [
                                 ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 4), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
@@ -1422,6 +1426,7 @@ class MetricsCalculator {
                             'steam_distrib_subtext'      => $hasSteam ? ("Екстракція: " . number_format(($steamDb['october_summary']['extr_t'] ?? ($octSumSteam * 0.544)), 1, ',', ' ') . " т • Підготовка: " . number_format(($steamDb['october_summary']['prep_t'] ?? ($octSumSteam * 0.383)), 1, ',', ' ') . " т") : "",
                             'steam_daily_table'          => !empty($steamDb['daily_oct26']) ? $steamDb['daily_oct26'] : array_reverse($steamDailyRows),
                             'steam_monthly_history'      => $steamMonthly,
+                            'steam_daily_archive'        => $steamDailyArchive,
                             'period_note'                => "Жовтень 2026: факт за {$daysCnt} діб переробки (внесено енергетиком)",
                             'departments'                => [
                                 ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 4), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
@@ -1501,6 +1506,7 @@ class MetricsCalculator {
                         'steam_distrib_subtext'      => $hasSteam ? ("Екстракція: " . number_format($curSteam * 0.544, 1, ',', ' ') . " т • Підготовка: " . number_format($curSteam * 0.383, 1, ',', ' ') . " т") : "",
                         'steam_daily_table'          => !empty($steamDb['daily_oct26']) ? $steamDb['daily_oct26'] : array_reverse($steamDailyRows),
                         'steam_monthly_history'      => $steamMonthly,
+                        'steam_daily_archive'        => $steamDailyArchive,
                         'period_note'                => "Доба: " . date('d.m.Y', strtotime($latest['date'])) . " (фактичні дані енергетика)",
                         'departments'                => [
                             ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 4), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
@@ -1562,6 +1568,7 @@ class MetricsCalculator {
                     'steam_distrib_subtext'      => 'Оберіть «Вересень» або натисніть «+ Внести показники»',
                     'steam_daily_table'          => [],
                     'steam_monthly_history'      => $steamMonthly,
+                    'steam_daily_archive'        => $steamDailyArchive,
                     'period_note'                => 'Жовтень 2026: немає даних (звіт очікується)',
                     'no_data_reason'             => 'Жовтень: немає даних',
                     'departments'                => [],

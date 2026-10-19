@@ -1001,14 +1001,22 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
             <!-- Блок технологічного обліку пари заводу («Учет пара на ООО “Агропроинвест 08”») -->
             <div style="margin-top: 16px;">
-                <details class="season-monthly-details" open>
-                    <summary>
+                <details class="season-monthly-details" id="steam-daily-details" open>
+                    <summary style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
                         <span><i data-lucide="flame" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f59e0b;"></i> Добовий журнал обліку технологічної пари («Учет пара на ООО “Агропроинвест 08”»)</span>
-                        <span style="font-size: 11px; color: #f59e0b; font-weight: 700;">Лузгова котельня &bull; Цех екстракції &bull; Підготовчо-пресовий цех &bull; Елеватор</span>
+                        <div style="display: inline-flex; align-items: center; gap: 8px;">
+                            <label for="steam-month-select" style="font-size: 11px; color: #475569; font-weight: 600;">Місяць:</label>
+                            <select id="steam-month-select" class="form-select form-select-sm" style="font-size: 11px; padding: 2px 8px; height: 26px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; font-weight: 600; cursor: pointer;">
+                                <?php foreach (($en['steam_monthly_history'] ?? []) as $smRow): ?>
+                                    <option value="<?= htmlspecialchars($smRow['key'] ?? '') ?>"><?= htmlspecialchars($smRow['month_ua'] ?? $smRow['sheet'] ?? '') ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <span id="steam-month-subtext" style="font-size: 11px; color: #64748b; font-weight: 500;">(Жовтень 2026: факт за звітні доби)</span>
+                        </div>
                     </summary>
-                    <div class="season-monthly-table-wrap">
+                    <div class="season-monthly-table-wrap" style="max-height: 420px; overflow-y: auto;">
                         <table class="data-table-clean" style="font-size: 11px;">
-                            <thead>
+                            <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 2;">
                                 <tr>
                                     <th>Дата / День</th>
                                     <th>Котел (т)</th>
@@ -1024,7 +1032,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                                 <?php if (!empty($en['steam_daily_table'])): ?>
                                     <?php foreach ($en['steam_daily_table'] as $sr): ?>
                                     <tr>
-                                        <td class="bold"><?= htmlspecialchars($sr['date'] ?? ($sr['day'] . '.09.2026')) ?></td>
+                                        <td class="bold"><?= htmlspecialchars($sr['date'] ?? ($sr['day'] . '.10.2026')) ?></td>
                                         <td class="bold" style="color: #d97706;"><?= number_format($sr['boiler_t'], 2, ',', ' ') ?></td>
                                         <td class="bold" style="color: #0284c7;"><?= number_format($sr['prod_t'], 2, ',', ' ') ?></td>
                                         <td><?= number_format($sr['sn_t'], 2, ',', ' ') ?></td>
@@ -1049,15 +1057,15 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                 </details>
 
-                <!-- Помісячний технологічний баланс пари (Архів 2025–2026 рр.) -->
+                <!-- Помісячний технологічний баланс пари (Архів за 12 років: 2015–2026 рр.) -->
                 <details class="season-monthly-details" style="margin-top: 10px;">
                     <summary>
-                        <span><i data-lucide="history" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #6366f1;"></i> Помісячний баланс виробітку та споживання пари (Архів 2025–2026 рр.)</span>
-                        <span style="font-size: 11px; color: #64748b;">Звіт котельні МЕЗ</span>
+                        <span><i data-lucide="history" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #6366f1;"></i> Помісячний баланс виробітку та споживання пари (Архів за 12 років: 2015–2026 рр.)</span>
+                        <span style="font-size: 11px; color: #64748b;">Звіт котельні МЕЗ (96 місяців)</span>
                     </summary>
-                    <div class="season-monthly-table-wrap">
+                    <div class="season-monthly-table-wrap" style="max-height: 480px; overflow-y: auto;">
                         <table class="data-table-clean" style="font-size: 11px;">
-                            <thead>
+                            <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 2;">
                                 <tr>
                                     <th>Місяць / Рік</th>
                                     <th>Виробіток котлом (т)</th>
@@ -1071,7 +1079,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                             </thead>
                             <tbody>
                                 <?php foreach (($en['steam_monthly_history'] ?? []) as $sm): ?>
-                                <tr>
+                                <tr style="cursor: pointer;" title="Натисніть для вибору місяця у добовому журналі" onclick="selectSteamMonth('<?= htmlspecialchars($sm['key'] ?? '') ?>')">
                                     <td class="bold"><?= htmlspecialchars($sm['month_ua'] ?? $sm['title']) ?></td>
                                     <td class="bold" style="color: #d97706;"><?= number_format($sm['boiler_t'], 2, ',', ' ') ?></td>
                                     <td class="bold" style="color: #0284c7;"><?= number_format($sm['prod_t'], 2, ',', ' ') ?></td>

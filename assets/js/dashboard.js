@@ -106,6 +106,58 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // 2.03 Інтерактивний архів пари за 12 років (2015–2026 рр.)
+    window.selectSteamMonth = function(key) {
+        if (!key) return;
+        const sel = document.getElementById('steam-month-select');
+        if (sel && sel.value !== key) {
+            sel.value = key;
+        }
+        const en = (window.INITIAL_DASHBOARD_DATA && window.INITIAL_DASHBOARD_DATA.energy) || {};
+        const archive = en.steam_daily_archive || {};
+        const records = archive[key] || [];
+
+        const details = document.getElementById('steam-daily-details');
+        if (details && !details.open) {
+            details.open = true;
+        }
+        
+        const subtext = document.getElementById('steam-month-subtext');
+        if (sel && subtext) {
+            const opt = sel.options[sel.selectedIndex];
+            if (opt) {
+                subtext.textContent = `(${opt.textContent})`;
+            }
+        }
+
+        const steamTbody = document.querySelector('#steam-daily-tbody');
+        if (steamTbody) {
+            if (records.length > 0) {
+                steamTbody.innerHTML = records.map(r => `
+                    <tr>
+                        <td class="bold">${r.date || (r.day + '.' + key)}</td>
+                        <td class="bold" style="color: #d97706;">${formatNumber(r.boiler_t, 2)}</td>
+                        <td class="bold" style="color: #0284c7;">${formatNumber(r.prod_t, 2)}</td>
+                        <td>${formatNumber(r.sn_t, 2)}</td>
+                        <td style="color: #2563eb;">${formatNumber(r.extr_t, 2)}</td>
+                        <td style="color: #10b981;">${formatNumber(r.prep_t, 2)}</td>
+                        <td>${formatNumber(r.elev_t, 2)}</td>
+                        <td>${formatNumber(r.heating_t, 2)}</td>
+                    </tr>
+                `).join('');
+            } else {
+                steamTbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">Журнал обліку за обраний місяць порожній або очікується.</td></tr>`;
+            }
+        }
+    };
+
+    const steamMonthSel = document.getElementById('steam-month-select');
+    if (steamMonthSel) {
+        steamMonthSel.addEventListener('change', function () {
+            window.selectSteamMonth(this.value);
+        });
+    }
+
     // 2.1 Обробники перемикання вкладок вантажу (Всі, Насіння, Олія, Шрот, Лузга)
     cargoButtons.forEach(btn => {
         btn.addEventListener('click', function () {
@@ -611,23 +663,36 @@ document.addEventListener('DOMContentLoaded', function () {
                 setElementText('#val-boiler-water', 'Оберіть «Вересень» для перегляду');
             }
 
-            const steamTbody = document.querySelector('#steam-daily-tbody');
-            if (steamTbody) {
-                if (hasData && Array.isArray(en.steam_daily_table) && en.steam_daily_table.length > 0) {
-                    steamTbody.innerHTML = en.steam_daily_table.map(r => `
-                        <tr>
-                            <td class="bold">${r.date || (r.day + '.09.2026')}</td>
-                            <td class="bold" style="color: #d97706;">${formatNumber(r.boiler_t, 2)}</td>
-                            <td class="bold" style="color: #0284c7;">${formatNumber(r.prod_t, 2)}</td>
-                            <td>${formatNumber(r.sn_t, 2)}</td>
-                            <td style="color: #2563eb;">${formatNumber(r.extr_t, 2)}</td>
-                            <td style="color: #10b981;">${formatNumber(r.prep_t, 2)}</td>
-                            <td>${formatNumber(r.elev_t, 2)}</td>
-                            <td>${formatNumber(r.heating_t, 2)}</td>
-                        </tr>
-                    `).join('');
-                } else {
-                    steamTbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">Жовтень 2026: добовий журнал обліку пари очікується. <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; cursor: pointer; font-weight: 700;">Обрати Вересень 2026</button></td></tr>`;
+            if (en.steam_daily_archive) {
+                if (!window.INITIAL_DASHBOARD_DATA) window.INITIAL_DASHBOARD_DATA = {};
+                if (!window.INITIAL_DASHBOARD_DATA.energy) window.INITIAL_DASHBOARD_DATA.energy = {};
+                window.INITIAL_DASHBOARD_DATA.energy.steam_daily_archive = en.steam_daily_archive;
+            }
+
+            const steamSel = document.getElementById('steam-month-select');
+            const selectedMonthKey = steamSel ? steamSel.value : '2026-10';
+
+            if (selectedMonthKey && selectedMonthKey !== '2026-10' && window.INITIAL_DASHBOARD_DATA?.energy?.steam_daily_archive?.[selectedMonthKey]) {
+                window.selectSteamMonth(selectedMonthKey);
+            } else {
+                const steamTbody = document.querySelector('#steam-daily-tbody');
+                if (steamTbody) {
+                    if (hasData && Array.isArray(en.steam_daily_table) && en.steam_daily_table.length > 0) {
+                        steamTbody.innerHTML = en.steam_daily_table.map(r => `
+                            <tr>
+                                <td class="bold">${r.date || (r.day + '.10.2026')}</td>
+                                <td class="bold" style="color: #d97706;">${formatNumber(r.boiler_t, 2)}</td>
+                                <td class="bold" style="color: #0284c7;">${formatNumber(r.prod_t, 2)}</td>
+                                <td>${formatNumber(r.sn_t, 2)}</td>
+                                <td style="color: #2563eb;">${formatNumber(r.extr_t, 2)}</td>
+                                <td style="color: #10b981;">${formatNumber(r.prep_t, 2)}</td>
+                                <td>${formatNumber(r.elev_t, 2)}</td>
+                                <td>${formatNumber(r.heating_t, 2)}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        steamTbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">Жовтень 2026: добовий журнал обліку пари очікується. <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; cursor: pointer; font-weight: 700;">Обрати Вересень 2026</button></td></tr>`;
+                    }
                 }
             }
 

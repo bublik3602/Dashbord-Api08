@@ -1621,6 +1621,10 @@ try {
                         if (!empty($monthDailyRecords)) {
                             if ($mNum === 10 && $yr === 2026) {
                                 $steamDb['daily_oct26'] = $monthDailyRecords;
+                                if (!isset($steamDb['daily_archive'])) {
+                                    $steamDb['daily_archive'] = [];
+                                }
+                                $steamDb['daily_archive']['2026-10'] = $monthDailyRecords;
                                 $steamDb['october_summary'] = [
                                     'month'     => 'Жовтень 2026',
                                     'boiler_t'  => round($sumBoiler, 2),
@@ -1631,8 +1635,33 @@ try {
                                     'elev_t'    => round($sumElev, 2),
                                     'heating_t' => round($sumHeat, 2),
                                 ];
+                                if (!empty($steamDb['monthly_summary'])) {
+                                    $octSummItem = [
+                                        'key'       => '2026-10',
+                                        'sheet'     => 'октябрь_26',
+                                        'month_ua'  => 'Жовтень 2026',
+                                        'year'      => 2026,
+                                        'month_num' => 10,
+                                        'boiler_t'  => round($sumBoiler, 2),
+                                        'prod_t'    => round($sumProd, 2),
+                                        'sn_t'      => round($sumSN, 2),
+                                        'extr_t'    => round($sumExtr, 2),
+                                        'prep_t'    => round($sumPrep, 2),
+                                        'elev_t'    => round($sumElev, 2),
+                                        'heating_t' => round($sumHeat, 2),
+                                    ];
+                                    if (($steamDb['monthly_summary'][0]['month_ua'] ?? '') === 'Жовтень 2026') {
+                                        $steamDb['monthly_summary'][0] = $octSummItem;
+                                    } else {
+                                        array_unshift($steamDb['monthly_summary'], $octSummItem);
+                                    }
+                                }
                             } elseif ($mNum === 9 && $yr === 2026) {
                                 $steamDb['daily_sep26'] = $monthDailyRecords;
+                                if (!isset($steamDb['daily_archive'])) {
+                                    $steamDb['daily_archive'] = [];
+                                }
+                                $steamDb['daily_archive']['2026-09'] = $monthDailyRecords;
                             }
                         }
                     }
