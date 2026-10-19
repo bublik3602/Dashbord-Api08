@@ -5,156 +5,156 @@
     {
       "day": 1,
       "date": "01.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 2,
       "date": "02.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 3,
       "date": "03.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 4,
       "date": "04.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 5,
       "date": "05.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 6,
       "date": "06.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 7,
       "date": "07.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 8,
       "date": "08.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 9,
       "date": "09.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 10,
       "date": "10.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 11,
       "date": "11.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 12,
       "date": "12.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 13,
       "date": "13.09.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 14,
       "date": "14.09.2026",
-      "boiler_t": 25.0,
+      "boiler_t": 25,
       "prod_t": 6.9,
       "sn_t": 18.1,
       "extr_t": 5.11,
       "prep_t": 1.79,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 15,
@@ -164,8 +164,8 @@
       "sn_t": 6.19,
       "extr_t": 57.99,
       "prep_t": 38.12,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 16,
@@ -176,7 +176,7 @@
       "extr_t": 65.12,
       "prep_t": 45.59,
       "elev_t": 0.32,
-      "heating_t": 0.0
+      "heating_t": 0
     },
     {
       "day": 17,
@@ -187,7 +187,7 @@
       "extr_t": 67.23,
       "prep_t": 47.9,
       "elev_t": 0.26,
-      "heating_t": 0.0
+      "heating_t": 0
     },
     {
       "day": 18,
@@ -197,8 +197,8 @@
       "sn_t": 7.66,
       "extr_t": 68.41,
       "prep_t": 48.46,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 19,
@@ -208,8 +208,8 @@
       "sn_t": 6.97,
       "extr_t": 67.25,
       "prep_t": 47.81,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 20,
@@ -219,8 +219,8 @@
       "sn_t": 7.54,
       "extr_t": 67.95,
       "prep_t": 48.08,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 21,
@@ -230,8 +230,8 @@
       "sn_t": 6.94,
       "extr_t": 67.3,
       "prep_t": 47.8,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 22,
@@ -241,8 +241,8 @@
       "sn_t": 7.58,
       "extr_t": 68.66,
       "prep_t": 48.94,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 23,
@@ -253,7 +253,7 @@
       "extr_t": 66.81,
       "prep_t": 47.35,
       "elev_t": 1.16,
-      "heating_t": 0.0
+      "heating_t": 0
     },
     {
       "day": 24,
@@ -263,8 +263,8 @@
       "sn_t": 6.5,
       "extr_t": 60.22,
       "prep_t": 39.27,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 25,
@@ -272,10 +272,10 @@
       "boiler_t": 123.58,
       "prod_t": 116.09,
       "sn_t": 7.49,
-      "extr_t": 68.0,
+      "extr_t": 68,
       "prep_t": 48.09,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 26,
@@ -286,7 +286,7 @@
       "extr_t": 67.31,
       "prep_t": 47.99,
       "elev_t": 0.18,
-      "heating_t": 0.0
+      "heating_t": 0
     },
     {
       "day": 27,
@@ -296,8 +296,8 @@
       "sn_t": 7.96,
       "extr_t": 69.11,
       "prep_t": 49.77,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 28,
@@ -308,7 +308,7 @@
       "extr_t": 69.96,
       "prep_t": 50.07,
       "elev_t": 3.51,
-      "heating_t": 0.0
+      "heating_t": 0
     },
     {
       "day": 29,
@@ -329,7 +329,7 @@
       "sn_t": 7.85,
       "extr_t": 70.13,
       "prep_t": 50.63,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 1.51
     }
   ],
@@ -342,8 +342,8 @@
       "sn_t": 8.8,
       "extr_t": 76.89,
       "prep_t": 56.99,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 2,
@@ -353,8 +353,8 @@
       "sn_t": 8.54,
       "extr_t": 76.34,
       "prep_t": 56.48,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 3,
@@ -364,8 +364,8 @@
       "sn_t": 8.53,
       "extr_t": 76.28,
       "prep_t": 56.22,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 4,
@@ -376,7 +376,7 @@
       "extr_t": 59.51,
       "prep_t": 41.87,
       "elev_t": 9.31,
-      "heating_t": 0.0
+      "heating_t": 0
     },
     {
       "day": 5,
@@ -387,7 +387,7 @@
       "extr_t": 72.64,
       "prep_t": 53.81,
       "elev_t": 9.39,
-      "heating_t": 0.0
+      "heating_t": 0
     },
     {
       "day": 6,
@@ -397,8 +397,8 @@
       "sn_t": 8.26,
       "extr_t": 75.27,
       "prep_t": 55.11,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 7,
@@ -408,7 +408,7 @@
       "sn_t": 8.77,
       "extr_t": 76.79,
       "prep_t": 56.88,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 0.44
     },
     {
@@ -419,7 +419,7 @@
       "sn_t": 7.08,
       "extr_t": 58.39,
       "prep_t": 40.41,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 0.55
     },
     {
@@ -430,7 +430,7 @@
       "sn_t": 9.04,
       "extr_t": 78.08,
       "prep_t": 57.55,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 1.34
     },
     {
@@ -441,7 +441,7 @@
       "sn_t": 8.87,
       "extr_t": 78.11,
       "prep_t": 57.67,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 0.8
     },
     {
@@ -463,7 +463,7 @@
       "sn_t": 9.81,
       "extr_t": 86.29,
       "prep_t": 61.48,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 2.1
     },
     {
@@ -474,7 +474,7 @@
       "sn_t": 9.8,
       "extr_t": 86.27,
       "prep_t": 61.3,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 2.11
     },
     {
@@ -518,7 +518,7 @@
       "sn_t": 9.89,
       "extr_t": 86.21,
       "prep_t": 61.27,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 2.04
     },
     {
@@ -540,8 +540,8 @@
       "sn_t": 9.53,
       "extr_t": 85.08,
       "prep_t": 58.86,
-      "elev_t": 0.0,
-      "heating_t": 2.0
+      "elev_t": 0,
+      "heating_t": 2
     },
     {
       "day": 20,
@@ -551,7 +551,7 @@
       "sn_t": 10.17,
       "extr_t": 83.84,
       "prep_t": 60.9,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 1.84
     },
     {
@@ -562,7 +562,7 @@
       "sn_t": 10.81,
       "extr_t": 86.24,
       "prep_t": 62.3,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 2.15
     },
     {
@@ -573,7 +573,7 @@
       "sn_t": 8.01,
       "extr_t": 42.31,
       "prep_t": 22.35,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 2.08
     },
     {
@@ -584,7 +584,7 @@
       "sn_t": 9.28,
       "extr_t": 30.49,
       "prep_t": 18.49,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 1.38
     },
     {
@@ -661,7 +661,7 @@
       "sn_t": 9.02,
       "extr_t": 78.33,
       "prep_t": 57.47,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 2.08
     },
     {
@@ -697,8 +697,8 @@
       "sn_t": 92.15,
       "extr_t": 1016.93,
       "prep_t": 428.05,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Червень 2026"
     },
     {
@@ -709,7 +709,7 @@
       "sn_t": 100.43,
       "extr_t": 640.52,
       "prep_t": 494.89,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 25.5,
       "month_ua": "Квітень 2026"
     },
@@ -717,36 +717,36 @@
       "sheet": "март_26",
       "title": "за март 2026 года в тоннах",
       "boiler_t": 203.37,
-      "prod_t": 0.0,
+      "prod_t": 0,
       "sn_t": 203.37,
       "extr_t": 393.63,
       "prep_t": 289.17,
       "elev_t": 4.29,
-      "heating_t": 75.0,
+      "heating_t": 75,
       "month_ua": "Березень 2026"
     },
     {
       "sheet": "февраль_26",
       "title": "за февраль 2026 года в тоннах",
       "boiler_t": 587.22,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
+      "prod_t": 0,
+      "sn_t": 0,
       "extr_t": 1031.42,
       "prep_t": 804.18,
       "elev_t": 78.19,
-      "heating_t": 287.0,
+      "heating_t": 287,
       "month_ua": "Лютий 2026"
     },
     {
       "sheet": "январь_26",
       "title": "за январь 2026 года в тоннах",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
       "extr_t": 69.01,
       "prep_t": 22.15,
       "elev_t": 64.43,
-      "heating_t": 344.0,
+      "heating_t": 344,
       "month_ua": "Січень 2026"
     },
     {
@@ -794,7 +794,7 @@
       "extr_t": 560.39,
       "prep_t": 425.08,
       "elev_t": 20.97,
-      "heating_t": 0.0,
+      "heating_t": 0,
       "month_ua": "Вересень 2025"
     },
     {
@@ -805,8 +805,8 @@
       "sn_t": 259.15,
       "extr_t": 1761.67,
       "prep_t": 778.93,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Липень 2025"
     },
     {
@@ -817,8 +817,8 @@
       "sn_t": 147.84,
       "extr_t": 1004.64,
       "prep_t": 797.26,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Травень 2025"
     },
     {
@@ -829,7 +829,7 @@
       "sn_t": 278.19,
       "extr_t": 1863.81,
       "prep_t": 1446.88,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 107.9,
       "month_ua": "Березень 2025"
     },
@@ -925,8 +925,8 @@
       "sn_t": 74.12,
       "extr_t": 907.87,
       "prep_t": 715.99,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Серпень 2023"
     },
     {
@@ -937,8 +937,8 @@
       "sn_t": 115.55,
       "extr_t": 1274.03,
       "prep_t": 701.67,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Червень 2023"
     },
     {
@@ -949,8 +949,8 @@
       "sn_t": 8.94,
       "extr_t": 24.21,
       "prep_t": 17.09,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Травень 2023"
     },
     {
@@ -1040,13 +1040,13 @@
     {
       "sheet": "сентябрь_22",
       "title": "за сентябрь  2022 года в тоннах",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Вересень 2022"
     },
     {
@@ -1057,8 +1057,8 @@
       "sn_t": 200.35,
       "extr_t": 1345.42,
       "prep_t": 908.9,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Серпень 2022"
     },
     {
@@ -1069,8 +1069,8 @@
       "sn_t": 136.98,
       "extr_t": 925.68,
       "prep_t": 664.6,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Липень 2022"
     },
     {
@@ -1126,7 +1126,7 @@
       "title": "за октябрь  2021 года в тоннах",
       "boiler_t": 4638.19,
       "prod_t": 4246.19,
-      "sn_t": 392.0,
+      "sn_t": 392,
       "extr_t": 2328.16,
       "prep_t": 1728.03,
       "elev_t": 105.74,
@@ -1153,8 +1153,8 @@
       "sn_t": 197.11,
       "extr_t": 1490.41,
       "prep_t": 632.35,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Липень 2021"
     },
     {
@@ -1165,8 +1165,8 @@
       "sn_t": 193.83,
       "extr_t": 1083.67,
       "prep_t": 652.1,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Червень 2021"
     },
     {
@@ -1177,8 +1177,8 @@
       "sn_t": 31.54,
       "extr_t": 5.23,
       "prep_t": 1.8,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Травень 2021"
     },
     {
@@ -1188,8 +1188,8 @@
       "prod_t": 108.93,
       "sn_t": 9.25,
       "extr_t": 87.74,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
+      "prep_t": 0,
+      "elev_t": 0,
       "heating_t": 21.19,
       "month_ua": "Квітень 2021"
     },
@@ -1258,7 +1258,7 @@
       "title": "за октябрь 2020 года в тоннах",
       "boiler_t": 4219.57,
       "prod_t": 3863.57,
-      "sn_t": 356.0,
+      "sn_t": 356,
       "extr_t": 2388.95,
       "prep_t": 1426.97,
       "elev_t": 20.23,
@@ -1270,11 +1270,11 @@
       "title": "за сентябрь 2020 года в тоннах",
       "boiler_t": 2253.24,
       "prod_t": 1977.24,
-      "sn_t": 276.0,
+      "sn_t": 276,
       "extr_t": 1176.91,
       "prep_t": 731.21,
       "elev_t": 69.12,
-      "heating_t": 0.0,
+      "heating_t": 0,
       "month_ua": "Вересень 2020"
     },
     {
@@ -1282,11 +1282,11 @@
       "title": "за июль 2020 года в тоннах",
       "boiler_t": 1808.17,
       "prod_t": 1695.17,
-      "sn_t": 113.0,
+      "sn_t": 113,
       "extr_t": 1209.6,
       "prep_t": 485.57,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Липень 2020"
     },
     {
@@ -1294,11 +1294,11 @@
       "title": "за июнь 2020 года в тоннах",
       "boiler_t": 3276.49,
       "prod_t": 3062.49,
-      "sn_t": 214.0,
+      "sn_t": 214,
       "extr_t": 1890.56,
       "prep_t": 1171.93,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Червень 2020"
     },
     {
@@ -1405,8 +1405,8 @@
       "sn_t": 145.95,
       "extr_t": 843.43,
       "prep_t": 235.13,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Липень 2019"
     },
     {
@@ -1417,8 +1417,8 @@
       "sn_t": 414.02,
       "extr_t": 2045.5,
       "prep_t": 1338.9,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Червень 2019"
     },
     {
@@ -1429,7 +1429,7 @@
       "sn_t": 353.56,
       "extr_t": 1506.59,
       "prep_t": 1523.84,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 99.49,
       "month_ua": "Квітень 2019"
     },
@@ -1538,7 +1538,7 @@
       "extr_t": 1823.6,
       "prep_t": 1302.59,
       "elev_t": 218.23,
-      "heating_t": 0.0,
+      "heating_t": 0,
       "month_ua": "Вересень 2018"
     },
     {
@@ -1546,11 +1546,11 @@
       "title": "за июль 2018 года в тоннах",
       "boiler_t": 576.64,
       "prod_t": 487.64,
-      "sn_t": 89.0,
-      "extr_t": 0.0,
+      "sn_t": 89,
+      "extr_t": 0,
       "prep_t": 487.64,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Липень 2018"
     },
     {
@@ -1558,11 +1558,11 @@
       "title": "за июнь 2018 года в тоннах",
       "boiler_t": 1015.84,
       "prod_t": 915.84,
-      "sn_t": 100.0,
+      "sn_t": 100,
       "extr_t": 634.97,
       "prep_t": 280.87,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Червень 2018"
     },
     {
@@ -1573,14 +1573,14 @@
       "sn_t": 403.56,
       "extr_t": 2191.18,
       "prep_t": 1635.08,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Травень 2018"
     },
     {
       "sheet": "апрель_18",
       "title": "за апрель 2018 года в тоннах",
-      "boiler_t": 4001.0,
+      "boiler_t": 4001,
       "prod_t": 3557.1,
       "sn_t": 443.9,
       "extr_t": 1817.62,
@@ -1670,37 +1670,37 @@
       "extr_t": 808.89,
       "prep_t": 702.44,
       "elev_t": 83.91,
-      "heating_t": 0.0,
+      "heating_t": 0,
       "month_ua": "Вересень 2017"
     },
     {
       "sheet": "август_17",
       "title": "за август 2017 года в тоннах",
-      "boiler_t": 0.0,
+      "boiler_t": 0,
       "prod_t": 289.72,
       "sn_t": 60.07,
-      "extr_t": 0.0,
+      "extr_t": 0,
       "prep_t": 289.72,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Серпень 2017"
     },
     {
       "sheet": "июль_17",
       "title": "за июль 2017 года в тоннах",
-      "boiler_t": 0.0,
+      "boiler_t": 0,
       "prod_t": 396.08,
       "sn_t": 81.78,
-      "extr_t": 0.0,
+      "extr_t": 0,
       "prep_t": 396.08,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Липень 2017"
     },
     {
       "sheet": "ноябрь_16",
       "title": "за ноябрь 2016 года в тоннах",
-      "boiler_t": 0.0,
+      "boiler_t": 0,
       "prod_t": 1909.33,
       "sn_t": 134.01,
       "extr_t": 703.1,
@@ -1741,8 +1741,8 @@
       "sn_t": 406.54,
       "extr_t": 1829.37,
       "prep_t": 1495.33,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Червень 2008"
     },
     {
@@ -1753,8 +1753,8 @@
       "sn_t": 70.21,
       "extr_t": 1008.26,
       "prep_t": 915.91,
-      "elev_t": 0.0,
-      "heating_t": 0.0,
+      "elev_t": 0,
+      "heating_t": 0,
       "month_ua": "Травень 2008"
     },
     {
@@ -1763,9 +1763,9 @@
       "boiler_t": 871.85,
       "prod_t": 729.95,
       "sn_t": 141.9,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
       "heating_t": 729.95,
       "month_ua": "Березень 2008"
     },
@@ -1786,19 +1786,19 @@
       "title": "Учет пара на ООО “Агропроинвест 08”",
       "boiler_t": 5455.9,
       "prod_t": 4990.9,
-      "sn_t": 465.0,
+      "sn_t": 465,
       "extr_t": 2621.1,
       "prep_t": 1861.8,
-      "elev_t": 0.0,
-      "heating_t": 508.0,
+      "elev_t": 0,
+      "heating_t": 508,
       "month_ua": "Січень 2008"
     },
     {
       "sheet": "декабрь",
       "title": "Учет пара на ООО “Агропроинвест 08”",
       "boiler_t": 5026.65,
-      "prod_t": 4540.0,
-      "sn_t": 445.0,
+      "prod_t": 4540,
+      "sn_t": 445,
       "extr_t": 2504.1,
       "prep_t": 1743.3,
       "elev_t": 20.4,
@@ -1809,7 +1809,7 @@
       "sheet": "ноябрь",
       "title": "Учет пара на ООО “Агропроинвест 08”",
       "boiler_t": 4294.3,
-      "prod_t": 3893.0,
+      "prod_t": 3893,
       "sn_t": 401.3,
       "extr_t": 2043.2,
       "prep_t": 1455.6,
@@ -1846,7 +1846,7 @@
       "date": "03.10.2026",
       "boiler_t": 128.99,
       "prod_t": 121.99,
-      "sn_t": 7.0,
+      "sn_t": 7,
       "extr_t": 65.5,
       "prep_t": 52.23,
       "elev_t": 2.76,
@@ -1860,7 +1860,7 @@
       "sn_t": 6.85,
       "extr_t": 65.01,
       "prep_t": 51.95,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 1.5
     },
     {
@@ -1871,7 +1871,7 @@
       "sn_t": 6.98,
       "extr_t": 65.95,
       "prep_t": 52.88,
-      "elev_t": 0.0,
+      "elev_t": 0,
       "heating_t": 1.5
     },
     {
@@ -1890,7 +1890,7 @@
       "date": "07.10.2026",
       "boiler_t": 54.1,
       "prod_t": 39.1,
-      "sn_t": 15.0,
+      "sn_t": 15,
       "extr_t": 25.31,
       "prep_t": 12.13,
       "elev_t": 1.16,
@@ -1899,46 +1899,46 @@
     {
       "day": 8,
       "date": "08.10.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 9,
       "date": "09.10.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 10,
       "date": "10.10.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 11,
       "date": "11.10.2026",
-      "boiler_t": 0.0,
-      "prod_t": 0.0,
-      "sn_t": 0.0,
-      "extr_t": 0.0,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "boiler_t": 0,
+      "prod_t": 0,
+      "sn_t": 0,
+      "extr_t": 0,
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 12,
@@ -1947,9 +1947,9 @@
       "prod_t": 9.99,
       "sn_t": 17.99,
       "extr_t": 9.99,
-      "prep_t": 0.0,
-      "elev_t": 0.0,
-      "heating_t": 0.0
+      "prep_t": 0,
+      "elev_t": 0,
+      "heating_t": 0
     },
     {
       "day": 13,
@@ -1981,8 +1981,41 @@
       "sn_t": 4.77,
       "extr_t": 44.71,
       "prep_t": 30.48,
+      "elev_t": 0,
+      "heating_t": 1
+    },
+    {
+      "day": 16,
+      "date": "16.10.2026",
+      "boiler_t": 0.0,
+      "prod_t": 0.0,
+      "sn_t": 0.0,
+      "extr_t": 0.0,
+      "prep_t": 0.0,
       "elev_t": 0.0,
-      "heating_t": 1.0
+      "heating_t": 0.0
+    },
+    {
+      "day": 17,
+      "date": "17.10.2026",
+      "boiler_t": 0.0,
+      "prod_t": 0.0,
+      "sn_t": 0.0,
+      "extr_t": 0.0,
+      "prep_t": 0.0,
+      "elev_t": 0.0,
+      "heating_t": 0.0
+    },
+    {
+      "day": 18,
+      "date": "18.10.2026",
+      "boiler_t": 0.0,
+      "prod_t": 0.0,
+      "sn_t": 0.0,
+      "extr_t": 0.0,
+      "prep_t": 0.0,
+      "elev_t": 0.0,
+      "heating_t": 0.0
     }
   ],
   "october_summary": {
