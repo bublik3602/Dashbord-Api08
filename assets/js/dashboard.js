@@ -450,13 +450,14 @@ document.addEventListener('DOMContentLoaded', function () {
         setElementText('#sub-yield-total', formatNumber(pz.products_total) + ' т' + (surplusTonnesVal > 0 ? ` (+${formatNumber(surplusTonnesVal)} т)` : ''));
 
         // Сповіщення коли за обрану добу переробка на паузі (0 т)
+        const seedProcVal = (pz.seed_processed !== undefined ? parseFloat(pz.seed_processed) : (parseFloat(pz.seed_in_production) || 0));
         const idleNoticeEl = document.querySelector('#badge-prod-idle-notice');
         if (idleNoticeEl) {
-            idleNoticeEl.style.display = (pz.seed_in_production <= 0) ? 'inline-flex' : 'none';
+            idleNoticeEl.style.display = (seedProcVal <= 0) ? 'inline-flex' : 'none';
         }
         const idleHintEl = document.querySelector('#prod-idle-hint');
         if (idleHintEl) {
-            idleHintEl.style.display = (pz.seed_in_production <= 0) ? 'flex' : 'none';
+            idleHintEl.style.display = (seedProcVal <= 0) ? 'flex' : 'none';
         }
 
         // Легенда виходу продукції

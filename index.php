@@ -204,7 +204,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     <div class="section-title">
         <i data-lucide="layers" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
         <span>Блок А: Виробництво, запаси та матеріальний баланс</span>
-        <span class="section-badge badge-blue" id="lbl-prod-period">Період: <?= $bounds['label'] ?></span>
+        <span class="section-badge badge-blue" id="lbl-prod-period">Період: <?= htmlspecialchars($dashboardData['period_label'] ?? $bounds['label']) ?></span>
     </div>
 
     <div class="kpi-grid">
