@@ -1444,6 +1444,15 @@ body {
     animation: modalSlideUp 0.25s ease-out;
 }
 
+.modal-container form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    margin: 0;
+}
+
 @keyframes modalSlideUp {
     from { transform: translateY(20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
@@ -1730,6 +1739,7 @@ body {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+    flex-shrink: 0;
 }
 
 .btn-modal-cancel {

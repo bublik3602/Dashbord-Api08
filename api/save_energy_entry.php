@@ -107,7 +107,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             }
         }
     } catch (Throwable $e) {}
-}
 
     krsort($entries);
     echo json_encode([

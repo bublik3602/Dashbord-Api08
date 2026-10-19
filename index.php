@@ -1707,20 +1707,26 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
      МОДАЛЬНЕ ВІКНО: ВВІД ПОКАЗНИКІВ ЕНЕРГОНОСІЇВ (ЕЛЕКТРОЕНЕРГІЯ, ВОДА, ПАРА)
      ============================================================= -->
 <div id="energy-entry-modal" class="modal-overlay" style="display: none;">
-    <div class="modal-container" style="max-width: 680px;">
-        <div class="modal-header" style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border-bottom: 1px solid #e2e8f0;">
+    <div class="modal-container" style="max-width: 720px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #eff6ff, #f0fdf4); border-bottom: 1px solid #e2e8f0; flex-shrink: 0; padding: 14px 20px;">
             <div class="modal-title-wrap">
-                <div class="modal-icon" style="background: #0284c7; color: #ffffff;"><i data-lucide="zap"></i></div>
+                <div class="modal-icon" style="background: #0284c7; color: #ffffff; width: 36px; height: 36px;"><i data-lucide="zap"></i></div>
                 <div>
-                    <h2 class="modal-title" style="color: #0f172a; font-size: 17px;">Ввід показників енергоносіїв (Служба головного енергетика)</h2>
-                    <p class="modal-subtitle">Оберіть дату та введіть споживання електроенергії у кВт за добу, витрату води та пару</p>
+                    <h2 class="modal-title" style="color: #0f172a; font-size: 16px; margin: 0;">Ввід показників енергоносіїв (Служба головного енергетика)</h2>
+                    <p class="modal-subtitle" style="margin: 2px 0 0 0; font-size: 11.5px;">Оберіть дату та введіть споживання електроенергії у кВт за добу, витрату води та пару</p>
                 </div>
             </div>
-            <button type="button" class="modal-close-btn" id="btn-close-energy-entry" title="Закрити">&times;</button>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="submit" form="form-energy-entry" class="btn-submit-energy-entry" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 7px 14px; font-size: 12px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35);">
+                    <i data-lucide="check" style="width: 14px; height: 14px;"></i>
+                    <span>Зберегти</span>
+                </button>
+                <button type="button" class="modal-close-btn" id="btn-close-energy-entry" title="Закрити">&times;</button>
+            </div>
         </div>
 
-        <form id="form-energy-entry" autocomplete="off">
-            <div class="modal-body" style="padding: 20px;">
+        <form id="form-energy-entry" autocomplete="off" style="display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; margin: 0;">
+            <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1; min-height: 0;">
                 <!-- Дата обліку -->
                 <div style="margin-bottom: 16px;">
                     <label style="display: block; font-size: 12px; font-weight: 700; color: #334155; margin-bottom: 6px;">
@@ -1819,12 +1825,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div id="energy-form-alert" style="display: none; margin-top: 12px; padding: 8px 12px; border-radius: 6px; font-size: 12px;"></div>
             </div>
 
-            <div class="modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 8px;">
-                <button type="button" class="btn-modal-cancel" id="btn-cancel-energy-entry" style="padding: 8px 14px; font-size: 12px;">Скасувати</button>
-                <button type="submit" class="btn-modal-submit" id="btn-submit-energy-entry" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 8px 16px; font-size: 12px; font-weight: 700; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
-                    <i data-lucide="check" style="width: 14px; height: 14px;"></i>
-                    <span>Зберегти показники</span>
-                </button>
+            <div class="modal-footer" style="padding: 12px 20px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
+                <div style="font-size: 11px; color: #64748b;">
+                    💡 Внесені дані автоматично оновлюють графіки та журнал обліку.
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn-modal-cancel" id="btn-cancel-energy-entry" style="padding: 9px 16px; font-size: 12px;">Скасувати</button>
+                    <button type="submit" class="btn-modal-submit btn-submit-energy-entry" id="btn-submit-energy-entry" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff; padding: 9px 20px; font-size: 13px; font-weight: 800; border: none; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">
+                        <i data-lucide="check" style="width: 15px; height: 15px;"></i>
+                        <span>Зберегти показники</span>
+                    </button>
+                </div>
             </div>
         </form>
     </div>

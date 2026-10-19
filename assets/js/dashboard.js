@@ -1318,8 +1318,15 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             energyHistoryTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 10px;">Завантаження...</td></tr>';
             const res = await fetch('api/save_energy_entry.php', { cache: 'no-store' });
-            const json = await res.json();
-            if (json.status === 'success' && Array.isArray(json.entries) && json.entries.length > 0) {
+            let json = null;
+            try {
+                const text = await res.text();
+                json = text ? JSON.parse(text) : null;
+            } catch (pErr) {
+                console.error("Помилка парсингу відповіді api/save_energy_entry.php:", pErr);
+            }
+
+            if (json && json.status === 'success' && Array.isArray(json.entries) && json.entries.length > 0) {
                 window._energyHistoryEntries = json.entries;
                 energyHistoryTbody.innerHTML = json.entries.map(e => {
                     const kwhTxt = (e.power_kwh !== null && e.power_kwh !== undefined && e.power_kwh !== '')
@@ -1387,12 +1394,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
                     });
                 });
+            } else if (!json || json.status !== 'success') {
+                window._energyHistoryEntries = [];
+                const errMsg = json ? (json.message || 'Не вдалося завантажити історію') : `Помилка з'єднання (HTTP ${res.status})`;
+                energyHistoryTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 10px;">${escapeHtml(errMsg)}. Ви можете зберегти показники вище.</td></tr>`;
             } else {
                 window._energyHistoryEntries = [];
-                energyHistoryTbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 10px;">Записів ще немає. Введіть перший показник вище.</td></tr>';
+                energyHistoryTbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 10px;">Записів ще немає. Введіть перший показник вище.</td></tr>';
             }
         } catch (err) {
-            energyHistoryTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 10px;">Помилка: ${escapeHtml(err.message)}</td></tr>`;
+            energyHistoryTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #ef4444; padding: 10px;">Помилка: ${escapeHtml(err.message)}</td></tr>`;
         }
     }
 
@@ -1400,7 +1411,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (formEnergyEntry) {
         formEnergyEntry.addEventListener('submit', async function (e) {
             e.preventDefault();
-            const btnSubmit = document.getElementById('btn-submit-energy-entry');
+            const btnSubmits = document.querySelectorAll('.btn-submit-energy-entry');
             const dateVal     = document.getElementById('energy-form-date').value;
             const kwhVal      = (document.getElementById('energy-form-kwh').value || '').trim();
             const waterVal    = (document.getElementById('energy-form-water').value || '').trim();
@@ -1422,10 +1433,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            if (btnSubmit) {
-                btnSubmit.disabled = true;
-                btnSubmit.innerHTML = `<span>Збереження...</span>`;
-            }
+            btnSubmits.forEach(b => {
+                b.disabled = true;
+                b.innerHTML = `<span>Збереження...</span>`;
+            });
 
             try {
                 const payload = {
@@ -1444,9 +1455,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                const json = await res.json();
+                const text = await res.text();
+                let json = null;
+                try {
+                    json = text ? JSON.parse(text) : null;
+                } catch (e) {
+                    throw new Error('Помилка сервера (некоректний формат відповіді): ' + text.slice(0, 100));
+                }
 
-                if (json.status === 'success') {
+                if (json && json.status === 'success') {
                     showToast(json.message);
                     if (energyFormAlert) {
                         energyFormAlert.style.display = 'block';
@@ -1464,7 +1481,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         closeEnergyModal();
                     }, 1200);
                 } else {
-                    throw new Error(json.message || 'Помилка збереження даних.');
+                    throw new Error((json && json.message) || 'Помилка збереження даних.');
                 }
             } catch (err) {
                 if (energyFormAlert) {
@@ -1476,11 +1493,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 showToast(err.message, true);
             } finally {
-                if (btnSubmit) {
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = `<i data-lucide="check" style="width: 14px; height: 14px;"></i><span>Зберегти показники</span>`;
-                    if (typeof lucide !== 'undefined') lucide.createIcons();
-                }
+                btnSubmits.forEach(b => {
+                    b.disabled = false;
+                    const isHeader = b.getAttribute('form') === 'form-energy-entry';
+                    b.innerHTML = isHeader 
+                        ? `<i data-lucide="check" style="width: 14px; height: 14px;"></i><span>Зберегти</span>`
+                        : `<i data-lucide="check" style="width: 15px; height: 15px;"></i><span>Зберегти показники</span>`;
+                });
+                if (typeof lucide !== 'undefined') lucide.createIcons();
             }
         });
     }
