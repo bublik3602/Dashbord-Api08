@@ -1,0 +1,936 @@
+{
+  "2026-10": {
+    "month_name": "Жовтень 2026",
+    "key": "2026-10",
+    "active_kwh": null,
+    "reactive_kvarh": null,
+    "water_m3": 476.0,
+    "sewage_m3": 266.6,
+    "gas_m3": 0.0,
+    "is_current": true,
+    "departments": [
+      {
+        "name": "Олійнопресовий цех (підготовка)",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 29.68,
+        "water_m3": 53.0,
+        "sewage_m3": 18.0
+      },
+      {
+        "name": "Дільниця екстракції (водооборотка)",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 11.62,
+        "water_m3": 103.0,
+        "sewage_m3": 50.0
+      },
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 7.94,
+        "water_m3": 2.0,
+        "sewage_m3": 2.0
+      },
+      {
+        "name": "Котельня лузгова (пермеат + пара)",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 3.3,
+        "water_m3": 194.0,
+        "sewage_m3": 74.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Василя Симоненка, 13Б)",
+        "active_kwh": null,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.32,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 0.32,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація, ВТЛ та госп.побут (Л.91)",
+        "active_kwh": null,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.1,
+        "water_m3": 124.0,
+        "sewage_m3": 124.0
+      }
+    ]
+  },
+  "2026-09": {
+    "month_name": "Вересень 2026",
+    "key": "2026-09",
+    "active_kwh": 485070.0,
+    "reactive_kvarh": 184589.66,
+    "water_m3": 2508.0,
+    "sewage_m3": 1409.0,
+    "gas_m3": 990.86,
+    "seed_processed_t": 4435.439,
+    "departments": [
+      {
+        "name": "Олійнопресовий цех (підготовка)",
+        "active_kwh": 270231.0,
+        "reactive_kvarh": 104898.78,
+        "specific_kwh": 60.93,
+        "water_m3": 279.0,
+        "sewage_m3": 97.0
+      },
+      {
+        "name": "Дільниця екстракції",
+        "active_kwh": 106000.0,
+        "reactive_kvarh": 36273.0,
+        "specific_kwh": 23.9,
+        "water_m3": 544.0,
+        "sewage_m3": 260.0
+      },
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": 72372.0,
+        "reactive_kvarh": 30732.08,
+        "specific_kwh": 8.2,
+        "water_m3": 8.0,
+        "sewage_m3": 8.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 29940.0,
+        "reactive_kvarh": 11657.2,
+        "specific_kwh": 3.39,
+        "water_m3": 1023.0,
+        "sewage_m3": 390.0
+      },
+      {
+        "name": "Котельня природного газу",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0,
+        "gas_m3": 990.86
+      },
+      {
+        "name": "Елеватор №2 (вул. Пушкіна, 13Б)",
+        "active_kwh": 2877.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.33,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 2780.0,
+        "reactive_kvarh": 1028.6,
+        "specific_kwh": 0.32,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 870.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.1,
+        "water_m3": 97.0,
+        "sewage_m3": 97.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 130.0,
+        "sewage_m3": 130.0
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 427.0,
+        "sewage_m3": 427.0
+      }
+    ]
+  },
+  "2026-08": {
+    "month_name": "Серпень 2026",
+    "key": "2026-08",
+    "active_kwh": 49379.0,
+    "reactive_kvarh": 67010.98,
+    "water_m3": 616.0,
+    "sewage_m3": 400.0,
+    "gas_m3": 96.0,
+    "seed_processed_t": 0.0,
+    "departments": [
+      {
+        "name": "Олійнопресовий цех (підготовка / ППР)",
+        "active_kwh": 14640.0,
+        "reactive_kvarh": 22993.6,
+        "specific_kwh": 0.0,
+        "water_m3": 73.0,
+        "sewage_m3": 13.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 14582.0,
+        "reactive_kvarh": 22589.18,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Дільниця приймання (Елеватор №1)",
+        "active_kwh": 12360.0,
+        "reactive_kvarh": 19131.4,
+        "specific_kwh": 0.0,
+        "water_m3": 42.0,
+        "sewage_m3": 10.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Пушкіна, 13Б)",
+        "active_kwh": 2558.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Дільниця екстракції (ППР)",
+        "active_kwh": 1360.0,
+        "reactive_kvarh": 1346.4,
+        "specific_kwh": 0.0,
+        "water_m3": 28.0,
+        "sewage_m3": 6.0
+      },
+      {
+        "name": "ПС-35/10 кВ (власні потреби)",
+        "active_kwh": 1020.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 972.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 95.0,
+        "sewage_m3": 95.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 960.0,
+        "reactive_kvarh": 950.4,
+        "specific_kwh": 0.0,
+        "water_m3": 57.0,
+        "sewage_m3": 10.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 927.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 32.0,
+        "sewage_m3": 19.0
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 289.0,
+        "sewage_m3": 247.0
+      }
+    ]
+  },
+  "2026-07": {
+    "month_name": "Липень 2026",
+    "key": "2026-07",
+    "active_kwh": 46923.0,
+    "reactive_kvarh": 37957.6,
+    "water_m3": 464.0,
+    "sewage_m3": 274.0,
+    "gas_m3": 3364.1,
+    "seed_processed_t": 10322.911,
+    "departments": [
+      {
+        "name": "Олійнопресовий цех (підготовка)",
+        "active_kwh": 21850.0,
+        "reactive_kvarh": 20842.0,
+        "specific_kwh": 2.12,
+        "water_m3": 45.0,
+        "sewage_m3": 41.0
+      },
+      {
+        "name": "Дільниця приймання (Елеватор №1)",
+        "active_kwh": 12560.0,
+        "reactive_kvarh": 11048.0,
+        "specific_kwh": 0.0,
+        "water_m3": 8.0,
+        "sewage_m3": 8.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 4387.0,
+        "reactive_kvarh": 4009.6,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Пушкіна, 13Б)",
+        "active_kwh": 2580.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Дільниця екстракції",
+        "active_kwh": 1500.0,
+        "reactive_kvarh": 1125.0,
+        "specific_kwh": 0.15,
+        "water_m3": 4.0,
+        "sewage_m3": 2.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 1140.0,
+        "reactive_kvarh": 933.0,
+        "specific_kwh": 0.0,
+        "water_m3": 10.0,
+        "sewage_m3": 6.0
+      },
+      {
+        "name": "ПС-35/10 кВ (власні потреби)",
+        "active_kwh": 1100.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 928.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 90.0,
+        "sewage_m3": 78.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 570.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 18.0,
+        "sewage_m3": 18.0
+      },
+      {
+        "name": "Котельня природного газу",
+        "active_kwh": 308.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 70.0,
+        "sewage_m3": 0.0,
+        "gas_m3": 3364.1
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 217.0,
+        "sewage_m3": 121.0
+      }
+    ]
+  },
+  "2026-06": {
+    "month_name": "Червень 2026",
+    "key": "2026-06",
+    "active_kwh": 255231.0,
+    "reactive_kvarh": 94658.03,
+    "water_m3": 2013.0,
+    "sewage_m3": 1153.0,
+    "gas_m3": 24707.0,
+    "seed_processed_t": 4508.686,
+    "departments": [
+      {
+        "name": "Олійнопресовий цех",
+        "active_kwh": 136243.21,
+        "reactive_kvarh": 51792.42,
+        "specific_kwh": 30.22,
+        "water_m3": 286.0,
+        "sewage_m3": 89.0
+      },
+      {
+        "name": "Дільниця екстракції",
+        "active_kwh": 68612.92,
+        "reactive_kvarh": 26097.91,
+        "specific_kwh": 15.22,
+        "water_m3": 202.0,
+        "sewage_m3": 90.0
+      },
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": 25295.0,
+        "reactive_kvarh": 9612.1,
+        "specific_kwh": 0.0,
+        "water_m3": 3.0,
+        "sewage_m3": 3.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 13320.0,
+        "reactive_kvarh": 5328.0,
+        "specific_kwh": 0.0,
+        "water_m3": 750.0,
+        "sewage_m3": 470.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 4569.0,
+        "reactive_kvarh": 1827.6,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Пушкіна, 13Б)",
+        "active_kwh": 3051.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Котельня природного газу",
+        "active_kwh": 1600.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 515.0,
+        "sewage_m3": 245.0,
+        "gas_m3": 24707.0
+      },
+      {
+        "name": "ПС-35/10 кВ (власні потреби)",
+        "active_kwh": 1020.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 937.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 21.0,
+        "sewage_m3": 20.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 583.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 16.0,
+        "sewage_m3": 16.0
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 220.0,
+        "sewage_m3": 220.0
+      }
+    ]
+  },
+  "2026-05": {
+    "month_name": "Травень 2026",
+    "key": "2026-05",
+    "active_kwh": 49518.0,
+    "reactive_kvarh": 32949.0,
+    "water_m3": 324.0,
+    "sewage_m3": 200.0,
+    "gas_m3": 0.0,
+    "seed_processed_t": 8488.351,
+    "departments": [
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": 19400.0,
+        "reactive_kvarh": 14950.0,
+        "specific_kwh": 0.0,
+        "water_m3": 8.0,
+        "sewage_m3": 8.0
+      },
+      {
+        "name": "Дільниця підготовки",
+        "active_kwh": 14140.0,
+        "reactive_kvarh": 12207.0,
+        "specific_kwh": 1.67,
+        "water_m3": 38.0,
+        "sewage_m3": 10.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 4569.0,
+        "reactive_kvarh": 1985.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Василя Симоненка, 13Б)",
+        "active_kwh": 4209.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 8.0,
+        "sewage_m3": 8.0
+      },
+      {
+        "name": "Дільниця екстракції",
+        "active_kwh": 4020.0,
+        "reactive_kvarh": 3510.0,
+        "specific_kwh": 0.47,
+        "water_m3": 5.0,
+        "sewage_m3": 5.0
+      },
+      {
+        "name": "ПС-35/10 кВ (власні потреби)",
+        "active_kwh": 1020.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 937.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 40.0,
+        "sewage_m3": 40.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 640.0,
+        "reactive_kvarh": 297.0,
+        "specific_kwh": 0.0,
+        "water_m3": 5.0,
+        "sewage_m3": 5.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 583.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 220.0,
+        "sewage_m3": 124.0
+      }
+    ]
+  },
+  "2026-04": {
+    "month_name": "Квітень 2026",
+    "key": "2026-04",
+    "active_kwh": 273083.0,
+    "reactive_kvarh": 91759.84,
+    "water_m3": 1954.0,
+    "sewage_m3": 1100.0,
+    "gas_m3": 1.0,
+    "seed_processed_t": 16805.535,
+    "departments": [
+      {
+        "name": "Олійнопресовий цех",
+        "active_kwh": 134360.0,
+        "reactive_kvarh": 44890.0,
+        "specific_kwh": 7.99,
+        "water_m3": 269.0,
+        "sewage_m3": 82.0
+      },
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": 57240.0,
+        "reactive_kvarh": 20606.4,
+        "specific_kwh": 0.0,
+        "water_m3": 6.0,
+        "sewage_m3": 6.0
+      },
+      {
+        "name": "Дільниця екстракції",
+        "active_kwh": 56260.0,
+        "reactive_kvarh": 20226.6,
+        "specific_kwh": 3.35,
+        "water_m3": 434.0,
+        "sewage_m3": 135.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 14700.0,
+        "reactive_kvarh": 5292.0,
+        "specific_kwh": 0.0,
+        "water_m3": 966.0,
+        "sewage_m3": 592.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Василя Симоненка, 13Б)",
+        "active_kwh": 6466.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 2069.0,
+        "reactive_kvarh": 744.84,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "ПС-35/10 кВ (власні потреби)",
+        "active_kwh": 950.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 698.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 39.0,
+        "sewage_m3": 39.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 340.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 16.0,
+        "sewage_m3": 16.0
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 224.0,
+        "sewage_m3": 230.0
+      }
+    ]
+  },
+  "2026-03": {
+    "month_name": "Березень 2026",
+    "key": "2026-03",
+    "active_kwh": 209627.0,
+    "reactive_kvarh": 71189.7,
+    "water_m3": 1819.0,
+    "sewage_m3": 1080.0,
+    "gas_m3": 49555.0,
+    "seed_processed_t": 2866.101,
+    "departments": [
+      {
+        "name": "Олійнопресовий цех (підготовка)",
+        "active_kwh": 103480.0,
+        "reactive_kvarh": 37150.8,
+        "specific_kwh": 36.1,
+        "water_m3": 117.0,
+        "sewage_m3": 89.0
+      },
+      {
+        "name": "Дільниця екстракції",
+        "active_kwh": 36440.0,
+        "reactive_kvarh": 13118.4,
+        "specific_kwh": 12.71,
+        "water_m3": 215.0,
+        "sewage_m3": 220.0
+      },
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": 28160.0,
+        "reactive_kvarh": 10179.9,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Котельня природного газу",
+        "active_kwh": 16780.0,
+        "reactive_kvarh": 6040.8,
+        "specific_kwh": 0.0,
+        "water_m3": 1026.0,
+        "sewage_m3": 444.0,
+        "gas_m3": 49555.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 10920.0,
+        "reactive_kvarh": 3931.2,
+        "specific_kwh": 0.0,
+        "water_m3": 329.0,
+        "sewage_m3": 134.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Василя Симоненка, 13Б)",
+        "active_kwh": 9632.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 2196.0,
+        "reactive_kvarh": 768.6,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 720.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 25.0,
+        "sewage_m3": 25.0
+      },
+      {
+        "name": "ПС-35/10 кВ (власні потреби)",
+        "active_kwh": 720.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 579.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 30.0,
+        "sewage_m3": 30.0
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 77.0,
+        "sewage_m3": 138.0
+      }
+    ]
+  },
+  "2026-02": {
+    "month_name": "Лютий 2026",
+    "key": "2026-02",
+    "active_kwh": 432539.0,
+    "reactive_kvarh": 124520.1,
+    "water_m3": 2901.0,
+    "sewage_m3": 1709.0,
+    "gas_m3": 82248.0,
+    "seed_processed_t": 13210.992,
+    "departments": [
+      {
+        "name": "Дільниця екстракції",
+        "active_kwh": 209160.0,
+        "reactive_kvarh": 62052.0,
+        "specific_kwh": 15.83,
+        "water_m3": 590.0,
+        "sewage_m3": 103.0
+      },
+      {
+        "name": "Олійнопресовий цех (підготовка)",
+        "active_kwh": 131080.0,
+        "reactive_kvarh": 39324.0,
+        "specific_kwh": 9.92,
+        "water_m3": 225.0,
+        "sewage_m3": 41.0
+      },
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": 46697.0,
+        "reactive_kvarh": 14009.1,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 24540.0,
+        "reactive_kvarh": 7362.0,
+        "specific_kwh": 0.0,
+        "water_m3": 673.0,
+        "sewage_m3": 68.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Василя Симоненка, 13Б)",
+        "active_kwh": 13829.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Котельня природного газу",
+        "active_kwh": 4010.0,
+        "reactive_kvarh": 1203.0,
+        "specific_kwh": 0.0,
+        "water_m3": 1225.0,
+        "sewage_m3": 1225.0,
+        "gas_m3": 82248.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 1900.0,
+        "reactive_kvarh": 570.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 870.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 30.0,
+        "sewage_m3": 30.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 453.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 56.0,
+        "sewage_m3": 56.0
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 102.0,
+        "sewage_m3": 186.0
+      }
+    ]
+  },
+  "2026-01": {
+    "month_name": "Січень 2026",
+    "key": "2026-01",
+    "active_kwh": 84026.0,
+    "reactive_kvarh": 32708.4,
+    "water_m3": 1300.0,
+    "sewage_m3": 758.0,
+    "gas_m3": 72784.0,
+    "seed_processed_t": 16491.503,
+    "departments": [
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": 27381.0,
+        "reactive_kvarh": 12721.45,
+        "specific_kwh": 0.0,
+        "water_m3": 5.0,
+        "sewage_m3": 5.0
+      },
+      {
+        "name": "Олійнопресовий цех (підготовка)",
+        "active_kwh": 18160.0,
+        "reactive_kvarh": 8672.0,
+        "specific_kwh": 1.1,
+        "water_m3": 84.0,
+        "sewage_m3": 84.0
+      },
+      {
+        "name": "Дільниця екстракції",
+        "active_kwh": 14060.0,
+        "reactive_kvarh": 6827.6,
+        "specific_kwh": 0.85,
+        "water_m3": 63.0,
+        "sewage_m3": 63.0
+      },
+      {
+        "name": "Елеватор №2 (вул. Пушкіна, 13Б)",
+        "active_kwh": 11953.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Котельня природного газу",
+        "active_kwh": 5063.0,
+        "reactive_kvarh": 2278.35,
+        "specific_kwh": 0.0,
+        "water_m3": 948.0,
+        "sewage_m3": 376.0,
+        "gas_m3": 72784.0
+      },
+      {
+        "name": "Котельня лузгова",
+        "active_kwh": 2520.0,
+        "reactive_kvarh": 1134.0,
+        "specific_kwh": 0.0,
+        "water_m3": 1.0,
+        "sewage_m3": 1.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": 2380.0,
+        "reactive_kvarh": 1075.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "ПС-35/10 кВ (власні потреби)",
+        "active_kwh": 1053.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація",
+        "active_kwh": 867.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 72.0,
+        "sewage_m3": 72.0
+      },
+      {
+        "name": "Лабораторія",
+        "active_kwh": 589.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 12.0,
+        "sewage_m3": 12.0
+      },
+      {
+        "name": "Госп.-побут (Л.91)",
+        "active_kwh": 0.0,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 115.0,
+        "sewage_m3": 145.0
+      }
+    ]
+  }
+}

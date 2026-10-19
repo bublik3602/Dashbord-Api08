@@ -782,6 +782,21 @@ class MetricsCalculator {
         return $steamCache;
     }
 
+    public function getEnergyDepartmentsArchive(): array {
+        static $energyDeptCache = null;
+        if ($energyDeptCache !== null) {
+            return $energyDeptCache;
+        }
+        $file = __DIR__ . '/../database/energy_departments_archive.json';
+        if (file_exists($file)) {
+            $json = file_get_contents($file);
+            $energyDeptCache = json_decode($json, true) ?: [];
+        } else {
+            $energyDeptCache = [];
+        }
+        return $energyDeptCache;
+    }
+
     /**
      * Блок В: Енергоресурси (електроенергія, вода, каналізація, пара, природний газ — за звітом головного енергетика та журналами обліку)
      */
@@ -790,26 +805,27 @@ class MetricsCalculator {
         $steamDaily = $steamDb['daily_sep26'] ?? [];
         $steamMonthly = $steamDb['monthly_summary'] ?? [];
         $steamDailyArchive = $steamDb['daily_archive'] ?? [];
+        $energyDeptArchive = $this->getEnergyDepartmentsArchive();
 
         // Помісячне зведення (з «Розподіл енергоносіїв за структурними підрозділами» та відомостей підстанції ТП)
         // Включає фактичні дані за 2025 рік (Жовтень — Грудень) та за весь 2026 рік по Вересень включно
         $monthly12 = [
-            ['month' => 'Жовтень 2025',  'short' => 'Жов\'25', 'active_kwh' => 1238440, 'reactive_kvarh' => 412800.0, 'gas_m3' => 0.0,     'water_m3' => 5325, 'sewage_m3' => 2980, 'daily_water_m3' => 171.8, 'press_kwh' => 473160, 'extr_kwh' => 209240, 'elev_kwh' => 102200, 'boiler_kwh' => 61560, 'specific_kwh' => 58.40, 'has_data' => true],
-            ['month' => 'Листопад 2025', 'short' => 'Лис\'25', 'active_kwh' => 1034500, 'reactive_kvarh' => 345000.0, 'gas_m3' => 0.0,     'water_m3' => 2802, 'sewage_m3' => 1650, 'daily_water_m3' => 93.4,  'press_kwh' => 241560, 'extr_kwh' => 166880, 'elev_kwh' => 88160,  'boiler_kwh' => 51660, 'specific_kwh' => 56.20, 'has_data' => true],
-            ['month' => 'Грудень 2025',  'short' => 'Гру\'25', 'active_kwh' => 589180,  'reactive_kvarh' => 198000.0, 'gas_m3' => 0.0,     'water_m3' => 3324, 'sewage_m3' => 1890, 'daily_water_m3' => 107.2, 'press_kwh' => 180000, 'extr_kwh' => 85440,  'elev_kwh' => 75680,  'boiler_kwh' => 25380, 'specific_kwh' => 55.10, 'has_data' => true],
-            ['month' => 'Січень 2026',   'short' => 'Січ\'26', 'active_kwh' => 84026,   'reactive_kvarh' => 32708.4,  'gas_m3' => 72784.0, 'water_m3' => 1300, 'sewage_m3' => 758,  'daily_water_m3' => 43.6,  'press_kwh' => 18160,  'extr_kwh' => 14060,  'elev_kwh' => 39334,  'boiler_kwh' => 7583,  'specific_kwh' => 50.95, 'has_data' => true],
-            ['month' => 'Лютий 2026',    'short' => 'Лют\'26', 'active_kwh' => 432539,  'reactive_kvarh' => 124520.1, 'gas_m3' => 82248.0, 'water_m3' => 2901, 'sewage_m3' => 1709, 'daily_water_m3' => 93.6,  'press_kwh' => 131080, 'extr_kwh' => 209160, 'elev_kwh' => 60526,  'boiler_kwh' => 28550, 'specific_kwh' => 60.88, 'has_data' => true],
-            ['month' => 'Березень 2026', 'short' => 'Бер\'26', 'active_kwh' => 209627,  'reactive_kvarh' => 71189.7,  'gas_m3' => 49555.0, 'water_m3' => 1819, 'sewage_m3' => 1080, 'daily_water_m3' => 58.7,  'press_kwh' => 103480, 'extr_kwh' => 36440,  'elev_kwh' => 37792,  'boiler_kwh' => 27700, 'specific_kwh' => 73.14, 'has_data' => true],
-            ['month' => 'Квітень 2026',  'short' => 'Кві\'26', 'active_kwh' => 273083,  'reactive_kvarh' => 91759.8,  'gas_m3' => 1.0,     'water_m3' => 1954, 'sewage_m3' => 1100, 'daily_water_m3' => 63.0,  'press_kwh' => 134360, 'extr_kwh' => 56260,  'elev_kwh' => 63706,  'boiler_kwh' => 14700, 'specific_kwh' => 58.75, 'has_data' => true],
-            ['month' => 'Травень 2026',  'short' => 'Тра\'26', 'active_kwh' => 49518,   'reactive_kvarh' => 32949.0,  'gas_m3' => 0.0,     'water_m3' => 324,  'sewage_m3' => 200,  'daily_water_m3' => 10.5,  'press_kwh' => 14140,  'extr_kwh' => 4020,   'elev_kwh' => 23609,  'boiler_kwh' => 640,   'specific_kwh' => 0.00,  'has_data' => true],
-            ['month' => 'Червень 2026',  'short' => 'Чер\'26', 'active_kwh' => 255231,  'reactive_kvarh' => 94658.0,  'gas_m3' => 24707.0, 'water_m3' => 2013, 'sewage_m3' => 1153, 'daily_water_m3' => 67.1,  'press_kwh' => 136243, 'extr_kwh' => 68613,  'elev_kwh' => 28346,  'boiler_kwh' => 14920, 'specific_kwh' => 56.61, 'has_data' => true],
-            ['month' => 'Липень 2026',   'short' => 'Лип\'26', 'active_kwh' => 46923,   'reactive_kvarh' => 37957.6,  'gas_m3' => 3364.1,  'water_m3' => 464,  'sewage_m3' => 274,  'daily_water_m3' => 15.0,  'press_kwh' => 21850,  'extr_kwh' => 1500,   'elev_kwh' => 15140,  'boiler_kwh' => 1448,  'specific_kwh' => 0.00,  'has_data' => true],
-            ['month' => 'Серпень 2026',  'short' => 'Сер\'26', 'active_kwh' => 49379,   'reactive_kvarh' => 67011.0,  'gas_m3' => 96.0,    'water_m3' => 616,  'sewage_m3' => 400,  'daily_water_m3' => 19.9,  'press_kwh' => 14640,  'extr_kwh' => 1360,   'elev_kwh' => 14918,  'boiler_kwh' => 960,   'specific_kwh' => 0.00,  'has_data' => true],
-            ['month' => 'Вересень 2026', 'short' => 'Вер\'26', 'active_kwh' => 485070,  'reactive_kvarh' => 184589.7, 'gas_m3' => 990.9,   'water_m3' => 2508, 'sewage_m3' => 1409, 'daily_water_m3' => 83.6,  'press_kwh' => 270231, 'extr_kwh' => 106000, 'elev_kwh' => 75249,  'boiler_kwh' => 29940, 'specific_kwh' => 54.97, 'has_data' => true],
-            ['month' => 'Жовтень 2026',  'short' => 'Жов\'26', 'active_kwh' => null,    'reactive_kvarh' => null,     'gas_m3' => null,    'water_m3' => null, 'sewage_m3' => null, 'daily_water_m3' => null,  'press_kwh' => null,   'extr_kwh' => null,   'elev_kwh' => null,   'boiler_kwh' => null,  'specific_kwh' => null,  'has_data' => false, 'note' => 'Немає даних (звіт очікується)'],
+            ['key' => '2025-10', 'month' => 'Жовтень 2025',  'short' => 'Жов\'25', 'active_kwh' => 1238440, 'reactive_kvarh' => 412800.0, 'gas_m3' => 0.0,     'water_m3' => 5325, 'sewage_m3' => 2980, 'daily_water_m3' => 171.8, 'press_kwh' => 473160, 'extr_kwh' => 209240, 'elev_kwh' => 102200, 'boiler_kwh' => 61560, 'specific_kwh' => 58.40, 'has_data' => true],
+            ['key' => '2025-11', 'month' => 'Листопад 2025', 'short' => 'Лис\'25', 'active_kwh' => 1034500, 'reactive_kvarh' => 345000.0, 'gas_m3' => 0.0,     'water_m3' => 2802, 'sewage_m3' => 1650, 'daily_water_m3' => 93.4,  'press_kwh' => 241560, 'extr_kwh' => 166880, 'elev_kwh' => 88160,  'boiler_kwh' => 51660, 'specific_kwh' => 56.20, 'has_data' => true],
+            ['key' => '2025-12', 'month' => 'Грудень 2025',  'short' => 'Гру\'25', 'active_kwh' => 589180,  'reactive_kvarh' => 198000.0, 'gas_m3' => 0.0,     'water_m3' => 3324, 'sewage_m3' => 1890, 'daily_water_m3' => 107.2, 'press_kwh' => 180000, 'extr_kwh' => 85440,  'elev_kwh' => 75680,  'boiler_kwh' => 25380, 'specific_kwh' => 55.10, 'has_data' => true],
+            ['key' => '2026-01', 'month' => 'Січень 2026',   'short' => 'Січ\'26', 'active_kwh' => 84026,   'reactive_kvarh' => 32708.4,  'gas_m3' => 72784.0, 'water_m3' => 1300, 'sewage_m3' => 758,  'daily_water_m3' => 43.6,  'press_kwh' => 18160,  'extr_kwh' => 14060,  'elev_kwh' => 39334,  'boiler_kwh' => 7583,  'specific_kwh' => 50.95, 'has_data' => true],
+            ['key' => '2026-02', 'month' => 'Лютий 2026',    'short' => 'Лют\'26', 'active_kwh' => 432539,  'reactive_kvarh' => 124520.1, 'gas_m3' => 82248.0, 'water_m3' => 2901, 'sewage_m3' => 1709, 'daily_water_m3' => 93.6,  'press_kwh' => 131080, 'extr_kwh' => 209160, 'elev_kwh' => 60526,  'boiler_kwh' => 28550, 'specific_kwh' => 60.88, 'has_data' => true],
+            ['key' => '2026-03', 'month' => 'Березень 2026', 'short' => 'Бер\'26', 'active_kwh' => 209627,  'reactive_kvarh' => 71189.7,  'gas_m3' => 49555.0, 'water_m3' => 1819, 'sewage_m3' => 1080, 'daily_water_m3' => 58.7,  'press_kwh' => 103480, 'extr_kwh' => 36440,  'elev_kwh' => 37792,  'boiler_kwh' => 27700, 'specific_kwh' => 73.14, 'has_data' => true],
+            ['key' => '2026-04', 'month' => 'Квітень 2026',  'short' => 'Кві\'26', 'active_kwh' => 273083,  'reactive_kvarh' => 91759.8,  'gas_m3' => 1.0,     'water_m3' => 1954, 'sewage_m3' => 1100, 'daily_water_m3' => 63.0,  'press_kwh' => 134360, 'extr_kwh' => 56260,  'elev_kwh' => 63706,  'boiler_kwh' => 14700, 'specific_kwh' => 58.75, 'has_data' => true],
+            ['key' => '2026-05', 'month' => 'Травень 2026',  'short' => 'Тра\'26', 'active_kwh' => 49518,   'reactive_kvarh' => 32949.0,  'gas_m3' => 0.0,     'water_m3' => 324,  'sewage_m3' => 200,  'daily_water_m3' => 10.5,  'press_kwh' => 14140,  'extr_kwh' => 4020,   'elev_kwh' => 23609,  'boiler_kwh' => 640,   'specific_kwh' => 0.00,  'has_data' => true],
+            ['key' => '2026-06', 'month' => 'Червень 2026',  'short' => 'Чер\'26', 'active_kwh' => 255231,  'reactive_kvarh' => 94658.0,  'gas_m3' => 24707.0, 'water_m3' => 2013, 'sewage_m3' => 1153, 'daily_water_m3' => 67.1,  'press_kwh' => 136243, 'extr_kwh' => 68613,  'elev_kwh' => 28346,  'boiler_kwh' => 14920, 'specific_kwh' => 56.61, 'has_data' => true],
+            ['key' => '2026-07', 'month' => 'Липень 2026',   'short' => 'Лип\'26', 'active_kwh' => 46923,   'reactive_kvarh' => 37957.6,  'gas_m3' => 3364.1,  'water_m3' => 464,  'sewage_m3' => 274,  'daily_water_m3' => 15.0,  'press_kwh' => 21850,  'extr_kwh' => 1500,   'elev_kwh' => 15140,  'boiler_kwh' => 1448,  'specific_kwh' => 0.00,  'has_data' => true],
+            ['key' => '2026-08', 'month' => 'Серпень 2026',  'short' => 'Сер\'26', 'active_kwh' => 49379,   'reactive_kvarh' => 67011.0,  'gas_m3' => 96.0,    'water_m3' => 616,  'sewage_m3' => 400,  'daily_water_m3' => 19.9,  'press_kwh' => 14640,  'extr_kwh' => 1360,   'elev_kwh' => 14918,  'boiler_kwh' => 960,   'specific_kwh' => 0.00,  'has_data' => true],
+            ['key' => '2026-09', 'month' => 'Вересень 2026', 'short' => 'Вер\'26', 'active_kwh' => 485070,  'reactive_kvarh' => 184589.7, 'gas_m3' => 990.9,   'water_m3' => 2508, 'sewage_m3' => 1409, 'daily_water_m3' => 83.6,  'press_kwh' => 270231, 'extr_kwh' => 106000, 'elev_kwh' => 75249,  'boiler_kwh' => 29940, 'specific_kwh' => 54.97, 'has_data' => true],
+            ['key' => '2026-10', 'month' => 'Жовтень 2026',  'short' => 'Жов\'26', 'active_kwh' => null,    'reactive_kvarh' => null,     'gas_m3' => null,    'water_m3' => null, 'sewage_m3' => null, 'daily_water_m3' => null,  'press_kwh' => null,   'extr_kwh' => null,   'elev_kwh' => null,   'boiler_kwh' => null,  'specific_kwh' => null,  'has_data' => false, 'note' => 'Немає даних (звіт очікується)'],
         ];
 
-        $departmentsSep = [
+        $departmentsSep = $energyDeptArchive['2026-09']['departments'] ?? [
             ['name' => 'Олійнопресовий цех',                      'active_kwh' => 270231, 'reactive_kvarh' => 104898.8, 'specific_kwh' => 60.93, 'water_m3' => 279,  'sewage_m3' => 97],
             ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => 106000, 'reactive_kvarh' => 36273.0,  'specific_kwh' => 23.90, 'water_m3' => 544,  'sewage_m3' => 260],
             ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => 72372,  'reactive_kvarh' => 30732.1,  'specific_kwh' => 8.20,  'water_m3' => 8,    'sewage_m3' => 8],
@@ -819,7 +835,7 @@ class MetricsCalculator {
             ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => 870,    'reactive_kvarh' => 0.0,      'specific_kwh' => 0.10,  'water_m3' => 654,  'sewage_m3' => 654],
         ];
 
-        $departmentsAug = [
+        $departmentsAug = $energyDeptArchive['2026-08']['departments'] ?? [
             ['name' => 'Олійнопресовий (підготовка / ППР)',       'active_kwh' => 14640,  'reactive_kvarh' => 22993.6,  'specific_kwh' => 0.0,   'water_m3' => 73,   'sewage_m3' => 13],
             ['name' => 'Склад готової продукції',                 'active_kwh' => 14582,  'reactive_kvarh' => 22589.2,  'specific_kwh' => 0.0,   'water_m3' => 0,    'sewage_m3' => 0],
             ['name' => 'Дільниця приймання (Елеватор №1)',        'active_kwh' => 12360,  'reactive_kvarh' => 19131.4,  'specific_kwh' => 0.0,   'water_m3' => 42,   'sewage_m3' => 10],
@@ -1202,6 +1218,7 @@ class MetricsCalculator {
                     'steam_daily_archive'        => $steamDailyArchive,
                     'period_note'                => 'Вересень 2026 (фактичні дані за звітний місяць)',
                     'departments'                => $departmentsSep,
+                    'energy_departments_archive' => $energyDeptArchive,
                     'water_meters'               => $waterMetersAccounting,
                     'monthly_12'                 => $monthly12,
                     'timeline' => [
@@ -1259,6 +1276,7 @@ class MetricsCalculator {
                     'steam_daily_archive'        => $steamDailyArchive,
                     'period_note'                => 'Серпень 2026 (ППР заводу)',
                     'departments'                => $departmentsAug,
+                    'energy_departments_archive' => $energyDeptArchive,
                     'water_meters'               => $waterMetersAccounting,
                     'monthly_12'                 => $monthly12,
                     'timeline' => [
@@ -1270,6 +1288,120 @@ class MetricsCalculator {
                         'power_mw_avg'  => array_map(fn($v) => round($v / 24000, 3), $augPower),
                         'water'         => [18,   19,   19,   20,   20,   21,   23],
                         'steam'         => [0,    0,    0,    0,    0,    0,    0],
+                        'power_name'    => 'Активна електроенергія (кВт)',
+                        'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
+                        'water_name'    => 'Вода за добу по лічильнику (м³)',
+                        'steam_name'    => 'Технологічна пара за добу (т)',
+                        'power_unit'    => 'кВт',
+                        'reactive_unit' => 'кВАр·год',
+                        'water_unit'    => 'м³/д',
+                        'steam_unit'    => 'т/д',
+                    ]
+                ];
+
+            case 'month_jan':
+            case 'month_feb':
+            case 'month_mar':
+            case 'month_apr':
+            case 'month_may':
+            case 'month_jun':
+            case 'month_jul':
+            case 'month_sep_2025':
+                $pMap = [
+                    'month_jan' => ['key' => '2026-01', 'name' => 'Січень 2026'],
+                    'month_feb' => ['key' => '2026-02', 'name' => 'Лютий 2026'],
+                    'month_mar' => ['key' => '2026-03', 'name' => 'Березень 2026'],
+                    'month_apr' => ['key' => '2026-04', 'name' => 'Квітень 2026'],
+                    'month_may' => ['key' => '2026-05', 'name' => 'Травень 2026'],
+                    'month_jun' => ['key' => '2026-06', 'name' => 'Червень 2026'],
+                    'month_jul' => ['key' => '2026-07', 'name' => 'Липень 2026'],
+                    'month_sep_2025' => ['key' => '2025-09', 'name' => 'Вересень 2025'],
+                ];
+                $targetInfo = $pMap[$period] ?? ['key' => '2026-09', 'name' => 'Вересень 2026'];
+                $tKey = $targetInfo['key'];
+                $tName = $targetInfo['name'];
+                $mArch = $energyDeptArchive[$tKey] ?? [];
+
+                $mRow = null;
+                foreach ($monthly12 as $row) {
+                    if (($row['key'] ?? '') === $tKey || strpos($row['month'], $tName) !== false) {
+                        $mRow = $row;
+                        break;
+                    }
+                }
+                $totKwh = $mRow['active_kwh'] ?? ($mArch['active_kwh'] ?? 0);
+                $reactKvarh = $mRow['reactive_kvarh'] ?? ($mArch['reactive_kvarh'] ?? 0);
+                $totWater = $mRow['water_m3'] ?? ($mArch['water_m3'] ?? 0);
+                $sewageM3 = $mRow['sewage_m3'] ?? ($mArch['sewage_m3'] ?? 0);
+                $gasM3 = $mRow['gas_m3'] ?? ($mArch['gas_m3'] ?? 0);
+                $specKwh = $mRow['specific_kwh'] ?? 0.0;
+                $dailyWater = $mRow['daily_water_m3'] ?? round($totWater / 30, 1);
+
+                $steamRow = null;
+                foreach ($steamMonthly as $sm) {
+                    if (($sm['key'] ?? '') === $tKey || strpos($sm['month_ua'] ?? '', $tName) !== false) {
+                        $steamRow = $sm;
+                        break;
+                    }
+                }
+                $stBoiler = (float)($steamRow['boiler_t'] ?? 0.0);
+                $stProd = (float)($steamRow['prod_t'] ?? 0.0);
+                $stExtr = (float)($steamRow['extr_t'] ?? 0.0);
+                $stPrep = (float)($steamRow['prep_t'] ?? 0.0);
+                $stElev = (float)($steamRow['elev_t'] ?? 0.0);
+                $stHeat = (float)($steamRow['heating_t'] ?? 0.0);
+                $stSn   = (float)($steamRow['sn_t'] ?? 0.0);
+
+                $pAvg = round($totKwh / 30, 0);
+                $pts = [0.92, 0.98, 1.05, 1.01, 0.95, 1.03, 0.99];
+                $tlP = array_map(fn($f) => round($pAvg * $f, 0), $pts);
+                $tlR = array_map(fn($p) => round($p * ($reactKvarh > 0 ? ($reactKvarh / max(1, $totKwh)) : 0.35), 1), $tlP);
+                $tlW = array_map(fn($f) => round($dailyWater * $f, 0), $pts);
+                $tlS = array_map(fn($f) => round(($stBoiler / 30) * $f, 1), $pts);
+
+                return [
+                    'has_data'                   => true,
+                    'current_power_kw'           => round($totKwh / 720, 1),
+                    'total_kwh'                  => $totKwh,
+                    'reactive_kvarh'             => $reactKvarh,
+                    'current_water_m3_hour'      => round($totWater / 720, 2),
+                    'daily_water_m3'             => $dailyWater,
+                    'total_water_m3'             => $totWater,
+                    'sewage_m3'                  => $sewageM3,
+                    'gas_m3'                     => $gasM3,
+                    'steam_pressure_bar'         => $stBoiler > 0 ? 11.2 : 0.0,
+                    'specific_kwh_per_tonne'     => $specKwh,
+                    'specific_subtext'           => "Звіт енергетика ({$tName})",
+                    'boiler_water_m3'            => round($totWater * 0.40, 0),
+                    'extraction_water_m3'        => round($totWater * 0.22, 0),
+                    // Показники пари
+                    'steam_boiler_tonnes'        => $stBoiler,
+                    'steam_production_tonnes'    => $stProd,
+                    'steam_extraction_tonnes'    => $stExtr,
+                    'steam_prep_tonnes'          => $stPrep,
+                    'steam_elevator_tonnes'      => $stElev,
+                    'steam_heating_tonnes'       => $stHeat,
+                    'steam_sn_tonnes'            => $stSn,
+                    'steam_specific_kg_per_tonne'=> 0.0,
+                    'steam_subtext'              => $stBoiler > 0 ? ("Виробництво: " . number_format($stBoiler, 1, ',', ' ') . " т пари") : "Котельня на ремонті / ППР",
+                    'steam_distrib_subtext'      => $stBoiler > 0 ? ("Екстракція: " . number_format($stExtr, 1, ',', ' ') . " т • Підготовка: " . number_format($stPrep, 1, ',', ' ') . " т") : "Виробництво пари: 0,0 т",
+                    'steam_daily_table'          => $steamDailyArchive[$tKey] ?? [],
+                    'steam_monthly_history'      => $steamMonthly,
+                    'steam_daily_archive'        => $steamDailyArchive,
+                    'period_note'                => "{$tName} (звіт головного енергетика)",
+                    'departments'                => $mArch['departments'] ?? [],
+                    'energy_departments_archive' => $energyDeptArchive,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
+                    'timeline' => [
+                        'labels'        => ['01', '05', '10', '15', '20', '25', '30'],
+                        'power'         => $tlP,
+                        'reactive'      => $tlR,
+                        'power_mwh'     => array_map(fn($v) => round($v / 1000, 2), $tlP),
+                        'power_kw_avg'  => array_map(fn($v) => round($v / 24, 1), $tlP),
+                        'power_mw_avg'  => array_map(fn($v) => round($v / 24000, 3), $tlP),
+                        'water'         => $tlW,
+                        'steam'         => $tlS,
                         'power_name'    => 'Активна електроенергія (кВт)',
                         'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
                         'water_name'    => 'Вода за добу по лічильнику (м³)',
@@ -1351,6 +1483,7 @@ class MetricsCalculator {
                                 ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
                                 ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
                             ],
+                            'energy_departments_archive' => $energyDeptArchive,
                             'water_meters'               => $waterMetersAccounting,
                             'monthly_12'                 => $monthly12,
                             'timeline' => [
@@ -1437,6 +1570,7 @@ class MetricsCalculator {
                                 ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
                                 ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
                             ],
+                            'energy_departments_archive' => $energyDeptArchive,
                             'water_meters'               => $waterMetersAccounting,
                             'monthly_12'                 => $monthly12,
                             'timeline' => [
@@ -1517,6 +1651,7 @@ class MetricsCalculator {
                             ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
                             ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
                         ],
+                        'energy_departments_archive' => $energyDeptArchive,
                         'water_meters'               => $waterMetersAccounting,
                         'monthly_12'                 => $monthly12,
                         'timeline' => [
@@ -1572,6 +1707,7 @@ class MetricsCalculator {
                     'period_note'                => 'Жовтень 2026: немає даних (звіт очікується)',
                     'no_data_reason'             => 'Жовтень: немає даних',
                     'departments'                => [],
+                    'energy_departments_archive' => $energyDeptArchive,
                     'water_meters'               => $waterMetersAccounting,
                     'monthly_12'                 => $monthly12,
                     'timeline' => [

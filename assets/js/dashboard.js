@@ -158,6 +158,82 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // 2.04 Інтерактивний архів електроенергії та підрозділів за 2026 рік (січень–жовтень)
+    window.selectEnergyMonth = function(key) {
+        if (!key) return;
+        const sel = document.getElementById('energy-month-select');
+        if (sel && sel.value !== key) {
+            sel.value = key;
+        }
+        const en = (window.INITIAL_DASHBOARD_DATA && window.INITIAL_DASHBOARD_DATA.energy) || {};
+        const archive = en.energy_departments_archive || {};
+        const monthData = archive[key];
+
+        const details = document.getElementById('energy-departments-details');
+        if (details && !details.open) {
+            details.open = true;
+        }
+
+        const subtext = document.getElementById('energy-month-subtext');
+        if (subtext) {
+            if (monthData && monthData.month_name) {
+                const gasNote = monthData.gas_m3 > 0 ? ` • Газ: ${formatNumber(monthData.gas_m3, 0)} м³` : '';
+                const seedNote = (monthData.seed_processed_t > 0) ? `переробка ${formatNumber(monthData.seed_processed_t, 2)} т` : 'ППР / очікується';
+                subtext.textContent = `(${monthData.month_name}: ${seedNote}${gasNote})`;
+            } else if (sel && sel.options[sel.selectedIndex]) {
+                subtext.textContent = `(${sel.options[sel.selectedIndex].textContent})`;
+            }
+        }
+
+        const deptTbody = document.querySelector('#energy-departments-tbody');
+        if (deptTbody) {
+            if (monthData && Array.isArray(monthData.departments) && monthData.departments.length > 0) {
+                const depts = monthData.departments;
+                let rowsHtml = depts.map(d => `
+                    <tr>
+                        <td class="bold">${d.name}</td>
+                        <td class="bold" style="color: #0284c7;">${d.active_kwh !== null && d.active_kwh !== undefined ? formatNumber(d.active_kwh, 0) : '—'}</td>
+                        <td>${d.reactive_kvarh !== null && d.reactive_kvarh !== undefined ? formatNumber(d.reactive_kvarh, 1) : '—'}</td>
+                        <td>${Number(d.specific_kwh) > 0 ? formatNumber(d.specific_kwh, 2) : '—'}</td>
+                        <td class="bold" style="color: #059669;">${d.water_m3 !== null && d.water_m3 !== undefined ? formatNumber(d.water_m3, 0) : '—'}</td>
+                        <td>${d.sewage_m3 !== null && d.sewage_m3 !== undefined ? formatNumber(d.sewage_m3, 0) : '—'}</td>
+                        <td style="color: #ea580c;">${d.gas_m3 > 0 ? formatNumber(d.gas_m3, 0) + ' м³' : '—'}</td>
+                    </tr>
+                `).join('');
+
+                // Підсумковий рядок РАЗОМ
+                const totalActive = monthData.active_kwh || 0;
+                const totalReactive = monthData.reactive_kvarh || 0;
+                const totalWater = monthData.water_m3 || 0;
+                const totalSewage = monthData.sewage_m3 || 0;
+                const totalGas = monthData.gas_m3 || 0;
+                const avgSpecific = (monthData.seed_processed_t > 0 && totalActive > 0) ? (totalActive / monthData.seed_processed_t) : 0;
+
+                rowsHtml += `
+                    <tr style="background: #f1f5f9; font-weight: 800; border-top: 2px solid #cbd5e1;">
+                        <td class="bold" style="color: #1e293b;">РАЗОМ (${monthData.month_name})</td>
+                        <td class="bold" style="color: #0284c7;">${formatNumber(totalActive, 0)}</td>
+                        <td class="bold">${formatNumber(totalReactive, 1)}</td>
+                        <td class="bold" style="color: #4f46e5;">${avgSpecific > 0 ? formatNumber(avgSpecific, 2) : '—'}</td>
+                        <td class="bold" style="color: #059669;">${formatNumber(totalWater, 0)}</td>
+                        <td class="bold">${formatNumber(totalSewage, 0)}</td>
+                        <td class="bold" style="color: #ea580c;">${totalGas > 0 ? formatNumber(totalGas, 0) + ' м³' : '—'}</td>
+                    </tr>
+                `;
+                deptTbody.innerHTML = rowsHtml;
+            } else {
+                deptTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">Дані за обраний місяць (${key}) очікуються або знаходяться в архіві попередніх років.</td></tr>`;
+            }
+        }
+    };
+
+    const energyMonthSel = document.getElementById('energy-month-select');
+    if (energyMonthSel) {
+        energyMonthSel.addEventListener('change', function () {
+            window.selectEnergyMonth(this.value);
+        });
+    }
+
     // 2.1 Обробники перемикання вкладок вантажу (Всі, Насіння, Олія, Шрот, Лузга)
     cargoButtons.forEach(btn => {
         btn.addEventListener('click', function () {
@@ -696,21 +772,35 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            const deptTbody = document.querySelector('#energy-departments-tbody');
-            if (deptTbody) {
-                if (hasData && Array.isArray(en.departments) && en.departments.length > 0) {
-                    deptTbody.innerHTML = en.departments.map(d => `
-                        <tr>
-                            <td class="bold">${d.name}</td>
-                            <td class="bold" style="color: #0284c7;">${formatNumber(d.active_kwh, 3)}</td>
-                            <td>${formatNumber(d.reactive_kvarh, 1)}</td>
-                            <td>${Number(d.specific_kwh) > 0 ? formatNumber(d.specific_kwh, 3) : '—'}</td>
-                            <td class="bold" style="color: #059669;">${formatNumber(d.water_m3, 0)}</td>
-                            <td>${formatNumber(d.sewage_m3, 0)}</td>
-                        </tr>
-                    `).join('');
-                } else {
-                    deptTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">Жовтень 2026: дані відсутні (звіт енергетика очікується). <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; cursor: pointer; font-weight: 700;">Обрати Вересень 2026</button></td></tr>`;
+            if (en.energy_departments_archive) {
+                if (!window.INITIAL_DASHBOARD_DATA) window.INITIAL_DASHBOARD_DATA = {};
+                if (!window.INITIAL_DASHBOARD_DATA.energy) window.INITIAL_DASHBOARD_DATA.energy = {};
+                window.INITIAL_DASHBOARD_DATA.energy.energy_departments_archive = en.energy_departments_archive;
+            }
+
+            const energyMonthSelEl = document.getElementById('energy-month-select');
+            const selectedEnergyMonthKey = energyMonthSelEl ? energyMonthSelEl.value : '2026-09';
+
+            if (selectedEnergyMonthKey && window.INITIAL_DASHBOARD_DATA?.energy?.energy_departments_archive?.[selectedEnergyMonthKey]) {
+                window.selectEnergyMonth(selectedEnergyMonthKey);
+            } else {
+                const deptTbody = document.querySelector('#energy-departments-tbody');
+                if (deptTbody) {
+                    if (hasData && Array.isArray(en.departments) && en.departments.length > 0) {
+                        deptTbody.innerHTML = en.departments.map(d => `
+                            <tr>
+                                <td class="bold">${d.name}</td>
+                                <td class="bold" style="color: #0284c7;">${d.active_kwh !== null && d.active_kwh !== undefined ? formatNumber(d.active_kwh, 0) : '—'}</td>
+                                <td>${d.reactive_kvarh !== null && d.reactive_kvarh !== undefined ? formatNumber(d.reactive_kvarh, 1) : '—'}</td>
+                                <td>${Number(d.specific_kwh) > 0 ? formatNumber(d.specific_kwh, 2) : '—'}</td>
+                                <td class="bold" style="color: #059669;">${d.water_m3 !== null && d.water_m3 !== undefined ? formatNumber(d.water_m3, 0) : '—'}</td>
+                                <td>${d.sewage_m3 !== null && d.sewage_m3 !== undefined ? formatNumber(d.sewage_m3, 0) : '—'}</td>
+                                <td style="color: #ea580c;">${d.gas_m3 > 0 ? formatNumber(d.gas_m3, 0) + ' м³' : '—'}</td>
+                            </tr>
+                        `).join('');
+                    } else {
+                        deptTbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #64748b; padding: 22px; font-weight: 600;">Жовтень 2026: дані відсутні (звіт енергетика очікується). <button type="button" class="btn-quick-period" data-period="month_sep" style="background: #0284c7; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; cursor: pointer; font-weight: 700;">Обрати Вересень 2026</button></td></tr>`;
+                    }
                 }
             }
         }
