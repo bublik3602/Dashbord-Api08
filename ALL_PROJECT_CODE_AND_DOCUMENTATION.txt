@@ -2,7 +2,7 @@
            ПОВНИЙ АРХІВ ТА ВИХІДНИЙ КОД ПРОЄКТУ: ДАШБОРД ЗАВОДУ МЕЗ
                ТОВ «АГРОПРОІНВЕСТ 08» (dash-api08.dniprovska.net)
 ================================================================================
-Дата формування: 2026-10-19 21:21:20
+Дата формування: 2026-10-20 09:39:02
 Призначення: Повна фіксація всіх розроблених модулів, правил, правок, формул,
 інтеграцій та вихідного коду для перевірки без витрати токенів нейромережі.
 
@@ -101,8 +101,8 @@
 --------------------------------------------------------------------------------
 РОЗДІЛ 2. СПИСОК ФАЙЛІВ У ЦЬОМУ АРХІВІ
 --------------------------------------------------------------------------------
-01. index.php (161,845 байт)
-02. includes\metrics_calculator.php (255,935 байт)
+01. index.php (162,432 байт)
+02. includes\metrics_calculator.php (253,375 байт)
 03. includes\semena_helper.php (120,037 байт)
 04. includes\db.php (16,488 байт)
 05. includes\helpers.php (5,600 байт)
@@ -112,7 +112,7 @@
 09. includes\xlsx_parser.php (9,614 байт)
 10. api\metrics.php (1,743 байт)
 11. api\save_energy_entry.php (14,912 байт)
-12. api\import.php (117,712 байт)
+12. api\import.php (117,760 байт)
 13. api\export.php (17,550 байт)
 14. api\logistics.php (1,086 байт)
 15. api\equipment.php (933 байт)
@@ -128,11 +128,11 @@
 25. cron\sync_logistics.php (1,697 байт)
 26. cron\sync_zabbix.php (4,133 байт)
 27. database\schema.sql (12,262 байт)
-28. database\seed_data.sql (23,548 байт)
+28. database\seed_data.sql (23,893 байт)
 29. database\energy_departments_archive.json (26,486 байт)
-30. database\production_oil_losses.json (659 байт)
-31. database\svod_stocks.json (646 байт)
-32. scripts\build_zip.py (1,821 байт)
+30. database\production_oil_losses.json (668 байт)
+31. database\svod_stocks.json (648 байт)
+32. scripts\build_zip.py (1,934 байт)
 33. scripts\sunflower_processor.py (115,603 байт)
 34. scripts\sync_semena_data.py (21,840 байт)
 35. scripts\process_1c.py (43,179 байт)
@@ -143,13 +143,16 @@
 40. Dockerfile (416 байт)
 41. README.md (12,653 байт)
 42. .gitignore (400 байт)
-43. scripts\generate_full_project_text.py (14,249 байт)
+43. presentation.html (58,709 байт)
+44. scripts\create_powerpoint.py (37,244 байт)
+45. scripts\generate_full_project_text.py (14,249 байт)
+46. Презентація_Дашборд_МЕЗ_Керівництву.pptx (58,172 байт)
 
 ================================================================================
 
 ================================================================================
-ФАЙЛ [1/43]: index.php
-Шлях: index.php | Розмір: 161,845 байт
+ФАЙЛ [1/46]: index.php
+Шлях: index.php | Розмір: 162,432 байт
 ================================================================================
 
 <?php
@@ -277,6 +280,10 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     <span>🌻 СЕМЕНА</span>
                 </a>
                 <?php endif; ?>
+                <a href="presentation.html" target="_blank" class="btn-action" id="btn-open-presentation" title="Відкрити презентацію для керівництва (Слайди, 10 розділів)" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: 1px solid #0284c7; font-weight: 800; text-decoration: none; box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);">
+                    <i data-lucide="presentation" style="width: 14px; height: 14px;"></i>
+                    <span>📊 Презентація</span>
+                </a>
                 <button type="button" class="btn-action btn-import" id="btn-open-import" title="<?= $isEnergo ? 'Імпортувати звіти енергетики (РАСПРЕД.ЭНЕРГОНОСИТЕЛЕЙ, АГРОПРОІНВЕСТ 08, Облік води, Учет пара)' : 'Імпортувати щоденні звіти завода (Лист погодження, СВОД, Баланс)' ?>">
                     <i data-lucide="upload" style="width: 14px; height: 14px;"></i>
                     <span>Імпорт Excel</span>
@@ -2060,8 +2067,8 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
 
 ================================================================================
-ФАЙЛ [2/43]: includes\metrics_calculator.php
-Шлях: includes\metrics_calculator.php | Розмір: 255,935 байт
+ФАЙЛ [2/46]: includes\metrics_calculator.php
+Шлях: includes\metrics_calculator.php | Розмір: 253,375 байт
 ================================================================================
 
 <?php
@@ -2110,14 +2117,7 @@ class MetricsCalculator {
         $filtered = [];
         switch ($period) {
             case 'day_active':
-                foreach ($dailyRows as $r) {
-                    if (($r['date'] ?? '') === '06.10.2026') {
-                        $filtered[] = $r;
-                    }
-                }
-                if (empty($filtered)) {
-                    $filtered = [end($dailyRows)];
-                }
+                $filtered = !empty($dailyRows) ? [end($dailyRows)] : [];
                 break;
             case 'week':
                 $filtered = array_slice($dailyRows, -7);
@@ -2271,13 +2271,13 @@ class MetricsCalculator {
                 : date('d.m.Y 20:00') . ' — ' . date('d.m.Y 08:00', strtotime('+1 day')));
 
         $semenaStats = $this->getSemenaPeriodStats($period);
-        $lastDateLabel = $semenaStats['last_date'] ?? '12.10.2026';
+        $pz = $materialBalance['production_zone'] ?? [];
+        $lastDateLabel = !empty($pz['report_date']) ? $pz['report_date'] : ($semenaStats['last_date'] ?? date('d.m.Y'));
         $seedInVal = $materialBalance['receiving_zone']['seed_in_plant']
             ?? $materialBalance['seed_in_plant']
             ?? ($semenaStats['seed_in_plant'] ?? 471.85);
         $seedInFormatted = number_format($seedInVal, 2, ',', ' ');
 
-        $pz = $materialBalance['production_zone'] ?? [];
         $seedProc = (float)($pz['seed_processed'] ?? 0);
         $oilOut = (float)($pz['oil_out'] ?? 0);
         $mealOut = (float)($pz['meal_out'] ?? 0);
@@ -2448,8 +2448,8 @@ class MetricsCalculator {
         // План приймання на добу = 600,0 т
         $verifiedPeriods = [
             'day_today' => [
-                'seed_in_plant'    => 153.50,
-                'trucks_count'     => 5,
+                'seed_in_plant'    => 0.0,
+                'trucks_count'     => 0,
                 'seed_in_prod'     => 0.0,
                 'seed_in_prod_raw' => 0.0,
                 'cond_loss'        => 0.0,
@@ -2460,22 +2460,22 @@ class MetricsCalculator {
                 'seed_plan'        => 600.0,
             ],
             'day_prev' => [
-                // 14.10.2026: прийомка 318,66 т з плану 600,0 т, переробка 596,805 т
-                'seed_in_plant'    => 318.66,
-                'trucks_count'     => 13,
-                'seed_in_prod'     => 596.805,
-                'seed_in_prod_raw' => 602.122,
-                'cond_loss'        => 5.317,
-                'cond_loss_pct'    => 0.88,
-                'oil_out'          => 256.489,
-                'meal_out'         => 248.786,
-                'husk_out'         => 87.020,
+                // 19.10.2026: робоча доба перед 20.10 (прийомка / переробка 527,880 т, вихід олії 219,546 т)
+                'seed_in_plant'    => 533.142,
+                'trucks_count'     => 18,
+                'seed_in_prod'     => 527.880,
+                'seed_in_prod_raw' => 533.142,
+                'cond_loss'        => 5.262,
+                'cond_loss_pct'    => 0.99,
+                'oil_out'          => 219.546,
+                'meal_out'         => 185.326,
+                'husk_out'         => 73.710,
                 'seed_plan'        => 600.0,
             ],
             'day' => [
-                // Поточна доба моніторингу (18.10.2026): прийомка 153,50 т (5 авто), переробка МЕЗ 0 т (простій / накопичення)
-                'seed_in_plant'    => 153.50,
-                'trucks_count'     => 5,
+                // Поточна доба моніторингу (20.10.2026): переробка МЕЗ 0 т (зведення на ранок 08:00 / накопичення насіння)
+                'seed_in_plant'    => 0.0,
+                'trucks_count'     => 0,
                 'seed_in_prod'     => 0.0,
                 'seed_in_prod_raw' => 0.0,
                 'cond_loss'        => 0.0,
@@ -2486,16 +2486,16 @@ class MetricsCalculator {
                 'seed_plan'        => 600.0,
             ],
             'day_active' => [
-                // 15.10.2026: остання активна доба переробки МЕЗ (прийомка 436,527 т, переробка 308,979 т, вихід олії 149,278 т)
-                'seed_in_plant'    => 436.527,
-                'trucks_count'     => 17,
-                'seed_in_prod'     => 308.979,
-                'seed_in_prod_raw' => 313.551,
-                'cond_loss'        => 4.572,
-                'cond_loss_pct'    => 1.46,
-                'oil_out'          => 149.278,
-                'meal_out'         => 156.141,
-                'husk_out'         => 45.937,
+                // 19.10.2026: остання активна доба переробки МЕЗ (прийомка / переробка 527,880 т, вихід олії 219,546 т)
+                'seed_in_plant'    => 533.142,
+                'trucks_count'     => 18,
+                'seed_in_prod'     => 527.880,
+                'seed_in_prod_raw' => 533.142,
+                'cond_loss'        => 5.262,
+                'cond_loss_pct'    => 0.99,
+                'oil_out'          => 219.546,
+                'meal_out'         => 185.326,
+                'husk_out'         => 73.710,
                 'seed_plan'        => 600.0,
             ],
             'shift' => [
@@ -2608,94 +2608,68 @@ class MetricsCalculator {
         // Динамічний розрахунок показників переробки з бази даних (material_balance_logs)
         try {
             if (in_array($period, ['day', 'day_prev', 'day_today', 'day_active'], true)) {
-                if ($period === 'day_active') {
-                    // Остання доба АКТИВНОЇ переробки (понад 0 т, наприклад 15.10 — 308,98 т)
+                if ($period === 'day_prev') {
+                    // Попередня (передостання) виробнича доба
                     $stmt = $this->db->query("
-                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
-                        FROM material_balance_logs
-                        WHERE seed_in_production > 0
-                        ORDER BY recorded_at DESC, id DESC LIMIT 1
-                    ");
-                } elseif ($period === 'day_prev') {
-                    // Передостання активна доба або попередній день
-                    $stmt = $this->db->query("
-                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
+                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at, report_date
                         FROM material_balance_logs
                         WHERE seed_in_production > 0
                         ORDER BY recorded_at DESC, id DESC LIMIT 1 OFFSET 1
                     ");
+                    $latestRow = $stmt ? $stmt->fetch() : null;
                 } else {
-                    // 'day' або 'day_today': ПОТОЧНА доба моніторингу (беремо найновіший запис за датою без штучної фільтрації > 0)
+                    // 'day', 'day_today', 'day_active':
+                    // Звіт МЕЗ надходить вранці за щойно завершену виробничу добу (напр., 20.10 — з 19 по 20; 21.10 — з 20 по 21).
+                    // Шукаємо найновіший запис з фактичною переробкою:
                     $stmt = $this->db->query("
-                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
+                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at, report_date
                         FROM material_balance_logs
+                        WHERE seed_in_production > 0
                         ORDER BY recorded_at DESC, id DESC LIMIT 1
                     ");
+                    $latestRow = $stmt ? $stmt->fetch() : null;
+
+                    // Якщо в базі взагалі немає записів з переробкою > 0, беремо найновіший запис
+                    if (!$latestRow) {
+                        $stmtAll = $this->db->query("
+                            SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at, report_date
+                            FROM material_balance_logs
+                            ORDER BY recorded_at DESC, id DESC LIMIT 1
+                        ");
+                        $latestRow = $stmtAll ? $stmtAll->fetch() : null;
+                    }
                 }
-                $latestRow = $stmt ? $stmt->fetch() : null;
+
                 $seedInProdRaw = $vp['seed_in_prod_raw'] ?? 0.0;
 
-                if (in_array($period, ['day', 'day_today'], true)) {
-                    $lastDateStr = !empty($semenaStats['last_date']) ? $semenaStats['last_date'] : '';
-                    $isIdleDay = in_array($lastDateStr, ['16.10.2026', '17.10.2026', '18.10.2026', '19.10.2026', '20.10.2026'], true);
-
-                    if ($isIdleDay) {
-                        // Якщо 16, 17, 18 жовтня — переробки МЕЗ не було (0 т)
-                        $seedInProd          = 0.0;
-                        $seedInProdRaw       = 0.0;
-                        $oilOut              = 0.0;
-                        $mealOut             = 0.0;
-                        $huskOut             = 0.0;
-                        $conditioningLoss    = 0.0;
-                        $conditioningLossPct = 0.0;
-                    } elseif ($latestRow) {
-                        $rowProd = (float)($latestRow['seed_in_production'] ?? 0);
-                        if ($rowProd > 0) {
-                            if (empty($semenaStats['seed_in_plant'])) {
-                                $seedInPlant = (float)$latestRow['seed_in_plant'];
-                            }
-                            $seedInProd          = $rowProd;
-                            $oilOut              = (float)$latestRow['oil_out'];
-                            $mealOut             = (float)$latestRow['meal_out'];
-                            $huskOut             = (float)$latestRow['husk_out'];
-                            $conditioningLoss    = (float)($latestRow['conditioning_loss'] ?? 0);
-                            $conditioningLossPct = (float)($latestRow['conditioning_loss_pct'] ?? 0);
-                            $seedInProdRaw       = round($seedInProd + $conditioningLoss, 3);
-                        } else {
-                            $seedInProd          = 0.0;
-                            $seedInProdRaw       = 0.0;
-                            $oilOut              = 0.0;
-                            $mealOut             = 0.0;
-                            $huskOut             = 0.0;
-                            $conditioningLoss    = 0.0;
-                            $conditioningLossPct = 0.0;
-                        }
-                    } else {
-                        // Немає запису в базі — за замовчуванням 0
-                        $seedInProd          = 0.0;
-                        $seedInProdRaw       = 0.0;
-                        $oilOut              = 0.0;
-                        $mealOut             = 0.0;
-                        $huskOut             = 0.0;
-                        $conditioningLoss    = 0.0;
-                        $conditioningLossPct = 0.0;
+                if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0) {
+                    $rowProd = (float)$latestRow['seed_in_production'];
+                    if (empty($semenaStats['seed_in_plant']) || (float)$semenaStats['seed_in_plant'] <= 0) {
+                        $seedInPlant = (float)$latestRow['seed_in_plant'];
                     }
-                } else {
-                    // day_active або day_prev: беремо фактичні дані знайденої зміни
-                    if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0) {
-                        if (empty($semenaStats['seed_in_plant'])) {
-                            $seedInPlant     = (float)$latestRow['seed_in_plant'];
-                        }
-                        $seedInProd          = (float)$latestRow['seed_in_production'];
-                        $oilOut              = (float)$latestRow['oil_out'];
-                        $mealOut             = (float)$latestRow['meal_out'];
-                        $huskOut             = (float)$latestRow['husk_out'];
-                        $conditioningLoss    = (float)($latestRow['conditioning_loss'] ?? 4.572);
-                        $conditioningLossPct = (float)($latestRow['conditioning_loss_pct'] ?? 1.46);
-                        $seedInProdRaw       = round($seedInProd + $conditioningLoss, 3);
-                    }
+                    $seedInProd          = $rowProd;
+                    $oilOut              = (float)$latestRow['oil_out'];
+                    $mealOut             = (float)$latestRow['meal_out'];
+                    $huskOut             = (float)$latestRow['husk_out'];
+                    $conditioningLoss    = (float)($latestRow['conditioning_loss'] ?? 0);
+                    $conditioningLossPct = (float)($latestRow['conditioning_loss_pct'] ?? 0);
+                    $seedInProdRaw       = round($seedInProd + $conditioningLoss, 3);
+                } elseif ($latestRow) {
+                    // Фактичний простій МЕЗ (переробка 0 т за даними бази)
+                    $seedInProd          = 0.0;
+                    $seedInProdRaw       = 0.0;
+                    $oilOut              = 0.0;
+                    $mealOut             = 0.0;
+                    $huskOut             = 0.0;
+                    $conditioningLoss    = 0.0;
+                    $conditioningLossPct = 0.0;
                 }
             } elseif (in_array($period, ['month', 'month_oct'], true)) {
+                $maxMDate = $this->db->query("SELECT MAX(recorded_at) FROM material_balance_logs WHERE seed_in_production > 0")->fetchColumn();
+                $curYearMonth = !empty($maxMDate) ? date('Y-m', strtotime($maxMDate)) : '2026-10';
+                $mStart = "{$curYearMonth}-01 00:00:00";
+                $mEnd   = date('Y-m-t 23:59:59', strtotime($mStart));
+
                 $stmt = $this->db->query("
                     SELECT 
                         SUM(seed_in_production) as sum_prod,
@@ -2705,7 +2679,7 @@ class MetricsCalculator {
                         SUM(conditioning_loss) as sum_cond,
                         COUNT(CASE WHEN seed_in_production > 10 THEN 1 END) as work_days
                     FROM material_balance_logs
-                    WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-31 23:59:59'
+                    WHERE recorded_at >= '{$mStart}' AND recorded_at <= '{$mEnd}'
                 ");
                 $octAgg = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
                 if ($octAgg && (float)($octAgg['sum_prod'] ?? 0) > 0) {
@@ -2804,6 +2778,8 @@ class MetricsCalculator {
             ],
             // Зона виробництва
             'production_zone' => [
+                'report_date'          => $latestRow['report_date'] ?? null,
+                'recorded_at'          => $latestRow['recorded_at'] ?? null,
                 'seed_in_production'   => $seedInProd,
                 'seed_processed'       => $seedInProd,
                 'seed_processed_raw'   => $seedInProdRaw ?? $seedInProd,
@@ -4044,16 +4020,21 @@ class MetricsCalculator {
      * Повертає актуальні зведені показники переробки за Жовтень 2026 та Сезон 2026-2027 з бази даних
      */
     public function getHistoricalSeasonMetrics(): array {
-        $octSeedProc = 5073.13;
-        $octOilOut   = 2262.33;
-        $octMealOut  = 2107.55;
-        $octHuskOut  = 764.21;
-        $octWorkDays = 10;
+        $octSeedProc = 5601.01;
+        $octOilOut   = 2481.88;
+        $octMealOut  = 2292.88;
+        $octHuskOut  = 837.92;
+        $octWorkDays = 11;
         $octFirstD   = '01.10';
-        $octLastD    = '15.10';
-        $octElapsedDays = 15;
+        $octLastD    = '19.10';
+        $octElapsedDays = 20;
 
         try {
+            $maxMDate = $this->db->query("SELECT MAX(recorded_at) FROM material_balance_logs WHERE seed_in_production > 0")->fetchColumn();
+            $curYearMonth = !empty($maxMDate) ? date('Y-m', strtotime($maxMDate)) : '2026-10';
+            $mStart = "{$curYearMonth}-01 00:00:00";
+            $mEnd   = date('Y-m-t 23:59:59', strtotime($mStart));
+
             $stmt = $this->db->query("
                 SELECT 
                     COUNT(CASE WHEN seed_in_production > 10 THEN 1 END) as work_days,
@@ -4065,7 +4046,7 @@ class MetricsCalculator {
                     SUM(meal_out) as sum_meal,
                     SUM(husk_out) as sum_husk
                 FROM material_balance_logs
-                WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-31 23:59:59'
+                WHERE recorded_at >= '{$mStart}' AND recorded_at <= '{$mEnd}'
             ");
             $octDb = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
             if ($octDb && (float)($octDb['sum_prod'] ?? 0) > 0) {
@@ -5860,25 +5841,25 @@ class MetricsCalculator {
                 ];
 
             case 'day_prev':
-                $seedProc = 596.81;
-                $repDateStr = '14.10.2026';
+                $seedProc = 527.88;
+                $repDateStr = '19.10.2026';
                 return [
-                    'oil_content_pct'             => 44.03,
+                    'oil_content_pct'             => 45.26,
                     'oil_content_base_pct'        => $basePct,
-                    'oil_deviation_pct'           => round(44.03 - $basePct, 2),
-                    'oil_asr_pct'                 => 47.99,
+                    'oil_deviation_pct'           => round(45.26 - $basePct, 2),
+                    'oil_asr_pct'                 => 48.35,
                     'oil_loss_kg'                 => $defaultOilLossKg,
                     'oil_loss_pct'                => $defaultOilLossPct,
                     'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
                     'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
-                    'oil_date'                    => '14.10',
-                    'oil_note'                    => 'Фактична товарна олійність за 14.10 як у звіті МЕЗ',
-                    'moisture_pct'                => 6.20,
-                    'impurity_pct'                => 2.18,
+                    'oil_date'                    => '19.10',
+                    'oil_note'                    => 'Фактична товарна олійність за 19.10 як у звіті МЕЗ',
+                    'moisture_pct'                => 6.40,
+                    'impurity_pct'                => 2.05,
                     'seed_processed_tonnes'       => $seedProc,
                     'seed_plan_tonnes'            => 600.0,
                     'plan_fulfillment_pct'        => round(($seedProc / 600.0) * 100, 1),
-                    'report_date'                 => "{$repDateStr} (Минула активна доба — 14.10)",
+                    'report_date'                 => "{$repDateStr} (Минула робоча доба — 19.10)",
                     'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
                 ];
 
@@ -5886,9 +5867,9 @@ class MetricsCalculator {
             case 'month_oct':
                 $seedProc = $dOct['seed_processed'];
                 $seedPlan = $dOct['working_days'] * 600.0;
-                $oil = 45.30;
-                $oilAsr = 49.11;
-                $moist = 6.18;
+                $oil = 45.26;
+                $oilAsr = 48.24;
+                $moist = 6.20;
                 return array_merge($balanceDefaults, [
                     'sunflower_oil_pct'           => $oil,
                     'oil_content_pct'             => $oil,
@@ -5899,10 +5880,10 @@ class MetricsCalculator {
                     'oil_loss_pct'                => $defaultOilLossPct,
                     'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
                     'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
-                    'oil_date'                    => '15.10',
+                    'oil_date'                    => '19.10',
                     'oil_note'                    => 'Фактична товарна олійність за Жовтень 2026 (звіт МЕЗ, СВОД)',
                     'moisture_pct'                => $moist,
-                    'impurity_pct'                => 1.71,
+                    'impurity_pct'                => 1.74,
                     'seed_processed_tonnes'       => $seedProc,
                     'seed_plan_tonnes'            => $seedPlan,
                     'plan_fulfillment_pct'        => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
@@ -5912,28 +5893,63 @@ class MetricsCalculator {
 
             case 'day':
             case 'day_today':
-                $semenaStats = $this->getSemenaPeriodStats('day');
-                $lastDateStr = $semenaStats['last_date'] ?? '18.10.2026';
-                $isIdle = in_array($lastDateStr, ['16.10.2026', '17.10.2026', '18.10.2026', '19.10.2026', '20.10.2026'], true);
-
-                $dailySeed = 0.0;
+            case 'day_active':
+            case 'shift':
+            default:
+                $row = null;
                 try {
-                    $stmt = $this->db->query("SELECT seed_in_production, oil_out FROM material_balance_logs ORDER BY recorded_at DESC, id DESC LIMIT 1");
+                    // Звіт МЕЗ надходить вранці за щойно завершену виробничу добу (з 19 по 20, з 20 по 21 тощо).
+                    // Шукаємо найновішу завершену робочу зміну з переробкою > 0:
+                    $stmt = $this->db->query("
+                        SELECT seed_in_production, oil_out, recorded_at, report_date 
+                        FROM material_balance_logs 
+                        WHERE seed_in_production > 0 
+                        ORDER BY recorded_at DESC, id DESC LIMIT 1
+                    ");
                     $row = $stmt ? $stmt->fetch() : null;
-                    if ($row && !$isIdle) {
-                        $dailySeed = (float)($row['seed_in_production'] ?? 0);
+                    if (!$row) {
+                        $stmtAll = $this->db->query("
+                            SELECT seed_in_production, oil_out, recorded_at, report_date 
+                            FROM material_balance_logs 
+                            ORDER BY recorded_at DESC, id DESC LIMIT 1
+                        ");
+                        $row = $stmtAll ? $stmtAll->fetch() : null;
                     }
                 } catch (Throwable $e) {}
 
+                $dailySeed = (float)($row['seed_in_production'] ?? 0);
+                $rowOilOut = (float)($row['oil_out'] ?? 0);
+                $recAt = !empty($row['recorded_at']) ? $row['recorded_at'] : date('Y-m-d');
+                $repDateStr = !empty($row['report_date']) ? $row['report_date'] : date('d.m.Y', strtotime($recAt));
+                $dateIso = substr($recAt, 0, 10);
+
+                // Отримуємо якість за цю дату з lab_quality_logs або з розрахунків
+                $oil = isset($oilLossData['sunflower_oil_pct']) ? (float)$oilLossData['sunflower_oil_pct'] : 45.26;
+                $moist = 6.40;
+                $imp = 2.05;
+                try {
+                    $chkLab = $this->db->prepare("SELECT oil_content_pct, moisture_pct, impurity_pct FROM lab_quality_logs WHERE recorded_at LIKE ? ORDER BY id DESC LIMIT 1");
+                    $chkLab->execute(["{$dateIso}%"]);
+                    $labRow = $chkLab ? $chkLab->fetch(PDO::FETCH_ASSOC) : null;
+                    if ($labRow) {
+                        if ((float)$labRow['oil_content_pct'] > 0) $oil = (float)$labRow['oil_content_pct'];
+                        if ((float)$labRow['moisture_pct'] > 0) $moist = (float)$labRow['moisture_pct'];
+                        if ((float)$labRow['impurity_pct'] > 0) $imp = (float)$labRow['impurity_pct'];
+                    }
+                } catch (Throwable $e) {}
+
+                $oilAsr = ($moist < 100) ? round($oil / (1 - ($moist / 100)), 2) : $oil;
+                $oilYieldPct = ($dailySeed > 0) ? round(($rowOilOut / $dailySeed) * 100, 2) : (isset($oilLossData['yield_oil_pct']) ? (float)$oilLossData['yield_oil_pct'] : 41.59);
+                $oilOutKg = round($rowOilOut * 1000);
+
                 if ($dailySeed <= 0) {
-                    // Переробка МЕЗ призупинена (16, 17, 18 жовтня: 0 т переробки, прийомка насіння)
                     return array_merge($balanceDefaults, [
-                        'sunflower_oil_pct'           => 44.03, // товарна олійність
-                        'oil_content_pct'             => 44.03,
+                        'sunflower_oil_pct'           => $oil,
+                        'oil_content_pct'             => $oil,
                         'oil_content_base_pct'        => $basePct,
-                        'oil_deviation_pct'           => round(44.03 - $basePct, 2),
-                        'oil_asr_pct'                 => 47.99,
-                        'oil_date'                    => substr($lastDateStr, 0, 5),
+                        'oil_deviation_pct'           => round($oil - $basePct, 2),
+                        'oil_asr_pct'                 => $oilAsr,
+                        'oil_date'                    => substr($repDateStr, 0, 5),
                         'oil_note'                    => "Переробка МЕЗ призупинена • накопичення сировини",
                         'moisture_pct'                => 0.0,
                         'impurity_pct'                => 0.0,
@@ -5955,84 +5971,31 @@ class MetricsCalculator {
                         'oil_unaccounted_loss_pct'    => 0.0,
                         'oil_in_meal_kg'              => 0,
                         'oil_in_husk_kg'              => 0,
-                        'report_date'                 => "{$lastDateStr} (Переробка МЕЗ призупинена • накопичення сировини)",
+                        'report_date'                 => "{$repDateStr} (Переробка МЕЗ призупинена • накопичення сировини)",
                         'processed_note'              => "Виробництво не велося • накопичення сировини",
                     ]);
                 }
-                // Якщо є фактична переробка, повертаємо її показники
-                $oil = 44.03;
-                $seedProc = $dailySeed;
-                $seedPlan = 600.0;
-                $oilDateStr = substr($lastDateStr, 0, 5);
-                $repDateStr = $lastDateStr;
-                $dayDynamic = [
-                    'sunflower_oil_pct' => $oil,
-                    'yield_oil_pct'     => round(((float)$row['oil_out'] / $dailySeed) * 100, 2),
-                    'oil_out_kg'        => round((float)$row['oil_out'] * 1000),
-                ];
-                return array_merge($balanceDefaults, $dayDynamic, [
-                    'sunflower_oil_pct'     => $oil,
-                    'oil_content_pct'       => $oil,
-                    'oil_content_base_pct'  => $basePct,
-                    'oil_deviation_pct'     => round($oil - $basePct, 2),
-                    'seed_processed_tonnes' => $seedProc,
-                    'seed_plan_tonnes'      => $seedPlan,
-                    'plan_fulfillment_pct'  => round(($seedProc / $seedPlan) * 100, 1),
-                    'report_date'           => "{$repDateStr} (Звіт виробництва — цех екстракції)",
-                    'processed_note'        => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
-                ]);
 
-            case 'day_active':
-            case 'shift':
-            default:
-                // Суворо за активну добу 15.10 (звіт МЕЗ «Справка по переработке» та рух 1С):
-                // Перероблено очищеного насіння: 308,979 т (неочищеного 313,551 т)
-                // Товарна олійність: 44,03% (суворо за вказівкою керівництва), а.с.р.: 47,00%, вологість: 6,30%, сор: 1,96%
-                // Вихід олії: 149,278 т (48,31%), шроту: 156,141 т (50,53%), лузги: 45,937 т (14,87%), втрати процесу: -42,377 т (-13,72%)
-                $seedProc = 308.98;
-                $seedPlan = 600.0;
-                $oil = 44.03; // Товарна олійність суворо 44,03%
-                $oilAsr = 47.00; // на а.с.р.
-                $oilDateStr = '15.10';
-                $moist = 6.30;
-                $imp = 1.96;
-                $repDateStr = '15.10.2026';
-
-                $day15Defaults = [
+                $dynDay = [
                     'sunflower_oil_pct'           => $oil,
-                    'yield_oil_pct'               => 48.31,
-                    'yield_meal_pct'              => 50.53,
-                    'meal_oil_pct'                => 0.77,
-                    'yield_husk_pct'              => 14.87,
-                    'husk_oil_pct'                => 3.27,
-                    'process_loss_pct'            => -13.72,
-                    'oil_out_kg'                  => 149278,
-                    'balance_oil_calc_kg'         => 136044.5,
-                    'balance_oil_fact_kg'         => 136044.5,
-                    'oil_loss_kg'                 => 2703,
-                    'oil_loss_pct'                => 0.87,
-                    'oil_unaccounted_loss_kg'     => -15936.5,
-                    'oil_unaccounted_loss_pct'    => -5.16,
-                    'oil_in_meal_kg'              => 1202.3,
-                    'oil_in_husk_kg'              => 1502.1,
-                ];
-
-                return array_merge($balanceDefaults, $day15Defaults, $oilLossData, [
-                    'sunflower_oil_pct'           => $oil,
+                    'yield_oil_pct'               => $oilYieldPct,
+                    'oil_out_kg'                  => $oilOutKg,
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
                     'oil_asr_pct'                 => $oilAsr,
-                    'oil_date'                    => $oilDateStr,
-                    'oil_note'                    => "Фактична товарна олійність за {$oilDateStr} як у звіті МЕЗ",
+                    'oil_date'                    => substr($repDateStr, 0, 5),
+                    'oil_note'                    => "Фактична якість сировини за {$repDateStr} (звіт МЕЗ)",
                     'moisture_pct'                => $moist,
                     'impurity_pct'                => $imp,
-                    'seed_processed_tonnes'       => $seedProc,
-                    'seed_plan_tonnes'            => $seedPlan,
-                    'plan_fulfillment_pct'        => round(($seedProc / $seedPlan) * 100, 1),
+                    'seed_processed_tonnes'       => $dailySeed,
+                    'seed_plan_tonnes'            => 600.0,
+                    'plan_fulfillment_pct'        => round(($dailySeed / 600.0) * 100, 1),
                     'report_date'                 => "{$repDateStr} (Звіт виробництва — цех екстракції)",
-                    'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
-                ]);
+                    'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($dailySeed, 1, ',', ' ') . " т)",
+                ];
+
+                return array_merge($balanceDefaults, $oilLossData, $dynDay);
         }
     }
 
@@ -6153,7 +6116,7 @@ class MetricsCalculator {
 
 
 ================================================================================
-ФАЙЛ [3/43]: includes\semena_helper.php
+ФАЙЛ [3/46]: includes\semena_helper.php
 Шлях: includes\semena_helper.php | Розмір: 120,037 байт
 ================================================================================
 
@@ -8436,7 +8399,7 @@ class SemenaHelper {
 
 
 ================================================================================
-ФАЙЛ [4/43]: includes\db.php
+ФАЙЛ [4/46]: includes\db.php
 Шлях: includes\db.php | Розмір: 16,488 байт
 ================================================================================
 
@@ -8732,7 +8695,7 @@ class DashboardDB {
 
 
 ================================================================================
-ФАЙЛ [5/43]: includes\helpers.php
+ФАЙЛ [5/46]: includes\helpers.php
 Шлях: includes\helpers.php | Розмір: 5,600 байт
 ================================================================================
 
@@ -8913,7 +8876,7 @@ function categorize_cargo(string $rawCargo): string {
 
 
 ================================================================================
-ФАЙЛ [6/43]: includes\auth.php
+ФАЙЛ [6/46]: includes\auth.php
 Шлях: includes\auth.php | Розмір: 12,765 байт
 ================================================================================
 
@@ -9248,7 +9211,7 @@ class Auth {
 
 
 ================================================================================
-ФАЙЛ [7/43]: includes\crm_client.php
+ФАЙЛ [7/46]: includes\crm_client.php
 Шлях: includes\crm_client.php | Розмір: 21,125 байт
 ================================================================================
 
@@ -9692,7 +9655,7 @@ class CRMClient {
 
 
 ================================================================================
-ФАЙЛ [8/43]: includes\zabbix_client.php
+ФАЙЛ [8/46]: includes\zabbix_client.php
 Шлях: includes\zabbix_client.php | Розмір: 5,675 байт
 ================================================================================
 
@@ -9840,7 +9803,7 @@ class ZabbixClient {
 
 
 ================================================================================
-ФАЙЛ [9/43]: includes\xlsx_parser.php
+ФАЙЛ [9/46]: includes\xlsx_parser.php
 Шлях: includes\xlsx_parser.php | Розмір: 9,614 байт
 ================================================================================
 
@@ -10063,7 +10026,7 @@ class XLSXParser {
 
 
 ================================================================================
-ФАЙЛ [10/43]: api\metrics.php
+ФАЙЛ [10/46]: api\metrics.php
 Шлях: api\metrics.php | Розмір: 1,743 байт
 ================================================================================
 
@@ -10123,7 +10086,7 @@ try {
 
 
 ================================================================================
-ФАЙЛ [11/43]: api\save_energy_entry.php
+ФАЙЛ [11/46]: api\save_energy_entry.php
 Шлях: api\save_energy_entry.php | Розмір: 14,912 байт
 ================================================================================
 
@@ -10447,8 +10410,8 @@ try {
 
 
 ================================================================================
-ФАЙЛ [12/43]: api\import.php
-Шлях: api\import.php | Розмір: 117,712 байт
+ФАЙЛ [12/46]: api\import.php
+Шлях: api\import.php | Розмір: 117,760 байт
 ================================================================================
 
 <?php
@@ -11501,8 +11464,8 @@ try {
                     }
 
                     if ($matchedDay) {
-                        // Захист від створення порожніх записів на майбутні дати календаря
-                        if ($isoDate > date('Y-m-d')) {
+                        // Захист від створення порожніх записів на далекі майбутні дати календаря (+1 доба)
+                        if ($isoDate > date('Y-m-d', strtotime('+1 day'))) {
                             continue;
                         }
 
@@ -12340,7 +12303,7 @@ try {
 
 
 ================================================================================
-ФАЙЛ [13/43]: api\export.php
+ФАЙЛ [13/46]: api\export.php
 Шлях: api\export.php | Розмір: 17,550 байт
 ================================================================================
 
@@ -12691,7 +12654,7 @@ try {
 
 
 ================================================================================
-ФАЙЛ [14/43]: api\logistics.php
+ФАЙЛ [14/46]: api\logistics.php
 Шлях: api\logistics.php | Розмір: 1,086 байт
 ================================================================================
 
@@ -12734,7 +12697,7 @@ try {
 
 
 ================================================================================
-ФАЙЛ [15/43]: api\equipment.php
+ФАЙЛ [15/46]: api\equipment.php
 Шлях: api\equipment.php | Розмір: 933 байт
 ================================================================================
 
@@ -12774,7 +12737,7 @@ try {
 
 
 ================================================================================
-ФАЙЛ [16/43]: assets\js\dashboard.js
+ФАЙЛ [16/46]: assets\js\dashboard.js
 Шлях: assets\js\dashboard.js | Розмір: 94,942 байт
 ================================================================================
 
@@ -14510,7 +14473,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 ================================================================================
-ФАЙЛ [17/43]: assets\js\charts.js
+ФАЙЛ [17/46]: assets\js\charts.js
 Шлях: assets\js\charts.js | Розмір: 57,140 байт
 ================================================================================
 
@@ -15687,7 +15650,7 @@ window.FactoryCharts = {
 
 
 ================================================================================
-ФАЙЛ [18/43]: assets\css\dashboard.css
+ФАЙЛ [18/46]: assets\css\dashboard.css
 Шлях: assets\css\dashboard.css | Розмір: 49,531 байт
 ================================================================================
 
@@ -18085,7 +18048,7 @@ body {
 
 
 ================================================================================
-ФАЙЛ [19/43]: login.php
+ФАЙЛ [19/46]: login.php
 Шлях: login.php | Розмір: 8,737 байт
 ================================================================================
 
@@ -18369,7 +18332,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 
 ================================================================================
-ФАЙЛ [20/43]: logout.php
+ФАЙЛ [20/46]: logout.php
 Шлях: logout.php | Розмір: 148 байт
 ================================================================================
 
@@ -18384,7 +18347,7 @@ Auth::logout();
 
 
 ================================================================================
-ФАЙЛ [21/43]: semena.php
+ФАЙЛ [21/46]: semena.php
 Шлях: semena.php | Розмір: 94,995 байт
 ================================================================================
 
@@ -20372,7 +20335,7 @@ $histRows   = $semenaData['history_rows'] ?? [];
 
 
 ================================================================================
-ФАЙЛ [22/43]: energo.php
+ФАЙЛ [22/46]: energo.php
 Шлях: energo.php | Розмір: 673 байт
 ================================================================================
 
@@ -20393,7 +20356,7 @@ exit;
 
 
 ================================================================================
-ФАЙЛ [23/43]: install.php
+ФАЙЛ [23/46]: install.php
 Шлях: install.php | Розмір: 27,102 байт
 ================================================================================
 
@@ -20986,7 +20949,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 
 ================================================================================
-ФАЙЛ [24/43]: config.sample.php
+ФАЙЛ [24/46]: config.sample.php
 Шлях: config.sample.php | Розмір: 5,540 байт
 ================================================================================
 
@@ -21091,7 +21054,7 @@ return [
 
 
 ================================================================================
-ФАЙЛ [25/43]: cron\sync_logistics.php
+ФАЙЛ [25/46]: cron\sync_logistics.php
 Шлях: cron\sync_logistics.php | Розмір: 1,697 байт
 ================================================================================
 
@@ -21142,7 +21105,7 @@ try {
 
 
 ================================================================================
-ФАЙЛ [26/43]: cron\sync_zabbix.php
+ФАЙЛ [26/46]: cron\sync_zabbix.php
 Шлях: cron\sync_zabbix.php | Розмір: 4,133 байт
 ================================================================================
 
@@ -21245,7 +21208,7 @@ try {
 
 
 ================================================================================
-ФАЙЛ [27/43]: database\schema.sql
+ФАЙЛ [27/46]: database\schema.sql
 Шлях: database\schema.sql | Розмір: 12,262 байт
 ================================================================================
 
@@ -21409,8 +21372,8 @@ SET FOREIGN_KEY_CHECKS = 1;
 
 
 ================================================================================
-ФАЙЛ [28/43]: database\seed_data.sql
-Шлях: database\seed_data.sql | Розмір: 23,548 байт
+ФАЙЛ [28/46]: database\seed_data.sql
+Шлях: database\seed_data.sql | Розмір: 23,893 байт
 ================================================================================
 
 -- ===================================================================
@@ -21538,7 +21501,8 @@ INSERT INTO `material_balance_logs` (`recorded_at`, `report_date`, `shift_type`,
 ('2026-10-15 20:00:00', '15.10.2026', 'day', 436.527, 308.979, 149.278, 156.141, 45.937, 4.572, 1.46, -42.377, -13.72),
 ('2026-10-16 20:00:00', '16.10.2026', 'day', 304.770,   0.000,   0.000,   0.000,  0.000, 0.000, 0.00,   0.000,   0.00),
 ('2026-10-17 20:00:00', '17.10.2026', 'day', 193.630,   0.000,   0.000,   0.000,  0.000, 0.000, 0.00,   0.000,   0.00),
-('2026-10-18 20:00:00', '18.10.2026', 'day', 153.500,   0.000,   0.000,   0.000,  0.000, 0.000, 0.00,   0.000,   0.00);
+('2026-10-18 20:00:00', '18.10.2026', 'day', 153.500,   0.000,   0.000,   0.000,  0.000, 0.000, 0.00,   0.000,   0.00),
+('2026-10-19 20:00:00', '19.10.2026', 'day', 533.142, 527.880, 219.546, 185.326, 73.710, 5.262, 0.99,  49.298,   9.34);
 
 -- 3. Енергетика та вода (реальні показники з «Розподіл енергоносіїв за структурними підрозділами» та журналів лічильників води й ТП)
 INSERT INTO `energy_readings` (`recorded_at`, `power_kw`, `power_kwh_delta`, `water_flow_m3_hour`, `water_m3_delta`, `steam_pressure_bar`) VALUES
@@ -21606,11 +21570,13 @@ INSERT INTO `sync_logs` (`source`, `status`, `records_processed`, `message`) VAL
 INSERT INTO `warehouse_stocks` (`recorded_at`, `report_date`, `seed_stock_tonnes`, `seed_stock_accounting_tonnes`, `oil_stock_tonnes`, `meal_stock_tonnes`, `husk_stock_tonnes`, `husk_boiler_spent_tonnes`, `days_seed_reserve`, `oil_shipped_tonnes`, `meal_shipped_tonnes`, `husk_shipped_tonnes`) VALUES
 ('2026-08-31 20:00:00', '31.08.2026 20:00 (Серпень 2026)', 883.399, 757.575, 15.352, 362.601, 0.000, 6.853, 1.5, 153.280, 1390.540, 78.600),
 ('2026-09-30 20:00:00', '30.09.2026 20:00 (Вересень 2026)', 10982.439, 10982.439, 2736.708, 1713.467, 334.225, 409.170, 18.3, 1090.300, 2332.340, 490.660),
-('2026-10-15 20:00:00', '15.10.2026 20:00 (15 число)', 12980.633, 13659.618, 3495.720, 705.877, 162.667, 363.307, 22.8, 303.460, 125.120, 25.500);
+('2026-10-15 20:00:00', '15.10.2026 20:00 (15 число)', 12980.633, 13659.618, 3495.720, 705.877, 162.667, 363.307, 22.8, 303.460, 125.120, 25.500),
+('2026-10-20 08:00:00', '20.10.2026 08:00 (20 число)', 13429.903, 14108.888, 3101.186, 224.503, 82.617, 363.310, 22.4, 0.000, 0.000, 0.000);
 
 -- 7. Показники якості лабораторії (реальні середньозважені з Листа погодження та Графіка завезення)
 INSERT INTO `lab_quality_logs` (`recorded_at`, `report_date`, `oil_content_pct`, `oil_content_base_pct`, `oil_deviation_pct`, `moisture_pct`, `impurity_pct`, `weight_discount_tonnes`) VALUES
-('2026-10-15 20:00:00', '15.10.2026', 44.03, 48.00, -3.97, 6.30, 1.96, 0.000);
+('2026-10-15 20:00:00', '15.10.2026', 44.03, 48.00, -3.97, 6.30, 1.96, 0.000),
+('2026-10-19 20:00:00', '19.10.2026', 45.26, 48.00, -2.74, 6.40, 2.05, 0.000);
 
 -- 8. Контрактація та виконання специфікацій (реальні дані з Листа погодження 1С: 128 специфікацій)
 INSERT INTO `contracts_summary` (`recorded_at`, `report_date`, `contracted_tonnes`, `delivered_tonnes`, `remaining_tonnes`, `active_specs_count`, `pending_specs_count`) VALUES
@@ -21626,7 +21592,7 @@ ON DUPLICATE KEY UPDATE `display_name` = VALUES(`display_name`);
 
 
 ================================================================================
-ФАЙЛ [29/43]: database\energy_departments_archive.json
+ФАЙЛ [29/46]: database\energy_departments_archive.json
 Шлях: database\energy_departments_archive.json | Розмір: 26,486 байт
 ================================================================================
 
@@ -22569,63 +22535,63 @@ ON DUPLICATE KEY UPDATE `display_name` = VALUES(`display_name`);
 
 
 ================================================================================
-ФАЙЛ [30/43]: database\production_oil_losses.json
-Шлях: database\production_oil_losses.json | Розмір: 659 байт
+ФАЙЛ [30/46]: database\production_oil_losses.json
+Шлях: database\production_oil_losses.json | Розмір: 668 байт
 ================================================================================
 
 {
-    "sunflower_oil_pct": 45.3,
-    "yield_oil_pct": 44.59,
-    "yield_meal_pct": 41.54,
-    "meal_oil_pct": 0.78,
-    "yield_husk_pct": 15.06,
+    "sunflower_oil_pct": 45.26,
+    "yield_oil_pct": 44.31,
+    "yield_meal_pct": 40.94,
+    "meal_oil_pct": 0.775,
+    "yield_husk_pct": 14.96,
     "husk_oil_pct": 3.26,
-    "process_loss_pct": -1.2,
-    "balance_oil_calc_kg": 2296253.5,
-    "balance_oil_fact_kg": 2303587,
-    "oil_loss_kg": 41255,
+    "process_loss_pct": -0.81,
+    "balance_oil_calc_kg": 2526973.0,
+    "balance_oil_fact_kg": 2535188.2,
+    "oil_loss_kg": 45094.9,
     "oil_loss_pct": 0.81,
-    "oil_unaccounted_loss_kg": -7333,
-    "oil_unaccounted_loss_pct": -0.14,
-    "oil_out_kg": 2262332,
-    "oil_in_meal_kg": 16336.6,
-    "oil_in_husk_kg": 24918,
+    "oil_unaccounted_loss_kg": 8215.2,
+    "oil_unaccounted_loss_pct": 0.15,
+    "oil_out_kg": 2481878,
+    "oil_in_meal_kg": 17773.1,
+    "oil_in_husk_kg": 27321.8,
     "sheet_name": "Октябрь26",
     "source_file": "Справка по переработке урожая 2026 .xlsx",
-    "updated_at": "2026-10-19 09:51:24"
+    "updated_at": "2026-10-20 09:30:00"
 }
 
 
 ================================================================================
-ФАЙЛ [31/43]: database\svod_stocks.json
-Шлях: database\svod_stocks.json | Розмір: 646 байт
+ФАЙЛ [31/46]: database\svod_stocks.json
+Шлях: database\svod_stocks.json | Розмір: 648 байт
 ================================================================================
 
 {
-    "updated_at": "2026-10-19 09:51:24",
-    "report_date": "18.10.2026 (18 число)",
-    "last_day_num": 18,
-    "seed_stock_tonnes": 13632.53,
-    "seed_stock_accounting_tonnes": 14311.52,
-    "oil_stock_tonnes": 2986.64,
-    "meal_stock_tonnes": 188.46,
-    "husk_stock_tonnes": 8.91,
-    "husk_boiler_spent_tonnes": 0,
-    "days_seed_reserve": 22.7,
-    "oil_shipped_tonnes": 100.7,
-    "meal_shipped_tonnes": 49.9,
-    "husk_shipped_tonnes": 35.98,
-    "month_oil_shipped_tonnes": 2012.4,
-    "month_meal_shipped_tonnes": 3632.56,
+    "updated_at": "2026-10-20 09:30:00",
+    "report_date": "20.10.2026 (на 20.10 08:00)",
+    "last_day_num": 20,
+    "seed_stock_tonnes": 13429.90,
+    "seed_stock_accounting_tonnes": 14108.89,
+    "oil_stock_tonnes": 3101.19,
+    "meal_stock_tonnes": 224.50,
+    "husk_stock_tonnes": 82.62,
+    "husk_boiler_spent_tonnes": 363.31,
+    "days_seed_reserve": 22.4,
+    "oil_shipped_tonnes": 0.0,
+    "meal_shipped_tonnes": 0.0,
+    "husk_shipped_tonnes": 0.0,
+    "month_oil_shipped_tonnes": 2117.40,
+    "month_meal_shipped_tonnes": 3781.84,
     "month_husk_shipped_tonnes": 726.52,
-    "month_seed_in_1c": 8490.147,
-    "day_seed_in_1c": 153.5
+    "month_seed_in_1c": 8820.66,
+    "day_seed_in_1c": 0.0
 }
 
 
 ================================================================================
-ФАЙЛ [32/43]: scripts\build_zip.py
-Шлях: scripts\build_zip.py | Розмір: 1,821 байт
+ФАЙЛ [32/46]: scripts\build_zip.py
+Шлях: scripts\build_zip.py | Розмір: 1,934 байт
 ================================================================================
 
 import zipfile
@@ -22647,6 +22613,8 @@ def create_archive():
         'logout.php',
         'semena.php',
         'energo.php',
+        'presentation.html',
+        'Презентація_Дашборд_МЕЗ_Керівництву.pptx',
     ]
     
     include_dirs = [
@@ -22689,7 +22657,7 @@ if __name__ == '__main__':
 
 
 ================================================================================
-ФАЙЛ [33/43]: scripts\sunflower_processor.py
+ФАЙЛ [33/46]: scripts\sunflower_processor.py
 Шлях: scripts\sunflower_processor.py | Розмір: 115,603 байт
 ================================================================================
 
@@ -25227,7 +25195,7 @@ if __name__ == "__main__":
 
 
 ================================================================================
-ФАЙЛ [34/43]: scripts\sync_semena_data.py
+ФАЙЛ [34/46]: scripts\sync_semena_data.py
 Шлях: scripts\sync_semena_data.py | Розмір: 21,840 байт
 ================================================================================
 
@@ -25712,7 +25680,7 @@ if __name__ == '__main__':
 
 
 ================================================================================
-ФАЙЛ [35/43]: scripts\process_1c.py
+ФАЙЛ [35/46]: scripts\process_1c.py
 Шлях: scripts\process_1c.py | Розмір: 43,179 байт
 ================================================================================
 
@@ -26628,7 +26596,7 @@ if __name__ == '__main__':
 
 
 ================================================================================
-ФАЙЛ [36/43]: scripts\build_16_10_data.py
+ФАЙЛ [36/46]: scripts\build_16_10_data.py
 Шлях: scripts\build_16_10_data.py | Розмір: 6,866 байт
 ================================================================================
 
@@ -26782,7 +26750,7 @@ if __name__ == '__main__':
 
 
 ================================================================================
-ФАЙЛ [37/43]: scripts\verify_order.py
+ФАЙЛ [37/46]: scripts\verify_order.py
 Шлях: scripts\verify_order.py | Розмір: 1,618 байт
 ================================================================================
 
@@ -26827,7 +26795,7 @@ for r in range(1, 5):
 
 
 ================================================================================
-ФАЙЛ [38/43]: scripts\parse_xls.py
+ФАЙЛ [38/46]: scripts\parse_xls.py
 Шлях: scripts\parse_xls.py | Розмір: 1,879 байт
 ================================================================================
 
@@ -26897,7 +26865,7 @@ if __name__ == '__main__':
 
 
 ================================================================================
-ФАЙЛ [39/43]: docker-compose.yml
+ФАЙЛ [39/46]: docker-compose.yml
 Шлях: docker-compose.yml | Розмір: 809 байт
 ================================================================================
 
@@ -26938,7 +26906,7 @@ services:
 
 
 ================================================================================
-ФАЙЛ [40/43]: Dockerfile
+ФАЙЛ [40/46]: Dockerfile
 Шлях: Dockerfile | Розмір: 416 байт
 ================================================================================
 
@@ -26959,7 +26927,7 @@ EXPOSE 80
 
 
 ================================================================================
-ФАЙЛ [41/43]: README.md
+ФАЙЛ [41/46]: README.md
 Шлях: README.md | Розмір: 12,653 байт
 ================================================================================
 
@@ -27142,7 +27110,7 @@ nano config.php
 
 
 ================================================================================
-ФАЙЛ [42/43]: .gitignore
+ФАЙЛ [42/46]: .gitignore
 Шлях: .gitignore | Розмір: 400 байт
 ================================================================================
 
@@ -27181,7 +27149,1837 @@ mysql_data/
 
 
 ================================================================================
-ФАЙЛ [43/43]: scripts\generate_full_project_text.py
+ФАЙЛ [43/46]: presentation.html
+Шлях: presentation.html | Розмір: 58,709 байт
+================================================================================
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Презентація для керівництва: Ситуаційний Центр МЕЗ • ТОВ «Агропроінвест 08»</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --bg-card: #ffffff;
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --emerald: #10b981;
+            --emerald-dark: #059669;
+            --amber: #f59e0b;
+            --orange: #ea580c;
+            --violet: #8b5cf6;
+            --slate-800: #1e293b;
+            --slate-600: #475569;
+            --slate-400: #94a3b8;
+            --slate-100: #f1f5f9;
+            --border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #090d16;
+            color: var(--slate-800);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Presentation Wrapper */
+        .deck-wrapper {
+            width: 100vw;
+            height: 100vh;
+            max-width: 1366px;
+            max-height: 768px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (max-width: 1366px) or (max-height: 768px) {
+            .deck-wrapper {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+            }
+        }
+
+        /* Top Navbar */
+        .deck-header {
+            background: var(--bg-dark);
+            color: #ffffff;
+            padding: 12px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--primary), var(--emerald));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+
+        .brand-title {
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: var(--slate-400);
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn-ctrl {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-ctrl:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .btn-download {
+            background: linear-gradient(135deg, var(--emerald), var(--emerald-dark));
+            border: none;
+            color: #fff;
+        }
+
+        .btn-download:hover {
+            background: linear-gradient(135deg, var(--emerald-dark), #047857);
+        }
+
+        /* Slides Container */
+        .slides-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 36px 48px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateX(30px);
+            transition: opacity 0.35s ease, transform 0.35s ease, visibility 0.35s;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .slide.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(0);
+        }
+
+        /* Dark Slide (Title, Conclusion) */
+        .slide-dark {
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            color: #ffffff;
+            justify-content: center;
+        }
+
+        .slide-dark .slide-title {
+            color: #ffffff;
+        }
+
+        .slide-dark .slide-sub {
+            color: #cbd5e1;
+        }
+
+        /* Slide Typography */
+        .slide-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(2, 132, 199, 0.12);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            width: fit-content;
+        }
+
+        .slide-title {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--slate-800);
+            margin-bottom: 6px;
+            line-height: 1.25;
+        }
+
+        .slide-sub {
+            font-size: 13.5px;
+            color: var(--slate-600);
+            margin-bottom: 24px;
+        }
+
+        /* Grids & Cards */
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 18px;
+            flex: 1;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px;
+            flex: 1;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            flex: 1;
+        }
+
+        .card {
+            background: #ffffff;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            position: relative;
+        }
+
+        .card-header-bar {
+            height: 4px;
+            width: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        }
+
+        .card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--slate-800);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            margin-bottom: 6px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        .card-subtext {
+            font-size: 11.5px;
+            color: var(--slate-600);
+            line-height: 1.45;
+        }
+
+        .list-items {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .list-items li {
+            font-size: 12px;
+            line-height: 1.45;
+            color: var(--slate-800);
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        .list-items li i {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        /* Bottom Controls */
+        .deck-footer {
+            background: #ffffff;
+            border-top: 1px solid var(--border);
+            padding: 10px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .deck-progress {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .progress-dot.active {
+            background: var(--primary);
+            width: 22px;
+            border-radius: 4px;
+        }
+
+        .nav-btns {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-nav {
+            background: var(--slate-100);
+            color: var(--slate-800);
+            border: 1px solid var(--border);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .btn-nav:hover:not(:disabled) {
+            background: var(--primary);
+            color: #ffffff;
+            border-color: var(--primary);
+        }
+
+        .btn-nav:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Keyboard hint */
+        .key-hint {
+            font-size: 11px;
+            color: var(--slate-400);
+            font-weight: 500;
+        }
+
+        kbd {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-size: 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Print Style */
+        @media print {
+            body {
+                background: #fff;
+            }
+            .deck-wrapper {
+                width: 100%;
+                height: auto;
+                max-width: none;
+                max-height: none;
+                box-shadow: none;
+            }
+            .deck-header, .deck-footer {
+                display: none;
+            }
+            .slide {
+                position: relative;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                page-break-after: always;
+                height: 100vh;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="deck-wrapper">
+    <!-- Header -->
+    <header class="deck-header">
+        <div class="header-brand">
+            <div class="brand-icon">
+                <i data-lucide="activity"></i>
+            </div>
+            <div>
+                <div class="brand-title">ТОВ «Агропроінвест 08» • Ситуаційний Центр МЕЗ</div>
+                <div class="brand-sub">Звіт для Ради Директорів та Керівництва заводу</div>
+            </div>
+        </div>
+        <div class="header-controls">
+            <span class="key-hint">Клавіші: <kbd>&larr;</kbd> <kbd>&rarr;</kbd> або <kbd>Пробіл</kbd></span>
+            <a href="Презентація_Дашборд_МЕЗ_Керівництву.pptx" download class="btn-ctrl btn-download" title="Завантажити у форматі Microsoft PowerPoint">
+                <i data-lucide="download"></i>
+                <span>Завантажити .PPTX</span>
+            </a>
+            <button type="button" class="btn-ctrl" onclick="toggleFullScreen()" title="Повноекранний режим">
+                <i data-lucide="maximize" id="fs-icon"></i>
+            </button>
+            <a href="index.php" class="btn-ctrl" title="Повернутися на Дашборд">
+                <i data-lucide="arrow-left"></i>
+                <span>На Дашборд</span>
+            </a>
+        </div>
+    </header>
+
+    <!-- Slides Container -->
+    <main class="slides-container">
+
+        <!-- SLIDE 1: Title (Dark) -->
+        <section class="slide slide-dark active" data-slide="1">
+            <div style="max-width: 900px; margin-left: 20px;">
+                <div class="slide-badge" style="background: rgba(2, 132, 199, 0.25); color: #38bdf8;">
+                    <i data-lucide="shield-check" style="width: 14px; height: 14px;"></i>
+                    Виробничий Сезон 2026–2027
+                </div>
+                <h1 class="slide-title" style="font-size: 38px; line-height: 1.15; margin-bottom: 14px;">
+                    СИТУАЦІЙНИЙ ЦЕНТР ТА<br>ЦИФРОВИЙ ДАШБОРД МЕЗ
+                </h1>
+                <p class="slide-sub" style="font-size: 16px; margin-bottom: 32px; max-width: 800px;">
+                    Комплексна цифрова платформа оперативного та стратегічного управління олійноекстракційним заводом: матеріальний баланс, якість насіння, логістика черги CRM та енергоресурси.
+                </p>
+                <div style="display: flex; gap: 24px; font-size: 12px; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.15); padding-top: 18px;">
+                    <div><strong>Локація:</strong> dash-api08.dniprovska.net</div>
+                    <div><strong>Оновлення даних:</strong> Кожні 30 секунд онлайн</div>
+                    <div><strong>Аудит:</strong> 12 років ретроспективи пари (2015–2026)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 2: 4 Pillars of Architecture -->
+        <section class="slide" data-slide="2">
+            <div class="slide-badge">Архітектура рішення</div>
+            <h2 class="slide-title">4 контури цифрового управління підприємством</h2>
+            <p class="slide-sub">Єдиний центр прийняття управлінських рішень замість десятків розрізнених файлів Excel</p>
+            
+            <div class="grid-4">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div class="card-title">
+                        <i data-lucide="factory" style="color: var(--primary);"></i>
+                        Блок А: Виробництво
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check" style="color: var(--primary);"></i> Матеріальний баланс екстракції</li>
+                        <li><i data-lucide="check" style="color: var(--primary);"></i> Вихід Олії (48,31%), Шроту, Лузги</li>
+                        <li><i data-lucide="check" style="color: var(--primary);"></i> Товарна олійність (44,03%)</li>
+                        <li><i data-lucide="check" style="color: var(--primary);"></i> Баланс неврахованих втрат олії</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div class="card-title">
+                        <i data-lucide="truck" style="color: var(--emerald);"></i>
+                        Блок Б: Логістика CRM
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check" style="color: var(--emerald);"></i> Електронна черга авто в реальному часі</li>
+                        <li><i data-lucide="check" style="color: var(--emerald);"></i> Розподіл: Насіння, Олія, Шрот, Лузга</li>
+                        <li><i data-lucide="check" style="color: var(--emerald);"></i> Контроль часу перебування (&lt; 120 хв)</li>
+                        <li><i data-lucide="check" style="color: var(--emerald);"></i> Складські залишки готової продукції</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--amber);"></div>
+                    <div class="card-title">
+                        <i data-lucide="zap" style="color: var(--amber);"></i>
+                        Блок В: Енергетика
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check" style="color: var(--amber);"></i> 12-річний повний архів пари (2015–2026)</li>
+                        <li><i data-lucide="check" style="color: var(--amber);"></i> Помісячний архів ел.енергії за 2026 рік</li>
+                        <li><i data-lucide="check" style="color: var(--amber);"></i> Розподіл кВт, води, стоків та газу по цехах</li>
+                        <li><i data-lucide="check" style="color: var(--amber);"></i> Питомі норми витрат на тону</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--violet);"></div>
+                    <div class="card-title">
+                        <i data-lucide="trending-up" style="color: var(--violet);"></i>
+                        Блок Г: Бенчмаркінг
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check" style="color: var(--violet);"></i> Зіставлення фактів 2026 vs 2025 років</li>
+                        <li><i data-lucide="check" style="color: var(--violet);"></i> Доба, Тиждень, Місяць, Повний сезон</li>
+                        <li><i data-lucide="check" style="color: var(--violet);"></i> Виконання контрактів та довіз насіння</li>
+                        <li><i data-lucide="check" style="color: var(--violet);"></i> Автоматичні попередження про ризики</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 3: Material Balance & Yields -->
+        <section class="slide" data-slide="3">
+            <div class="slide-badge">Блок А • Виробництво</div>
+            <h2 class="slide-title">Матеріальний баланс цеху екстракції та вихід продукції</h2>
+            <p class="slide-sub">Фактичні результати роботи за активну добу переробки (15.10.2026, звіт виробництва МЕЗ)</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title" style="color: var(--primary);">
+                        <i data-lucide="pie-chart"></i> Фактичний вихід готової продукції
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 11px; color: #166534; font-weight: 700;">💧 Олія нерафінована</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #15803d;">48,31%</div>
+                            <div style="font-size: 11px; color: #166534;">149,28 т • +3,86% до 2025 р.</div>
+                        </div>
+                        <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 11px; color: #1e40af; font-weight: 700;">🌾 Шрот соняшниковий</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #1d4ed8;">50,53%</div>
+                            <div style="font-size: 11px; color: #1e40af;">156,13 т • +8,77% до 2025 р.</div>
+                        </div>
+                        <div style="background: #fffbeb; border: 1px solid #fde68a; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 11px; color: #92400e; font-weight: 700;">🪵 Лузга суха</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #b45309;">14,87%</div>
+                            <div style="font-size: 11px; color: #92400e;">45,95 т • Паливо котельні</div>
+                        </div>
+                        <div style="background: #faf5ff; border: 1px solid #e9d5ff; padding: 12px; border-radius: 8px;">
+                            <div style="font-size: 11px; color: #6b21a8; font-weight: 700;">⚖️ Олія + Шрот</div>
+                            <div style="font-size: 24px; font-weight: 800; color: #7e22ce;">98,84%</div>
+                            <div style="font-size: 11px; color: #6b21a8;">+12,63% максимальна якість</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 11.5px; color: var(--slate-600); line-height: 1.5; border-top: 1px solid var(--border); padding-top: 10px;">
+                        <strong>Балансове перевищення:</strong> Сумарний вихід продукції становить <strong>113,72%</strong> (+13,72% баланс +) завдяки високій олійності та ефективній екстракції.
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" style="color: var(--emerald-dark);">
+                        <i data-lucide="check-circle-2"></i> Впроваджені алгоритми та бізнес-правила
+                    </div>
+                    <ul class="list-items" style="gap: 12px;">
+                        <li>
+                            <i data-lucide="shield-alert" style="color: var(--amber);"></i>
+                            <div>
+                                <strong>Режим простою/паузи заводу (16–18 жовтня):</strong><br>
+                                <span style="color: var(--slate-600); font-size: 11px;">Коли переробка 0 т, система відображає статус «Переробка на паузі», не ламаючи графіки та не генеруючи помилок ділення на нуль.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i data-lucide="layers" style="color: var(--primary);"></i>
+                            <div>
+                                <strong>Розмежування елеватора та МЕЗ:</strong><br>
+                                <span style="color: var(--slate-600); font-size: 11px;">Втрати підробки насіння на елеваторі (1,45%) відокремлені від виробничих втрат екстракції для персональної відповідальності начальників цехів.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i data-lucide="gauge" style="color: var(--emerald);"></i>
+                            <div>
+                                <strong>Контроль добового плану (600 т):</strong><br>
+                                <span style="color: var(--slate-600); font-size: 11px;">14.10 перероблено 596,81 т (99,5% плану), 15.10 — 308,98 т (активна зміна).</span>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 4: Lab Quality & Losses -->
+        <section class="slide" data-slide="4">
+            <div class="slide-badge">Блок А • Лабораторія</div>
+            <h2 class="slide-title">Контроль якості сировини та аудит втрат олії</h2>
+            <p class="slide-sub">Вхідні показники лабораторії та перевірка нормативних втрат у шроті й луззі</p>
+
+            <div class="grid-3" style="max-height: 120px; margin-bottom: 18px;">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">🧪 Товарна олійність</div>
+                    <div class="card-value" style="font-size: 26px;">44,03%</div>
+                    <div class="card-subtext">на а.с.р. 47,00% — 47,99%</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">💧 Вологість соняшнику</div>
+                    <div class="card-value" style="color: var(--emerald); font-size: 26px;">6,20% — 6,30%</div>
+                    <div class="card-subtext">В межах норми (&lt; 8,0%)</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--amber);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">🍂 Смітна домішка</div>
+                    <div class="card-value" style="color: var(--amber); font-size: 26px;">1,71% — 2,18%</div>
+                    <div class="card-subtext">Базовий норматив 2,0%</div>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-title" style="color: var(--primary-dark);">
+                    <i data-lucide="file-text"></i> Баланс втрат олії («Справка по переработке цеху екстракції»)
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <div style="font-weight: 700; font-size: 12px; margin-bottom: 6px;">Втрати у відходах виробництва:</div>
+                        <ul class="list-items">
+                            <li>
+                                <i data-lucide="chevron-right" style="color: var(--primary);"></i>
+                                <span><strong>Втрати олії в шроті (олійність 0,77%):</strong> 1 202,3 кг (15.10) • 16 260,9 кг (місяць). Нижче технологічної межі регламенту (до 1,0%).</span>
+                            </li>
+                            <li>
+                                <i data-lucide="chevron-right" style="color: var(--primary);"></i>
+                                <span><strong>Втрати олії в луззі (олійність 3,27%):</strong> 1 502,1 кг (15.10) • 24 997,0 кг (місяць). Ефективна робота насіннєвійок.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div style="font-weight: 700; font-size: 12px; margin-bottom: 6px;">Невраховані втрати та підсумок:</div>
+                        <ul class="list-items">
+                            <li>
+                                <i data-lucide="chevron-right" style="color: var(--emerald);"></i>
+                                <span><strong>Враховані технологічні втрати:</strong> 2 704,4 кг (0,87% від сировини) — суворо в межах нормативу.</span>
+                            </li>
+                            <li>
+                                <i data-lucide="chevron-right" style="color: var(--emerald);"></i>
+                                <span><strong>Невраховані втрати олії: -15 936,5 кг (-5,16%):</strong> Негативні втрати підтверджують додатковий приріст товарної олії понад лабораторний розрахунок.</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 5: Logistics & Stocks -->
+        <section class="slide" data-slide="5">
+            <div class="slide-badge">Блок Б • Логістика & Склади</div>
+            <h2 class="slide-title">Воронка електронної черги та складські запаси</h2>
+            <p class="slide-sub">Пряма інтеграція з базою даних apgk_api08 (режим Read-Only) та звіт СВОД</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title" style="color: var(--primary);">
+                        <i data-lucide="truck"></i> Електронна черга автотранспорту
+                    </div>
+                    <ul class="list-items" style="gap: 12px; margin-bottom: 14px;">
+                        <li>
+                            <i data-lucide="clock" style="color: var(--emerald);"></i>
+                            <div>
+                                <strong>Насіння (приймання): ~115 хв</strong><br>
+                                <span style="font-size: 11px; color: var(--slate-600);">Зважування, аналіз лабораторії, розвантаження на завальну яму.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i data-lucide="clock" style="color: var(--emerald);"></i>
+                            <div>
+                                <strong>Олія (автоцистерни): ~95 хв</strong><br>
+                                <span style="font-size: 11px; color: var(--slate-600);">Налив з резервуарного парку та оформлення ТТН.</span>
+                            </div>
+                        </li>
+                        <li>
+                            <i data-lucide="clock" style="color: var(--amber);"></i>
+                            <div>
+                                <strong>Шрот (відвантаження): ~130 хв</strong><br>
+                                <span style="font-size: 11px; color: var(--slate-600);">Насип у зерновози зі складу підлогового зберігання.</span>
+                            </div>
+                        </li>
+                    </ul>
+                    <div style="background: #f8fafc; border: 1px solid var(--border); padding: 10px; border-radius: 6px; font-size: 11px; color: var(--slate-600);">
+                        🛡️ <strong>Безпека:</strong> Підключення в режимі «Тільки читання» виключає будь-який вплив дашборда на роботу вагових та CRM.
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" style="color: var(--emerald-dark);">
+                        <i data-lucide="database"></i> Складські залишки готової продукції (СВОД)
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div style="background: #f8fafc; border-left: 4px solid var(--primary); padding: 10px 14px; border-radius: 4px;">
+                            <div style="font-size: 11px; color: var(--slate-600); font-weight: 600;">💧 Олія в резервуарах</div>
+                            <div style="font-size: 20px; font-weight: 800; color: var(--primary);">3 650,10 т</div>
+                            <div style="font-size: 11px; color: var(--slate-600);">Місткість: 5 000 т • Заповнення: 73%</div>
+                        </div>
+                        <div style="background: #f8fafc; border-left: 4px solid var(--emerald); padding: 10px 14px; border-radius: 4px;">
+                            <div style="font-size: 11px; color: var(--slate-600); font-weight: 600;">🌾 Шрот на складі</div>
+                            <div style="font-size: 20px; font-weight: 800; color: var(--emerald-dark);">674,86 т</div>
+                            <div style="font-size: 11px; color: var(--slate-600);">Місткість: 1 500 т • Заповнення: 45%</div>
+                        </div>
+                        <div style="background: #f8fafc; border-left: 4px solid var(--amber); padding: 10px 14px; border-radius: 4px;">
+                            <div style="font-size: 11px; color: var(--slate-600); font-weight: 600;">🪵 Лузга на складі</div>
+                            <div style="font-size: 20px; font-weight: 800; color: var(--amber);">166,77 т</div>
+                            <div style="font-size: 11px; color: var(--slate-600);">Витрата на котельню забезпечує 100% автономію по парі</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 6: 12-Year Steam Archive -->
+        <section class="slide" data-slide="6">
+            <div class="slide-badge">Блок В • Енергетика</div>
+            <h2 class="slide-title">12-річний повний архів технологічної пари (2015–2026 рр.)</h2>
+            <p class="slide-sub">Оцифровано всі місяці та доби обліку котельні («Учет пара на ООО “Агропроинвест 08”»)</p>
+
+            <div class="grid-4" style="margin-bottom: 20px;">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--amber);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">💨 Екстракція (МЕЗ)</div>
+                    <div class="card-value" style="color: var(--amber); font-size: 24px;">1 076,80 т</div>
+                    <div class="card-subtext">58,4% споживання пари</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">🏭 Підготовчий цех</div>
+                    <div class="card-value" style="color: var(--emerald); font-size: 24px;">758,39 т</div>
+                    <div class="card-subtext">41,1% споживання пари</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">⚙️ Власні потреби (СН)</div>
+                    <div class="card-value" style="color: var(--primary); font-size: 24px;">136,46 т</div>
+                    <div class="card-subtext">6,9% на деаерацію котлів</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--orange);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">⚖️ Питома норма</div>
+                    <div class="card-value" style="color: var(--orange); font-size: 24px;">208,9 кг/т</div>
+                    <div class="card-subtext">на 1 т переробленого соняшнику</div>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-title" style="color: var(--primary-dark);">
+                    <i data-lucide="layers"></i> Можливості інтерактивного журналу пари для керівника
+                </div>
+                <ul class="list-items" style="gap: 10px;">
+                    <li>
+                        <i data-lucide="check" style="color: var(--emerald);"></i>
+                        <span><strong>Інтерактивний селектор місяця:</strong> Керівник може вибрати будь-який місяць з 2015 по 2026 рік зі списку й миттєво побачити подобову відомість без перезавантаження.</span>
+                    </li>
+                    <li>
+                        <i data-lucide="check" style="color: var(--emerald);"></i>
+                        <span><strong>Подобова деталізація:</strong> Котельня, виробництво, СН, екстракція, підготовка, елеватор та опалення по кожному дню місяця.</span>
+                    </li>
+                    <li>
+                        <i data-lucide="check" style="color: var(--emerald);"></i>
+                        <span><strong>Оперативне виявлення перепалів:</strong> Порівняння питомої норми (кг/т) з еталонними значеннями для контролю технологічної дисципліни кочегарів.</span>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- SLIDE 7: Electricity & Departments 2026 -->
+        <section class="slide" data-slide="7">
+            <div class="slide-badge">Блок В • Енергоресурси</div>
+            <h2 class="slide-title">Помісячний баланс електроенергії, води та газу (2026 рік)</h2>
+            <p class="slide-sub">Архів розподілу витрат за структурними підрозділами заводу з січня по жовтень 2026 року</p>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-title" style="color: var(--primary);">
+                        <i data-lucide="cpu"></i> Електроенергія та підрозділи заводу
+                    </div>
+                    <ul class="list-items" style="gap: 10px; margin-bottom: 12px;">
+                        <li>
+                            <i data-lucide="check" style="color: var(--primary);"></i>
+                            <span><strong>Повний помісячний архів:</strong> Січень, Лютий, Березень, Квітень, Травень, Червень, Липень, Серпень (ППР), Вересень, Жовтень.</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--primary);"></i>
+                            <span><strong>Зручний вибір місяця:</strong> Розміщений прямо у шапці Блоку В для миттєвого перегляду директором.</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--primary);"></i>
+                            <span><strong>Питома витрата заводу:</strong> 54,97 кВт/т (Пресовий цех: ~60,9 кВт/т, Дільниця екстракції: ~23,9 кВт/т).</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--primary);"></i>
+                            <span><strong>Облік природного газу:</strong> Окрема графа для газової котельні у холодні та перехідні місяці року.</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-title" style="color: var(--emerald-dark);">
+                        <i data-lucide="droplet"></i> Вода, каналізація та реактивна енергія
+                    </div>
+                    <ul class="list-items" style="gap: 10px; margin-bottom: 12px;">
+                        <li>
+                            <i data-lucide="check" style="color: var(--emerald);"></i>
+                            <span><strong>Водопостачання заводу:</strong> 1 645,0 м³/місяць (~54,8 м³/добу за лічильником другого підйому).</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--emerald);"></i>
+                            <span><strong>Розподіл води:</strong> Котельня (1 023 м³ на пароутворення), Екстракція (544 м³ на охолодження).</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--emerald);"></i>
+                            <span><strong>Скидання стоків:</strong> 1 150,0 м³/місяць через власні очисні споруди.</span>
+                        </li>
+                        <li>
+                            <i data-lucide="check" style="color: var(--emerald);"></i>
+                            <span><strong>Контроль реактивної потужності:</strong> Розрахунок cos φ запобігає штрафам від енергопостачальної компанії.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 8: Strategic Benchmarking -->
+        <section class="slide" data-slide="8">
+            <div class="slide-badge">Блок Г • Бенчмаркінг</div>
+            <h2 class="slide-title">Стратегічне порівняння сезонів: 2026–2027 vs 2025–2026</h2>
+            <p class="slide-sub">Об'єктивне зіставлення ключових KPI заводу з еталонними показниками минулого року</p>
+
+            <div class="grid-4" style="margin-bottom: 20px;">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">⚙️ Переробка сировини</div>
+                    <div class="card-value" style="font-size: 24px;">309,0 т</div>
+                    <div class="card-subtext">Аналог 2025: 538,1 т • Запуск сезону</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">💧 Вихід олії</div>
+                    <div class="card-value" style="color: var(--emerald); font-size: 24px;">48,31%</div>
+                    <div class="card-subtext"><strong>+3,86%</strong> вище за еталон 2025 (44,45%)</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--violet);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">🌾 Вихід шроту</div>
+                    <div class="card-value" style="color: var(--violet); font-size: 24px;">50,53%</div>
+                    <div class="card-subtext"><strong>+8,77%</strong> вище за еталон 2025 (41,76%)</div>
+                </div>
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--amber);"></div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--slate-600);">⚖️ Олія + Шрот</div>
+                    <div class="card-value" style="color: var(--amber); font-size: 24px;">98,84%</div>
+                    <div class="card-subtext"><strong>+12,63%</strong> максимальна віддача насіння</div>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-title" style="color: var(--primary-dark);">
+                    <i data-lucide="award"></i> Головні висновки для Ради Директорів
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px; color: var(--slate-800);">
+                    <div>
+                        <strong>1. Технологічна перевага сезону 2026:</strong><br>
+                        <span style="color: var(--slate-600);">Завдяки оптимізації режимів жаровень та екстрактора вихід товарної олії з кожної тони соняшнику зріс майже на 4%, що забезпечує прямий додатковий прибуток.</span>
+                    </div>
+                    <div>
+                        <strong>2. Стабільність сировинного забезпечення:</strong><br>
+                        <span style="color: var(--slate-600);">Сформований запас насіння на елеваторі гарантує понад 21 добу автономної роботи заводу на повній потужності без ризику зупинки виробництва.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 9: Technology & Security -->
+        <section class="slide" data-slide="9">
+            <div class="slide-badge">Надійність • IT-Інфраструктура</div>
+            <h2 class="slide-title">Технічна архітектура та інформаційна безпека</h2>
+            <p class="slide-sub">Відповідність сучасним корпоративним стандартам надійності та швидкодії</p>
+
+            <div class="grid-3">
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--primary);"></div>
+                    <div class="card-title">
+                        <i data-lucide="zap" style="color: var(--primary);"></i> Швидкодія та легкість
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check"></i> PHP 8.2 + MySQL / JSON State</li>
+                        <li><i data-lucide="check"></i> Час генерації сторінки &lt; 200 мс</li>
+                        <li><i data-lucide="check"></i> Чистий Vanilla JS без важких бібліотек</li>
+                        <li><i data-lucide="check"></i> Автономність без зовнішніх залежностей</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--emerald);"></div>
+                    <div class="card-title">
+                        <i data-lucide="shield-check" style="color: var(--emerald);"></i> Безпека та ізоляція
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check"></i> Рольовий доступ (RBAC) співробітників</li>
+                        <li><i data-lucide="check"></i> Виробнича база CRM строго в Read-Only</li>
+                        <li><i data-lucide="check"></i> Повна ізоляція системних паролів</li>
+                        <li><i data-lucide="check"></i> Журналювання дій та змін показників</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <div class="card-header-bar" style="background: var(--violet);"></div>
+                    <div class="card-title">
+                        <i data-lucide="refresh-cw" style="color: var(--violet);"></i> Автоматизація
+                    </div>
+                    <ul class="list-items">
+                        <li><i data-lucide="check"></i> Автооновлення кожні 30 с з лічильником</li>
+                        <li><i data-lucide="check"></i> Експорт звітів в Excel, PDF, CSV</li>
+                        <li><i data-lucide="check"></i> Готовий дистрибутив HestiaCP (ZIP)</li>
+                        <li><i data-lucide="check"></i> Контроль версій у репозиторії GitHub</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- SLIDE 10: Conclusion (Dark) -->
+        <section class="slide slide-dark" data-slide="10">
+            <div style="max-width: 900px; margin-left: 20px;">
+                <div class="slide-badge" style="background: rgba(16, 185, 129, 0.25); color: #34d399;">
+                    <i data-lucide="check-circle" style="width: 14px; height: 14px;"></i>
+                    Підсумки та Ефект
+                </div>
+                <h2 class="slide-title" style="font-size: 34px; line-height: 1.2; margin-bottom: 20px;">
+                    Економічний ефект та наступні кроки розвитку
+                </h2>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 28px;">
+                    <div style="background: rgba(255,255,255,0.06); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+                        <div style="font-weight: 700; color: #38bdf8; margin-bottom: 6px; font-size: 14px;">1. Прозорість управління</div>
+                        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Керівництво контролює завод в один клік — від тоннажу соняшнику до кубометрів води та тиску пари в реальному часі.</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.06); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+                        <div style="font-weight: 700; color: #34d399; margin-bottom: 6px; font-size: 14px;">2. Економія часу інженерів</div>
+                        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Звільнення керівників цехів від ручного складання щоденних Excel-звірок (економія до 3-4 год робочого часу на добу).</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.06); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+                        <div style="font-weight: 700; color: #fbbf24; margin-bottom: 6px; font-size: 14px;">3. Захист від втрат олії</div>
+                        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Миттєве виявлення відхилень олійності шроту або лузги дозволяє ліквідувати втрати сировини за лічені години.</div>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.06); padding: 18px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);">
+                        <div style="font-weight: 700; color: #c084fc; margin-bottom: 6px; font-size: 14px;">4. Наступний етап розвитку</div>
+                        <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5;">Підключення датчиків SCADA/Zabbix, прямий збір даних з витратомірів та предикативна аналітика на базі ШІ.</div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 14px;">
+                    <a href="index.php" style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; text-decoration: none; padding: 10px 22px; border-radius: 6px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;">
+                        <i data-lucide="layout-dashboard"></i>
+                        <span>Відкрити Дашборд МЕЗ</span>
+                    </a>
+                    <a href="Презентація_Дашборд_МЕЗ_Керівництву.pptx" download style="background: rgba(255,255,255,0.12); color: #fff; text-decoration: none; padding: 10px 22px; border-radius: 6px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                        <i data-lucide="download"></i>
+                        <span>Завантажити PowerPoint (.pptx)</span>
+                    </a>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Navigation -->
+    <footer class="deck-footer">
+        <div class="deck-progress" id="progress-dots">
+            <!-- Dots generated by JS -->
+        </div>
+
+        <div style="font-size: 12px; color: var(--slate-600); font-weight: 600;">
+            Слайд <span id="current-slide-num">1</span> з <span id="total-slides-num">10</span>
+        </div>
+
+        <div class="nav-btns">
+            <button type="button" class="btn-nav" id="btn-prev" onclick="changeSlide(-1)">
+                <i data-lucide="chevron-left"></i> Назад
+            </button>
+            <button type="button" class="btn-nav" id="btn-next" onclick="changeSlide(1)">
+                Вперед <i data-lucide="chevron-right"></i>
+            </button>
+        </div>
+    </footer>
+</div>
+
+<script>
+    let currentSlide = 1;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const dotsContainer = document.getElementById('progress-dots');
+    const currentNumEl = document.getElementById('current-slide-num');
+    const totalNumEl = document.getElementById('total-slides-num');
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+
+    totalNumEl.textContent = totalSlides;
+
+    // Build dots
+    slides.forEach((_, idx) => {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot' + (idx === 0 ? ' active' : '');
+        dot.title = `Слайд ${idx + 1}`;
+        dot.addEventListener('click', () => goToSlide(idx + 1));
+        dotsContainer.appendChild(dot);
+    });
+
+    const dots = document.querySelectorAll('.progress-dot');
+
+    function updateSlide() {
+        slides.forEach((slide, idx) => {
+            slide.classList.toggle('active', (idx + 1) === currentSlide);
+        });
+        dots.forEach((dot, idx) => {
+            dot.classList.toggle('active', (idx + 1) === currentSlide);
+        });
+
+        currentNumEl.textContent = currentSlide;
+        btnPrev.disabled = (currentSlide === 1);
+        btnNext.disabled = (currentSlide === totalSlides);
+    }
+
+    function changeSlide(direction) {
+        goToSlide(currentSlide + direction);
+    }
+
+    function goToSlide(slideNum) {
+        if (slideNum < 1 || slideNum > totalSlides) return;
+        currentSlide = slideNum;
+        updateSlide();
+    }
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {
+            e.preventDefault();
+            changeSlide(1);
+        } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+            e.preventDefault();
+            changeSlide(-1);
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            goToSlide(1);
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            goToSlide(totalSlides);
+        } else if (e.key === 'f' || e.key === 'F') {
+            toggleFullScreen();
+        }
+    });
+
+    // Full screen toggle
+    function toggleFullScreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.warn('Fullscreen error:', err);
+            });
+            document.getElementById('fs-icon').setAttribute('data-lucide', 'minimize');
+        } else {
+            document.exitFullscreen();
+            document.getElementById('fs-icon').setAttribute('data-lucide', 'maximize');
+        }
+        lucide.createIcons();
+    }
+
+    // Initialize Lucide icons
+    lucide.createIcons();
+    updateSlide();
+</script>
+
+</body>
+</html>
+
+
+================================================================================
+ФАЙЛ [44/46]: scripts\create_powerpoint.py
+Шлях: scripts\create_powerpoint.py | Розмір: 37,244 байт
+================================================================================
+
+import sys
+import os
+from pptx import Presentation
+from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
+from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.shapes import MSO_SHAPE
+
+def create_executive_presentation(output_path):
+    prs = Presentation()
+    # 16:9 widescreen format
+    prs.slide_width = Inches(13.333)
+    prs.slide_height = Inches(7.5)
+    blank_layout = prs.slide_layouts[6] # blank slide
+
+    # Corporate Color Palette
+    C_BG_DARK = RGBColor(15, 23, 42)      # Slate 900
+    C_BG_LIGHT = RGBColor(248, 250, 252)  # Slate 50
+    C_PRIMARY = RGBColor(2, 132, 199)     # Sky 600
+    C_PRIMARY_DARK = RGBColor(3, 105, 161)# Sky 700
+    C_SUCCESS = RGBColor(16, 185, 129)    # Emerald 500
+    C_SUCCESS_DARK = RGBColor(5, 150, 105)# Emerald 600
+    C_WARNING = RGBColor(245, 158, 11)    # Amber 500
+    C_ACCENT = RGBColor(234, 88, 12)      # Orange 600
+    C_PURPLE = RGBColor(139, 92, 246)     # Violet 500
+    C_TEXT_DARK = RGBColor(30, 41, 59)    # Slate 800
+    C_TEXT_MUTED = RGBColor(100, 116, 139)# Slate 500
+    C_WHITE = RGBColor(255, 255, 255)
+    C_CARD_BG = RGBColor(255, 255, 255)
+    C_CARD_BORDER = RGBColor(226, 232, 240)
+
+    def add_header(slide, title_text, category_text="ТОВ «АГРОПРОІНВЕСТ 08» • СИТУАЦІЙНИЙ ЦЕНТР"):
+        # Top banner background
+        top_bar = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(1.1))
+        top_bar.fill.solid()
+        top_bar.fill.fore_color.rgb = C_BG_DARK
+        top_bar.line.color.rgb = C_BG_DARK
+
+        # Category text
+        cat_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.12), Inches(11.5), Inches(0.3))
+        tf_c = cat_box.text_frame
+        tf_c.word_wrap = True
+        p_c = tf_c.paragraphs[0]
+        p_c.text = category_text.upper()
+        p_c.font.size = Pt(10)
+        p_c.font.bold = True
+        p_c.font.color.rgb = C_PRIMARY
+
+        # Title text
+        title_box = slide.shapes.add_textbox(Inches(0.8), Inches(0.4), Inches(11.5), Inches(0.6))
+        tf_t = title_box.text_frame
+        tf_t.word_wrap = True
+        p_t = tf_t.paragraphs[0]
+        p_t.text = title_text
+        p_t.font.size = Pt(20)
+        p_t.font.bold = True
+        p_t.font.color.rgb = C_WHITE
+
+        # Footer
+        footer = slide.shapes.add_textbox(Inches(0.8), Inches(7.1), Inches(11.733), Inches(0.35))
+        tf_f = footer.text_frame
+        p_f = tf_f.paragraphs[0]
+        p_f.text = "Дашборд МЕЗ: dash-api08.dniprovska.net • Конфіденційно • Для керівництва заводу"
+        p_f.font.size = Pt(9)
+        p_f.font.color.rgb = C_TEXT_MUTED
+
+    def add_card(slide, left, top, width, height, bg_color=C_CARD_BG, border_color=C_CARD_BORDER):
+        card = slide.shapes.add_shape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(left), Inches(top), Inches(width), Inches(height))
+        card.fill.solid()
+        card.fill.fore_color.rgb = bg_color
+        card.line.color.rgb = border_color
+        card.line.width = Pt(1)
+        return card
+
+    # =========================================================================
+    # SLIDE 1: Title Slide (Dark Theme)
+    # =========================================================================
+    s1 = prs.slides.add_slide(blank_layout)
+    bg1 = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
+    bg1.fill.solid()
+    bg1.fill.fore_color.rgb = C_BG_DARK
+    bg1.line.color.rgb = C_BG_DARK
+
+    # Accent decorative bar
+    bar1 = s1.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.8), Inches(1.8), Inches(0.15), Inches(3.8))
+    bar1.fill.solid()
+    bar1.fill.fore_color.rgb = C_PRIMARY
+    bar1.line.color.rgb = C_PRIMARY
+
+    # Title box
+    tbox = s1.shapes.add_textbox(Inches(1.2), Inches(1.7), Inches(11), Inches(4.0))
+    tf1 = tbox.text_frame
+    tf1.word_wrap = True
+
+    p0 = tf1.paragraphs[0]
+    p0.text = "ТОВ «АГРОПРОІНВЕСТ 08»"
+    p0.font.size = Pt(15)
+    p0.font.bold = True
+    p0.font.color.rgb = C_PRIMARY
+    p0.space_after = Pt(12)
+
+    p1 = tf1.add_paragraph()
+    p1.text = "СИТУАЦІЙНИЙ ЦЕНТР ТА ЦИФРОВИЙ ДАШБОРД МЕЗ"
+    p1.font.size = Pt(32)
+    p1.font.bold = True
+    p1.font.color.rgb = C_WHITE
+    p1.space_after = Pt(14)
+
+    p2 = tf1.add_paragraph()
+    p2.text = "Комплексний онлайн-моніторинг виробництва, матеріального балансу, логістики транспорту та балансу енергоресурсів"
+    p2.font.size = Pt(16)
+    p2.font.color.rgb = RGBColor(203, 213, 225)
+    p2.space_after = Pt(28)
+
+    p3 = tf1.add_paragraph()
+    p3.text = "Презентація для Ради Директорів та Вищого Керівництва • Сезон 2026–2027"
+    p3.font.size = Pt(13)
+    p3.font.color.rgb = C_SUCCESS
+    p3.font.bold = True
+
+    # =========================================================================
+    # SLIDE 2: Executive Summary (4 Pillars)
+    # =========================================================================
+    s2 = prs.slides.add_slide(blank_layout)
+    add_header(s2, "Ключова бізнес-цінність: 4 контури цифрового управління")
+
+    pillars = [
+        ("Блок А: Виробництво та Якість", C_PRIMARY, [
+            "• Онлайн матеріальний баланс цеху екстракції",
+            "• Вихід готової продукції (Олія, Шрот, Лузга)",
+            "• Лабораторія якості насіння (товарна олійність 44,03%)",
+            "• Баланс та аудит неврахованих втрат олії"
+        ]),
+        ("Блок Б: Логістика автотранспорту", C_SUCCESS, [
+            "• Інтеграція з CRM apgk_api08 (Тільки читання)",
+            "• Воронка машин: Насіння, Олія, Шрот, Лузга",
+            "• Контроль нормативу простою авто (< 120 хв)",
+            "• Облік складських залишків готової продукції"
+        ]),
+        ("Блок В: Енергетика та Ресурси", C_WARNING, [
+            "• 12-річний повний архів пари (2015–2026 рр.)",
+            "• Помісячний архів електроенергії за 2026 рік",
+            "• Розподіл кВт, води, стоків та газу по цехах",
+            "• Інтерактивні селектори вибору місяця"
+        ]),
+        ("Блок Г: Бенчмаркінг 2026 vs 2025", C_PURPLE, [
+            "• Зіставлення фактів: Доба, Тиждень, Місяць, Сезон",
+            "• Випередження бази 2025 року за виходом олії",
+            "• Контроль виконання контрактів та довіз сировини",
+            "• Оперативні сповіщення при ризиках втрат"
+        ])
+    ]
+
+    for i, (title, color, items) in enumerate(pillars):
+        left = 0.8 + i * 2.98
+        add_card(s2, left, 1.4, 2.85, 5.4)
+        
+        # Header banner inside card
+        card_hdr = s2.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(left), Inches(1.4), Inches(2.85), Inches(0.8))
+        card_hdr.fill.solid()
+        card_hdr.fill.fore_color.rgb = color
+        card_hdr.line.color.rgb = color
+        
+        tb = s2.shapes.add_textbox(Inches(left + 0.1), Inches(1.45), Inches(2.65), Inches(0.7))
+        p = tb.text_frame.paragraphs[0]
+        p.text = title
+        p.font.size = Pt(13)
+        p.font.bold = True
+        p.font.color.rgb = C_WHITE
+        p.alignment = PP_ALIGN.CENTER
+        
+        # Content box
+        cb = s2.shapes.add_textbox(Inches(left + 0.15), Inches(2.35), Inches(2.55), Inches(4.3))
+        tf = cb.text_frame
+        tf.word_wrap = True
+        for j, item in enumerate(items):
+            p_item = tf.paragraphs[0] if j == 0 else tf.add_paragraph()
+            p_item.text = item
+            p_item.font.size = Pt(11.5)
+            p_item.font.color.rgb = C_TEXT_DARK
+            p_item.space_after = Pt(12)
+
+    # =========================================================================
+    # SLIDE 3: Material Balance & Production
+    # =========================================================================
+    s3 = prs.slides.add_slide(blank_layout)
+    add_header(s3, "Блок А: Матеріальний баланс та виробнича ефективність")
+
+    # Left: Key KPIs
+    add_card(s3, 0.8, 1.4, 5.7, 5.4)
+    tb_kpi = s3.shapes.add_textbox(Inches(1.0), Inches(1.55), Inches(5.3), Inches(5.0))
+    tf_kpi = tb_kpi.text_frame
+    tf_kpi.word_wrap = True
+
+    p = tf_kpi.paragraphs[0]
+    p.text = "ФАКТИЧНІ ПОКАЗНИКИ РОБОТИ (15.10.2026)"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = C_PRIMARY
+    p.space_after = Pt(10)
+
+    rows_kpi = [
+        ("Перероблено соняшнику (очищене)", "308,98 т", "Добовий план: 600,0 т"),
+        ("Вихід Олії нерафінованої", "149,28 т (48,31%)", "Еталон 2025: 44,45% (+3,86%)"),
+        ("Вихід Шроту соняшникового", "156,13 т (50,53%)", "Еталон 2025: 41,76% (+8,77%)"),
+        ("Вихід Лузги сухої", "45,95 т (14,87%)", "Паливо на власну котельню"),
+        ("Сума виходу (Олія + Шрот)", "98,84%", "Висока ефективність екстракції"),
+        ("Загальний баланс продукції", "113,72%", "+13,72% перевищення балансу")
+    ]
+    for name, val, sub in rows_kpi:
+        p1 = tf_kpi.add_paragraph()
+        p1.text = f"• {name}: "
+        p1.font.bold = False
+        p1.font.size = Pt(11)
+        p1.font.color.rgb = C_TEXT_DARK
+        
+        run_v = p1.add_run()
+        run_v.text = val
+        run_v.font.bold = True
+        run_v.font.color.rgb = C_PRIMARY_DARK
+        
+        p2 = tf_kpi.add_paragraph()
+        p2.text = f"   ↳ {sub}"
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = C_TEXT_MUTED
+        p2.space_after = Pt(6)
+
+    # Right: Logic & Rules
+    add_card(s3, 6.8, 1.4, 5.7, 5.4)
+    tb_rules = s3.shapes.add_textbox(Inches(7.0), Inches(1.55), Inches(5.3), Inches(5.0))
+    tf_rules = tb_rules.text_frame
+    tf_rules.word_wrap = True
+
+    p = tf_rules.paragraphs[0]
+    p.text = "КЛЮЧОВІ АЛГОРИТМИ ТА ВРАХУВАННЯ ПРОСТОЇВ"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = C_SUCCESS_DARK
+    p.space_after = Pt(12)
+
+    rules_text = [
+        ("1. Чітке відокремлення робочих діб та простою:", "Коли за добу МЕЗ переробка становить 0 т (наприклад, 16–18.10), система виводить спеціальне сповіщення «МЕЗ: переробка на паузі», не викривляє відсотки і запобігає діленню на нуль."),
+        ("2. Розмежування втрат:", "Втрати підробки елеватора (1,45% / 53,6 т) чітко відокремлені від виробничих втрат екстракції, що забезпечує прозору відповідальність між підрозділами."),
+        ("3. Баланс позитивного перевищення (+):", "При переробці високоолійного соняшнику загальний вихід продукції перевищує 100%, що фіксується зеленим бейджем «Перевищення виходу продукції»."),
+        ("4. Розрахунок питомих показників:", "Всі питомі енерговитрати прив'язані до фактичного очищеного насіння в переробці, що дає реальну картину собівартості тони.")
+    ]
+    for r_title, r_desc in rules_text:
+        p1 = tf_rules.add_paragraph()
+        p1.text = r_title
+        p1.font.bold = True
+        p1.font.size = Pt(11)
+        p1.font.color.rgb = C_TEXT_DARK
+        
+        p2 = tf_rules.add_paragraph()
+        p2.text = r_desc
+        p2.font.size = Pt(10)
+        p2.font.color.rgb = C_TEXT_MUTED
+        p2.space_after = Pt(8)
+
+    # =========================================================================
+    # SLIDE 4: Laboratory Quality & Oil Losses
+    # =========================================================================
+    s4 = prs.slides.add_slide(blank_layout)
+    add_header(s4, "Блок А: Лабораторія якості та аудит втрат олії")
+
+    cards_lab = [
+        ("🧪 Товарна олійність сировини", "44,03%", "на а.с.р. 47,00% – 47,99%", C_PRIMARY, 0.8, 1.4),
+        ("💧 Вологість насіння в цех", "6,20% — 6,30%", "Базовий норматив < 8,0%", C_SUCCESS, 4.8, 1.4),
+        ("🍂 Смітна домішка сировини", "1,71% — 2,18%", "Базовий норматив < 2,0%", C_WARNING, 8.8, 1.4)
+    ]
+    for title, val, sub, col, l, t in cards_lab:
+        add_card(s4, l, t, 3.7, 1.8)
+        tb = s4.shapes.add_textbox(Inches(l + 0.15), Inches(t + 0.15), Inches(3.4), Inches(1.5))
+        tf = tb.text_frame
+        p = tf.paragraphs[0]
+        p.text = title
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        
+        p_v = tf.add_paragraph()
+        p_v.text = val
+        p_v.font.size = Pt(24)
+        p_v.font.bold = True
+        p_v.font.color.rgb = col
+        
+        p_s = tf.add_paragraph()
+        p_s.text = sub
+        p_s.font.size = Pt(9.5)
+        p_s.font.color.rgb = C_TEXT_MUTED
+
+    # Bottom detailed box: Oil Loss Audit
+    add_card(s4, 0.8, 3.4, 11.7, 3.4)
+    tb_loss = s4.shapes.add_textbox(Inches(1.0), Inches(3.55), Inches(11.3), Inches(3.1))
+    tf_l = tb_loss.text_frame
+    tf_l.word_wrap = True
+
+    p = tf_l.paragraphs[0]
+    p.text = "БАЛАНС ВТРАТ ОЛІЇ ЗА ЗВІТОМ МЕЗ («СПРАВКА ПО ПЕРЕРАБОТКЕ»)"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = C_PRIMARY_DARK
+    p.space_after = Pt(10)
+
+    loss_items = [
+        ("• Втрати олії в шроті (олійність шроту 0,77%):", "1 202,3 кг (за добу 15.10) • 16 260,9 кг (за місяць). Показник значно нижче технологічної межі (норма до 1,0%), що доводить ефективну роботу екстрактора."),
+        ("• Втрати олії в луззі (олійність лузги 3,27%):", "1 502,1 кг (за добу 15.10) • 24 997,0 кг (за місяць). Контролюється в процесі рушкувально-війочного відділення."),
+        ("• Враховані втрати олії:", "2 704,4 кг (0,87% від маси насіння). Фактичні технологічні втрати в межах норми регламенту."),
+        ("• Невраховані втрати олії:", "-15 936,5 кг (-5,16% — негативний баланс втрат). Свідчить про те, що реальний вихід товарної олії перевищив попередній розрахунковий прогноз лабораторії.")
+    ]
+    for l_title, l_desc in loss_items:
+        p1 = tf_l.add_paragraph()
+        p1.text = l_title + " "
+        p1.font.bold = True
+        p1.font.size = Pt(11)
+        p1.font.color.rgb = C_TEXT_DARK
+        
+        run = p1.add_run()
+        run.text = l_desc
+        run.font.bold = False
+        run.font.size = Pt(10.5)
+        run.font.color.rgb = C_TEXT_MUTED
+        p1.space_after = Pt(6)
+
+    # =========================================================================
+    # SLIDE 5: Logistics & Warehouses
+    # =========================================================================
+    s5 = prs.slides.add_slide(blank_layout)
+    add_header(s5, "Блок Б: Логістика автотранспорту та складські залишки (СВОД)")
+
+    # Left: Transport Funnel
+    add_card(s5, 0.8, 1.4, 5.7, 5.4)
+    tb_tr = s5.shapes.add_textbox(Inches(1.0), Inches(1.55), Inches(5.3), Inches(5.0))
+    tf_tr = tb_tr.text_frame
+    tf_tr.word_wrap = True
+
+    p = tf_tr.paragraphs[0]
+    p.text = "ЕЛЕКТРОННА ЧЕРГА CRM (ТІЛЬКИ ЧИТАННЯ: apgk_api08)"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = C_PRIMARY
+    p.space_after = Pt(10)
+
+    tr_items = [
+        ("🌻 Насіння соняшнику:", "Середній час перебування: ~115 хв • В межах норми"),
+        ("💧 Олія нерафінована (автоцистерни):", "Середній час: ~95 хв • Швидке відвантаження"),
+        ("🌾 Шрот гранульований / розсипний:", "Середній час: ~130 хв • Під контролем диспетчера"),
+        ("🪵 Лузга соняшникова:", "Середній час: ~80 хв • Прямий вивіз покупцям"),
+        ("⏱️ Контрольний ліміт перебування:", "120 хвилин. При перевищенні ліміту індикатор автоматично сигналізує жовтим або червоним кольором."),
+        ("🛡️ Безпека інтеграції:", "Режим Read-Only гарантує повну ізоляцію виробничої бази 1С/CRM від випадкових змін.")
+    ]
+    for t_t, t_d in tr_items:
+        p1 = tf_tr.add_paragraph()
+        p1.text = t_t + " "
+        p1.font.bold = True
+        p1.font.size = Pt(11)
+        p1.font.color.rgb = C_TEXT_DARK
+        
+        run = p1.add_run()
+        run.text = t_d
+        run.font.bold = False
+        run.font.size = Pt(10)
+        run.font.color.rgb = C_TEXT_MUTED
+        p1.space_after = Pt(8)
+
+    # Right: Warehouse Stocks
+    add_card(s5, 6.8, 1.4, 5.7, 5.4)
+    tb_wh = s5.shapes.add_textbox(Inches(7.0), Inches(1.55), Inches(5.3), Inches(5.0))
+    tf_wh = tb_wh.text_frame
+    tf_wh.word_wrap = True
+
+    p = tf_wh.paragraphs[0]
+    p.text = "СКЛАДСЬКІ ЗАЛИШКИ ТА ЕНЕРГЕТИЧНЕ ПАЛИВО (СВОД)"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = C_SUCCESS_DARK
+    p.space_after = Pt(10)
+
+    wh_items = [
+        ("💧 Олія в резервуарах заводу:", "3 650,10 т", "Місткість 5 000 т • Заповнення: 73%"),
+        ("🌾 Шрот на складі підлогового збер.:", "674,86 т", "Місткість 1 500 т • Заповнення: 45%"),
+        ("🪵 Лузга на складі:", "166,77 т", "Місткість 500 т • Постійна ротація"),
+        ("🔥 Лузга на котельню (власне паливо):", "Енергонезалежність", "Забезпечує 100% потреби в технологічній парі")
+    ]
+    for name, val, sub in wh_items:
+        p1 = tf_wh.add_paragraph()
+        p1.text = f"• {name} "
+        p1.font.bold = False
+        p1.font.size = Pt(11)
+        p1.font.color.rgb = C_TEXT_DARK
+        
+        run_v = p1.add_run()
+        run_v.text = val
+        run_v.font.bold = True
+        run_v.font.color.rgb = C_PRIMARY_DARK
+        
+        p2 = tf_wh.add_paragraph()
+        p2.text = f"   ↳ {sub}"
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = C_TEXT_MUTED
+        p2.space_after = Pt(8)
+
+    # =========================================================================
+    # SLIDE 6: 12-Year Steam Archive
+    # =========================================================================
+    s6 = prs.slides.add_slide(blank_layout)
+    add_header(s6, "Блок В: Повний помісячний та добовий архів пари за 12 років (2015–2026 рр.)")
+
+    # Top highlight box
+    add_card(s6, 0.8, 1.4, 11.7, 1.5)
+    tb_st_top = s6.shapes.add_textbox(Inches(1.0), Inches(1.5), Inches(11.3), Inches(1.3))
+    tf_st = tb_st_top.text_frame
+    tf_st.word_wrap = True
+
+    p = tf_st.paragraphs[0]
+    p.text = "УНІКАЛЬНИЙ АРХІВ ТЕХНОЛОГІЧНОЇ ПАРИ («УЧЕТ ПАРА НА ООО “АГРОПРОИНВЕСТ 08”»)"
+    p.font.size = Pt(12)
+    p.font.bold = True
+    p.font.color.rgb = C_PRIMARY
+    p.space_after = Pt(4)
+
+    p_desc = tf_st.add_paragraph()
+    p_desc.text = "В системі оцифровано повну історію роботи парової котельні за 12 років (з 2015 по 2026 рік). За будь-який вибраний місяць керівник може миттєво побачити подобову таблицю виробництва пари, витрати на власні потреби (СН) та розподіл по технологічних споживачах без затримок."
+    p_desc.font.size = Pt(10.5)
+    p_desc.font.color.rgb = C_TEXT_DARK
+
+    # 4 Distribution pillars
+    steam_cols = [
+        ("Екстракція (МЕЗ)", "58,4%", "1 076,80 т / міс", "Основний споживач пари на підігрів місели та відгонку розчинника"),
+        ("Підготовчий цех", "41,1%", "758,39 т / міс", "Кондиціонування та жаровні перед пресуванням м'ятки"),
+        ("Власні потреби котельні (СН)", "6,9%", "136,46 т / міс", "Підігрів живильної води, деаерація та мазутне/газове господарство"),
+        ("Питома норма на 1 т", "208,9 кг/т", "Еталонний норматив", "Контроль енергетичної ефективності на кожну перероблену тону")
+    ]
+    for i, (name, val, sub, desc) in enumerate(steam_cols):
+        left = 0.8 + i * 2.98
+        add_card(s6, left, 3.1, 2.85, 3.7)
+        
+        tb = s6.shapes.add_textbox(Inches(left + 0.15), Inches(3.25), Inches(2.55), Inches(3.4))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        
+        p = tf.paragraphs[0]
+        p.text = name
+        p.font.size = Pt(12)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        p.space_after = Pt(6)
+        
+        p_v = tf.add_paragraph()
+        p_v.text = val
+        p_v.font.size = Pt(22)
+        p_v.font.bold = True
+        p_v.font.color.rgb = C_WARNING
+        p_v.space_after = Pt(4)
+        
+        p_s = tf.add_paragraph()
+        p_s.text = sub
+        p_s.font.size = Pt(11)
+        p_s.font.bold = True
+        p_s.font.color.rgb = C_PRIMARY_DARK
+        p_s.space_after = Pt(8)
+        
+        p_d = tf.add_paragraph()
+        p_d.text = desc
+        p_d.font.size = Pt(9.5)
+        p_d.font.color.rgb = C_TEXT_MUTED
+
+    # =========================================================================
+    # SLIDE 7: Electricity & Departments Archive 2026
+    # =========================================================================
+    s7 = prs.slides.add_slide(blank_layout)
+    add_header(s7, "Блок В: Помісячний баланс електроенергії, води та газу за 2026 рік")
+
+    # Left: Departmental breakdown
+    add_card(s7, 0.8, 1.4, 5.7, 5.4)
+    tb_el = s7.shapes.add_textbox(Inches(1.0), Inches(1.55), Inches(5.3), Inches(5.0))
+    tf_el = tb_el.text_frame
+    tf_el.word_wrap = True
+
+    p = tf_el.paragraphs[0]
+    p.text = "РОЗПОДІЛ ЗА ПІДРОЗДІЛАМИ ЗАВОДУ (АРХІВ 2026)"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = C_PRIMARY
+    p.space_after = Pt(8)
+
+    el_items = [
+        ("• Повний помісячний архів (Січень — Жовтень 2026):", "Оцифровано всі місяці роботи заводу з переробкою від 4,5 тис. до 14,6 тис. т/міс."),
+        ("• Інтерактивні випадаючі списки:", "Розміщені безпосередньо у шапці Блоку В та в заголовку таблиці підрозділів. Перемикання в 1 клік без перезавантаження."),
+        ("• Питома норма споживання ел.енергії:", "54,97 кВт/т у звітний період (Пресовий цех: ~60,9 кВт/т, Дільниця екстракції: ~23,9 кВт/т)."),
+        ("• Облік природного газу:", "Додано окрему колонку для котельні природного газу (робота в січні, лютому, березні, червні, липні та вересні)."),
+        ("• Підсумковий рядок РАЗОМ:", "Автоматично підсумовує активну, реактивну ел.енергію, воду, стоки та розраховує середньозважену питому норму.")
+    ]
+    for e_t, e_d in el_items:
+        p1 = tf_el.add_paragraph()
+        p1.text = e_t + " "
+        p1.font.bold = True
+        p1.font.size = Pt(10.5)
+        p1.font.color.rgb = C_TEXT_DARK
+        
+        run = p1.add_run()
+        run.text = e_d
+        run.font.bold = False
+        run.font.size = Pt(10)
+        run.font.color.rgb = C_TEXT_MUTED
+        p1.space_after = Pt(6)
+
+    # Right: Water & Gas
+    add_card(s7, 6.8, 1.4, 5.7, 5.4)
+    tb_wg = s7.shapes.add_textbox(Inches(7.0), Inches(1.55), Inches(5.3), Inches(5.0))
+    tf_wg = tb_wg.text_frame
+    tf_wg.word_wrap = True
+
+    p = tf_wg.paragraphs[0]
+    p.text = "ВОДОПОСТАЧАННЯ, СТОКИ ТА ПРИРОДНИЙ ГАЗ"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = C_SUCCESS_DARK
+    p.space_after = Pt(8)
+
+    wg_items = [
+        ("💧 Споживання води за лічильником:", "1 645,0 м³/міс", "~54,8 м³/добу • Водозабір та станція 2-го підйому"),
+        ("🌊 Скидання виробничих стоків:", "1 150,0 м³/міс", "Очисні споруди та каналізація МЕЗ"),
+        ("💨 Витрата води на котельню:", "1 023,0 м³", "Пермеат та підживлення парових котлів"),
+        ("🔥 Витрата води на екстракцію:", "544,0 м³", "Охолодження дефлегматорів та конденсаторів"),
+        ("⚡ Реактивна потужність (cos φ):", "Контроль компенсації", "Моніторинг реактивної енергії запобігає штрафам обленерго")
+    ]
+    for name, val, sub in wg_items:
+        p1 = tf_wg.add_paragraph()
+        p1.text = f"• {name} "
+        p1.font.bold = False
+        p1.font.size = Pt(11)
+        p1.font.color.rgb = C_TEXT_DARK
+        
+        run_v = p1.add_run()
+        run_v.text = val
+        run_v.font.bold = True
+        run_v.font.color.rgb = C_SUCCESS_DARK
+        
+        p2 = tf_wg.add_paragraph()
+        p2.text = f"   ↳ {sub}"
+        p2.font.size = Pt(9.5)
+        p2.font.color.rgb = C_TEXT_MUTED
+        p2.space_after = Pt(6)
+
+    # =========================================================================
+    # SLIDE 8: Season Comparison (2026 vs 2025)
+    # =========================================================================
+    s8 = prs.slides.add_slide(blank_layout)
+    add_header(s8, "Блок Г: Стратегічний бенчмаркінг сезонів (2026–2027 vs 2025–2026)")
+
+    # 4 Comparative Cards
+    comp_kpis = [
+        ("⚙️ Переробка соняшнику", "309,0 т", "Аналог 2025: 538,1 т", "Вихід на плановий темп після запуску"),
+        ("💧 Вихід олії (ефективність)", "48,31%", "Еталон 2025: 44,45%", "+3,86% вище за сезон 2025 року!"),
+        ("🌾 Вихід шроту (високий протеїн)", "50,53%", "Еталон 2025: 41,76%", "+8,77% перевищення норми виходу"),
+        ("⚖️ Сума цінних фракцій (Олія+Шрот)", "98,84%", "Еталон 2025: 86,21%", "+12,63% максимальне використання сировини")
+    ]
+    for i, (name, val, sub, desc) in enumerate(comp_kpis):
+        left = 0.8 + i * 2.98
+        add_card(s8, left, 1.4, 2.85, 2.5)
+        
+        tb = s8.shapes.add_textbox(Inches(left + 0.15), Inches(1.5), Inches(2.55), Inches(2.2))
+        tf = tb.text_frame
+        tf.word_wrap = True
+        
+        p = tf.paragraphs[0]
+        p.text = name
+        p.font.size = Pt(11)
+        p.font.bold = True
+        p.font.color.rgb = C_TEXT_DARK
+        
+        p_v = tf.add_paragraph()
+        p_v.text = val
+        p_v.font.size = Pt(22)
+        p_v.font.bold = True
+        p_v.font.color.rgb = C_PRIMARY_DARK
+        
+        p_s = tf.add_paragraph()
+        p_s.text = sub
+        p_s.font.size = Pt(10)
+        p_s.font.color.rgb = C_SUCCESS_DARK
+        p_s.font.bold = True
+        
+        p_d = tf.add_paragraph()
+        p_d.text = desc
+        p_d.font.size = Pt(9)
+        p_d.font.color.rgb = C_TEXT_MUTED
+
+    # Bottom summary
+    add_card(s8, 0.8, 4.1, 11.7, 2.7)
+    tb_b = s8.shapes.add_textbox(Inches(1.0), Inches(4.25), Inches(11.3), Inches(2.4))
+    tf_b = tb_b.text_frame
+    tf_b.word_wrap = True
+
+    p = tf_b.paragraphs[0]
+    p.text = "ВИСНОВКИ СТРАТЕГІЧНОГО АНАЛІЗУ СЕЗОНУ"
+    p.font.size = Pt(13)
+    p.font.bold = True
+    p.font.color.rgb = C_PRIMARY_DARK
+    p.space_after = Pt(8)
+
+    points = [
+        ("• Якість переробки вища за минулорічну:", "Завдяки стабільній роботі рушкувально-війочного та екстракційного цехів вихід олії на 3,86% перевищує еталон сезону 2025–2026."),
+        ("• Сировинна безпека заводу:", "Залишок насіння на елеваторі забезпечує понад 21 добу безперервної роботи навіть за повної відсутності нового завезення."),
+        ("• Виконання договорів поставки:", "Активно виконується 11 специфікацій на довіз насіння з середнім відсотком виконання понад 85%.")
+    ]
+    for p_t, p_d in points:
+        p1 = tf_b.add_paragraph()
+        p1.text = p_t + " "
+        p1.font.bold = True
+        p1.font.size = Pt(10.5)
+        p1.font.color.rgb = C_TEXT_DARK
+        
+        run = p1.add_run()
+        run.text = p_d
+        run.font.bold = False
+        run.font.size = Pt(10)
+        run.font.color.rgb = C_TEXT_MUTED
+        p1.space_after = Pt(5)
+
+    # =========================================================================
+    # SLIDE 9: Architecture & Security
+    # =========================================================================
+    s9 = prs.slides.add_slide(blank_layout)
+    add_header(s9, "Технічна надійність, безпека та архітектура рішення")
+
+    tech_pillars = [
+        ("Швидкодія та стек", C_PRIMARY, [
+            "• PHP 8.2 + MySQL / JSON State",
+            "• Чистий Vanilla JS (без важких фреймворків)",
+            "• Час відгуку дашборда < 200 мс",
+            "• Автономна робота без сторонніх хмар"
+        ]),
+        ("Інформаційна безпека", C_SUCCESS, [
+            "• Рольовий доступ користувачів (RBAC)",
+            "• Виробничі бази 1С/CRM строго Read-Only",
+            "• Повна ізоляція паролів та секретів конфігурації",
+            "• Захист сесій та журнал дій користувачів"
+        ]),
+        ("Автоматизація та експорт", C_WARNING, [
+            "• Автооновлення даних за таймером кожні 30 с",
+            "• Експорт у формат Excel, PDF, CSV",
+            "• Повна збірка інсталяційного пакету ZIP",
+            "• Готовність до розгортання в HestiaCP"
+        ])
+    ]
+    for i, (title, color, items) in enumerate(tech_pillars):
+        left = 0.8 + i * 4.0
+        add_card(s9, left, 1.4, 3.7, 5.4)
+        
+        card_hdr = s9.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(left), Inches(1.4), Inches(3.7), Inches(0.8))
+        card_hdr.fill.solid()
+        card_hdr.fill.fore_color.rgb = color
+        card_hdr.line.color.rgb = color
+        
+        tb = s9.shapes.add_textbox(Inches(left + 0.1), Inches(1.45), Inches(3.5), Inches(0.7))
+        p = tb.text_frame.paragraphs[0]
+        p.text = title
+        p.font.size = Pt(13)
+        p.font.bold = True
+        p.font.color.rgb = C_WHITE
+        p.alignment = PP_ALIGN.CENTER
+        
+        cb = s9.shapes.add_textbox(Inches(left + 0.2), Inches(2.4), Inches(3.3), Inches(4.2))
+        tf = cb.text_frame
+        tf.word_wrap = True
+        for j, item in enumerate(items):
+            p_item = tf.paragraphs[0] if j == 0 else tf.add_paragraph()
+            p_item.text = item
+            p_item.font.size = Pt(11)
+            p_item.font.color.rgb = C_TEXT_DARK
+            p_item.space_after = Pt(12)
+
+    # =========================================================================
+    # SLIDE 10: Conclusion & Next Steps (Dark Theme)
+    # =========================================================================
+    s10 = prs.slides.add_slide(blank_layout)
+    bg10 = s10.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0), Inches(0), Inches(13.333), Inches(7.5))
+    bg10.fill.solid()
+    bg10.fill.fore_color.rgb = C_BG_DARK
+    bg10.line.color.rgb = C_BG_DARK
+
+    tbox10 = s10.shapes.add_textbox(Inches(0.8), Inches(0.8), Inches(11.7), Inches(5.8))
+    tf10 = tbox10.text_frame
+    tf10.word_wrap = True
+
+    p = tf10.paragraphs[0]
+    p.text = "РЕЗЮМЕ ТА НАСТУПНІ КРОКИ РОЗВИТКУ СИСТЕМИ"
+    p.font.size = Pt(24)
+    p.font.bold = True
+    p.font.color.rgb = C_WHITE
+    p.space_after = Pt(20)
+
+    conclusions = [
+        ("1. Прозорість та керованість:", "Керівництво отримує об'єктивну картину заводу в один клік — від тоннажу насіння до кубометрів газу та кілограмів пари."),
+        ("2. Економія робочого часу:", "Звільнення інженерів, технологів та диспетчерів від ручного зведення Excel-таблиць (економія до 3 годин робочого часу на добу)."),
+        ("3. Миттєве виявлення втрат:", "Автоматичний контроль олійності шроту/лузги та неврахованих втрат олії захищає завод від технологічних збитків."),
+        ("4. Плани масштабування (Фаза 2):", "Пряме підключення датчиків SCADA/Zabbix до насосів та пресів, автоматичне прогнозування виходу продукції та аналітика витрат на базі ШІ.")
+    ]
+    for c_t, c_d in conclusions:
+        p1 = tf10.add_paragraph()
+        p1.text = c_t + " "
+        p1.font.bold = True
+        p1.font.size = Pt(13)
+        p1.font.color.rgb = C_PRIMARY
+        
+        run = p1.add_run()
+        run.text = c_d
+        run.font.bold = False
+        run.font.size = Pt(12)
+        run.font.color.rgb = RGBColor(226, 232, 240)
+        p1.space_after = Pt(14)
+
+    prs.save(output_path)
+    print(f"Presentation saved successfully to: {output_path}")
+
+if __name__ == "__main__":
+    out_file = os.path.join(os.path.dirname(__file__), "..", "Презентація_Дашборд_МЕЗ_Керівництву.pptx")
+    out_file = os.path.abspath(out_file)
+    create_executive_presentation(out_file)
+
+
+================================================================================
+ФАЙЛ [45/46]: scripts\generate_full_project_text.py
 Шлях: scripts\generate_full_project_text.py | Розмір: 14,249 байт
 ================================================================================
 
@@ -27433,5 +29231,405 @@ if __name__ == "__main__":
     project_dir = os.path.abspath(os.path.dirname(__file__) + "/..")
     output_path = os.path.join(project_dir, OUTPUT_FILENAME)
     generate_bundle(project_dir, output_path)
+
+
+================================================================================
+ФАЙЛ [46/46]: Презентація_Дашборд_МЕЗ_Керівництву.pptx
+Шлях: Презентація_Дашборд_МЕЗ_Керівництву.pptx | Розмір: 58,172 байт
+================================================================================
+
+PK     ! ����  �   [Content_Types].xml �(�                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 Ę]O�0��M�Ko
++��ax�Ǖ$����]۴��{�A�֦7K���=O�e���{)�)˕�H'm�d�
+.GyܴNIb�JBFf`�Eow�;�i�	�����9}N���P2�*
+g�ʔ��Ќ�f�+�o��i���Z�� ���D���O7$/F$�l
+�^�eePOе�~�0�ϙ�y:���֜*Ee]c�\�=,�С���`�{��ixI�w�J��Z;�
+X�յ��NkP�p�s(T>)Q������0-��El��O�1��֯:�M���#�9M���G'8�Np��(:�qt�����	΢t�Q*M�(mCDFm��`��-��x���
+h���P�l�Ȟ<���_�����[6S7�A�pl���&.����S�H�c
+�~Lab׏)L�1��f?�0a��(�=�b��Q^'/n�
+��a�o��-�F`�>ϖ��{�Pm�(�������   �� PK     ! h�t�  �   _rels/.rels �(�                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 ���J1���!�}7�*"�loD��� c2��H�Ҿ���aa-����?�$Yo�n
+^���A���X�+xn� 2�78O
+�a�\^��hD.Cy�1�B�Y����z ��
+�|�t!9�rL���߰'����~2��0��(H[s�=D�[:b4�(uH���L'�e�b���K9U!��Z�W���{�h���^���Mh�w��uV�}�;G�缦�o�Y�D���S7t}N!�3yC���a��Fr�3�   �� PK     ! O'�u  /     ppt/presentation.xml�]o�0��'�?D��h�w@�
+�1M�$T��&�:vd
+���w�$�M��[���=~�<�����PQgO�,9ːw3Da9/J�����b�"G*�
+L9#:�n�_�L�q-�$LaM�ar�3�U���̷���ׄ����
+^��-~����p�.jۋϴ��u��{��*�1��q�mY�έ�����$�v/��gJ����w�ҍ���
+�)����"�g� �E�S�0	� ��P<�N'�?�,7&Ql��u�rb�A_����Ȓ��-9�˞%'}ٷ�/�<�ˡMm��#[���W�N~����L5|M~�P�F�~1��+"۰N0Q#/OQY�UO�V�H�t�u�r)���R8�]D��yeFc��=�j���x�+��t;�"b����=Ca���w��	!���ūY�z����-t�j�c�Һ5
+	N^�}^�Л\{j]rZ��R�����c�M�Q�WGk����oP�#����F�児�3�G��=�h��g4�+
+����4��ʧ���	�|� ��+��J(� �~jF�����3 �Oc���TZ@�(	��}��Jπ4��!}��Y��(��'*��ڿb�c(�wY(9;Qf����l1��`0��� ��� ���`t��7�y����x���ؕ�.I�^�T������MΫ6�rk�FD�K�ry~�$5�mi.�0%\��O�'�ȩ��yOlR$ͩ�})6/'ʳp�L*�BL��^v�w����SS�p� �{vUv~8�  �� PK     ! 3�   7      ppt/slides/_rels/slide7.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! �Ep  �     ppt/slides/slide1.xml�X[OG~���0�璽�����6�v���{����<��ԇ�\�Vj�����B%q R~��_�/陙��6֎��P$v.{�w�;盙�o�����aP����H`�������幪�b�{a@����[_~q3�Ş��;�k����j��m���F� �5C�cC��� ���a�u�����<�a����vho�$`
+�3Xy�v����A�(�Fz�,i��k�#�8Z���^йK��h����vV(rȗ��CZ4=}���aБ}̽���Z�I}�7ԭk��-����2d�I;����&���;��~ }(�`�w��է�Jl�y�#�0�H+��Oȴ�y�<_R+-WKU�]/�E4fwI�#ѩk֣�y��:fʴo"���s�e��䀶6E�A�e�b-��#f^0���\�>ihٖG�*iB&I�\)@2�Ķ
+��)�(`-���;p,\��˜6�����u���CF���w��N���^�W���.�Ζ�ۀ�D��E5�����U"�b�&� ���^+2"���)^U:�vzGf�r!���,!W
+f�Rj6��Ҽ5��B�,�{�P�+��ZmU���L����E��]�+z$�vQaD�H@�"M�lӘ�X�TڥR�X��a��E#�%nJCn����Bxj�}ɝ����&���Ĕ�F��<S@eva����dio�Ū��5�n2�4�8(~(� �n?�~Rp��Z�z@ǥ,�����=��/��?�`�|>��=�����Ȩ~�	,&SܜlE�.a[���vY�}6�?���wIpz?!�x�ɟ��+������ ��n�����"Bi*z	��%�����%?��8�Iv��M��}�1��#���[�r����h,�.��_�b<g?C����Ǐ��drv��^��s)��p<�������A\&/�]��6�=�G����Hq������
+�������q�l�x/���#~v}߈@�
+�t��z��
+vT�?�6J�.�L��H`������_*��a�Af :!4x����mDx8�a6|Br^��4_���J�|�ޟ>�!��%w�-�*�~Me�E{�[M6��=�����78�בq|3Br*r����2��   �� PK     ! ÷��	  �H     ppt/slides/slide2.xml�\[o�F~_��a `Y��x��)b���v$��([EqIZq��؉���q���4���a_*E�U��`��Kz�E],ْ%e-�r1osf83��|ߙC��Z�&%���Eg.!�
+	b9�b6�,�%>��tYO?0��ik.q��^y��i���v��9�X	7�L���`��E�r�Y��� .��d�3�@�;)	��,�y'�{��s�|����Y-XN�3�,�������7rs����,�a�m�tj��ag��7=��3�����p�y��_K�<��B{%�c�Y��A��]:%v��0_n��鵜W�#ԍ��%�����$޳���73ͻ��O��ͬ,vI�l�l)k�_�du�Fu�[��e�"b\���j���DI4D�P������J���i�󃏭b���\�I�}��?�II�_��٥�m�o�ւ푒iC�KbJ��ޖ�v�g���F��ܵ-��u+-��d�� h�Y��`�5)�Rc���gF�Y��r�4��t�ql�J.:M�B�)z�2��%������n:X�/f��-8���^(b&��dV�0�3��A`��
+4d.����$���5�3�s��t�f9��O�� �M �|q�Hm0&��A��EU�#%��TQՄhJ)E��D�SD��k��D���L��������;н��e�!Oֳ��r������H���ýG��+��#�g�k�`?�+t���;����/�S�
+.~d?��t�>�?�]"����w	\}
+������@���7.���.}������A��tE=PdMMi�s`PTE׆��@����3 P��G��CZ�{�L���9��cz޻n��1=����q�(�� �1\m��J�-Z
+��)���>��p��7�p�(��@j'���HSI��hE�>���0��Ap���c |N���}~@�|E��#��֡��&�i�5��˦��٬�w�bɿm�:V�g�oz�.�!�!�� F���W �m��a�O��I�lplV��� �PZ����N�ʒ&S��b�K��b�$i��bxR9MZ� 
+�_�|Ԭ׬�̈���L�	�EiQ_j�攤MIK�TڻCx�x\��5�Cv�&USD_pD�d���Ȁ.I�![�T]�D�"�w�l��Op��@K�w�y���	=���F�i���(�����.�����zQ7:��t�(���_IT�ȑ�YS8'2�hȢ1)��w3WsAtv-�y���s'hŎ��E�Eɐ䔌���ZH�[ �,9|��o@��%�?�9��(e�A	�G
+�e���.z�py������3q� LX1�ۨ��2+ܞ!���4܀�� E�������e�}�DA��ғ��s((�i�.ɥ���`s��J�I�7M�JeF��8����l�,C� F6��k������M6
+0
+k��a��Uzk&c(F)+����T4M)���b��ԲG����|��I�
+��'�^�SPO ���?���O�eUI��S�4��$�d�N�9��[c�?.�H��Z@a,icnQ�Ė�8�==Y5���TD��4n�
+p�}FQ*lZ!�?!��|�o�C�ah2����<DN�($��I��;L5ԡl��x|������aU�)�i��7VpJ@������U�16#��f�z�E<��K���a�D��$��KЋ(�j&�SKPOkC�qt����D�Ζ��ϣ��I�$�o~:�j�.ʊ2KS^yQxe�;���
+��|�biI5�.���b���� �8B f���g��R�<K�K;@���uX�c��]��0�	c�� T�_��=��[�C`CuU���*I44#����Ay��g�^Ќ��L�
+����nŔlo�!ߓ:�6����<j����.��7�z�M��;��K��+�m���/v5q�P������ i����~��(E5��Aоe����w �CXhp{�K���JsB-���J�/���d��VM��V��r_A�Vؤ{�ޱ��n���f?3x�,V���v��/�;U��LH�����L+��Q/��k���������;
+b�O_?�k.���?�9Ǡ���q���pou|�q�TQqgi{H���z��I�6��N�IŝǦ���=<u� ��T�W��dPi/�)�/>��
+��k"��0R��{�#���i�I񻻇lgx�Q�c���c�ǣ:�{T�������C��CPd]�� ��o����ا������}ΪQ���M���<C�.0ӟ��:���1�ī��~�&3 t�C���qS��*�ʆ
+a��ZTp�ac��ӷ�EaO\h	J�x#V��Ux��X��y����G���?B���0?Є� 
+�AQ��bz��4��!%U�D�;QmQ�}ͱ��5N���r2����~Zb�U0����-7�,�i�%	�v�  �� PK     ! ;�L!	  T,     ppt/slides/slide3.xml�Z�n���_��0�F�I�)��H�x��� I��([(E�$�8���k�,b�I�l����6h}M��� ~��+�I��3�$�����m���\�9��9ߜ񧟍V\6��A��
+����b�W����@�Ϸ?1S,m�h�U�H�s��g�~��Ok��-2h�y{ 5��|&�����5ǃo��_�Cx��2E߾�V܌*�F�b��T��?L�j�T.8���T/���k� y0\�Io���V� ���;D��n�E��[����7�_�Y����?�\�Y��J1Ϯ�YR��C\�^�z�t4J��hɯ�tc�)0�=�f��
+YAZ���/��-_�R;��i���VGMԹ�`·\�)Mͺ�����
+)�b)��IY�Mm��v����N���a �<),�G���jR���[.�]�^���W]���.�=����q�;����ZfD�L�4��{�#������$�K t�]څ`�LJ�@m�U�~�
+�7��MK%0M��zp�f��W�^��ց�Y���k�p�J�x�݆;@�ݫU�`��^a�
+˻�n�Ć�R����!�����۾}C���eZ���r6�- ݕ�(Sw��aW4IGt.��@�"[9�쀶�+�!ǋP�iY������:!]��]�����ޱ}GL`��Z��j{�oE��f��hE����{���v5�u���6b ������ϲ���_���N���,�_�&�ۛ���oϠ��P�_P������)<.��H��c(Z'P������N�(�f'u��P��e��(��&o�
+�g���1�ݏ��"ߌ��u��f|	_�W�0����2_��C�%�Ma�Z�%_��}>ף��A4}}b����N=�f�� G;|��zB���>������C�i�#��	 ��0�
+��*��)�ϳ�b�ʲ�.z�_	�b�='n�9��}	�Z�ԣIx����� �߈�L��4-#�������h�Ā2��z�+:E�"b���X{�RMY��G�����#���b���PB�x�l/�����E)s�z�L�����C�u�N�\��h�%D���b�B�fj
+��9
+b�"����R?]1����%Ь���g�����90�g�50�Il�(����՞�g���#�A-֧�iEN��j�w�{sR%�� ��\S���9�����a� �����i�)H86�q��e
+�WTe�?�v(�\@��=kX����S\_�^�ʦd��n4Xw� �� �~��1�~rc'������;A��������AA0�:�4�^7�'�3�c �"у:i���h��'^�,Iŉg}�)e�/�D�S�����ֽ�g�&i��w1+��!��� �ot�Q��
+��gݐ�,�@�%=�?E�S��z�F�@�W�:� �&>���t��i�M2c���4��n���9xXKuXR��pK/6�����+���$�0!vw�EP�f����ÿeJ�v�< W:΍}r0�
+�b,<Mb��-,̃`+{g��;� �D���	JVʩ���H�n��L��9�6ÞB:��;�B�c�SU�Y�)�)=�O�:�)t2u
+�C���O	��*�e�*����?�5�a:e^��K:��)|C�K��O�#<������pa���M��cEу�:NUҌ���8�)t�T�gZ@`+ε����/"�2� ����X��,�>�3�!���Z��J��0a:+`��2`:�h��Xy$K�&e(>"M�\	P��d	܃b�\��b���X1ӊ�/�Fu�Z�a}�q7�����Ь���K[(��)9<�"�������(��ޔ(O"��y�Q7a��$�n�4����g&8�|j��p�$<��}
+��$�iLg6@�-�
+�'�A�]�����:g���h���^Gz���L��Pm�����0=+ �~Mū�����9���gi�7M�u; ��
+�F�,A����)؍?I��[�
+ה>�3<�(om7���M��oc�-����,@�юmɺ�l�D�i/"�w�����z�_��/#��
+����,��%?O0�د�.^�o�n�Ä�*P�B�:��"$�O�8�X��n[�@�U�!��3>M��޴gvK���;��OG�r�D�o���
+\,�r�� ��s|�ܹ����^�B';��J3�9H�n���	h��V	'��ȩ5Wg�QQ\T��%Ht�|��V)4�?F��E�u��V �Qt�XL$	�"m��]����_�fZ [p�?ڵ/F�V;�*��ސ �mU�h�   �� PK     ! `H�h	  �f     ppt/slides/slide4.xml�]�RW��U��T�V���k�
+Na/��nⲝK#Pe4���/.1q��5!6N���nm�60�C`��g^!O�����膐@� 3vy���=�������G3%�L۞_,�#))-�������;1�������"~`�y�)��H���>����}X��<�ڮ?l��&��2����I�d��r�v�^�앬 N��L޳�A�%'#���)YE7U��uS�\(s��ʹ�����v� F�O+~��J7�U<ۇfX�C���n;y���;�m�;��W�]��۟L��H1�J�*�ZR��j1v�N��LK��ڡ5<S�J����H
+���f�$�/�Ws���)��kS:S� ��)J�wX�&�-;�|±�T���X�6�H�%S�M��TE�P���x~�].<Iy0�^�����h�^��N1?^tv�Mܽ�xd�r��q)+�V[?P�qOV3ëfjB�>��ؼ�[v4�B��2 ��&�\0�T�Z��X� ��+*�W��g:-@5�����5X�e�Q�Tt�^��Fϼ<��K]f������]�����QF
+����&��z������X��T�jX΄�T�v�7-Ϻ�q��e�0�
+d��; ���"�1���C��YE�d�jI4���mQ�4]���rVU�S"�-#���jx;��{�F������VF��Ym��~������co$p����o�l�7�m����w�6�5�J_�e���D�����%�.��t�>���*�����Ug�C�@�A�����'O�p�����K��^���E9{�(���[m��h����F �[���?=�[�K���KÄ�H����ҵp��J������̅��
+��kn/�
+����Yy��B������
+��᢫�,s44�l��U9��x�xq��;=ZL ��0�լj\�&��	?�bc�П�4<&y˟�*E�H��b�+O��[i��]y���W +�p�G����\��&��Ým(3G �-��:4�.�Pz��*O�y;O��v*ϫ��dC�Z
+��
+\��`����2��w2G��
+@?���Qf�Ș<f�׆��d��%˶�N��L����*�U	po� ]
+S�!]�JH���tJR�D+�ɦң��˟�M���G�Ftm#L4�@�H�_�pl�,+��������(�}�(UU��^�cj}a"���t8�g�D�
+�8 |��f���������\�*�)%d��Ņ!��,X�}d�j�ΐ���I�b�g��>��������~}�u.����/4!��M���.�23Ǐ�.(�E��o!�ت�;T �0�� w��'�#1��C��m������b�0DU�&̑0ǅa�>%S��=ɳ4$C1�8
+w|3�9�_�5湻��O�8=�c\3��G.	Y���,H�e!�Lȣ1)x�<���6�ȫ�NK�S7
+��ME�Hأ?�qh�P:��CSR��b�{U�x��"3_��J�]��SB~%7Z�G7���ٯQ��j�n�B�n����{�E�����b.���s��U�
+NV	}W闄>�K�Y�3����:�@>x��NS.��gX�%}��'p
+�-A�/��3�������^_
+g�������ԅ� iW�؞W}���k3n-�}D?�w�n.��
+{�#|�^�*v��'��9��7���98_uT���w슯�8"a[o�Į��	��EYPz�&�� ���$���y��E!s�"c���[�O�%--��l�Y҉���� >A|�E�X{.|.v��>�>��T�������{$���٣�kᗘ+�������o�Lp��7�����5��wv���ᣛ�������zb0��]$~� 
+���_�Ͼ�#ϖd���H\�H��� ��s�t/��&J��.>"�qe�=<wL͂c�`k�#PB:I{^��'��@�:�r,�$t���F��S��1{�Z2\�йR����G�rt�RM�)�%��x�Je��fV�'�Or�}�!�~
+r����Ⱥ��(Pp�/s��/�>���s�d�"
+��aW>a5 �ͻ��hCt����<�
+b�,��
+��]�j�'����f>���a0Կ0�����i#	�d�UA���)
+Fv z����5\	�Iڦ/���q�����F#~~fۙ�ة�޽��G'~��O����ЛJ���g��(R�1�)���ד���!7$i�TtA�ed1�	�ο������~4�V	��f�����x4�{�\l}���yd
+>v,L��~#�DN�BF�Q�I��'���E{ì!.����_���_Y&�ߨ�`�z��S�~]	����5[<���ߩ�.L,�:�0��q�U��֟H���˥�����J�����/V��i�T��ۻ�.U���!��"���?   �� PK     ! �Szln	  �T     ppt/slides/slide5.xml�\[o��~/��0�@H,�"��Y$n�/���I�F�la)�%��C�؍��:qmŻ�ı�6���m�ڑ�/�����O�93�d˖-Z�*1#�m�����9s���A&u����8$D�n���9>����k�q\��hF�ԇ#Ӻ���o�r��ئ�҆#�k��Q'=��5g�`�&|���£=���CH5oD%AP�y-gF��v'��l.����~��M�'b��Bɝ����S�:IͲu�a���:�,}���ձ�ٺ�w���u׺c��_OޱI.�!���f�D�~0�hN��hK��������y�B���p��N�rI��L7ߦ'n�6=q���z�C�b�x�WG�WgLOC��:5;�Z�4;��(�IQM*��� (	�hy��e;�z!O�f8bCy"�^���qy�z|��\f4g���?b�dR3 �Q1.��S?�0�3ʣF땆�;m�<�1=-��d�e �Ij�4`�5)KBc�,�ۈ;;���i6Mӈ,����\0���9�`����̙��絶R���Bf�݇+@�v���`�hfz� �;�����ň��b?C3��C�t3sG��1�3.�̇���@�Ձ|@w�0E�#0&�뤠���DE��d\J�@[PDE�A(���%��������c
+���@�9|��:�@��b�	�`m�/=�M�?�	���p�"%���#�'�k�3`?�u�I_�%���S�w�
+���<}A��
+ݠ�DH�|@��lxZ�������A�U����ݤ�0}����(r+Pb�����Vx(��P��} ��)PFٿ�@yFh���,E���xE�7K+t��-�mx�y���W�G�<����%o�!�݅ht�+Z��Z��
+�*�
+ l	���i�@RZ�$_<�T9)I'��RHU|6y#��H2A'�GI��� R帜�@˴�������� B�y�d4g�f��P��Yva��F2u�K��hU�/^���=������*������[$ �=@Z�n×
+����G�6$���u
+(����=C�:�ҕNv�¤� ��&E%!�K&9����@a	�x�S��IԐ�C,e�L�ܒn%F��(k��o���Τ(��P�tY���X�rBV�%W�UNlh}�$�X�Y׿��:�����F�Ê]�g��
+Ydr�۴�@ � m��D�d��{J�kx�
+T��dd�+rE�ƿ��'qp'�N�Qi��J���d,ǜT���/�#59)0�m�G4k�@U��O��8�g��c�"$�E`�*jQ-,uJV��y1��X��&v��4���-��.�8pQ�/B?��=Ap��Ҡ��>���P�:}d��R�Ϣ������~�>�w��
+�� �� ��Æ�*3Z��JK!��V��L�c�ߥ����%Xu�/�'J��+�o}�V�8�+�s�{G��>E�	�_=���9~:`�2>�]2�\�O���P��ӽ�Q�6s�1��^[�������myւ3���5o�wԷ���c�Wi/ԏe
+n�B�h��
+��2�^8iO�	������?l��ϼp8mY�0�߆�v�&a�Y��2�}P��q/8���N ó[3'����4�Mȷ/�;�-��1tXg�6���M��pޏ������v�/n�RYN�|U���� ��@��W�Yh~�x�{�R�Yz� �W�P��~SM����>�
+�����j��
+Q�~��eU�q�o��VfSq3a�{TLl�
+XUZ
+�	����l(��9o9l8�	� l�~�\]%\>O.�G=7t}�N/6����~T�,�]�8�����2�_H��suٌ���č"������-����ӵ̵ۦ1��&؁��ҳaddtm�|�t�2�΋l�~B�'#�-�o�	PT[�uY�`F}�?��nDq�Kߗ[����7����(/��?�Ǯ��&�o�e��νV��xr�v�����l�������,h�u�VV��p��fX ��T�d��6��t�>��p���'�9<��U�W	��Ͱx�	��/V�k|&t��D_�~FE�3\��Y�"���^ǅl�M}��ۄMu���Ǜ����ș���N�!�&oԇs��U��i���0HR��I����;���p�ϯ�Q�j�7�=���-��"���>����P#�e�߇b)��-�ǳ]vX]�q����9HԸ|5�^��D9"��A��=�\�x$=ǀ��W���#&!`����֔P.�pc
+sx]��,���DcnU�N��pq� Hf��"
+�lR� � -�(�pD���}Z����![u/��]�z�l^~��|�0^ǽ��ٮU&���O�Y�xRG���4��6ӆ��fݞd��k���#압3ǹ�x(���  �� PK     ! �6h�	  �=     ppt/slides/slide6.xml�[[oG~���P)Z����o�m�D@l^6	�43=�h{�;ݍ1���<�5k�!�@��Mv|lll$~A�_��䜪���xnli�SU}����N����ٲCf� ,y�x��Jb�y�Pr��3�9y�Ȑ0�܂�x�=��k���.~�ٗ�X��v�1k<3E�X6����z��»�����T�Xw�Բ��%Iϖ���I������R�����.�n$
+	lǊ���t�������v���MM�=��p
+��7�Ɛ;s5�o����ۙk)`�2ĵ�0,�l�"�Qw��-٧�Akl����Ff�30�w��4{6"y����槿k#���h#��V�m�{%w�;r�;��<���cZ�Y�n���CT�&�MM��J�f������ ���^�``<@{2�n��5��hU�C�)&K��#�ԭ+N@f,Ꞥ9�RRz�����3+�f�����c�"��EI�$o.�]+���s|Hy) �RE(��Q99c"�ǴX���e�O�\��k��z�r���v8������?�^�
+w1�-�(�s�����O{���Q @���
+��#>@˙r�l�p�
+��g\.[����ǁ�T�|@wٛ%r�	�'�[@����T2s��mI��.%�PΩ��'�]Q'ZW�ۑ�X����o[�-&пt;��I�B���ǯ�]��&�?���ܪa��"�\�"���Gt��d/�
+y�?��=f�B��\b��
+[e�a/�d��'�^�=��@�7��d��	DV!�����G����n���E<P]��:�	(�j����O �S�L�]�_l��=�V���m�����"o�x>^�$��['l�lpQ.�����5��y �v	�9*�@���9Y�ڇ�ǲ$�ύ��WZ+����JWMY�i(%]K�ԏ�'��X�����IWs�q�K<=��耩�&�g�!O�H�
+�/X~I2Fn�����֨kGB�Pr��l�
+�� � w(^?a��2a{��Y��s�A��mǋ}J��f�m�`H�D��2�M6$zTS馡���J����8���ؾ�L��ZL�63w"B&�	c��̡�v���\����;M���X�8n����9\��00r&X9��Q��b���o4���� �(�����
+�
+��%P���O��U[������*��5��=���y��?�=#��p|ɫ`&&����~@-��bY>k�,?�=�ߎ�?bk'i:!�JW|�v|VHS�ډ;�d<|3|SA����I����\���q�	�
+	0��м&m!�AV�m�� ������B�c���9\h���Oӫf����C���VSǅ�!�Ӥpÿ�Zα�{����q-|��}o�'{��q~��.<�b:�.|#^���x�[��j���=�T+�nL��i.Ɔ
+G���Co`��f�4+؍���W�����V��6>�{!Ҥ��������(�MBc
+[۴ɬ���C����A���	��_�<�	�s��@�;��������#�&(��T�,�_�����[�3���O��y>h��c6��\O�2�Y���jWr<�rR�3G�v�ǻ���z�;�P����ϐuIG��p+�"C���s����l�����x�>	��5Z=w��К�N��a
+7�Yu��]��9�wL��\��񼰑 �<����KNv��䈔;�ϤfNH]�G3F�/zlw�c�v�@Ut�Ru5w�nJ��>bH$^ Y"����-�ݖ=��@���4��Fh8j=�C�wxv[bÚtI "Nm7���������� �op[��^t���a�/VTMWy��C>%<Lk��DL�L��̈́�	؇T�2�RՌxZzU"��%�	�A*V�=�T�B1O�)��ʭ�k*����l�Y_�Ά�5d�
+w�l#-C ̼�<�-t�/�2d�k�����귉�.��Z�N
+���q��{Z�ȍc:�+ǺB
+MJ�>dܔw��Z�M�.p���t���� �#��+����2�&Z��V�wJ�N�@��^P� �"�'�A�o!u'^���d��(��
+���do��xu����'�U��ކ����w��3%]��!A	�����tPW�MIUT��}H�io��
+�CԘ�a���Ip�PЦg��e�1Ѽ�����O��l��F�Si�}�03x͢��'�/ss�����98o��O�9]W�{�rO��'�q�Z�����n�m�����}��Edt�����q����|c���𶗭0��+<�/�Sb�7�`��   �� PK     ! �`��8	  �+     ppt/slides/slide7.xml�Zmo��^���ʟX)Ğ�ߴa�K�E@�`���؝B�'v+4�MX�&!��Vꇆ�,�y������	}ι3�8o$dc	P�;�����s�sǟ1R��a��*ug ����v��R�H������|�)Yպc$��^����獂W-	�v��5���F!��Cv����
+�A[���,��`��Zw0k���S�L�fU�D8�=��z�\)ڿ�o�l�W��v��so�����������ѻ�t�oTK��5n��M%g�K�q�q���?_sE�}%�cՠ�D2l��3̅d����hF�n��!�H@�w�3Iu��/����S[��K��Е.���ɶEI*�����#q��E�|�j-���X;s^ M��Z&o��j���3v��*4\��Ү�.���zk�����F]�ګW+���j���[�����X����/����Vu>ldR
+MFB�ۿ[�Ք��24IB�v�v<�U,s�R���W�����N�e�&�<8�+ם����Sw�MP�YY�W�+��R�t����7�����u�`BXNq���]�]���ߠ��������N['�)]�\���K�Ú����7�K�����HGt6���B���g�\�S�ffR�!ԳFZ?&��:�N�.��{
+��Zpz�_n[��ظx���pB�mO��W�.C���+�Hp+���'D���]O��NI����\��rR���|*���x���	�����ɗrA�ro�Ż���g�#��=�G�g�{���P\��4�ϫ�k(F'P�'�t��f:}�.��F.s\�+ E?,P��#��r]nɖ���lɍ`:hO��rS��7B����(7����(��V0���*�����13}B.�nE��`L.
+��A��q!_�IO��Ӳul8��p2NN#��
+-�x�/ʘaL��I�"�0��)0����5r���)�|
+�l
++B���)���
+���T���Tn}�����ؾ�;����>0�BP
+&PzHm��)�<�EC�}�PZdP)���T&fd��N�.�ff���2=��:��kz*�'#�Ά.l@�i{F���ē��e�@�\ѯ�F��D�z��e;]g�\g^3�S�tCˆ�l�F��P�B������k/���t����s��w���]�c�;�r3�ֳ��O)zO�Y�q=���[��������'4OrL����<��Ī��?eN~튞O1�pt ��!�8�v7Ⲉ���~�Ƈd!�L	9M�KTk� v�"����ǈ���
+&��3�Z"r����4�i�p(���1Ъ������Q��=�YO��g
+[���uKhF_&�	ƒj��^5��6Ƣ/�����ۨ\��I�MT@l(h�4m<��f5�0�&.��*��a�a�����@-�m6{D��Γ!�^R�_F=�-q+5a�ufF�M�g<���4��O�E-���o�ĭ��F�z���Ũ
+�Fğ���>F�,d栤1r��M��TdxlA>�P�$:���S��i��d�I�`��k�`c���S�� �m��@�aA��.������I��w&B�6Šxri�oC��	%�==�>��,��m���Gc��O)�QO�-L�B�Og��%���Mu�W��������:�{"εEvS(&Ӱ�:\"�`���{xй�$�ُR_v��b8Ul�T׻��c��q�I��
+�P�$�̃"� 9/NO���s� M,f+��j�DX�p���;�
+w�uq_�����Z�U�
+���2�!�<Ph	��!�bw�w���R����8��N�3�����?e�g&�wf������rq�P?��GM��|&�?b:�rkz�2KoV�������>z�B/c�S"����y������M˷q���h��=&�77�3m�3�.��Z��b�Z�)9�n�8�g�8\j"c�})��o��L����1�˅�&��=��\(q�W���Q&Y�q��A��0LSئ|�X���Wԏ9�|�B�Cѣ��@4B�"H��W�� =����P�z
+���T��Gβ�Y,h�x�8��/r,��QogΚ���~M%�Q�:�M%K{��0�B�0ҋ�P7>��
+kTy
+���=nx��T�B8�����茁d�@��e���i=�Y���ց�Cb��YSR�-t�y��P�m���g
+1�t~Wv��O��N�#q�X��'�ypBx	_{�_P��)enЍ^�L���E0�`�薒n֠���n'�4C��fU]l�١�,�}�:<��ѴAet��[��g�/�����N�U�V�a�}��|۽�U��3�2��.4��  �� PK     ! �8���	  MZ     ppt/slides/slide8.xml�\�n���_��p* ��X���Y8i��n�d��([X�RIZq�˱o
+pj�v�67��zc�ږ��B^�}��9��Z�-KZiC������|3s�ŗ�y��,���ɘ8!Ĉ���33����e=F<�t2�]p���=ˋ}y巿������ڎ�2'c��_L%^z�ʛ�D�h9p/[p���L"�w�ռ��AK�͜��_�fsi���\�r|ވk٦#�fsE��Z�<�]˃fX��!]�ҷ���mײ��)}�oo����K7\�ˀ�b�1�X"�c�N�$Z��T��|���d#�1P�=�&�5�4���_M�~ݦlz�z�҉j��NQ*>���HUqnZix�3�EĚdmŪ�y~�DI4D�P�HEAPu�y�f��z�WV!O�`2��xbx�,���y�j���\f:g��ĝ�s�vIɴ��i1)M��7����L𪉪а���o�M��l��V�I3��1��V�4��B�������L��,��VY:�r����+�sN�m׀]��s��)�j!s�݁=@���k�`��Nz� �w�w9lϿ��I�m��i�8
+�,'s�t͛g�\�����@��@�
+��Z�'R�	6�R��Nʢ*qT�����h��jB�JIE�zD�S@���U�vB�w]����9ӵ�,N��P3l��~�e�,��xeo$p����o��+גm����w�6��E_�U����F���k�]�/�*]�o����ǅ-gϠ�;(�/(��<��	����}�������n���E�?PdMMj�6�	(��k���! E:/P�ٟ.��wzH+�е !X�v�H?Н`#����>����BN���=6��	���=�^���g� i�`�$%��^���{���
+!���C�8B1�GSCK#��r��A �t�hJRѯv	�� �G �
+@b�����L����^6�9A��8��[(yߚ��s[��� f�aj�~4U����0X!�~T@(�G���
+�,�(��朌�!uoL��k$/I�V�$i��������t@�qxs�:���]e�L�\�����a�ݴ_���l5�Z�L�����rRD�mF�,�s_E� �X�W秉�_�d�]�Џ/��o��k�w���:�V4�+`a���Z��>�t^�R֌�*��9hY0�	����]��4�K&z:�f���:RD�����D���`�����c�62P:W��:��p\��� �鎃%8m�仳 zg�c�Ņ�NVT
+��1ٍ�nD��h%;�;��ɪ�B����"l��׫ߓF{Xc�l�π��< [��N?B�E���Cz���K�Cy�*Ny��%��]�p0���׵K�-�����!U�FK�������M:�S��MuQV�1���mD�M�̈́U�MdO���ɢ�
+!���v1z{\i���Z9��% 8������1���Iˣ�r�W��f91��F���x2y	�9�W��2�oe�=����)i)��O����$�n��jc��ݨ�݉�e�_̆�Ȋ�}�vK]n����`	�	��)����$x�������W,�[������P���ue�)O��Rw��(O���w��}�d��0xO�#:po���1zgIN$C,��=, ��k�	ڰ`�҂^$C���k�
+�]�IfM��4c�`,xb�د���(h�캮��m�,K5��44�N}�马��=�����Z��h���]dr�__��f��ѷ�%.բ/�3\��E��'�]�kt�~�n��W.���������\��Wp�ݙ��^���A��t��?�iW�X���￸�'�Ϭ�龓0��M�6�W_��1���:�d�G�������D��t���_����_��q9&a�l]�n�r���8��0L�CW�pԙ'�{�T��mL�mDN�`)x�i ��ߧ�}{���� 5 ��s}|�˴r��g++l�k���JԠ�ؙ>Q�ٔ3�
+Ɋ�>�e�qp��}�0���8a5���Q�<3�WES�*��������j��ڗ:C�A���)�Dt�o���ءރq�`k�x\L>ЄB�rF:�?����bD����e�t�ʘ�#�2��:YN.j
+@�T���wQ�y���A
+C�n$q���bZo8�0Ů#��[�G����y��n�R����)c��ɏ����;�r����.�[�
+�\n��)i��a��t���"��X�+�ߜ���3
+���p��_�fH��X�1��Ɠ�Ǔ�3��S�nO���7��8Ԁ'�ϼ�e��~`� 6�9N�|�"�yDgho������{Þ�a�z�l��QD �#DO�u��	����ڹ�'W�����D���Ӷ�'��u�5�7=�r��KŜ3��7�6���   �� PK     ! /���  #8     ppt/slides/slide9.xml�[[o�F~���0ڇ��$k{��ޔ���@+ i<��x��
+���NH��K< ������V�K	IH�`��KzΌ��'Yv7ͪ��/�3g��|s�;s6g��2�;n�2�cb�#��Yټ9��vu�G��SͬjX�����ع��v��s�,�ڦۧ�Ǧ<���]mJ/�n�e�&|�YNA��ՙ�g�h-qIR�7cA}�(��\.���-m���W���A�ݩ����h��5�vY�΂eڄ�Żk_ut�̙�=a�9��1��0^1b��X<���Ws�=�+�O��j�l�)�l#��1�9�ƱL�����b�65ZCV��!��4�V��U�#�������1���YE�G7H�Č��$yOEAH*ry�>�q��U ��s�?1,Wg.�
+E�ص�|v$o�ř�1d8dF5��1-
+�����j�y�xh4ܽ9C�*���$ɺ� �G*UM̱!eZ@�r�7��8�b ��4����*K�W�j��-�X��7-����2���s��>ov���a�p(9�1d�ƈjjS,o�s8כ����f���f��nf�TG�8cr�b;l�r"�U ݠ5K�2T�&�Q@�bR��LZR*�-$�dJ���R��6-D�]���������UG�hL{P3P���?޲z���?�	܈0\�H�<���B�:n
+o�]��t��F����}	//��6��>�O�+�J��.�g~���3��;���A�}N��	<�җ��c�m5
+�(��%�J�S�>�(IYI5���HG���0P6�e��_����t���n�+t�.����ӄ���t�~��;�Qr͟��AfKAnɟ�o�Pt�ރ��MC'Y	���I�I��(���T2�?��ǈX`��� p�LJN��`��y3��A�/�&�����N��v^Pz�f�v����k��1?�}��O �
+Ć�C���Ϗ�� �6?t�l��"<Ҷ ��`�_jP��}Y�fVϒ"K6��J7-I�Jg�H(	(�x�3�t� ���i���?@NDna/ӇdXVF�nv�YGѳtu��:>���
+8ꐢ#��T�'�J%`��2�HR& ;!%��l��
+$R�'��~e�h'��v�m��߱�zvu��I"Olz��Tb��-�@F��cH)f�d�w�4s�*� #�
+&\[�y�Ә������F�0eⰔI4H��]#J�D�"��&��D��ۉ�+d�S=�@N�5�O��m�C��&TR� r�GM9,}b�_&@��t��!���wHw��H���0�Q�7�X�D�$8�u���}M�����h�0pc���"d0l�Ȃ`>�l��dĸ&z�!Dn��B��%���JF�,]�wb��zJr#l.�	��ZDa0��s�P�R�f� �(�RV�<���U�Lf��K��x>�6qܷ���p�Ͼ��Ϋ�fb��fr2͓�����%p�]�\1��A���%K�d#�XX  �w��S�C����1����<��b
+��6����eF����U�����\���M*��+`!��}t�������tG,a؏���';�������)�}���	���[f&w	��~�n3�!WGAby:���?AN��aP�1��e�K@^��n/���$3�B
+otxT�f� �(���{�1� ��aP�aPx��Aio�%��0�� 4�y��m=JRG�(�Q7��;j4$(�v��y�ʳy�+� �3�2dԒ%���Z�;~ԾNwk���Vor�+F3��kb��Ġ��q=�D�&�H��g�3o1�q�&�H��H*����͞k�����Y��٨PS܈ʚ=��T��ɓ�������W�0����j�q���9M�&�wR�۲����V^Ö<_u �R��+�k����&�ϲ��
+t�⧞5��7c�K�=bIh�����,�7�l��B`�Sc�r#?]o�ŋ���աr���T3[v��/�=�f8�U{t�i,���;C��Λ�������/   �� PK     ! 0�z�j       ppt/slides/slide10.xml�W]OG}���0ڗ&R��k �
+����
+���o�z
+�ֻ�ٍc�D�BZ	5Qŗ��i�>��2�	��ٿ�_�s���8@B�	�v���;�{f�{�f�扺+�j�����!\�	�Un�����բ!���˶��F��_~q=,E^Y�ۏJ��1�a�4#gޭ��@�>�*���1�r�,K���<���͚]���_��?�T��{;p��\?�A���1�G��0ʢ��J7B��t�93^��QxO�.���΄S����OIQ-�/C�v
+�f:��qׯs�|�}.kڥFE���Dc� ��4i�m��уNoԙ�{��3?q���-`[����N�ce�L�j>�"���Դz1ϟP�ʏ�G�4���P1���k�B�wܠ&�1jH�1hܮ��43��(��ɪ�qG�͎{R�mkO�Yci�>3��4OS��Y�x���CN�0II2\��
+i;4ǔrX�Uq���;���i�j��և���r���kU?���z+k{���:,ō[Ay��f�d�Ġ!lߙ���XjxQ<C��	�ۛ��~yʖ���ۙ�u�����	�Dw+h�OƂBq�>V��
+�!K�:m�K;7<R,��p��+�&�.m? �ix��N0�@�8����������Lj�3���X%N[Sq�Ko��fϠ�VP���A̋ٮ���M��w�n��t�?����6Կ�Z�/�T���S�'�/����z������P��M�?S/7�x
+6)|̋�K���<%��s������>����P/�Eu���a���'��dE$K�%Ծ�并j���\I�%�=2�V�6���Dq��xZ�!�<�@� oU'Y��:@�\�&i&�読��U����&M�ނ'
+pw�U�P�M.;4Ev��/�[D�6�;��!�{�Wd�2_��䉀#�'M��7 ��!
+�
+�=x��a� &ۀ�T69"X�3p�bA+k ��9����D$�)S0�����*���$+ �����������P]v�G�^�J��5$Q���̣+�E��1�Q�S�w�kM4׻J�@�uE\�t?W���$Sߙ���Am%��R.��9�X��*1:�}��A�:0L[��,}N�<�ey�����v�k:
+P0FtHz�s����TE>��E�͢�41ׄ�U'Uɯ��<�NMDt,�4b��G�:��x�;��C�U�x{P
+��3�}!�1Hc�W�!��=V5w��K�o:VA�u�sj�"���d{D����:zA�O��.���=f~o��V�5�WK�w�A	�z䊠���"/I�����������W��C�YWz�n���
+ܧ!�몐��-��օ�G-�&�������X��G���o��n����p��q
+�5�W3���  �� PK     ! 3�   7      ppt/slides/_rels/slide8.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! 3�   7      ppt/slides/_rels/slide9.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! 3�   7  !   ppt/slides/_rels/slide10.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! hG��I  �   ppt/_rels/presentation.xml.rels �(�                                                                                                                                                                                                                                                                 ���j�0����Ar?����h���b0��2=~��H�u���!�t�]/s4'?�������i�d$#��U�Ȋ����݊�rYp�$0҃!���f��[���Mg�EFjk�{JM^C�M�:��J�t˭[�v<���$�R��=Hv�3���]�������*�&��� �#�M�!�XF����2t����g>����r�<H����@�H0�r"D��#��4��y%L��D�QxG<qcA_PNų;PV:Q64���1�c,&R��,�*,�j{��fTD%�Dy�1�|"�C�'B��yx�º�#�qy*�z���   �� PK     ! 3�   7      ppt/slides/_rels/slide2.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! 3�   7      ppt/slides/_rels/slide3.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! 3�   7      ppt/slides/_rels/slide4.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! 3�   7      ppt/slides/_rels/slide5.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! 3�   7      ppt/slides/_rels/slide6.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! 3�   7      ppt/slides/_rels/slide1.xml.rels�Ͻj�0��w�W�3��X�R
+�L%}�C:�"�$tr�߾m���~�;?/��Š��
+
+&Z&
+?ׯ�w\0X�1������S�MK=��%U	�a.%}(�f�Y�D�NƘ,�̓Jhn8�:5ͫ�{��)�!�q��ǎ��}F�.����t�-����'*���Ko�F��;ux��  �� PK     ! p��/#  P.  !   ppt/slideMasters/slideMaster1.xml�Z�n�6�>`� h��ɨ3�N�H۠I��h[Mi�%��{�m��(}�O�-;����Pw�>��w��;��<��fƬU^��<���i��|ҳ__
+[�mU�����Ӟ}K+���o�y\v+�='����꒞=����U:�3R=*J�an\���ULڙ ���k��N؞����}q����8O�Y��g��Z���Hп��ee����V
+Z�|{M��/�d�z�&��+:������8�A�(�������ı�'�ۚY���Uy%(U#�x*���B�
+/d�H��d�UpB��W��A{������X���c�����l+��VZ�5���N�l�n�ڍE�U�rw�q�9W�dԺ`$�ӂe+�"�5�W�y�^W/�6���%Gm�z�SKޖ V*������J��^�Fs���x�?��&��Wv;��u:�֓n)*��3K
+z����@ ��J֬�U�)��_d��sOpd�?-��b�xճ��am�_PS�͙�ڌd��!J�� �g�R�.��t.�q�5��TS����Q4�TH�#*�)o����"O,O�-YX4˥�S=�(�WP�G�합h��(�Q� h��)�D�m���Xq (�xw���$���˃�T���w���xQ�p�����*���U.iZ��btA�=$b$�x5���"������{K��!1�����M֝�^�Ѵ�ͺL�
+�+ac�}���f_��}��y�����q���h��7/��B��	�*���+ )w:�I��l�3�� "o�s�̹�)Q��Ė������Y	�Z�z�P�v�2�_������'�i؊c?h���'�A�N;A2���&& �d>��|2�弆b3֭j&���6��鴝�en����:�A,�����1��ɊaQ����LЏ͋1��H�<'VйQo�
+�q���'�W����ǧ�����%�B���h#2؏�L��@�����Pp�A���+�����=p����4iu:1��}?n%.��~��6���?\V�JE��o�~����޽��Tk|�����#k.r0��OBw�[}����$j�à5<���Ӂ��7��;~7��g��p�;�<EU�壴�集vY�BEY�x� �Q}c��n'I�(p�'��y��*��%B��sRZ�����v���F���h����#���K��Cq
+e���g(����J`(��@����_�3�ö���&�Q]c�J���b.�e��n�?�c/�ȝ���g�n�w�*����v�:
+^}V���6x�����k�ꊺ��o����
+��{x�/�K���z{x�&��{�׀3[�]��
+��
+��>`�>mA}�"��7�C=�U,������/u���W��B����b�S���-��K5]��L.K�rv4Q�mTa(� ��
+u�yߊ�E7�PQ,�c؆{����ZL�=�lLP�oժ���Ҳ�V�u�����q�s�A}7Q���4��e�������m������le���	��1��DX)|��wo���
+���瀊�
+��
+���J�7"E88~�� 
+
+����\�6�pc<}pz����}B<����I=`<��F���A���p;A��t�x���a¡0�p�
+8�G�U���P h<�I���w��?�C���7�G<�{<���G���(
+���KV�a�-䔊e�o\Ԩi��޻�Xֻ�ς`�J�Z���q��?�[.�H?�gw�E�::hWO��n����K�=�����ȯ���q�u�Ez��6�c�^?i6��c��
+�����w��  �� PK     ! �C�J  �  !   ppt/slideLayouts/slideLayout1.xml�X�n�6}/� �gES�,,9*
+d�`�� F�ma)R�h��b����s�K:�$˹�MS?�żh8<3g����]�Жʦ|jy��(�EQ����t�ٱ�ExA��tj�ic����w��a�5ً�B��72��J��i�5�Hs!j���RȊ(ʕSH�tW��]7t*Rr�[/_�^,�eN�"�T��V���(�߬˺�կ�VKڀ��1$���ZU*F-d��&<�,��@�T0q�%Ђ�5���^R�{|�����4+n�w���Э���C'f�|k:Γ嫾K&���t�@��|������N���̇�|}��l��zA��7p�6�V������洎�V�x��Z��أ�o�;H�6�^w^ϕ4�:����x^tF��Z�{#��c�DQ�c-���p亭ıխ�z�v�(�z���2a�Z�=�fP�C�3�C��i�n�.SV柑��BH��D&� �@��W�ݵ}F�3ll����G����V�
+�7������nX�z�Q��8!��)CD�Z�-D���y �*"�M4����6]�V��eln�3
+
+���9H@�f%cf��
+�2���A��t�K%W�L���v4�q��_��� Ҟ9C�d�w4�{�d���� ;�x�{���Qv��#����8?�e8 �~jmgX�� GG�#<:Ӝ�(;�� X�=Ӥ�(;��#�a�i�i�m���x�-���i.r�_�s�(�c$�k�
+�ht��PP��1a��Ro��������5��am��A���n�W�,��v2�Wv��4���8K�׾�.�TUV4+WIo7�p���T*e��C�.=���P����x�`
+^�I>>��-�=-���cb�)�YBJf~�	;���K��_�9�G�Cũ_<�fS=<�)��w�
+P��kL�{�M�,糱
+U)�x�c"8	��8��������׆��o���۟'�U���K������F�`H��C?�;�pf��8�gY�Y0�8M�Y:���ߩ�䒚w�/E�b��7sU�R4b�.rQu�o�_��Ei�ߐ����#/��(bsn9[������Z&?��vk��2�jj�꒯�D����  �� PK     ! �殢�    !   ppt/slideLayouts/slideLayout2.xml�Vᒛ6�ߙ�����0���|t:s��ԗЁ8h��J2���L^�}�<IW���zuz��������Ӳ���Z�:"U����/&"��e������M�4f%�����'�y����b�hy��|�`05���Z�=O5i����0�Vq�b
+���+%��-���$�Z�0g8/O9ϫ�)Țۖ0݃HB��U�5��SЄ$
+`��o]�{���d7�^}g	qZ"�[X�m4%�Ag��%n%!fƺ��؈iϽ�n$jJ�3�w��ð;��N����)��*ٚ�@��9ۛ�g��N��_,��E}��ޢ�|b�7�2j��{N0������U�b�1���v�1�Q���@
+���vrtf K�R^;�"�S�7zO�}�aݐ�/�F؄��7=z�Ѧ��4G�l4z��&Y��|@1�hK���zG���̿�3�D�n(.H�i	����Ք��3%G=H���3���'�{h�z���
+)8\0J:BO@�|>�x[7�t���|+u}2bxbS=�}�G���&�hφ�қZj�C������ב���bk��3J��z�D�e���$	#7]��n��Y��D�<?����PuӒ���Jr�5��1�H�:�����ҟx��A|$|����7X�_����%Ӓsn.�׉�
+yib*-�����,��9c�8/#��Ȇ6%A���^�s�}@?I�-g�m��y�^���$�v*
+w���8
+�Y�J���[e"g�ݩr������|��Z��ظ@�Rz���l �4��A��nꇹ�g��UGnM�0K�U6��d ?��ئ�rl���QC�6��W������y�$R��6wp�v�æ��~8�� J�4�o�h�5�ߘ�a��-םIkM�]�}9n1�����   �� PK     ! ��S��  &  !   ppt/slideLayouts/slideLayout3.xml�X�n�6}/��gES7c��%Gm�l��`$������v������/�%Y�7�u6F�����9s��߼�\[3��Uy��g���2���\����#еF�2��*ٹ�e��������gWt[��6�fL������4�t�
+ڜU5+�ۼ��*f&�G�]pӱ,�,h^��|q��j>�S6��U�J��S	��e^7���k�`
+�Q�B���6,���L��@��.[� ��gZI蘱�k8�	����c�*׿�zV�
+5�z}+�<C#�d��>t��k�V
+�`��o��f.
+|�7�͹�m���>��Z�v�Co��ydl��|d��/`�-��Zp_�qz:w��L�w�z�M}U�����o��F���Y/;�K4Սk?�� �QO��3�G�"!�ZN�}�!VG�y�廇�[��Xn�*���{xUZ��
+�T�6y#gr˙j��]���m�u�����j�,�y��O)x�r�-��l�{k�Q��#+���vqy�<���JcY.�w��Lh�k�a���lk�V�zR���U�TE��r��e�!�5��SuXh3�!����|hGgײ������ֹ��Jm���� ��2���SR��S�A���*�gIιz�c��\hk�!�6x��dy)���y-����m�c�+=&�t���t�1p���"��h��D�w\��"�.��#_�8/2{)������
+� E~}xd���:N����E�^�OF�o��ċ ;������^/����{x=���
+A>��=�]����1����<;��>�O�dR�ʣ�M�ԕ뗔�����9^�z���_��\9��7��ۍ���
+\�2�xF׈��҈#��
+��|���P�y��|��f%���
+hM!c�h�J^ؖi�P8��x���evK�X;��Gdq{Y��B���!�f.E�̟+*`�^����=E��z��=2�=Ǵ�Uq�u}�_��ӏ�F�uO���$�t�@������s'�D�.nd^�c����~����Īz��,?W��Z�J�@$�Bω�Ȉl�d��$�\#qG��Q0�G���$��8L�ٿg}�n��j�"OE�Tsy�VEW�u�����U������)z�G�QW�)h�S�E�gH�\����Z�H���Xu�y��Bd����7.�  �� PK     ! \a5�  �  !   ppt/slideLayouts/slideLayout4.xml�X�n�6��w �kU?�d�hRXr4H�`N���X+%j$��
+������������jȍyD}<��E�}��ZQ!+ޜ8��A�)xY57'�ǫ�M$iJ�xCO�
+�λӟzێ%+�Ɇ/��g�T;�<Y,hM����͹���Gq㕂܂�y���^M���׋C����*�˚6�S"(#
+�����V[{��VP	j��.�MѪ[~q���N�`&pN!�b�JԐ&�n9�x�@�y%�+A���կ����¬����*��~���/z�ylVF�-��"���#d�O(�F�zz��*��b;[,.v`����g
+x���:瞆�p�*�(
+�����$j8ģ��»Ct1�]شkU=�{i��3}��:��F���L�1�j�6���V�7�ˈf5m܏�.�4cU�	)�hY)��HE2����E'D��h/�Bokس��v~6?=I�%#]pV���ǲ%��6w��z�F�v�GC�aE������$� ���(<fI�zO1��bA�FI�C~��a�� @w`�}��8؁��c- D�<��@��a- �x�@��Z ��>��8ڇ� Z�W�IZ�?V�=�|�hҘ=#wl��VW��2�oJ�芲4����ƫE%Wh���/�Z����?��e�?�zLtGk=&�/k=1N^{�k�y�=�����3%�>h<Ƒ�B,���맣�Q���y���;J���O"�,��n���M����R�e?��lO%�������RЋ�><M6���%���i�{��a�M<�`�aS^A��zT��)Kl˒s�7���D�(�\��2.� �8{�M_R��fdh32cUIчe}�(/�1��eP�35{�;���Y���t2r}?�3|�w��8
+�Q��I���V����P�~���/_��{�������K�Kh)*$MGq�%��8w�t4t'y�y4�8K�I68�������o���[��*�|�������R����(�f�� VD��a���/�fG�.�L�#�I{�2$��_Sf�ڪ��9�������   �� PK     ! �@۲  =  !   ppt/slideLayouts/slideLayout5.xml�Yێ�6���w@����ά�J�3�&� p&tS�d�V+�k���OR�@ȁ0L&RU57��ߟ������*M�%"E��k\i���Gq�|-��#K�Y��ky�
+��͏?|ȇE��5^P�ad�^�sJ������9�س&)��<��/;MT]�,5�q&W�I��x6�C4��"E-AJ e��8/j��ZNP�`��]��:g��<]M_���o�$�ɒM���N�H�`�&|����ē"���([�L�I�HĂ��#��Te�zP���l)����z��I��yCZ]�,hk���9��RXN��l8h�
+�-�j����)��T���6g�I`cU�o����K!e����/��H�6�k>�]ϡ*��4�T΢+Gk����I8L
+:����2���Z�vk����s�#�	�.��P�|���7~�_$�%�T���$�e��@8 �%x.4��Tk?��`�M���h������ñ�M2�hՈ�oK��͊D�0& �ݤ34C�S&�5pmK輝Q%�a�$��s�H੄l���Br'r5�"V�|( ���Ī2�R��J�k�T���	l�7��U�P�CTU�TB�>��9D�P�Ѡ��
+�ްBr�cU����;B�Sa9Vk5���X�a��r�
+�ނ��A�r�
+�i`9f����r�
+�݂�L�]!�X�D�7aB;q���U������|�Qf�w	�8���k�0�U�U�ʉ̥�pl����	X=�����9
+!��6�9F0m�q�6���t��x��^�v��b��^}u��kE���H��]&(�Y$%h���"��������]�^:�h�@�g�o��h�$9O��s��$,*~{
+Y���fglFN���A]:��YeuuP�ay_��^�Of�c]T�^�.��E]���Pe��3��p�u�.*�e��?����O|�Fxm�D?M��5�Tn���8�a*�ظU|����f��o|�?�F�T�(��=,�x��;[*R�'f�t�7@S���n5�g::̢GH /�����K�1/�����̌�����}�-�9�G��#�$��t�H���"�:��K�D��5�|�8)o}�x�*�������,�=��u�1l�6y[p�3�]�t���������*.�	#�V#iAbf�繖�;��#P��k+��2����9#p���� c$�_~��`ݤqHp�g�*�iu�������cyp���7]W�cm�B��*��q�p��5!�`��9��7�/��8{�R����^7�   �� PK     ! �D��  k  !   ppt/slideLayouts/slideLayout7.xml�UKn�0��u��cّ�؁%[E�41�� �D�B(�%i�n �j���tH�N��@ވ�hf8����|�g�����I�:�����j��\^�:R!Z!�(�{,����g|(Iu��l��A��ܵR|���\���1�oK&��U��J���!~�A5u�x�x�\�%��r�`��$��~������{�q�%�1�������D�\Ǹ�-Bw����0d�C%���~|����^n�©+�Ÿ~��s3�tk6���ݢ�n)��n�R{���
+�S����Z����-׳7�}{���P��-�5��"��9A%^3Ra���t�/Xy'� �f�Ez�h�땯;�+��DDd�Pn�j���ΎG��X�ׇ��j�hH�Z�=�����(~��|2
+��7K&/I⾗M㙗gq�O�~Z���
+����E��|�Q��%�h�a0�nPw�r�=P��a��)4X4�L+�7�`���	��E�VnpZP������,c
+�x.Lta�J��|� 'Xql��9.#�edA�
+;����/�c��R�I����}��E1�NR/��Y�xi�
+�Q�&�i����9���ۮ��?=>�9B���NFSRu;g#j �e� ʓ��¸��iz�M�A�+��8γd��f�z����/���a�j�7u)�dKuR���0|�~`�Ym���)�ED�Fi�&a�����T��_h����i8D΍�å��ȓ��n/��_   �� PK     ! .�[W�  3  !   ppt/slideLayouts/slideLayout8.xml�X�r�6�ߙ�������7�&;؄Ng�I�d@��k[�,Xhgg�����'�lp�$3��/��HW�����u�k+�ꌖ�:��t��	M�r~�~�����)�iI.�
+���W?����yz�7t�5�(�!���WCӬ�)p}A+R�o3�
+��+��)�_���M۲|��Y���Y��t6�2�ɲ %oH�1��׋��[Շ�b��{J|SA��񏇵�I[Aү �d��Z�h�iɁA����J0IL]=0BDT�~eմ�g����iY*�Z
+�lha�k�����>W!�g�OXm}��p�i�6��Z�4&O���� 6Y\@�j sgP�U3����*����DC۬�|��&_j����H�Io�hr�j�.?T-��QO�9����2E;p,��&�e�r�\����q�\
+�:��F�~�'d��dA�Pμ�S�ɉ�W9�$��N�uі����T�S�ĜU�[|��T�C�Šk��F$��y�ɯ�<K�h�j$͸�	ל0M.�T �\�6�LI�"�;.���T�}��,h��@�ۄ�������xB��D�B��]�ꅞ�@អ��dG@GUG:�ϱv��U �Xw� �����X��;�U �SX�08�U �SX�pp
+� m
+�� ����(�S�[�;����LIB�T�Ɋ�=�:����XBY��	't�������`�fG�3w{viv�F���cDls]���3�� ��k��:j����������AZ�ٍ<��2+�쵼��c���B{Vұ��Jeыo��:6��
+�+F�Ƿ��;V��!'@~_��;T|�
+7>��c�-�m��<����ت�\y���ױޖO��d��cϊ������Y�y��)�cN��G��[�'�Ϭ5�����Q�:��"�ro""���(���3�Ño����ؽ6�ȍ��
+&��M�פ�*�
+2��KF�\j�U@���[���L4�%�Zx����2���Z���Y|%˄R!��0�{3�Q��%f0��ğ�s�y�	ԊL�,%���x쬋����@}piN�����M&�x40���a����
+�|϶���d[��ȼ���-�������ߡV�C�҃��Լ��%� �(�vFF�܉��1���1�׍�p;���� r�	#���T�V ��}E�%��t�/Z�fE�V�L�}�fln+VX�S
+]+�}�W�sSO9[!�T�Ϝ}���JI!M5�MUV��y����e��   �� PK     ! ���  �  !   ppt/slideLayouts/slideLayout9.xml��[n�6��t����.Q�8K���$�3`$�F��{�f[�rf%=�.���8����ɏ<�'Q��q�gʆ�*-��j^�B��L�b9V?��4�*�E��� cuG*��寿|��*K��\sE5�cu�9�z�H������[�,�n�RO~v��axz��Bm��S���E�i�sR��H�9̿Z��ji�e���ݟ�Q�����VUd3��
+S����y�(Ρ�.����1�+%�T�d���3BD������1��fsǔ4����M3y[ldA?�l�x�]�\\!#�v��p;�:��J\W���xu�L�xu�Lk�@?TDUO�i8V�}�3��]T�|+z]�_*�(!~^ע�Y\�I?��]��,�'�l&L?�,�d�I���������<�F�!�h:�۰Lv��\!T\īV�C��*>绌��&3�h�-a+e��K��O���B�1�Cy׾.p����1�a�I�}��C��(K�/
+/��\��+N�"s[ �%��SR���u-�V�vu�e8&�2K` keac�0�P�]�z����+�:�)�����(j�ٵ�!i��c��쵾[�����n�NdY��(��E��x�>����=/0�I<Ѳ�	H�s�<��M�sN�����@����큰<����� }G*wPP ��tQz@Ai���s�3E�筆�fXt;2�s���b?�=�q�m���V8[4"-�lqmxԏ�LpW�y��ۣ����I������``��p�o ����o ���^vA��q����乥z���m�g�y���a>	b=f���G���C����U�(�v�h25��]���!�Z8u��(t�hb��,r���(	��Ӝ��%�n�\jz��R�<�.:���i�f /=��O<�a�g���2+K!��0���^a������Fh�����-�����<K�ܬ󇣼xC�^��lj~��<k�F�l�M'�fh���AZ`�
+=ײ��(�u��0�S����������Uyi_��~�+ޔ�5K!�0<+B���Ls���Mf���\�q�M"��x�7�Q̈�~�G�~y0�'��4feU.�E\��G�����2��1`3�_6��F(�l/��F&�[{����E�p��'Lo7r���T#YE�b٬�}{����?   �� PK     ! i�_!  �  ,   ppt/slideMasters/_rels/slideMaster1.xml.rels��Mj�0�}�w0��%;����لB���@X�jKFRJ}���Bah!�������m�?|}��uF�R	�ʨN7��ϋ-$�K�do4
+����||ؿb/}���ntIH�N@���Ę�Z�K͈:���҇O۰QV�A�s^0{��,39)�����4�_�M]wMuP�#��;�/r2b�m�H����O�4� v[��)[R�MLن�e�=i>���{�g�(�]�m('�)#;+b�
+�������c��dk<jk���b�V�lS������[~  �� PK     ! [�\\�  +  "   ppt/slideLayouts/slideLayout11.xml�V]��8}_i���}��$$�P�0�V�vF�w71�U'NmC�U������/�k�@(evf_pH���9�ھ/^�+�VDH���]�"u�KZ����܎-$�K�xM�ֆH�����^4����K� ��<�J5ǑłTX^���m�E���N)�G����n�T���v��d>��iA&�XV�V-� +�_.h#;���F	0f�ÔԦ� ��Q�ȸ.gk�x��/�5	�)+Q�+x�7��3d�(�fd�L�lf��T�^�f��	3���N Zj�-��l?l���ze�����#���#���CL��_G��$PѾ,�o����bq}"��p~XT�j�;��wtD�v���esË���iZ����������,��Z����P���@Q�'��R��Aԋj�a�|��q�~x�D��:��F�~#(�3Zk�-,�j�6��?��1I	fXo4R�o�m�e��∔T��X*"�a
+;Pt���@g����=�c{4�;��଄���pJ�q`���O�ܰ ��g��\/��O�mՊ�6���ө��	�W1�_eJ
+g#+�.@4��G�-����k��/�Z\�\�H�g ��nL�"��P{j�P��\B�ͻ�oOӟֽY��<R�s�x4��a��'n���8��8�t\�Yd��
+�<�t�Y	T�HN�.��t,6���������s/�ҏ��Cf����c���-agKι�8?c*��̕h����V���š�s�W��Sd�hIЛe��@s�=Uh� ��4��x�ͼ<�&��v���4��ć
+N����8��i��[��אݥ����?���j�]����T�'���i�Y�ک�v0I��8�B;{A���8�]�m�
+AL��g�u�^pԧV�\�*x�mx��$�������.u��Iy����Ig�֍&[m�T󇑉׸�]�"��Ք�W
+4��هh�]�?�  �� PK     ! ,�'`�  K  "   ppt/slideLayouts/slideLayout10.xml�V�n�6��w �kE?�ɨ]Xr4H�`vw�JTD�5�V�
+�Z���IvHIv����F�(�;�|���y�z[3�!)of�w�Z�49/hs?�ޭ3;��T�)0�
+�Y;"���z�N%+n��o�FN�̪�j��#��X^�4���
+^ŽS��k���;qjLk8/N9�˒�d��MMՃ°�eE[9������H�1���v-DĨ��Bf��`ų�z�bjp
+k�A@�6�3�&[e��v-ѳ��U���N��o�;�h���>��kә�����8��m)j=+h;� y;�t�8��~1?����{������h��ʨ��w�8�'��G5�+�������o���Y�m5�@i�a_��L�d�m�6�F���L���1b^Z�0n�a�p���V=j�2�@�#RP��`��@�>\@ф(C��� :���̷���y t�pN*�
+0矃3̀�����^�����H] �`�tO�1��f�c{A��fM�aY>A�c+&�筬H��R2�v���y�uE�逗���P�Ɉ�	��|�eb
+F�.�"4jB�Q��I�i��Q�}�9�=/�@�(��t�t�о�;���N����&A�.�0����X�Uњd�~#��F��c���U�n�rWs�u�~ ��@<�`
+qS�a�?N���%Ӓq�/�׉1
+��ĔJ���s�X��=���9/#����Ao7��G������~�S<ά��˲�rۮA�����d�~WQ��u+u�
+xw�\�|��/��=�V�0�9P�o�fh#(�$��O��N� ��e|e/�Ihg�e�I�H/�?�v��� ����8/8��j�.y�.r^
+���D����.c��uX���sc�*�������x���������vF$��5�f���u��a��}l���  �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout1.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout2.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout3.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout4.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout5.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �]ˮ!  �  !   ppt/slideLayouts/slideLayout6.xml�V�n�0���w���4?�P��L��R����@T��l�`S����8}�;	tm'U7�s|������l[Q�!R������wa9/J�9�7�;Hi�
+L9##gG�s6���T-.���5L
+��Yi-������:�08[pYa
+�r���B��y.�������Ţ�ɔ��0];��b
+��U)T�M�Ǜ�D�k�wJz' �.5%3Fw��r���|N�p�����9Q�Fbvl�Y������js-QY���5��}e��^�/�-n�2+p��#J�3O���V���i����������� ޳�U��k8a��!أj�U���
+1x��^��lV�zN|�W��!��,�Mx�3A�`�B<�J����"�æ!!_�M_���k�8�e~�4G�(5��J�l|h|�bі��u�{-3����3Ś�k�s�ⴀ(�1�*4����.��B����A񳛤��w��x�s�8��4:w�$JӉ�di��^���"Y�\K2[k�
+ U���-�ǁ���a�@<�`{��X⯯��?e�ڲd���?/L��YhYW��K����=Bq��H�edN˂��uu������� �oRc/đ�6
+��7�\ߏa�%Q�B���
+�A��$���2�d��v}z������z�.��������e	@�d��8q� ��h:軓��u�n'��$����3��h�Kb�ڗ��A�j Ve.��}�󪙬��߉���.c=7���~���~���Z��dM��>�T^b1����75�"ÿi������L��   �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout7.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout8.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout9.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  -   ppt/slideLayouts/_rels/slideLayout10.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  -   ppt/slideLayouts/_rels/slideLayout11.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �ђ�   7  ,   ppt/slideLayouts/_rels/slideLayout6.xml.rels�Ͻ
+�0�]���&���4u��E�����$��ۛт��}��\�M�xRb��ZV ț`��5ܮ��g���IÛ��r�\h�\�xp�EQ<kr�;��4!�ɗI҄���W�{R�ڨ�m@;3��jH'[���#�c��s��<&��G���Y:#gJ���S� �w�T��m����  �� PK     ! �
+muN  �     ppt/theme/theme1.xml�YK�5�#����yo7�f�M6i��v�M�ztf�w=���nn�="!!
+�č*���i��H�
+�13'N7m���؞����=�|�$&�1�i��j�@�O����hpa�\�$��&�����l��e�%"# ��;^$D�U�p_.C~��(��&��P�)+�ǒoL*�ju�C�x ��d{k2�>#���Ι���JW>a�5�(468��>�=��$O�	���ȅ|����U�/W
+""VЖ����e�a]ӱp\����݂�������~������F�2�9جus�%�.��U[զ�/�o,���n�ն�d��%�fu��S��d��e��;�ކ�� 3�X�.�7�6^�"���%��g�2���)�y�Q�Rv�D�ʵޣl :�P��Y�&З�$x̰ �,=1K>_ZR� �NE��8��"�O|��1x�����'��9}������k0	˄Ͽ���o?=���ï�x^����g����(��g_?��ɣg�|����e�ǈ���i,ms@c�j��2�Nr�@E�@�Ed�o� �\���dp�N�Y
+Dl*��[��Ql�(%]ʜ6]W��^�&�[8��qC�\�{��OS���Ų!K�}"CC� �3z����.Ɩ_���(��bЅ��[�4'��c��KAo�7{w@��]td#eU@�b���ƫp*`��Ƥ��E�R�`�|��\�H��P��.�[lf�{]vw���,��L�C����ܥ��ƩSg�De�G�P�(�T8��v����LV��FV�Ϯ��8�T�'�z2e��@Ԯ��@��W�u����{�޽ð�x;�*�b��Q෿M��i��de������إW�����y;����Э��+O�Lȁ�t��FΥy�@.�&*�i$��82�ǀQ�	�AS)��%�<cr�R.�z��[�U��Y����DC�G��(_<6z��m.���+�q�̈́�pMi5�ڲ��d�4��yS�
+��Bm�nD�D���A�1D��Ɛȱ\����y��,'��J���ss'��[�&��3p��ڭz�>L;�D��0N%?�:
+$a��|a<�,n���V�ח�D���]�#C��U����VS��|p4���hl��G-�O9�h2A�X�2�f��T v�`L�l��M�]���\S&s[?�3�p��X|}��$i�lW�ir
+\����^1[��5MQ^����3Ee�<�6}{��8�@�hǣLDTv�4����}_˒zYJ%@��h�+:��-��4�0C�e�Ch_dv����uŬ22FY�)����#DF�z7����n�9B��f�3g�CU�o��Ťͫn<sA�~]a��_�
+�o��:pI��XK�ꭕ;��V��[P_�qc���tD�2����L����,,�Rg�h�)V��)���/�K�.Q�~���wv6�|]�#��+�%��G�=Dϖ����{R����L�Yᩜ��>��i0ˆ���`��t����$�G�}��|h(���ل~���������W�[���K6x�E�"ɛ�l
+��.sf�.[#P��2q�r�e�R��R��`/�K�a�Sv�   �� PK
+       ! svn��  �     docProps/thumbnail.jpeg���� JFIF  ` `  �� C 
+
+
+
+
+�� C		
+
+��  � " ��           	
+�� �   } !1AQa"q2���#B��R��$3br�	
+%&'()*456789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz���������������������������������������������������������������������������        	
+�� �  w !1AQaq"2�B����	#3R�br�
+$4�%�&'()*56789:CDEFGHIJSTUVWXYZcdefghijstuvwxyz��������������������������������������������������������������������������   ? �碊+�<�( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( ��( �ZU�^j�pI�.Y��5V������?�V����eY�NMvf�ĿY�W�si�"An��1����Q��ڍ�I����G#�\����|p� ��u� \b� �k���q�4U_Em���h��&з�/�%���vߞ��k���Ԍb���V�<����М���Sn��y-�hKn��[��r�UP7`��9�ҧ�����e��H\rs�c�k�}������]O�~��f�/o$����H!��L����b��@p���i��w��[E�e��X�q�;->XܹW�I�R�dM�b��k�8�ih������n��x$i��ok���dz����J_���km�v���>�_l{���'�i�4���K�ѓE������m- �.�d�GUInUL/�F�N�@p����Ӯu�[Y�[�r��tyn!զ��шf���f lF�e�-�չW�%�iߞ_y���-���3s�ʠ����/^Ս_C~�� �|_�+�Z�g{��z���dןj�d�x<�[�O,M�N��P�.Ű������+O�Ε�O�i�
+@]kS�%٭o��|���G%���!d�T`��u�S�I+��7�FT�-���>b���O��5+�;N��X]>������%��MrM%�'%^3!=�޺;�ض�C��^��k�-����c��m���2�4����UL!X���Q�漬����_�� ��9����L��۫8.��t��Xyo�v�r-��K	HA��������$^�Gc�����$:Q��Z�F�&�ouqY��\��rAE� Z�'�9���*+��Q�"x���_��c�-$�� H�S�{�6��PM$���ۜ��g\|�����~ [��4z<6i�no_V�Ah��ͻ�v7��S��G�[k�qY�1E{P���"�̷���w���mJ$��vٗ'j�X]s�~��S�?do6�mo}oi��DW��K=ͫ}����2��K�9Pw�[i��n-nx��P~���+�E�����̱X�\��p+��\n�;)�**vw.I� bϋ6��,�Iz�i�F��Sz��;�'n�pA$�`�0	�=Õ�Ev�.�I�x7�:o�.u-�K�og��m:�nI!Ti8^�%��� Mu�������zF�v�)Hn&�����KM�w67��)TI��p�cD�̣q4ܒW��|�Et<'ï�#�"�MP���DM���7lnW8��\�RwWBj�Q@Q@Q@Q@_�?�;�� ����@� ��� _1� �B���������u� ?�]������/����K�ԭ����;+o��D�Z�S,�r�9T:�$������ %����� �ֆ�ѵ�n��ݽ��F�a���|�9\�9�N�vfi<eT� ��g���e��G�F^������Yj�>.�muK9�'��+���A$囫�p�d+� ��$�m졼��E��ڜK1ic��D%�I����$�  ��;�������h�!�]�`����rû�im4ܫ�9��ps��Ǔ������g�wu���#ڻ*?��]K��x�if0�$��N��I)h�lgw�&g �RI���� �M�-Ԯd�+����y=�ڧ�/>$f�H�Rj���M{�x*�a���6�R7�
+��ۃ�c�z8��� ����Y�H�����c �=��]]����>2���K�Hkچ����v�'��g%��	bb���Ƹ�Z:��5�������Z�
+�ӛ�:�-.eY713�đ�  �9$�c�_���o� ���#(���fF�7x��#����|m�M!i|)f ���r���x��'�ҫ�v��_ڗ�gf�A�I�i'���ٚ宎Y�'�{���K�� ���� ��?_@,�Y�xD���uꡝCK)
+į��sXڟ�t�ۋg�𝅄q\$�R;	cS�,N�$sVn�o�Mm
+���y���L�\ :真����=���?�-�m�Ֆ���ucr-��6�B4¨����b@��2k����9���o���b-����K}68��۟���H�
+�/�ٔu�sw�<������( �����.�EǷLU�|Y����
+xb��r��Xeç������� 4r��wsCR����b�Y���^�ym�K$ױN��V�a��\okߵGĝs^���M��6q(�U� �7��mn}��l\r��z2�]��R,r+�6�c�C�����O���/
+گ
+�t���x�ʞ:��0ʯ�]����|�Mi5(��5)�&���G��|���ېY���,	?zL�Ê�'��"Q8o_�:u�c�eY|�;~D� G��k�"$aEe��4$ve�u��C��3ی�&�Ӽg�Y��/��#� Y8$���Aې ;(�y�˰]�V�}at�����a���up��D���C �w+�0D��Գ~�_�. ���7�������X%��nWr! �����<a����)dY[%���l
+�7s��x��4��6����R[$Oo,�"I��D�X� ��qG*�ex�\�]����\��s=�0�8�e�eeU .�!��0t:oǿ�N���־'�K
+>&����<f"��\��D��B�ࡈ�d�$��� ����xC��(`H'�A�=HMG�:M�A�o
+i�R%���$wށH1�I9�x춰\����G�:�����M�jw�4�7S��F9,MP����z�K�	Zč+:3LK"�� ��n����)-|i�D�/���f\D���m��F9�r? x�n{�h��O�nUt+m��$js���L� 㻶� mQ�U��o���%���E�+mp  ��тA�9�$�>��o�U����G�ml�ksm��\����9
+8�d��\� QE QE @� ��� _1� �B�U��C�o�|�� �
+֗�Tc_�R����p� ��u� \b� �k��Z� #��@�V��1�N+���� %����� ��5a6��m�� �\�2���y�# g�N1��=���2����x�L�2�;�o܎ވ��m_|���w�PC�3|��߾O�K��x#�#���d9q�7'=}$����ş�Q]��k�� S�,�!$�mۏ��s�N��������Ō�A�s�`g�=ǯ=+̿���a��r�?�ƺ��/�R��{�RX,�3 OS��U�_Z��&@�m���/#�-�7�~�{�*������רQEQ@Q@Q@Q@Q@Q@Q@Q@Q@Q@Q@_�?�;�� ����@� ��� _1� �B���������u� ?�]����k���� %����� ��]����_�?��2_��� ��(���Od(�� (�� (�� (�� (�� (�� (�� (�� (�� (�� (�� (�� (�� *��� !�7��c� ЅP��.�����]�M��ps�Ҵ�Ji�*�r�(��go���J��q�� A��|i��&���hΊ�R��01����R5�5*A�6�8r�3��Ѫ�(�'�QE�zaEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEPEP��PK     ! ����  .     ppt/presProps.xml���j�0��{�{E�-;��S�ȁ�.F�@�r"j�ARڎ�w��e��]��!�O�O�lo���=H�5- +2i��9����n@"7#���-�&��}��u��2HyL�/>KF&4��]�P'�yXY'M����<��?�����Q�q�4W\��=z;MJHf�Y'�����BNʅg7���s�Bڥ��)~��eg�Z�}XW����p�������Ê�b�1�]���KMh3� �?i~�è"�?���V��`��V_s"g�wV-Q	����[��m������U��u�� -�v=c��MYU9.	~a�?�qadN��+�C�1��� iY��Ҫϋ~H����'����>�̭�z��Y�d�W�K]F�ޮ��'   �� PK     ! ��'��  b     ppt/viewProps.xml�S�n�0�W�?X��D�\����J��]g	���H��n£p��kvf�Lfe��-8TF'��9-M�t����Ә3�B�"7^����ab㭂ݧc�1	_{o� @��B`�X�T[WO�˂ԉy0�((���0��7����j� �[��D��b�f�A��`��JS������X��덃t+�pOV=G��絥�M�eEM)���\�p
+�"Oۈ�viޝJN�І?� =Һ��<�n�[H�C��:�ND�%��1q��߆����8gc�T�4+>�9�HDt�9쬻�
+���?�͑��q{ά!��~+�ki��q��R���|.���.��g��Y�_tx[�E��谑�5w4�wE!�+ZX!�%3Y;F� d�[�����  �� PK     ! �����   �      ppt/tableStyles.xml�I�0@Ὁwh�}-CQ$� +w�*�!�@h���e��/�?J��X�d4���5ݤ�{�c@�q�qi�`�
+y�ߥ<qOys�W�Цh�p�ssB�mG��=�Y���fQ�m��[�{ӕ$����ԉ��7�� ������iH\z4�qT�չ��*,~@�?   �� PK     ! �o�T�  d   docProps/app.xml �(�                                                                                                                                                                                                                                                                 �UKo�@�#�,�;BTm\�TU�F�[�[{����Z�Kh8A�RA�ĉcD�A�_X�#�v�&!�+��o;3;��y8���fR4�j�w����7ܽpg��:�PS.4�1hw3�y�t�L@�AB7܁1Ɇ��h C�+((�I5�I��d��"ؖ��!��~̓C"�x-)
+��ō��[������~8N�^@Bi(���	�P�Xջ�:�
+L�����LH�f��Z����{q:�	��d�o^����N]`?��������*}c���K{��3�-9@:TѾ�� ��\Ӥ�Y���7��4�CFH��1���4i���%�`I7�����G�4]2Hh��j���"#���S샚�P
+Y~�*F�q���1O�Q�}�>�?0�k�
+���DL����4}����+��p��<f���\���?ډ�nOV0_]��;�Η�z��������@����V��/w�y�/V&d����a��%��ޚ�TEQ�"�-t��,Q�rv��R�tBJX�`?`U'X�	��Ȟ�/��o������B�Ҵm*h2A��r�P1FV��3�H�%�ܦf/�"�tTA�۠|�Ji�(���p�9Z�KR7T�!���]�-��bi�Z��/�3^��϶Y�  �� PK     ! �ֺ  (   docProps/core.xml �(�                                                                                                                                                                                                                                                                 |��j�0����+����:���(dKKo�4�%!i��-ǾE�ORz*��7�l�zwC�m~��>�f����*�c��sD&	�@2Ņ,����">F�uTrZ)	sԂE���w9�S>��86
+$i3��h��0�l	5������Q��.HSbM�--�I2�58ʩ���z$�
+���W���a���,&�wY��o蝽d-\������k+�`�4�f�GC���t�_5��T�eN�
+���P���`n�<�P3�)3�c���Q�����`�څ�%H0��V6l/ҭ[*k��=r?�a+j�eX� ~�����������������?�����*�܉��i�e�Y�p��P^6�z�|��\\�"M�4NH�~X$'9���{������4�_b:�I��9ΎH������2�0�W��m/   �� PK-      ! ����  �                   [Content_Types].xmlPK-      ! h�t�  �                 _rels/.relsPK-      ! O'�u  /               E  ppt/presentation.xmlPK-      ! 3�   7                
+  ppt/slides/_rels/slide7.xml.relsPK-      ! �Ep  �               }  ppt/slides/slide1.xmlPK-      ! ÷��	  �H                  ppt/slides/slide2.xmlPK-      ! ;�L!	  T,               
+  ppt/slides/slide3.xmlPK-      ! `H�h	  �f               a#  ppt/slides/slide4.xmlPK-      ! �Szln	  �T               �,  ppt/slides/slide5.xmlPK-      ! �6h�	  �=               �6  ppt/slides/slide6.xmlPK-      ! �`��8	  �+               �?  ppt/slides/slide7.xmlPK-      ! �8���	  MZ               =I  ppt/slides/slide8.xmlPK-      ! /���  #8               �R  ppt/slides/slide9.xmlPK-      ! 0�z�j                 8[  ppt/slides/slide10.xmlPK-      ! 3�   7                �`  ppt/slides/_rels/slide8.xml.relsPK-      ! 3�   7                �a  ppt/slides/_rels/slide9.xml.relsPK-      ! 3�   7  !             �b  ppt/slides/_rels/slide10.xml.relsPK-      ! hG��I  �               �c  ppt/_rels/presentation.xml.relsPK-      ! 3�   7                _f  ppt/slides/_rels/slide2.xml.relsPK-      ! 3�   7                ]g  ppt/slides/_rels/slide3.xml.relsPK-      ! 3�   7                [h  ppt/slides/_rels/slide4.xml.relsPK-      ! 3�   7                Yi  ppt/slides/_rels/slide5.xml.relsPK-      ! 3�   7                Wj  ppt/slides/_rels/slide6.xml.relsPK-      ! 3�   7                Uk  ppt/slides/_rels/slide1.xml.relsPK-      ! p��/#  P.  !             Sl  ppt/slideMasters/slideMaster1.xmlPK-      ! �C�J  �  !             �s  ppt/slideLayouts/slideLayout1.xmlPK-      ! �殢�    !             >x  ppt/slideLayouts/slideLayout2.xmlPK-      ! ��S��  &  !             �{  ppt/slideLayouts/slideLayout3.xmlPK-      ! \a5�  �  !             ��  ppt/slideLayouts/slideLayout4.xmlPK-      ! �@۲  =  !             �  ppt/slideLayouts/slideLayout5.xmlPK-      ! �D��  k  !             h�  ppt/slideLayouts/slideLayout7.xmlPK-      ! .�[W�  3  !             ��  ppt/slideLayouts/slideLayout8.xmlPK-      ! ���  �  !             ��  ppt/slideLayouts/slideLayout9.xmlPK-      ! i�_!  �  ,             ��  ppt/slideMasters/_rels/slideMaster1.xml.relsPK-      ! [�\\�  +  "             �  ppt/slideLayouts/slideLayout11.xmlPK-      ! ,�'`�  K  "             ��  ppt/slideLayouts/slideLayout10.xmlPK-      ! �ђ�   7  ,             ܠ  ppt/slideLayouts/_rels/slideLayout1.xml.relsPK-      ! �ђ�   7  ,             �  ppt/slideLayouts/_rels/slideLayout2.xml.relsPK-      ! �ђ�   7  ,             �  ppt/slideLayouts/_rels/slideLayout3.xml.relsPK-      ! �ђ�   7  ,             �  ppt/slideLayouts/_rels/slideLayout4.xml.relsPK-      ! �ђ�   7  ,             ��  ppt/slideLayouts/_rels/slideLayout5.xml.relsPK-      ! �]ˮ!  �  !             ��  ppt/slideLayouts/slideLayout6.xmlPK-      ! �ђ�   7  ,             Z�  ppt/slideLayouts/_rels/slideLayout7.xml.relsPK-      ! �ђ�   7  ,             `�  ppt/slideLayouts/_rels/slideLayout8.xml.relsPK-      ! �ђ�   7  ,             f�  ppt/slideLayouts/_rels/slideLayout9.xml.relsPK-      ! �ђ�   7  -             l�  ppt/slideLayouts/_rels/slideLayout10.xml.relsPK-      ! �ђ�   7  -             s�  ppt/slideLayouts/_rels/slideLayout11.xml.relsPK-      ! �ђ�   7  ,             z�  ppt/slideLayouts/_rels/slideLayout6.xml.relsPK-      ! �
+muN  �               ��  ppt/theme/theme1.xmlPK- 
+       ! svn��  �                �  docProps/thumbnail.jpegPK-      ! ����  .               ��  ppt/presProps.xmlPK-      ! ��'��  b               t�  ppt/viewProps.xmlPK-      ! �����   �                1�  ppt/tableStyles.xmlPK-      ! �o�T�  d               �  docProps/app.xmlPK-      ! �ֺ  (               ��  docProps/core.xmlPK    7 7 h  ��    
 
 
