@@ -44,14 +44,7 @@ class MetricsCalculator {
         $filtered = [];
         switch ($period) {
             case 'day_active':
-                foreach ($dailyRows as $r) {
-                    if (($r['date'] ?? '') === '06.10.2026') {
-                        $filtered[] = $r;
-                    }
-                }
-                if (empty($filtered)) {
-                    $filtered = [end($dailyRows)];
-                }
+                $filtered = !empty($dailyRows) ? [end($dailyRows)] : [];
                 break;
             case 'week':
                 $filtered = array_slice($dailyRows, -7);
@@ -205,13 +198,13 @@ class MetricsCalculator {
                 : date('d.m.Y 20:00') . ' — ' . date('d.m.Y 08:00', strtotime('+1 day')));
 
         $semenaStats = $this->getSemenaPeriodStats($period);
-        $lastDateLabel = $semenaStats['last_date'] ?? '12.10.2026';
+        $pz = $materialBalance['production_zone'] ?? [];
+        $lastDateLabel = !empty($pz['report_date']) ? $pz['report_date'] : ($semenaStats['last_date'] ?? date('d.m.Y'));
         $seedInVal = $materialBalance['receiving_zone']['seed_in_plant']
             ?? $materialBalance['seed_in_plant']
             ?? ($semenaStats['seed_in_plant'] ?? 471.85);
         $seedInFormatted = number_format($seedInVal, 2, ',', ' ');
 
-        $pz = $materialBalance['production_zone'] ?? [];
         $seedProc = (float)($pz['seed_processed'] ?? 0);
         $oilOut = (float)($pz['oil_out'] ?? 0);
         $mealOut = (float)($pz['meal_out'] ?? 0);
@@ -542,94 +535,68 @@ class MetricsCalculator {
         // Динамічний розрахунок показників переробки з бази даних (material_balance_logs)
         try {
             if (in_array($period, ['day', 'day_prev', 'day_today', 'day_active'], true)) {
-                if ($period === 'day_active') {
-                    // Остання доба АКТИВНОЇ переробки (понад 0 т, наприклад 15.10 — 308,98 т)
+                if ($period === 'day_prev') {
+                    // Попередня (передостання) виробнича доба
                     $stmt = $this->db->query("
-                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
-                        FROM material_balance_logs
-                        WHERE seed_in_production > 0
-                        ORDER BY recorded_at DESC, id DESC LIMIT 1
-                    ");
-                } elseif ($period === 'day_prev') {
-                    // Передостання активна доба або попередній день
-                    $stmt = $this->db->query("
-                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
+                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at, report_date
                         FROM material_balance_logs
                         WHERE seed_in_production > 0
                         ORDER BY recorded_at DESC, id DESC LIMIT 1 OFFSET 1
                     ");
+                    $latestRow = $stmt ? $stmt->fetch() : null;
                 } else {
-                    // 'day' або 'day_today': ПОТОЧНА доба моніторингу (беремо найновіший запис за датою без штучної фільтрації > 0)
+                    // 'day', 'day_today', 'day_active':
+                    // Звіт МЕЗ надходить вранці за щойно завершену виробничу добу (напр., 20.10 — з 19 по 20; 21.10 — з 20 по 21).
+                    // Шукаємо найновіший запис з фактичною переробкою:
                     $stmt = $this->db->query("
-                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at
+                        SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at, report_date
                         FROM material_balance_logs
+                        WHERE seed_in_production > 0
                         ORDER BY recorded_at DESC, id DESC LIMIT 1
                     ");
+                    $latestRow = $stmt ? $stmt->fetch() : null;
+
+                    // Якщо в базі взагалі немає записів з переробкою > 0, беремо найновіший запис
+                    if (!$latestRow) {
+                        $stmtAll = $this->db->query("
+                            SELECT seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, recorded_at, report_date
+                            FROM material_balance_logs
+                            ORDER BY recorded_at DESC, id DESC LIMIT 1
+                        ");
+                        $latestRow = $stmtAll ? $stmtAll->fetch() : null;
+                    }
                 }
-                $latestRow = $stmt ? $stmt->fetch() : null;
+
                 $seedInProdRaw = $vp['seed_in_prod_raw'] ?? 0.0;
 
-                if (in_array($period, ['day', 'day_today'], true)) {
-                    $lastDateStr = !empty($semenaStats['last_date']) ? $semenaStats['last_date'] : '';
-                    $isIdleDay = in_array($lastDateStr, ['16.10.2026', '17.10.2026', '18.10.2026', '20.10.2026'], true);
-
-                    if ($isIdleDay) {
-                        // Якщо 16, 17, 18 жовтня — переробки МЕЗ не було (0 т)
-                        $seedInProd          = 0.0;
-                        $seedInProdRaw       = 0.0;
-                        $oilOut              = 0.0;
-                        $mealOut             = 0.0;
-                        $huskOut             = 0.0;
-                        $conditioningLoss    = 0.0;
-                        $conditioningLossPct = 0.0;
-                    } elseif ($latestRow) {
-                        $rowProd = (float)($latestRow['seed_in_production'] ?? 0);
-                        if ($rowProd > 0) {
-                            if (empty($semenaStats['seed_in_plant'])) {
-                                $seedInPlant = (float)$latestRow['seed_in_plant'];
-                            }
-                            $seedInProd          = $rowProd;
-                            $oilOut              = (float)$latestRow['oil_out'];
-                            $mealOut             = (float)$latestRow['meal_out'];
-                            $huskOut             = (float)$latestRow['husk_out'];
-                            $conditioningLoss    = (float)($latestRow['conditioning_loss'] ?? 0);
-                            $conditioningLossPct = (float)($latestRow['conditioning_loss_pct'] ?? 0);
-                            $seedInProdRaw       = round($seedInProd + $conditioningLoss, 3);
-                        } else {
-                            $seedInProd          = 0.0;
-                            $seedInProdRaw       = 0.0;
-                            $oilOut              = 0.0;
-                            $mealOut             = 0.0;
-                            $huskOut             = 0.0;
-                            $conditioningLoss    = 0.0;
-                            $conditioningLossPct = 0.0;
-                        }
-                    } else {
-                        // Немає запису в базі — за замовчуванням 0
-                        $seedInProd          = 0.0;
-                        $seedInProdRaw       = 0.0;
-                        $oilOut              = 0.0;
-                        $mealOut             = 0.0;
-                        $huskOut             = 0.0;
-                        $conditioningLoss    = 0.0;
-                        $conditioningLossPct = 0.0;
+                if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0) {
+                    $rowProd = (float)$latestRow['seed_in_production'];
+                    if (empty($semenaStats['seed_in_plant']) || (float)$semenaStats['seed_in_plant'] <= 0) {
+                        $seedInPlant = (float)$latestRow['seed_in_plant'];
                     }
-                } else {
-                    // day_active або day_prev: беремо фактичні дані знайденої зміни
-                    if ($latestRow && (float)($latestRow['seed_in_production'] ?? 0) > 0) {
-                        if (empty($semenaStats['seed_in_plant'])) {
-                            $seedInPlant     = (float)$latestRow['seed_in_plant'];
-                        }
-                        $seedInProd          = (float)$latestRow['seed_in_production'];
-                        $oilOut              = (float)$latestRow['oil_out'];
-                        $mealOut             = (float)$latestRow['meal_out'];
-                        $huskOut             = (float)$latestRow['husk_out'];
-                        $conditioningLoss    = (float)($latestRow['conditioning_loss'] ?? 4.572);
-                        $conditioningLossPct = (float)($latestRow['conditioning_loss_pct'] ?? 1.46);
-                        $seedInProdRaw       = round($seedInProd + $conditioningLoss, 3);
-                    }
+                    $seedInProd          = $rowProd;
+                    $oilOut              = (float)$latestRow['oil_out'];
+                    $mealOut             = (float)$latestRow['meal_out'];
+                    $huskOut             = (float)$latestRow['husk_out'];
+                    $conditioningLoss    = (float)($latestRow['conditioning_loss'] ?? 0);
+                    $conditioningLossPct = (float)($latestRow['conditioning_loss_pct'] ?? 0);
+                    $seedInProdRaw       = round($seedInProd + $conditioningLoss, 3);
+                } elseif ($latestRow) {
+                    // Фактичний простій МЕЗ (переробка 0 т за даними бази)
+                    $seedInProd          = 0.0;
+                    $seedInProdRaw       = 0.0;
+                    $oilOut              = 0.0;
+                    $mealOut             = 0.0;
+                    $huskOut             = 0.0;
+                    $conditioningLoss    = 0.0;
+                    $conditioningLossPct = 0.0;
                 }
             } elseif (in_array($period, ['month', 'month_oct'], true)) {
+                $maxMDate = $this->db->query("SELECT MAX(recorded_at) FROM material_balance_logs WHERE seed_in_production > 0")->fetchColumn();
+                $curYearMonth = !empty($maxMDate) ? date('Y-m', strtotime($maxMDate)) : '2026-10';
+                $mStart = "{$curYearMonth}-01 00:00:00";
+                $mEnd   = date('Y-m-t 23:59:59', strtotime($mStart));
+
                 $stmt = $this->db->query("
                     SELECT 
                         SUM(seed_in_production) as sum_prod,
@@ -639,7 +606,7 @@ class MetricsCalculator {
                         SUM(conditioning_loss) as sum_cond,
                         COUNT(CASE WHEN seed_in_production > 10 THEN 1 END) as work_days
                     FROM material_balance_logs
-                    WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-31 23:59:59'
+                    WHERE recorded_at >= '{$mStart}' AND recorded_at <= '{$mEnd}'
                 ");
                 $octAgg = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
                 if ($octAgg && (float)($octAgg['sum_prod'] ?? 0) > 0) {
@@ -738,6 +705,8 @@ class MetricsCalculator {
             ],
             // Зона виробництва
             'production_zone' => [
+                'report_date'          => $latestRow['report_date'] ?? null,
+                'recorded_at'          => $latestRow['recorded_at'] ?? null,
                 'seed_in_production'   => $seedInProd,
                 'seed_processed'       => $seedInProd,
                 'seed_processed_raw'   => $seedInProdRaw ?? $seedInProd,
@@ -1988,6 +1957,11 @@ class MetricsCalculator {
         $octElapsedDays = 20;
 
         try {
+            $maxMDate = $this->db->query("SELECT MAX(recorded_at) FROM material_balance_logs WHERE seed_in_production > 0")->fetchColumn();
+            $curYearMonth = !empty($maxMDate) ? date('Y-m', strtotime($maxMDate)) : '2026-10';
+            $mStart = "{$curYearMonth}-01 00:00:00";
+            $mEnd   = date('Y-m-t 23:59:59', strtotime($mStart));
+
             $stmt = $this->db->query("
                 SELECT 
                     COUNT(CASE WHEN seed_in_production > 10 THEN 1 END) as work_days,
@@ -1999,7 +1973,7 @@ class MetricsCalculator {
                     SUM(meal_out) as sum_meal,
                     SUM(husk_out) as sum_husk
                 FROM material_balance_logs
-                WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-31 23:59:59'
+                WHERE recorded_at >= '{$mStart}' AND recorded_at <= '{$mEnd}'
             ");
             $octDb = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
             if ($octDb && (float)($octDb['sum_prod'] ?? 0) > 0) {
@@ -3846,28 +3820,63 @@ class MetricsCalculator {
 
             case 'day':
             case 'day_today':
-                $semenaStats = $this->getSemenaPeriodStats('day');
-                $lastDateStr = $semenaStats['last_date'] ?? '20.10.2026';
-                $isIdle = in_array($lastDateStr, ['16.10.2026', '17.10.2026', '18.10.2026', '20.10.2026'], true);
-
-                $dailySeed = 0.0;
+            case 'day_active':
+            case 'shift':
+            default:
+                $row = null;
                 try {
-                    $stmt = $this->db->query("SELECT seed_in_production, oil_out FROM material_balance_logs ORDER BY recorded_at DESC, id DESC LIMIT 1");
+                    // Звіт МЕЗ надходить вранці за щойно завершену виробничу добу (з 19 по 20, з 20 по 21 тощо).
+                    // Шукаємо найновішу завершену робочу зміну з переробкою > 0:
+                    $stmt = $this->db->query("
+                        SELECT seed_in_production, oil_out, recorded_at, report_date 
+                        FROM material_balance_logs 
+                        WHERE seed_in_production > 0 
+                        ORDER BY recorded_at DESC, id DESC LIMIT 1
+                    ");
                     $row = $stmt ? $stmt->fetch() : null;
-                    if ($row && !$isIdle) {
-                        $dailySeed = (float)($row['seed_in_production'] ?? 0);
+                    if (!$row) {
+                        $stmtAll = $this->db->query("
+                            SELECT seed_in_production, oil_out, recorded_at, report_date 
+                            FROM material_balance_logs 
+                            ORDER BY recorded_at DESC, id DESC LIMIT 1
+                        ");
+                        $row = $stmtAll ? $stmtAll->fetch() : null;
                     }
                 } catch (Throwable $e) {}
 
+                $dailySeed = (float)($row['seed_in_production'] ?? 0);
+                $rowOilOut = (float)($row['oil_out'] ?? 0);
+                $recAt = !empty($row['recorded_at']) ? $row['recorded_at'] : date('Y-m-d');
+                $repDateStr = !empty($row['report_date']) ? $row['report_date'] : date('d.m.Y', strtotime($recAt));
+                $dateIso = substr($recAt, 0, 10);
+
+                // Отримуємо якість за цю дату з lab_quality_logs або з розрахунків
+                $oil = isset($oilLossData['sunflower_oil_pct']) ? (float)$oilLossData['sunflower_oil_pct'] : 45.26;
+                $moist = 6.40;
+                $imp = 2.05;
+                try {
+                    $chkLab = $this->db->prepare("SELECT oil_content_pct, moisture_pct, impurity_pct FROM lab_quality_logs WHERE recorded_at LIKE ? ORDER BY id DESC LIMIT 1");
+                    $chkLab->execute(["{$dateIso}%"]);
+                    $labRow = $chkLab ? $chkLab->fetch(PDO::FETCH_ASSOC) : null;
+                    if ($labRow) {
+                        if ((float)$labRow['oil_content_pct'] > 0) $oil = (float)$labRow['oil_content_pct'];
+                        if ((float)$labRow['moisture_pct'] > 0) $moist = (float)$labRow['moisture_pct'];
+                        if ((float)$labRow['impurity_pct'] > 0) $imp = (float)$labRow['impurity_pct'];
+                    }
+                } catch (Throwable $e) {}
+
+                $oilAsr = ($moist < 100) ? round($oil / (1 - ($moist / 100)), 2) : $oil;
+                $oilYieldPct = ($dailySeed > 0) ? round(($rowOilOut / $dailySeed) * 100, 2) : (isset($oilLossData['yield_oil_pct']) ? (float)$oilLossData['yield_oil_pct'] : 41.59);
+                $oilOutKg = round($rowOilOut * 1000);
+
                 if ($dailySeed <= 0) {
-                    // Переробка МЕЗ призупинена (16, 17, 18 жовтня: 0 т переробки, прийомка насіння)
                     return array_merge($balanceDefaults, [
-                        'sunflower_oil_pct'           => 44.03, // товарна олійність
-                        'oil_content_pct'             => 44.03,
+                        'sunflower_oil_pct'           => $oil,
+                        'oil_content_pct'             => $oil,
                         'oil_content_base_pct'        => $basePct,
-                        'oil_deviation_pct'           => round(44.03 - $basePct, 2),
-                        'oil_asr_pct'                 => 47.99,
-                        'oil_date'                    => substr($lastDateStr, 0, 5),
+                        'oil_deviation_pct'           => round($oil - $basePct, 2),
+                        'oil_asr_pct'                 => $oilAsr,
+                        'oil_date'                    => substr($repDateStr, 0, 5),
                         'oil_note'                    => "Переробка МЕЗ призупинена • накопичення сировини",
                         'moisture_pct'                => 0.0,
                         'impurity_pct'                => 0.0,
@@ -3889,84 +3898,31 @@ class MetricsCalculator {
                         'oil_unaccounted_loss_pct'    => 0.0,
                         'oil_in_meal_kg'              => 0,
                         'oil_in_husk_kg'              => 0,
-                        'report_date'                 => "{$lastDateStr} (Переробка МЕЗ призупинена • накопичення сировини)",
+                        'report_date'                 => "{$repDateStr} (Переробка МЕЗ призупинена • накопичення сировини)",
                         'processed_note'              => "Виробництво не велося • накопичення сировини",
                     ]);
                 }
-                // Якщо є фактична переробка, повертаємо її показники
-                $oil = 44.03;
-                $seedProc = $dailySeed;
-                $seedPlan = 600.0;
-                $oilDateStr = substr($lastDateStr, 0, 5);
-                $repDateStr = $lastDateStr;
-                $dayDynamic = [
-                    'sunflower_oil_pct' => $oil,
-                    'yield_oil_pct'     => round(((float)$row['oil_out'] / $dailySeed) * 100, 2),
-                    'oil_out_kg'        => round((float)$row['oil_out'] * 1000),
-                ];
-                return array_merge($balanceDefaults, $dayDynamic, [
-                    'sunflower_oil_pct'     => $oil,
-                    'oil_content_pct'       => $oil,
-                    'oil_content_base_pct'  => $basePct,
-                    'oil_deviation_pct'     => round($oil - $basePct, 2),
-                    'seed_processed_tonnes' => $seedProc,
-                    'seed_plan_tonnes'      => $seedPlan,
-                    'plan_fulfillment_pct'  => round(($seedProc / $seedPlan) * 100, 1),
-                    'report_date'           => "{$repDateStr} (Звіт виробництва — цех екстракції)",
-                    'processed_note'        => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
-                ]);
 
-            case 'day_active':
-            case 'shift':
-            default:
-                // Суворо за активну добу 19.10 (звіт МЕЗ «Справка по переработке» та рух 1С):
-                // Перероблено очищеного насіння: 527,880 т (неочищеного 533,142 т, втрати очистки 5,262 т / 0,99%)
-                // Товарна олійність: 45,26%, а.с.р.: 48,35%, вологість: 6,40%, сор: 2,05%
-                // Вихід олії: 219,546 т (41,59%), шроту: 185,326 т (35,11%), лузги: 73,710 т (13,96%), втрати виробництва: 49,298 т (9,34%)
-                $seedProc = 527.88;
-                $seedPlan = 600.0;
-                $oil = 45.26;
-                $oilAsr = 48.35;
-                $oilDateStr = '19.10';
-                $moist = 6.40;
-                $imp = 2.05;
-                $repDateStr = '19.10.2026';
-
-                $day19Defaults = [
+                $dynDay = [
                     'sunflower_oil_pct'           => $oil,
-                    'yield_oil_pct'               => 41.59,
-                    'yield_meal_pct'              => 35.11,
-                    'meal_oil_pct'                => 0.775,
-                    'yield_husk_pct'              => 13.96,
-                    'husk_oil_pct'                => 3.26,
-                    'process_loss_pct'            => 9.34,
-                    'oil_out_kg'                  => 219546,
-                    'balance_oil_calc_kg'         => 238918.5,
-                    'balance_oil_fact_kg'         => 238918.5,
-                    'oil_loss_kg'                 => 4240,
-                    'oil_loss_pct'                => 0.80,
-                    'oil_unaccounted_loss_kg'     => 770,
-                    'oil_unaccounted_loss_pct'    => 0.15,
-                    'oil_in_meal_kg'              => 1436.3,
-                    'oil_in_husk_kg'              => 2402.9,
-                ];
-
-                return array_merge($balanceDefaults, $day19Defaults, $oilLossData, [
-                    'sunflower_oil_pct'           => $oil,
+                    'yield_oil_pct'               => $oilYieldPct,
+                    'oil_out_kg'                  => $oilOutKg,
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
                     'oil_asr_pct'                 => $oilAsr,
-                    'oil_date'                    => $oilDateStr,
-                    'oil_note'                    => "Фактична товарна олійність за {$oilDateStr} як у звіті МЕЗ",
+                    'oil_date'                    => substr($repDateStr, 0, 5),
+                    'oil_note'                    => "Фактична якість сировини за {$repDateStr} (звіт МЕЗ)",
                     'moisture_pct'                => $moist,
                     'impurity_pct'                => $imp,
-                    'seed_processed_tonnes'       => $seedProc,
-                    'seed_plan_tonnes'            => $seedPlan,
-                    'plan_fulfillment_pct'        => round(($seedProc / $seedPlan) * 100, 1),
+                    'seed_processed_tonnes'       => $dailySeed,
+                    'seed_plan_tonnes'            => 600.0,
+                    'plan_fulfillment_pct'        => round(($dailySeed / 600.0) * 100, 1),
                     'report_date'                 => "{$repDateStr} (Звіт виробництва — цех екстракції)",
-                    'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
-                ]);
+                    'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($dailySeed, 1, ',', ' ') . " т)",
+                ];
+
+                return array_merge($balanceDefaults, $oilLossData, $dynDay);
         }
     }
 
