@@ -382,8 +382,8 @@ class MetricsCalculator {
         // План приймання на добу = 600,0 т
         $verifiedPeriods = [
             'day_today' => [
-                'seed_in_plant'    => 153.50,
-                'trucks_count'     => 5,
+                'seed_in_plant'    => 0.0,
+                'trucks_count'     => 0,
                 'seed_in_prod'     => 0.0,
                 'seed_in_prod_raw' => 0.0,
                 'cond_loss'        => 0.0,
@@ -394,22 +394,22 @@ class MetricsCalculator {
                 'seed_plan'        => 600.0,
             ],
             'day_prev' => [
-                // 14.10.2026: прийомка 318,66 т з плану 600,0 т, переробка 596,805 т
-                'seed_in_plant'    => 318.66,
-                'trucks_count'     => 13,
-                'seed_in_prod'     => 596.805,
-                'seed_in_prod_raw' => 602.122,
-                'cond_loss'        => 5.317,
-                'cond_loss_pct'    => 0.88,
-                'oil_out'          => 256.489,
-                'meal_out'         => 248.786,
-                'husk_out'         => 87.020,
+                // 19.10.2026: робоча доба перед 20.10 (прийомка / переробка 527,880 т, вихід олії 219,546 т)
+                'seed_in_plant'    => 533.142,
+                'trucks_count'     => 18,
+                'seed_in_prod'     => 527.880,
+                'seed_in_prod_raw' => 533.142,
+                'cond_loss'        => 5.262,
+                'cond_loss_pct'    => 0.99,
+                'oil_out'          => 219.546,
+                'meal_out'         => 185.326,
+                'husk_out'         => 73.710,
                 'seed_plan'        => 600.0,
             ],
             'day' => [
-                // Поточна доба моніторингу (18.10.2026): прийомка 153,50 т (5 авто), переробка МЕЗ 0 т (простій / накопичення)
-                'seed_in_plant'    => 153.50,
-                'trucks_count'     => 5,
+                // Поточна доба моніторингу (20.10.2026): переробка МЕЗ 0 т (зведення на ранок 08:00 / накопичення насіння)
+                'seed_in_plant'    => 0.0,
+                'trucks_count'     => 0,
                 'seed_in_prod'     => 0.0,
                 'seed_in_prod_raw' => 0.0,
                 'cond_loss'        => 0.0,
@@ -420,16 +420,16 @@ class MetricsCalculator {
                 'seed_plan'        => 600.0,
             ],
             'day_active' => [
-                // 15.10.2026: остання активна доба переробки МЕЗ (прийомка 436,527 т, переробка 308,979 т, вихід олії 149,278 т)
-                'seed_in_plant'    => 436.527,
-                'trucks_count'     => 17,
-                'seed_in_prod'     => 308.979,
-                'seed_in_prod_raw' => 313.551,
-                'cond_loss'        => 4.572,
-                'cond_loss_pct'    => 1.46,
-                'oil_out'          => 149.278,
-                'meal_out'         => 156.141,
-                'husk_out'         => 45.937,
+                // 19.10.2026: остання активна доба переробки МЕЗ (прийомка / переробка 527,880 т, вихід олії 219,546 т)
+                'seed_in_plant'    => 533.142,
+                'trucks_count'     => 18,
+                'seed_in_prod'     => 527.880,
+                'seed_in_prod_raw' => 533.142,
+                'cond_loss'        => 5.262,
+                'cond_loss_pct'    => 0.99,
+                'oil_out'          => 219.546,
+                'meal_out'         => 185.326,
+                'husk_out'         => 73.710,
                 'seed_plan'        => 600.0,
             ],
             'shift' => [
@@ -571,7 +571,7 @@ class MetricsCalculator {
 
                 if (in_array($period, ['day', 'day_today'], true)) {
                     $lastDateStr = !empty($semenaStats['last_date']) ? $semenaStats['last_date'] : '';
-                    $isIdleDay = in_array($lastDateStr, ['16.10.2026', '17.10.2026', '18.10.2026', '19.10.2026', '20.10.2026'], true);
+                    $isIdleDay = in_array($lastDateStr, ['16.10.2026', '17.10.2026', '18.10.2026', '20.10.2026'], true);
 
                     if ($isIdleDay) {
                         // Якщо 16, 17, 18 жовтня — переробки МЕЗ не було (0 т)
@@ -1978,14 +1978,14 @@ class MetricsCalculator {
      * Повертає актуальні зведені показники переробки за Жовтень 2026 та Сезон 2026-2027 з бази даних
      */
     public function getHistoricalSeasonMetrics(): array {
-        $octSeedProc = 5073.13;
-        $octOilOut   = 2262.33;
-        $octMealOut  = 2107.55;
-        $octHuskOut  = 764.21;
-        $octWorkDays = 10;
+        $octSeedProc = 5601.01;
+        $octOilOut   = 2481.88;
+        $octMealOut  = 2292.88;
+        $octHuskOut  = 837.92;
+        $octWorkDays = 11;
         $octFirstD   = '01.10';
-        $octLastD    = '15.10';
-        $octElapsedDays = 15;
+        $octLastD    = '19.10';
+        $octElapsedDays = 20;
 
         try {
             $stmt = $this->db->query("
@@ -3794,25 +3794,25 @@ class MetricsCalculator {
                 ];
 
             case 'day_prev':
-                $seedProc = 596.81;
-                $repDateStr = '14.10.2026';
+                $seedProc = 527.88;
+                $repDateStr = '19.10.2026';
                 return [
-                    'oil_content_pct'             => 44.03,
+                    'oil_content_pct'             => 45.26,
                     'oil_content_base_pct'        => $basePct,
-                    'oil_deviation_pct'           => round(44.03 - $basePct, 2),
-                    'oil_asr_pct'                 => 47.99,
+                    'oil_deviation_pct'           => round(45.26 - $basePct, 2),
+                    'oil_asr_pct'                 => 48.35,
                     'oil_loss_kg'                 => $defaultOilLossKg,
                     'oil_loss_pct'                => $defaultOilLossPct,
                     'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
                     'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
-                    'oil_date'                    => '14.10',
-                    'oil_note'                    => 'Фактична товарна олійність за 14.10 як у звіті МЕЗ',
-                    'moisture_pct'                => 6.20,
-                    'impurity_pct'                => 2.18,
+                    'oil_date'                    => '19.10',
+                    'oil_note'                    => 'Фактична товарна олійність за 19.10 як у звіті МЕЗ',
+                    'moisture_pct'                => 6.40,
+                    'impurity_pct'                => 2.05,
                     'seed_processed_tonnes'       => $seedProc,
                     'seed_plan_tonnes'            => 600.0,
                     'plan_fulfillment_pct'        => round(($seedProc / 600.0) * 100, 1),
-                    'report_date'                 => "{$repDateStr} (Минула активна доба — 14.10)",
+                    'report_date'                 => "{$repDateStr} (Минула робоча доба — 19.10)",
                     'processed_note'              => "Подано у вальцьовий цех та екстракцію (" . number_format($seedProc, 1, ',', ' ') . " т)",
                 ];
 
@@ -3820,9 +3820,9 @@ class MetricsCalculator {
             case 'month_oct':
                 $seedProc = $dOct['seed_processed'];
                 $seedPlan = $dOct['working_days'] * 600.0;
-                $oil = 45.30;
-                $oilAsr = 49.11;
-                $moist = 6.18;
+                $oil = 45.26;
+                $oilAsr = 48.24;
+                $moist = 6.20;
                 return array_merge($balanceDefaults, [
                     'sunflower_oil_pct'           => $oil,
                     'oil_content_pct'             => $oil,
@@ -3833,10 +3833,10 @@ class MetricsCalculator {
                     'oil_loss_pct'                => $defaultOilLossPct,
                     'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
                     'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
-                    'oil_date'                    => '15.10',
+                    'oil_date'                    => '19.10',
                     'oil_note'                    => 'Фактична товарна олійність за Жовтень 2026 (звіт МЕЗ, СВОД)',
                     'moisture_pct'                => $moist,
-                    'impurity_pct'                => 1.71,
+                    'impurity_pct'                => 1.74,
                     'seed_processed_tonnes'       => $seedProc,
                     'seed_plan_tonnes'            => $seedPlan,
                     'plan_fulfillment_pct'        => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
@@ -3847,8 +3847,8 @@ class MetricsCalculator {
             case 'day':
             case 'day_today':
                 $semenaStats = $this->getSemenaPeriodStats('day');
-                $lastDateStr = $semenaStats['last_date'] ?? '18.10.2026';
-                $isIdle = in_array($lastDateStr, ['16.10.2026', '17.10.2026', '18.10.2026', '19.10.2026', '20.10.2026'], true);
+                $lastDateStr = $semenaStats['last_date'] ?? '20.10.2026';
+                $isIdle = in_array($lastDateStr, ['16.10.2026', '17.10.2026', '18.10.2026', '20.10.2026'], true);
 
                 $dailySeed = 0.0;
                 try {
@@ -3919,39 +3919,39 @@ class MetricsCalculator {
             case 'day_active':
             case 'shift':
             default:
-                // Суворо за активну добу 15.10 (звіт МЕЗ «Справка по переработке» та рух 1С):
-                // Перероблено очищеного насіння: 308,979 т (неочищеного 313,551 т)
-                // Товарна олійність: 44,03% (суворо за вказівкою керівництва), а.с.р.: 47,00%, вологість: 6,30%, сор: 1,96%
-                // Вихід олії: 149,278 т (48,31%), шроту: 156,141 т (50,53%), лузги: 45,937 т (14,87%), втрати процесу: -42,377 т (-13,72%)
-                $seedProc = 308.98;
+                // Суворо за активну добу 19.10 (звіт МЕЗ «Справка по переработке» та рух 1С):
+                // Перероблено очищеного насіння: 527,880 т (неочищеного 533,142 т, втрати очистки 5,262 т / 0,99%)
+                // Товарна олійність: 45,26%, а.с.р.: 48,35%, вологість: 6,40%, сор: 2,05%
+                // Вихід олії: 219,546 т (41,59%), шроту: 185,326 т (35,11%), лузги: 73,710 т (13,96%), втрати виробництва: 49,298 т (9,34%)
+                $seedProc = 527.88;
                 $seedPlan = 600.0;
-                $oil = 44.03; // Товарна олійність суворо 44,03%
-                $oilAsr = 47.00; // на а.с.р.
-                $oilDateStr = '15.10';
-                $moist = 6.30;
-                $imp = 1.96;
-                $repDateStr = '15.10.2026';
+                $oil = 45.26;
+                $oilAsr = 48.35;
+                $oilDateStr = '19.10';
+                $moist = 6.40;
+                $imp = 2.05;
+                $repDateStr = '19.10.2026';
 
-                $day15Defaults = [
+                $day19Defaults = [
                     'sunflower_oil_pct'           => $oil,
-                    'yield_oil_pct'               => 48.31,
-                    'yield_meal_pct'              => 50.53,
-                    'meal_oil_pct'                => 0.77,
-                    'yield_husk_pct'              => 14.87,
-                    'husk_oil_pct'                => 3.27,
-                    'process_loss_pct'            => -13.72,
-                    'oil_out_kg'                  => 149278,
-                    'balance_oil_calc_kg'         => 136044.5,
-                    'balance_oil_fact_kg'         => 136044.5,
-                    'oil_loss_kg'                 => 2703,
-                    'oil_loss_pct'                => 0.87,
-                    'oil_unaccounted_loss_kg'     => -15936.5,
-                    'oil_unaccounted_loss_pct'    => -5.16,
-                    'oil_in_meal_kg'              => 1202.3,
-                    'oil_in_husk_kg'              => 1502.1,
+                    'yield_oil_pct'               => 41.59,
+                    'yield_meal_pct'              => 35.11,
+                    'meal_oil_pct'                => 0.775,
+                    'yield_husk_pct'              => 13.96,
+                    'husk_oil_pct'                => 3.26,
+                    'process_loss_pct'            => 9.34,
+                    'oil_out_kg'                  => 219546,
+                    'balance_oil_calc_kg'         => 238918.5,
+                    'balance_oil_fact_kg'         => 238918.5,
+                    'oil_loss_kg'                 => 4240,
+                    'oil_loss_pct'                => 0.80,
+                    'oil_unaccounted_loss_kg'     => 770,
+                    'oil_unaccounted_loss_pct'    => 0.15,
+                    'oil_in_meal_kg'              => 1436.3,
+                    'oil_in_husk_kg'              => 2402.9,
                 ];
 
-                return array_merge($balanceDefaults, $day15Defaults, $oilLossData, [
+                return array_merge($balanceDefaults, $day19Defaults, $oilLossData, [
                     'sunflower_oil_pct'           => $oil,
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
