@@ -377,12 +377,12 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
             <div class="gauge-card">
                 <div class="gauge-header">
                     <span class="gauge-title">🧪 Товарна олійність у переробку</span>
-                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-asr">за <?= htmlspecialchars($prodLab['oil_date'] ?? '15.10') ?> • <?= number_format($prodLab['oil_content_pct'] ?? 44.03, 2, ',', ' ') ?>%</span>
+                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-asr">за <?= htmlspecialchars($prodLab['oil_date'] ?? '19.10') ?> • <?= number_format($prodLab['oil_content_pct'] ?? 45.26, 2, ',', ' ') ?>%</span>
                 </div>
                 <div id="chart-gauge-prod-oil" class="gauge-chart-container"></div>
                 <div class="gauge-footer">
-                    <div class="gauge-sub" id="val-prod-oil-asr">Товарна олійність (за <?= htmlspecialchars($prodLab['oil_date'] ?? '15.10') ?>): <strong><?= number_format($prodLab['oil_content_pct'] ?? 44.03, 2, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 47.00, 2, ',', ' ') ?>%)</div>
-                    <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична товарна олійність за 15.10 як у звіті МЕЗ') ?> • Справка по переработке</div>
+                    <div class="gauge-sub" id="val-prod-oil-asr">Товарна олійність (за <?= htmlspecialchars($prodLab['oil_date'] ?? '19.10') ?>): <strong><?= number_format($prodLab['oil_content_pct'] ?? 45.26, 2, ',', ' ') ?>%</strong> (а.с.р. <?= number_format($prodLab['oil_asr_pct'] ?? 48.35, 2, ',', ' ') ?>%)</div>
+                    <div class="gauge-note" id="note-prod-oil"><?= htmlspecialchars($prodLab['oil_note'] ?? 'Фактична якість сировини за 19.10.2026 (звіт МЕЗ)') ?> • Справка по переработке</div>
                 </div>
             </div>
 
@@ -393,7 +393,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <span style="font-size: 15px;">⚖️</span>
                         <span>Баланс виходу продукції та втрат олії</span>
                     </span>
-                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-balance-date" style="font-weight: 700;">за <?= htmlspecialchars($prodLab['oil_date'] ?? '15.10') ?> • Справка по переработке</span>
+                    <span class="gauge-badge badge-bonus" id="badge-prod-oil-balance-date" style="font-weight: 700;">за <?= htmlspecialchars($prodLab['oil_date'] ?? '19.10') ?> • Справка по переработке</span>
                 </div>
 
                 <!-- БЛОК 1: % ВИХОДУ ПРОДУКЦІЇ ТА ОЛІЙНІСТЬ -->

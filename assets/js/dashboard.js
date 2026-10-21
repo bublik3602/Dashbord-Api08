@@ -489,9 +489,9 @@ document.addEventListener('DOMContentLoaded', function () {
         // --- Блок: Лабораторія якості - Подача на переробку (МЕЗ) ---
         if (data.production_lab_quality) {
             const plq = data.production_lab_quality;
-            const oilDate = plq.oil_date || '14.10';
-            const oilVal = (plq.oil_content_pct !== undefined && plq.oil_content_pct > 0) ? plq.oil_content_pct : 44.03;
-            const oilAsrVal = (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) ? plq.oil_asr_pct : 47.99;
+            const oilDate = plq.oil_date || '19.10';
+            const oilVal = (plq.oil_content_pct !== undefined && plq.oil_content_pct > 0) ? plq.oil_content_pct : 45.26;
+            const oilAsrVal = (plq.oil_asr_pct !== undefined && plq.oil_asr_pct > 0) ? plq.oil_asr_pct : 48.35;
 
             const oilLossKg = plq.oil_loss_kg !== undefined ? plq.oil_loss_kg : 41258;
             const oilLossPct = plq.oil_loss_pct !== undefined ? plq.oil_loss_pct : 0.81;

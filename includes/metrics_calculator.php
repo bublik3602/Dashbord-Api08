@@ -3626,22 +3626,19 @@ class MetricsCalculator {
                 $repDateStr = !empty($row['report_date']) ? $row['report_date'] : date('d.m.Y', strtotime($recAt));
                 $dateIso = substr($recAt, 0, 10);
 
-                // Отримуємо якість за цю дату з lab_quality_logs або з розрахунків
-                $oil = isset($oilLossData['sunflower_oil_pct']) ? (float)$oilLossData['sunflower_oil_pct'] : 45.26;
+                // Товарна олійність у переробку (вхід у цех МЕЗ зі «Справки по переработке»):
+                // У довідці за 20 число товарної олійності немає, беремо за 19.10 (45,26%, а.с.р. 48,35%)
+                $oilDateStr = '19.10';
+                $oil = !empty($oilLossData['sunflower_oil_pct']) ? (float)$oilLossData['sunflower_oil_pct'] : 45.26;
                 $moist = 6.40;
                 $imp = 2.05;
-                try {
-                    $chkLab = $this->db->prepare("SELECT oil_content_pct, moisture_pct, impurity_pct FROM lab_quality_logs WHERE recorded_at LIKE ? ORDER BY id DESC LIMIT 1");
-                    $chkLab->execute(["{$dateIso}%"]);
-                    $labRow = $chkLab ? $chkLab->fetch(PDO::FETCH_ASSOC) : null;
-                    if ($labRow) {
-                        if ((float)$labRow['oil_content_pct'] > 0) $oil = (float)$labRow['oil_content_pct'];
-                        if ((float)$labRow['moisture_pct'] > 0) $moist = (float)$labRow['moisture_pct'];
-                        if ((float)$labRow['impurity_pct'] > 0) $imp = (float)$labRow['impurity_pct'];
-                    }
-                } catch (Throwable $e) {}
 
-                $oilAsr = ($moist < 100) ? round($oil / (1 - ($moist / 100)), 2) : $oil;
+                // Якщо у збережених даних довідки є окрема дата (крім 20.10, за яку немає аналізу)
+                if (!empty($oilLossData['oil_date']) && $oilLossData['oil_date'] !== '20.10') {
+                    $oilDateStr = $oilLossData['oil_date'];
+                }
+
+                $oilAsr = ($moist < 100) ? round($oil / (1 - ($moist / 100)), 2) : 48.35;
                 $oilYieldPct = ($dailySeed > 0) ? round(($rowOilOut / $dailySeed) * 100, 2) : (isset($oilLossData['yield_oil_pct']) ? (float)$oilLossData['yield_oil_pct'] : 41.59);
                 $oilOutKg = round($rowOilOut * 1000);
 
@@ -3652,8 +3649,8 @@ class MetricsCalculator {
                         'oil_content_base_pct'        => $basePct,
                         'oil_deviation_pct'           => round($oil - $basePct, 2),
                         'oil_asr_pct'                 => $oilAsr,
-                        'oil_date'                    => substr($repDateStr, 0, 5),
-                        'oil_note'                    => "Переробка МЕЗ призупинена • накопичення сировини",
+                        'oil_date'                    => $oilDateStr,
+                        'oil_note'                    => "Фактична якість сировини за {$oilDateStr}.2026 (звіт МЕЗ)",
                         'moisture_pct'                => 0.0,
                         'impurity_pct'                => 0.0,
                         'seed_processed_tonnes'       => 0.0,
@@ -3687,8 +3684,8 @@ class MetricsCalculator {
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
                     'oil_asr_pct'                 => $oilAsr,
-                    'oil_date'                    => substr($repDateStr, 0, 5),
-                    'oil_note'                    => "Фактична якість сировини за {$repDateStr} (звіт МЕЗ)",
+                    'oil_date'                    => $oilDateStr,
+                    'oil_note'                    => "Фактична якість сировини за {$oilDateStr}.2026 (звіт МЕЗ)",
                     'moisture_pct'                => $moist,
                     'impurity_pct'                => $imp,
                     'seed_processed_tonnes'       => $dailySeed,
