@@ -1024,13 +1024,24 @@ try {
             $latestFeedOilRow = null;
 
             foreach ($prodMonthSheets as $sName => $rows) {
-                // Визначаємо місяць аркуша
+                // Визначаємо місяць та рік аркуша
                 $sLowName = mb_strtolower($sName, 'UTF-8');
                 $sheetMonth = '10';
                 $sheetYear = '2026';
+                if (preg_match('/(\d{2})$/', trim($sName), $ym)) {
+                    $sheetYear = '20' . $ym[1];
+                }
                 if (strpos($sLowName, 'сент') !== false || strpos($sLowName, 'верес') !== false) $sheetMonth = '09';
+                elseif (strpos($sLowName, 'окт') !== false || strpos($sLowName, 'жовт') !== false) $sheetMonth = '10';
                 elseif (strpos($sLowName, 'нояб') !== false || strpos($sLowName, 'лист') !== false) $sheetMonth = '11';
                 elseif (strpos($sLowName, 'дек') !== false || strpos($sLowName, 'груд') !== false) $sheetMonth = '12';
+                elseif (strpos($sLowName, 'янв') !== false || strpos($sLowName, 'січ') !== false) $sheetMonth = '01';
+                elseif (strpos($sLowName, 'фев') !== false || strpos($sLowName, 'лют') !== false) $sheetMonth = '02';
+                elseif (strpos($sLowName, 'мар') !== false || strpos($sLowName, 'бер') !== false) $sheetMonth = '03';
+                elseif (strpos($sLowName, 'апр') !== false || strpos($sLowName, 'квіт') !== false) $sheetMonth = '04';
+                elseif (strpos($sLowName, 'май') !== false || strpos($sLowName, 'трав') !== false) $sheetMonth = '05';
+                elseif (strpos($sLowName, 'июн') !== false || strpos($sLowName, 'черв') !== false) $sheetMonth = '06';
+                elseif (strpos($sLowName, 'июл') !== false || strpos($sLowName, 'лип') !== false) $sheetMonth = '07';
                 elseif (strpos($sLowName, 'авг') !== false || strpos($sLowName, 'серп') !== false) $sheetMonth = '08';
 
                 // Шукаємо колонку «товарн. масличн. семян, %» у шапці (рядки 0-9)
@@ -1075,30 +1086,33 @@ try {
 
                     if ($matchedDay) {
                         // Динамічний пошук останнього заповненого рядка з датою у колонці «товарн. масличн. семян, %»
+                        // Враховуємо лише якщо дата новіша за вже знайдену (щоб вересень не перетирав жовтень)
                         $cellOilVal = $r[$feedOilColIdx] ?? null;
                         if ($cellOilVal !== null && $cellOilVal !== '') {
                             $oilCleanStr = str_replace([' ', ','], ['', '.'], (string)$cellOilVal);
                             if (is_numeric($oilCleanStr)) {
                                 $fOil = (float)$oilCleanStr;
                                 if ($fOil > 10.0 && $fOil < 70.0) {
-                                    $cellMoistVal = isset($r[$feedMoistColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedMoistColIdx]) : '';
-                                    $fMoist = (is_numeric($cellMoistVal) && (float)$cellMoistVal > 0 && (float)$cellMoistVal < 25) ? (float)$cellMoistVal : 6.30;
+                                    if ($latestFeedOilRow === null || strcmp($isoDate, $latestFeedOilRow['iso_date']) > 0) {
+                                        $cellMoistVal = isset($r[$feedMoistColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedMoistColIdx]) : '';
+                                        $fMoist = (is_numeric($cellMoistVal) && (float)$cellMoistVal > 0 && (float)$cellMoistVal < 25) ? (float)$cellMoistVal : 6.30;
 
-                                    $cellTrashVal = isset($r[$feedTrashColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedTrashColIdx]) : '';
-                                    $fTrash = (is_numeric($cellTrashVal) && (float)$cellTrashVal > 0 && (float)$cellTrashVal < 25) ? (float)$cellTrashVal : 1.80;
+                                        $cellTrashVal = isset($r[$feedTrashColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedTrashColIdx]) : '';
+                                        $fTrash = (is_numeric($cellTrashVal) && (float)$cellTrashVal > 0 && (float)$cellTrashVal < 25) ? (float)$cellTrashVal : 1.80;
 
-                                    $cellAsrVal = isset($r[$feedAsrColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedAsrColIdx]) : '';
-                                    $fAsr = (is_numeric($cellAsrVal) && (float)$cellAsrVal > 10 && (float)$cellAsrVal < 70) ? (float)$cellAsrVal : round($fOil / (1 - ($fMoist / 100)), 2);
+                                        $cellAsrVal = isset($r[$feedAsrColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedAsrColIdx]) : '';
+                                        $fAsr = (is_numeric($cellAsrVal) && (float)$cellAsrVal > 10 && (float)$cellAsrVal < 70) ? (float)$cellAsrVal : round($fOil / (1 - ($fMoist / 100)), 2);
 
-                                    $latestFeedOilRow = [
-                                        'oil_date'      => substr($dCellFormatted, 0, 5), // e.g. "21.10"
-                                        'date_str'      => $dCellFormatted,               // e.g. "21.10.2026"
-                                        'iso_date'      => $isoDate,
-                                        'oil_pct'       => round($fOil, 2),               // e.g. 44.59
-                                        'moisture_pct'  => round($fMoist, 2),
-                                        'impurity_pct'  => round($fTrash, 2),
-                                        'oil_asr_pct'   => round($fAsr, 2),
-                                    ];
+                                        $latestFeedOilRow = [
+                                            'oil_date'      => substr($dCellFormatted, 0, 5), // e.g. "21.10"
+                                            'date_str'      => $dCellFormatted,               // e.g. "21.10.2026"
+                                            'iso_date'      => $isoDate,
+                                            'oil_pct'       => round($fOil, 2),               // e.g. 44.59
+                                            'moisture_pct'  => round($fMoist, 2),
+                                            'impurity_pct'  => round($fTrash, 2),
+                                            'oil_asr_pct'   => round($fAsr, 2),
+                                        ];
+                                    }
                                 }
                             }
                         }
