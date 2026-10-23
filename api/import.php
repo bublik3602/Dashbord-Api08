@@ -1021,7 +1021,38 @@ try {
         if (!empty($prodMonthSheets)) {
             $importedProdDays = 0;
             $lastProdDate = '';
+            $latestFeedOilRow = null;
+
             foreach ($prodMonthSheets as $sName => $rows) {
+                // Визначаємо місяць аркуша
+                $sLowName = mb_strtolower($sName, 'UTF-8');
+                $sheetMonth = '10';
+                $sheetYear = '2026';
+                if (strpos($sLowName, 'сент') !== false || strpos($sLowName, 'верес') !== false) $sheetMonth = '09';
+                elseif (strpos($sLowName, 'нояб') !== false || strpos($sLowName, 'лист') !== false) $sheetMonth = '11';
+                elseif (strpos($sLowName, 'дек') !== false || strpos($sLowName, 'груд') !== false) $sheetMonth = '12';
+                elseif (strpos($sLowName, 'авг') !== false || strpos($sLowName, 'серп') !== false) $sheetMonth = '08';
+
+                // Шукаємо колонку «товарн. масличн. семян, %» у шапці (рядки 0-9)
+                $feedOilColIdx = null;
+                for ($hR = 0; $hR < min(10, count($rows)); $hR++) {
+                    foreach ($rows[$hR] as $cIdx => $cVal) {
+                        if (is_scalar($cVal)) {
+                            $cTxt = mb_strtolower(trim((string)$cVal), 'UTF-8');
+                            if (strpos($cTxt, 'товарн') !== false && strpos($cTxt, 'масличн') !== false) {
+                                $feedOilColIdx = $cIdx;
+                                break 2;
+                            }
+                        }
+                    }
+                }
+                if ($feedOilColIdx === null) {
+                    $feedOilColIdx = 19; // Col T (0-indexed 19)
+                }
+                $feedMoistColIdx = $feedOilColIdx + 2; // Col V (21)
+                $feedTrashColIdx = $feedOilColIdx + 4; // Col X (23)
+                $feedAsrColIdx   = $feedOilColIdx + 6; // Col Z (25)
+
                 foreach ($rows as $r) {
                     $dCell = trim((string)($r[0] ?? ''));
                     $matchedDay = false;
@@ -1037,17 +1068,40 @@ try {
                     } elseif (preg_match('/^(\d{1,2})\s*число/iu', $dCell, $dm)) {
                         $dayNum = (int)$dm[1];
                         $day = str_pad((string)$dayNum, 2, '0', STR_PAD_LEFT);
-                        $month = '10';
-                        $year = '2026';
-                        $sLowName = mb_strtolower($sName, 'UTF-8');
-                        if (strpos($sLowName, 'сент') !== false || strpos($sLowName, 'верес') !== false) $month = '09';
-                        elseif (strpos($sLowName, 'авг') !== false || strpos($sLowName, 'серп') !== false) $month = '08';
-                        $isoDate = "{$year}-{$month}-{$day}";
-                        $dCellFormatted = "{$day}.{$month}.{$year}";
+                        $isoDate = "{$sheetYear}-{$sheetMonth}-{$day}";
+                        $dCellFormatted = "{$day}.{$sheetMonth}.{$sheetYear}";
                         $matchedDay = true;
                     }
 
                     if ($matchedDay) {
+                        // Динамічний пошук останнього заповненого рядка з датою у колонці «товарн. масличн. семян, %»
+                        $cellOilVal = $r[$feedOilColIdx] ?? null;
+                        if ($cellOilVal !== null && $cellOilVal !== '') {
+                            $oilCleanStr = str_replace([' ', ','], ['', '.'], (string)$cellOilVal);
+                            if (is_numeric($oilCleanStr)) {
+                                $fOil = (float)$oilCleanStr;
+                                if ($fOil > 10.0 && $fOil < 70.0) {
+                                    $cellMoistVal = isset($r[$feedMoistColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedMoistColIdx]) : '';
+                                    $fMoist = (is_numeric($cellMoistVal) && (float)$cellMoistVal > 0 && (float)$cellMoistVal < 25) ? (float)$cellMoistVal : 6.30;
+
+                                    $cellTrashVal = isset($r[$feedTrashColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedTrashColIdx]) : '';
+                                    $fTrash = (is_numeric($cellTrashVal) && (float)$cellTrashVal > 0 && (float)$cellTrashVal < 25) ? (float)$cellTrashVal : 1.80;
+
+                                    $cellAsrVal = isset($r[$feedAsrColIdx]) ? str_replace([' ', ','], ['', '.'], (string)$r[$feedAsrColIdx]) : '';
+                                    $fAsr = (is_numeric($cellAsrVal) && (float)$cellAsrVal > 10 && (float)$cellAsrVal < 70) ? (float)$cellAsrVal : round($fOil / (1 - ($fMoist / 100)), 2);
+
+                                    $latestFeedOilRow = [
+                                        'oil_date'      => substr($dCellFormatted, 0, 5), // e.g. "21.10"
+                                        'date_str'      => $dCellFormatted,               // e.g. "21.10.2026"
+                                        'iso_date'      => $isoDate,
+                                        'oil_pct'       => round($fOil, 2),               // e.g. 44.59
+                                        'moisture_pct'  => round($fMoist, 2),
+                                        'impurity_pct'  => round($fTrash, 2),
+                                        'oil_asr_pct'   => round($fAsr, 2),
+                                    ];
+                                }
+                            }
+                        }
                         // Захист від створення порожніх записів на далекі майбутні дати календаря (+1 доба)
                         if ($isoDate > date('Y-m-d', strtotime('+1 day'))) {
                             continue;
@@ -1168,6 +1222,36 @@ try {
                 $detectedDates['material_balance'] = $lastProdDate;
                 $details[] = "✅ «Справка по переработке урожая» ({$filename}): імпортовано {$importedProdDays} діб переробки з вкладок «" . implode('», «', array_keys($prodMonthSheets)) . "»";
                 $fileHadProcessedReport = true;
+            }
+
+            if ($latestFeedOilRow !== null) {
+                $oilDataFile = __DIR__ . '/../database/production_oil_losses.json';
+                $curOilData = file_exists($oilDataFile) ? (json_decode((string)file_get_contents($oilDataFile), true) ?: []) : [];
+                $curOilData['latest_feed_oil_date']     = $latestFeedOilRow['oil_date'];
+                $curOilData['latest_feed_oil_pct']      = $latestFeedOilRow['oil_pct'];
+                $curOilData['latest_feed_oil_asr_pct']  = $latestFeedOilRow['oil_asr_pct'];
+                $curOilData['latest_feed_moisture_pct'] = $latestFeedOilRow['moisture_pct'];
+                $curOilData['latest_feed_impurity_pct'] = $latestFeedOilRow['impurity_pct'];
+                $curOilData['oil_date']                 = $latestFeedOilRow['oil_date'];
+                $curOilData['sunflower_oil_pct']        = $latestFeedOilRow['oil_pct'];
+                $curOilData['updated_at']               = date('Y-m-d H:i:s');
+                @file_put_contents($oilDataFile, json_encode($curOilData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+                try {
+                    $db->exec("
+                        CREATE TABLE IF NOT EXISTS `dashboard_state` (
+                            `key_name` VARCHAR(100) PRIMARY KEY,
+                            `data_json` LONGTEXT NOT NULL,
+                            `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+                    ");
+                    $stStmt = $db->prepare("
+                        INSERT INTO `dashboard_state` (`key_name`, `data_json`, `updated_at`)
+                        VALUES ('production_oil_losses', ?, NOW())
+                        ON DUPLICATE KEY UPDATE `data_json` = VALUES(`data_json`), `updated_at` = NOW()
+                    ");
+                    $stStmt->execute([json_encode($curOilData, JSON_UNESCAPED_UNICODE)]);
+                } catch (Throwable $e) {}
+                $details[] = "🧪 Товарна олійність у переробку: розпізнано останній заповнений день {$latestFeedOilRow['oil_date']} ({$latestFeedOilRow['oil_pct']}%) з колонки «товарн. масличн. семян, %».";
             }
         }
 
@@ -1335,6 +1419,23 @@ try {
                     'source_file'              => $filename,
                     'updated_at'               => date('Y-m-d H:i:s'),
                 ];
+                if ($latestFeedOilRow !== null) {
+                    $newOilData['latest_feed_oil_date']     = $latestFeedOilRow['oil_date'];
+                    $newOilData['latest_feed_oil_pct']      = $latestFeedOilRow['oil_pct'];
+                    $newOilData['latest_feed_oil_asr_pct']  = $latestFeedOilRow['oil_asr_pct'];
+                    $newOilData['latest_feed_moisture_pct'] = $latestFeedOilRow['moisture_pct'];
+                    $newOilData['latest_feed_impurity_pct'] = $latestFeedOilRow['impurity_pct'];
+                    $newOilData['oil_date']                 = $latestFeedOilRow['oil_date'];
+                    $newOilData['sunflower_oil_pct']        = $latestFeedOilRow['oil_pct'];
+                } elseif (!empty($existingOilData['latest_feed_oil_date'])) {
+                    $newOilData['latest_feed_oil_date']     = $existingOilData['latest_feed_oil_date'];
+                    $newOilData['latest_feed_oil_pct']      = $existingOilData['latest_feed_oil_pct'] ?? $newOilData['sunflower_oil_pct'];
+                    $newOilData['latest_feed_oil_asr_pct']  = $existingOilData['latest_feed_oil_asr_pct'] ?? 47.60;
+                    $newOilData['latest_feed_moisture_pct'] = $existingOilData['latest_feed_moisture_pct'] ?? 6.30;
+                    $newOilData['latest_feed_impurity_pct'] = $existingOilData['latest_feed_impurity_pct'] ?? 1.80;
+                    $newOilData['oil_date']                 = $existingOilData['oil_date'];
+                    $newOilData['sunflower_oil_pct']        = $existingOilData['latest_feed_oil_pct'] ?? $newOilData['sunflower_oil_pct'];
+                }
                 @file_put_contents($oilDataFile, json_encode($newOilData, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
                 try {
                     $db->exec("

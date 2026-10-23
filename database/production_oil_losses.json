@@ -1,5 +1,11 @@
 {
-    "sunflower_oil_pct": 45.26,
+    "latest_feed_oil_date": "21.10",
+    "latest_feed_oil_pct": 44.59,
+    "latest_feed_oil_asr_pct": 47.60,
+    "latest_feed_moisture_pct": 6.30,
+    "latest_feed_impurity_pct": 1.80,
+    "oil_date": "21.10",
+    "sunflower_oil_pct": 44.59,
     "yield_oil_pct": 44.31,
     "yield_meal_pct": 40.94,
     "meal_oil_pct": 0.775,
@@ -17,5 +23,5 @@
     "oil_in_husk_kg": 27321.8,
     "sheet_name": "Октябрь26",
     "source_file": "Справка по переработке урожая 2026 .xlsx",
-    "updated_at": "2026-10-20 09:30:00"
+    "updated_at": "2026-10-23 10:00:00"
 }

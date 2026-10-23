@@ -3627,18 +3627,20 @@ class MetricsCalculator {
                 $dateIso = substr($recAt, 0, 10);
 
                 // Товарна олійність у переробку (вхід у цех МЕЗ зі «Справки по переработке»):
-                // У довідці за 20 число товарної олійності немає, беремо за 19.10 (45,26%, а.с.р. 48,35%)
-                $oilDateStr = '19.10';
-                $oil = !empty($oilLossData['sunflower_oil_pct']) ? (float)$oilLossData['sunflower_oil_pct'] : 45.26;
-                $moist = 6.40;
-                $imp = 2.05;
-
-                // Якщо у збережених даних довідки є окрема дата (крім 20.10, за яку немає аналізу)
-                if (!empty($oilLossData['oil_date']) && $oilLossData['oil_date'] !== '20.10') {
-                    $oilDateStr = $oilLossData['oil_date'];
-                }
-
-                $oilAsr = ($moist < 100) ? round($oil / (1 - ($moist / 100)), 2) : 48.35;
+                // Динамічно беремо останній заповнений рядок з датою з колонки «товарн. масличн. семян, %»
+                $oilDateStr = $oilLossData['latest_feed_oil_date'] ?? $oilLossData['oil_date'] ?? '21.10';
+                $oil = isset($oilLossData['latest_feed_oil_pct']) && (float)$oilLossData['latest_feed_oil_pct'] > 10
+                    ? (float)$oilLossData['latest_feed_oil_pct']
+                    : (!empty($oilLossData['sunflower_oil_pct']) ? (float)$oilLossData['sunflower_oil_pct'] : 44.59);
+                $moist = isset($oilLossData['latest_feed_moisture_pct']) && (float)$oilLossData['latest_feed_moisture_pct'] > 0
+                    ? (float)$oilLossData['latest_feed_moisture_pct']
+                    : 6.30;
+                $imp = isset($oilLossData['latest_feed_impurity_pct']) && (float)$oilLossData['latest_feed_impurity_pct'] > 0
+                    ? (float)$oilLossData['latest_feed_impurity_pct']
+                    : 1.80;
+                $oilAsr = isset($oilLossData['latest_feed_oil_asr_pct']) && (float)$oilLossData['latest_feed_oil_asr_pct'] > 10
+                    ? (float)$oilLossData['latest_feed_oil_asr_pct']
+                    : (($moist < 100) ? round($oil / (1 - ($moist / 100)), 2) : 47.60);
                 $oilYieldPct = ($dailySeed > 0) ? round(($rowOilOut / $dailySeed) * 100, 2) : (isset($oilLossData['yield_oil_pct']) ? (float)$oilLossData['yield_oil_pct'] : 41.59);
                 $oilOutKg = round($rowOilOut * 1000);
 
