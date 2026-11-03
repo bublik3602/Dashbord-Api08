@@ -841,7 +841,7 @@ document.addEventListener('DOMContentLoaded', function () {
             };
             const energyMonthSelEl = document.getElementById('energy-month-select');
             const headerMonthSelEl = document.getElementById('energy-header-month-select');
-            const selectedEnergyMonthKey = reversePeriodMap[currentPeriod] || (headerMonthSelEl ? headerMonthSelEl.value : (energyMonthSelEl ? energyMonthSelEl.value : '2026-09'));
+            const selectedEnergyMonthKey = reversePeriodMap[currentPeriod] || (headerMonthSelEl ? headerMonthSelEl.value : (energyMonthSelEl ? energyMonthSelEl.value : '2026-11'));
 
             if (headerMonthSelEl && selectedEnergyMonthKey) headerMonthSelEl.value = selectedEnergyMonthKey;
             if (energyMonthSelEl && selectedEnergyMonthKey) energyMonthSelEl.value = selectedEnergyMonthKey;

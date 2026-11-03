@@ -1664,11 +1664,12 @@ class MetricsCalculator {
 
                     // 2. Період: МІСЯЦЬ / ЖОВТЕНЬ
                     if ($period === 'month' || $period === 'month_oct' || $period === 'season') {
-                        $daysCnt = max(1, count($manualEntries));
+                        $targetMonthEntries = !empty($octEntries) ? $octEntries : $manualEntries;
+                        $daysCnt = max(1, count($targetMonthEntries));
 
-                        $powList = array_values(array_filter(array_map(fn($e) => isset($e['power_kwh']) && $e['power_kwh'] !== null && $e['power_kwh'] !== '' ? (float)$e['power_kwh'] : null, $manualEntries), fn($v) => $v !== null));
-                        $watList = array_values(array_filter(array_map(fn($e) => isset($e['water_m3']) && $e['water_m3'] !== null && $e['water_m3'] !== '' ? (float)$e['water_m3'] : null, $manualEntries), fn($v) => $v !== null));
-                        $stmList = array_values(array_filter(array_map(fn($e) => isset($e['steam_t']) && $e['steam_t'] !== null && $e['steam_t'] !== '' ? (float)$e['steam_t'] : null, $manualEntries), fn($v) => $v !== null));
+                        $powList = array_values(array_filter(array_map(fn($e) => isset($e['power_kwh']) && $e['power_kwh'] !== null && $e['power_kwh'] !== '' ? (float)$e['power_kwh'] : null, $targetMonthEntries), fn($v) => $v !== null));
+                        $watList = array_values(array_filter(array_map(fn($e) => isset($e['water_m3']) && $e['water_m3'] !== null && $e['water_m3'] !== '' ? (float)$e['water_m3'] : null, $targetMonthEntries), fn($v) => $v !== null));
+                        $stmList = array_values(array_filter(array_map(fn($e) => isset($e['steam_t']) && $e['steam_t'] !== null && $e['steam_t'] !== '' ? (float)$e['steam_t'] : null, $targetMonthEntries), fn($v) => $v !== null));
 
                         $hasPower = !empty($powList);
                         $hasWater = !empty($watList);
