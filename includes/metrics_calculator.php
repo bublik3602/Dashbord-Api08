@@ -862,6 +862,17 @@ class MetricsCalculator {
             ['key' => '2026-08', 'month' => 'Серпень 2026',  'short' => 'Сер\'26', 'active_kwh' => 49379,   'reactive_kvarh' => 67011.0,  'gas_m3' => 96.0,    'water_m3' => 616,  'sewage_m3' => 400,  'daily_water_m3' => 19.9,  'press_kwh' => 14640,  'extr_kwh' => 1360,   'elev_kwh' => 14918,  'boiler_kwh' => 960,   'specific_kwh' => 0.00,  'has_data' => true],
             ['key' => '2026-09', 'month' => 'Вересень 2026', 'short' => 'Вер\'26', 'active_kwh' => 485070,  'reactive_kvarh' => 184589.7, 'gas_m3' => 990.9,   'water_m3' => 2508, 'sewage_m3' => 1409, 'daily_water_m3' => 83.6,  'press_kwh' => 270231, 'extr_kwh' => 106000, 'elev_kwh' => 75249,  'boiler_kwh' => 29940, 'specific_kwh' => 54.97, 'has_data' => true],
             ['key' => '2026-10', 'month' => 'Жовтень 2026',  'short' => 'Жов\'26', 'active_kwh' => null,    'reactive_kvarh' => null,     'gas_m3' => null,    'water_m3' => null, 'sewage_m3' => null, 'daily_water_m3' => null,  'press_kwh' => null,   'extr_kwh' => null,   'elev_kwh' => null,   'boiler_kwh' => null,  'specific_kwh' => null,  'has_data' => false, 'note' => 'Немає даних (звіт очікується)'],
+            ['key' => '2026-11', 'month' => 'Листопад 2026', 'short' => 'Лис\'26', 'active_kwh' => null,    'reactive_kvarh' => null,     'gas_m3' => 0.0,     'water_m3' => null, 'sewage_m3' => null, 'daily_water_m3' => null,  'press_kwh' => null,   'extr_kwh' => null,   'elev_kwh' => null,   'boiler_kwh' => 26.98, 'specific_kwh' => 0.00,  'has_data' => true,  'note' => 'Поточний місяць (облік пари: 26,98 т • завод у простої)'],
+        ];
+
+        $departmentsNov = $energyDeptArchive['2026-11']['departments'] ?? [
+            ['name' => 'Олійнопресовий цех (підготовка)',                  'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0, 'water_m3' => null, 'sewage_m3' => null],
+            ['name' => 'Дільниця екстракції (водооборотка)',              'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0, 'water_m3' => null, 'sewage_m3' => null],
+            ['name' => 'Дільниця приймання, доробки та зберіг. сировини', 'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0, 'water_m3' => null, 'sewage_m3' => null],
+            ['name' => 'Котельня лузгова (пермеат + пара)',               'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0, 'water_m3' => null, 'sewage_m3' => null],
+            ['name' => 'Елеватор №2 (вул. Василя Симоненка, 13Б)',         'active_kwh' => null, 'reactive_kvarh' => 0.0,  'specific_kwh' => 0.0, 'water_m3' => 0.0,  'sewage_m3' => 0.0],
+            ['name' => 'Склад готової продукції',                         'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0, 'water_m3' => 0.0,  'sewage_m3' => 0.0],
+            ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)',         'active_kwh' => null, 'reactive_kvarh' => 0.0,  'specific_kwh' => 0.0, 'water_m3' => null, 'sewage_m3' => null],
         ];
 
         $departmentsSep = $energyDeptArchive['2026-09']['departments'] ?? [
@@ -1113,11 +1124,14 @@ class MetricsCalculator {
             @file_put_contents($manualFile, json_encode($manualEntries, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
         }
 
-        // Відокремлюємо записи за місяцями (Жовтень та Вересень):
+        // Відокремлюємо записи за місяцями (Листопад, Жовтень та Вересень):
+        $novEntries = [];
         $octEntries = [];
         $sepManualEntries = [];
         foreach ($manualEntries as $dStr => $entry) {
-            if (strpos($dStr, '2026-10') === 0) {
+            if (strpos($dStr, '2026-11') === 0) {
+                $novEntries[$dStr] = $entry;
+            } elseif (strpos($dStr, '2026-10') === 0) {
                 $octEntries[$dStr] = $entry;
             } elseif (strpos($dStr, '2026-09') === 0) {
                 $sepManualEntries[$dStr] = $entry;
@@ -1199,7 +1213,109 @@ class MetricsCalculator {
             }
         }
 
+        // Перевіряємо поточний місяць: якщо звіт за листопад або зараз листопад, період 'month' відноситься до листопада
+        $liveSvod = $this->loadLiveSvodStocks();
+        $isNovActive = strpos($liveSvod['report_date'] ?? '', '.11.') !== false || date('m') === '11' || !empty($novEntries) || !empty($steamDb['daily_nov26']);
+        if ($period === 'month' && $isNovActive) {
+            $period = 'month_nov';
+        }
+
         switch ($period) {
+            case 'month_nov':
+                $novDailyTable = $steamDb['daily_nov26'] ?? $steamDailyArchive['2026-11'] ?? [];
+                $novLabels = [];
+                $novPower = [];
+                $novWater = [];
+                $novSteam = [];
+
+                if (!empty($novEntries)) {
+                    foreach ($novEntries as $dStr => $e) {
+                        $novLabels[] = date('d.m', strtotime($dStr));
+                        $p = isset($e['power_kwh']) && (float)$e['power_kwh'] > 0 ? (float)$e['power_kwh'] : null;
+                        $novPower[] = $p;
+                        $novWater[] = isset($e['water_m3']) ? (float)$e['water_m3'] : 0.0;
+                        $novSteam[] = isset($e['steam_t']) ? (float)$e['steam_t'] : 0.0;
+                    }
+                } elseif (!empty($novDailyTable)) {
+                    foreach (array_slice($novDailyTable, 0, 7) as $r) {
+                        $novLabels[] = sprintf('%02d.11', (int)($r['day'] ?? 1));
+                        $novPower[] = null;
+                        $novWater[] = null;
+                        $novSteam[] = (float)($r['boiler_t'] ?? 0.0);
+                    }
+                }
+
+                $stNovBoiler = (float)($steamDb['november_summary']['boiler_t'] ?? 26.98);
+                $stNovProd   = (float)($steamDb['november_summary']['prod_t'] ?? 11.98);
+                $stNovSN     = (float)($steamDb['november_summary']['sn_t'] ?? 15.0);
+                $stNovExtr   = (float)($steamDb['november_summary']['extr_t'] ?? 10.37);
+                $stNovPrep   = (float)($steamDb['november_summary']['prep_t'] ?? 0.0);
+                $stNovElev   = (float)($steamDb['november_summary']['elev_t'] ?? 0.0);
+                $stNovHeat   = (float)($steamDb['november_summary']['heating_t'] ?? 1.61);
+
+                $powListNov = array_values(array_filter($novPower, fn($v) => $v !== null && $v > 0));
+                $hasNovPow = !empty($powListNov);
+                $totNovPow = $hasNovPow ? array_sum($powListNov) : null;
+                $totNovWat = !empty(array_filter($novWater)) ? array_sum(array_filter($novWater)) : null;
+
+                $novDept = $energyDeptArchive['2026-11']['departments'] ?? $departmentsNov;
+
+                return [
+                    'has_data'                   => true,
+                    'has_power'                  => $hasNovPow,
+                    'has_water'                  => $totNovWat !== null,
+                    'has_steam'                  => true,
+                    'current_power_kw'           => $hasNovPow ? round($totNovPow / (max(1, count($powListNov)) * 24), 4) : 0.0,
+                    'total_kwh'                  => $totNovPow,
+                    'reactive_kvarh'             => $hasNovPow ? round($totNovPow * 0.32, 1) : null,
+                    'current_water_m3_hour'      => $totNovWat !== null ? round($totNovWat / (max(1, count($novWater)) * 24), 2) : 0.0,
+                    'daily_water_m3'             => $totNovWat !== null ? round($totNovWat / max(1, count($novWater)), 1) : 0.0,
+                    'total_water_m3'             => $totNovWat,
+                    'sewage_m3'                  => $totNovWat !== null ? round($totNovWat * 0.56, 1) : null,
+                    'gas_m3'                     => 0.0,
+                    'steam_pressure_bar'         => 11.2,
+                    'specific_kwh_per_tonne'     => 0.0,
+                    'specific_subtext'           => 'Листопад 2026: завод у простої (підтримка та черговий режим котельні)',
+                    'boiler_water_m3'            => $totNovWat !== null ? round($totNovWat * 0.408, 0) : null,
+                    'extraction_water_m3'        => $totNovWat !== null ? round($totNovWat * 0.217, 0) : null,
+                    'steam_boiler_tonnes'        => $stNovBoiler,
+                    'steam_production_tonnes'    => $stNovProd,
+                    'steam_extraction_tonnes'    => $stNovExtr,
+                    'steam_prep_tonnes'          => $stNovPrep,
+                    'steam_elevator_tonnes'      => $stNovElev,
+                    'steam_heating_tonnes'       => $stNovHeat,
+                    'steam_sn_tonnes'            => $stNovSN,
+                    'steam_specific_kg_per_tonne'=> 0.0,
+                    'steam_subtext'              => "Листопад 2026: " . number_format($stNovBoiler, 2, ',', ' ') . " т котлом • Виробництво: " . number_format($stNovProd, 2, ',', ' ') . " т • СН: " . number_format($stNovSN, 2, ',', ' ') . " т",
+                    'steam_distrib_subtext'      => "Екстракція: " . number_format($stNovExtr, 2, ',', ' ') . " т • Опалення: " . number_format($stNovHeat, 2, ',', ' ') . " т • Завод у простої",
+                    'steam_daily_table'          => $novDailyTable,
+                    'steam_monthly_history'      => $steamMonthly,
+                    'steam_daily_archive'        => $steamDailyArchive,
+                    'period_note'                => 'Листопад 2026 (поточний місяць • завод у простої • облік пари та черговий режим)',
+                    'departments'                => $novDept,
+                    'energy_departments_archive' => $energyDeptArchive,
+                    'water_meters'               => $waterMetersAccounting,
+                    'monthly_12'                 => $monthly12,
+                    'timeline' => [
+                        'labels'        => !empty($novLabels) ? $novLabels : ['01.11', '02.11', '03.11'],
+                        'power'         => $novPower,
+                        'reactive'      => array_map(fn($p) => $p !== null ? round($p * 0.32, 1) : null, $novPower),
+                        'power_mwh'     => array_map(fn($p) => $p !== null ? round($p / 1000, 4) : null, $novPower),
+                        'power_kw_avg'  => array_map(fn($p) => $p !== null ? round($p / 24, 4) : null, $novPower),
+                        'power_mw_avg'  => array_map(fn($p) => $p !== null ? round($p / 24000, 4) : null, $novPower),
+                        'water'         => $novWater,
+                        'steam'         => !empty($novSteam) ? $novSteam : [26.98, 0.0, 0.0],
+                        'power_name'    => 'Активна електроенергія (кВт)',
+                        'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
+                        'water_name'    => 'Вода за добу по лічильнику (м³)',
+                        'steam_name'    => 'Технологічна пара за добу (т)',
+                        'power_unit'    => 'кВт',
+                        'reactive_unit' => 'кВАр·год',
+                        'water_unit'    => 'м³/д',
+                        'steam_unit'    => 'т/д',
+                    ]
+                ];
+
             case 'month_sep':
                 // Вересень 2026: точні дані з журналу пари ТОВ «Агропроінвест 08» (1 980,50 т котлом, 1 844,04 т на виробництво)
                 $sepLabels = ['15.09', '16.09', '17.09', '18.09', '19.09', '20.09', '21.09', '22.09', '23.09', '24.09', '25.09', '26.09', '27.09', '28.09', '29.09', '30.09'];

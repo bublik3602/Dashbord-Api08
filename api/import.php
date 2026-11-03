@@ -1636,6 +1636,7 @@ try {
         if ($isEnergyReport) {
             $energyManualFile = __DIR__ . '/../database/energy_manual_entries.json';
             $steamDbFile = __DIR__ . '/../database/steam_data.json';
+            $energyDeptFile = __DIR__ . '/../database/energy_departments_archive.json';
             
             $energyManualEntries = [];
             if (file_exists($energyManualFile)) {
@@ -1653,9 +1654,18 @@ try {
                 }
             }
 
+            $energyDeptArchive = [];
+            if (file_exists($energyDeptFile)) {
+                $rawDept = @file_get_contents($energyDeptFile);
+                if ($rawDept) {
+                    $energyDeptArchive = json_decode($rawDept, true) ?: [];
+                }
+            }
+
             $waterUpdatedDays = 0;
             $steamUpdatedDays = 0;
             $powerUpdatedDays = 0;
+            $deptUpdatedCount = 0;
 
             // Допоміжна функція визначення дати з Excel (серійний номер або рядок)
             $excelDateToIso = function($val): ?string {
@@ -1861,50 +1871,165 @@ try {
                         }
 
                         if (!empty($monthDailyRecords)) {
-                            if ($mNum === 10 && $yr === 2026) {
+                            $monthKey = sprintf('%04d-%02d', $yr, $mNum);
+                            $uaMonths = [
+                                1 => 'Січень', 2 => 'Лютий', 3 => 'Березень', 4 => 'Квітень',
+                                5 => 'Травень', 6 => 'Червень', 7 => 'Липень', 8 => 'Серпень',
+                                9 => 'Вересень', 10 => 'Жовтень', 11 => 'Листопад', 12 => 'Грудень'
+                            ];
+                            $uaMonthName = ($uaMonths[$mNum] ?? ('Місяць ' . $mNum)) . ' ' . $yr;
+
+                            if (!isset($steamDb['daily_archive']) || !is_array($steamDb['daily_archive'])) {
+                                $steamDb['daily_archive'] = [];
+                            }
+                            $steamDb['daily_archive'][$monthKey] = $monthDailyRecords;
+
+                            $summaryData = [
+                                'month'     => $uaMonthName,
+                                'boiler_t'  => round($sumBoiler, 2),
+                                'prod_t'    => round($sumProd, 2),
+                                'sn_t'      => round($sumSN, 2),
+                                'extr_t'    => round($sumExtr, 2),
+                                'prep_t'    => round($sumPrep, 2),
+                                'elev_t'    => round($sumElev, 2),
+                                'heating_t' => round($sumHeat, 2),
+                            ];
+
+                            if ($mNum === 11 && $yr === 2026) {
+                                $steamDb['daily_nov26'] = $monthDailyRecords;
+                                $steamDb['november_summary'] = $summaryData;
+                            } elseif ($mNum === 10 && $yr === 2026) {
                                 $steamDb['daily_oct26'] = $monthDailyRecords;
-                                if (!isset($steamDb['daily_archive'])) {
-                                    $steamDb['daily_archive'] = [];
-                                }
-                                $steamDb['daily_archive']['2026-10'] = $monthDailyRecords;
-                                $steamDb['october_summary'] = [
-                                    'month'     => 'Жовтень 2026',
-                                    'boiler_t'  => round($sumBoiler, 2),
-                                    'prod_t'    => round($sumProd, 2),
-                                    'sn_t'      => round($sumSN, 2),
-                                    'extr_t'    => round($sumExtr, 2),
-                                    'prep_t'    => round($sumPrep, 2),
-                                    'elev_t'    => round($sumElev, 2),
-                                    'heating_t' => round($sumHeat, 2),
-                                ];
-                                if (!empty($steamDb['monthly_summary'])) {
-                                    $octSummItem = [
-                                        'key'       => '2026-10',
-                                        'sheet'     => 'октябрь_26',
-                                        'month_ua'  => 'Жовтень 2026',
-                                        'year'      => 2026,
-                                        'month_num' => 10,
-                                        'boiler_t'  => round($sumBoiler, 2),
-                                        'prod_t'    => round($sumProd, 2),
-                                        'sn_t'      => round($sumSN, 2),
-                                        'extr_t'    => round($sumExtr, 2),
-                                        'prep_t'    => round($sumPrep, 2),
-                                        'elev_t'    => round($sumElev, 2),
-                                        'heating_t' => round($sumHeat, 2),
-                                    ];
-                                    if (($steamDb['monthly_summary'][0]['month_ua'] ?? '') === 'Жовтень 2026') {
-                                        $steamDb['monthly_summary'][0] = $octSummItem;
-                                    } else {
-                                        array_unshift($steamDb['monthly_summary'], $octSummItem);
-                                    }
-                                }
+                                $steamDb['october_summary'] = $summaryData;
                             } elseif ($mNum === 9 && $yr === 2026) {
                                 $steamDb['daily_sep26'] = $monthDailyRecords;
-                                if (!isset($steamDb['daily_archive'])) {
-                                    $steamDb['daily_archive'] = [];
-                                }
-                                $steamDb['daily_archive']['2026-09'] = $monthDailyRecords;
                             }
+
+                            if (!isset($steamDb['monthly_summary']) || !is_array($steamDb['monthly_summary'])) {
+                                $steamDb['monthly_summary'] = [];
+                            }
+                            $monthSummItem = [
+                                'key'       => $monthKey,
+                                'sheet'     => $sName,
+                                'month_ua'  => $uaMonthName,
+                                'year'      => $yr,
+                                'month_num' => $mNum,
+                                'boiler_t'  => round($sumBoiler, 2),
+                                'prod_t'    => round($sumProd, 2),
+                                'sn_t'      => round($sumSN, 2),
+                                'extr_t'    => round($sumExtr, 2),
+                                'prep_t'    => round($sumPrep, 2),
+                                'elev_t'    => round($sumElev, 2),
+                                'heating_t' => round($sumHeat, 2),
+                            ];
+                            $foundIdx = -1;
+                            foreach ($steamDb['monthly_summary'] as $idx => $mItem) {
+                                if (($mItem['key'] ?? '') === $monthKey) {
+                                    $foundIdx = $idx;
+                                    break;
+                                }
+                            }
+                            if ($foundIdx >= 0) {
+                                $steamDb['monthly_summary'][$foundIdx] = $monthSummItem;
+                            } else {
+                                $steamDb['monthly_summary'][] = $monthSummItem;
+                                usort($steamDb['monthly_summary'], function($a, $b) {
+                                    return strcmp($b['key'] ?? '', $a['key'] ?? '');
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // ---------------------------------------------------------
+                // B.1. РОЗПОДІЛ ЕНЕРГОНОСІЇВ ЗА СТРУКТУРНИМИ ПІДРОЗДІЛАМИ
+                // ---------------------------------------------------------
+                $isDeptSheet = (strpos($sLow, 'распредел') !== false || strpos($sLow, 'розподіл') !== false || strpos($sLow, 'подраздел') !== false || strpos($sLow, 'підрозділ') !== false);
+                $deptTitle = '';
+                foreach (array_slice($rows, 0, 6) as $topR) {
+                    $tStr = implode(' ', array_filter($topR, 'is_string'));
+                    if (mb_stripos($tStr, 'распределение энергоносителей') !== false || mb_stripos($tStr, 'розподіл енергоносіїв') !== false) {
+                        $isDeptSheet = true;
+                        $deptTitle = $tStr;
+                        break;
+                    }
+                }
+                if ($isDeptSheet) {
+                    [$mNumDept, $yrDept] = $resolveMonthYear($deptTitle !== '' ? $deptTitle : $sName);
+                    $mKeyDept = sprintf('%04d-%02d', $yrDept, $mNumDept);
+                    $headerRowDept = -1;
+                    $cName = 1; $cAct = 2; $cReact = 3; $cGas = 4; $cWater = 5; $cSewage = 6; $cSpec = 7;
+                    for ($r = 0; $r < min(10, count($rows)); $r++) {
+                        $rRow = $rows[$r] ?? [];
+                        $rStr = mb_strtolower(implode(' ', array_filter($rRow, 'is_string')), 'UTF-8');
+                        if (strpos($rStr, 'подразделение') !== false || strpos($rStr, 'підрозділ') !== false || strpos($rStr, 'эл. энергия') !== false || strpos($rStr, 'ел. енергія') !== false) {
+                            $headerRowDept = $r;
+                            foreach ($rRow as $ci => $cv) {
+                                $cvLow = mb_strtolower((string)$cv, 'UTF-8');
+                                if (strpos($cvLow, 'подразделен') !== false || strpos($cvLow, 'підрозділ') !== false) $cName = $ci;
+                                elseif (strpos($cvLow, 'акт') !== false || (strpos($cvLow, 'квт') !== false && strpos($cvLow, 'реакт') === false)) $cAct = $ci;
+                                elseif (strpos($cvLow, 'реакт') !== false || strpos($cvLow, 'квар') !== false) $cReact = $ci;
+                                elseif (strpos($cvLow, 'газ') !== false) $cGas = $ci;
+                                elseif (strpos($cvLow, 'вода') !== false) $cWater = $ci;
+                                elseif (strpos($cvLow, 'сток') !== false) $cSewage = $ci;
+                                elseif (strpos($cvLow, 'удельн') !== false || strpos($cvLow, 'питом') !== false) $cSpec = $ci;
+                            }
+                            break;
+                        }
+                    }
+                    if ($headerRowDept >= 0) {
+                        $parsedDepts = [];
+                        $totAct = null; $totReact = null; $totGas = null; $totWater = null; $totSewage = null;
+                        for ($r = $headerRowDept + 1; $r < count($rows); $r++) {
+                            $rRow = $rows[$r] ?? [];
+                            $nameVal = trim((string)($rRow[$cName] ?? $rRow[1] ?? ''));
+                            if ($nameVal === '') continue;
+                            $nameLow = mb_strtolower($nameVal, 'UTF-8');
+                            $isTotalRow = (strpos($nameLow, 'всего') !== false || strpos($nameLow, 'разом') !== false || strpos($nameLow, 'итого') !== false);
+                            
+                            $actVal = isset($rRow[$cAct]) && is_numeric($rRow[$cAct]) ? (float)$rRow[$cAct] : null;
+                            $reactVal = isset($rRow[$cReact]) && is_numeric($rRow[$cReact]) ? (float)$rRow[$cReact] : null;
+                            $gasVal = isset($rRow[$cGas]) && is_numeric($rRow[$cGas]) ? (float)$rRow[$cGas] : 0.0;
+                            $watVal = isset($rRow[$cWater]) && is_numeric($rRow[$cWater]) ? (float)$rRow[$cWater] : null;
+                            $sewVal = isset($rRow[$cSewage]) && is_numeric($rRow[$cSewage]) ? (float)$rRow[$cSewage] : null;
+                            $specVal = isset($rRow[$cSpec]) && is_numeric($rRow[$cSpec]) ? (float)$rRow[$cSpec] : null;
+
+                            if ($isTotalRow) {
+                                $totAct = $actVal;
+                                $totReact = $reactVal;
+                                $totGas = $gasVal;
+                                $totWater = $watVal;
+                                $totSewage = $sewVal;
+                            } else {
+                                $parsedDepts[] = [
+                                    'name'           => $nameVal,
+                                    'active_kwh'     => $actVal,
+                                    'reactive_kvarh' => $reactVal,
+                                    'specific_kwh'   => $specVal,
+                                    'water_m3'       => $watVal,
+                                    'sewage_m3'      => $sewVal,
+                                ];
+                            }
+                        }
+                        if (!empty($parsedDepts)) {
+                            $uaMonths = [
+                                1 => 'Січень', 2 => 'Лютий', 3 => 'Березень', 4 => 'Квітень',
+                                5 => 'Травень', 6 => 'Червень', 7 => 'Липень', 8 => 'Серпень',
+                                9 => 'Вересень', 10 => 'Жовтень', 11 => 'Листопад', 12 => 'Грудень'
+                            ];
+                            $monthUa = ($uaMonths[$mNumDept] ?? ('Місяць ' . $mNumDept)) . ' ' . $yrDept;
+                            $energyDeptArchive[$mKeyDept] = [
+                                'month_name'     => $monthUa,
+                                'key'            => $mKeyDept,
+                                'active_kwh'     => $totAct,
+                                'reactive_kvarh' => $totReact,
+                                'water_m3'       => $totWater,
+                                'sewage_m3'      => $totSewage,
+                                'gas_m3'         => $totGas ?? 0.0,
+                                'is_current'     => ($mKeyDept >= '2026-11'),
+                                'departments'    => $parsedDepts,
+                            ];
+                            $deptUpdatedCount++;
                         }
                     }
                 }
@@ -1989,12 +2114,17 @@ try {
                 @file_put_contents($steamDbFile, json_encode($steamDb, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
             }
 
+            if ($deptUpdatedCount > 0 && !empty($energyDeptArchive)) {
+                @file_put_contents($energyDeptFile, json_encode($energyDeptArchive, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT), LOCK_EX);
+            }
+
             $processedReports[] = 'energy';
             $sheetListStr = implode('», «', array_slice(array_keys($sheetsData), 0, 5));
             $summaryParts = [];
             if ($waterUpdatedDays > 0) $summaryParts[] = "{$waterUpdatedDays} діб води";
             if ($steamUpdatedDays > 0) $summaryParts[] = "{$steamUpdatedDays} діб пари";
             if ($powerUpdatedDays > 0) $summaryParts[] = "{$powerUpdatedDays} діб електроенергії";
+            if ($deptUpdatedCount > 0) $summaryParts[] = "{$deptUpdatedCount} розподілів підрозділів";
             $sumTxt = !empty($summaryParts) ? implode(', ', $summaryParts) : "показники оновлено";
             $details[] = "✅ «Енергоносії, Вода та Пара» ({$filename}): успішно імпортовано та оновлено графіки ({$sumTxt}, вкладки «{$sheetListStr}»).";
             $fileHadProcessedReport = true;

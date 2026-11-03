@@ -1,4 +1,72 @@
 {
+  "2026-11": {
+    "month_name": "Листопад 2026",
+    "key": "2026-11",
+    "active_kwh": null,
+    "reactive_kvarh": null,
+    "water_m3": null,
+    "sewage_m3": null,
+    "gas_m3": 0.0,
+    "is_current": true,
+    "departments": [
+      {
+        "name": "Олійнопресовий цех (підготовка)",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 0.0,
+        "water_m3": null,
+        "sewage_m3": null
+      },
+      {
+        "name": "Дільниця екстракції (водооборотка)",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 0.0,
+        "water_m3": null,
+        "sewage_m3": null
+      },
+      {
+        "name": "Дільниця приймання, доробки та зберіг. сировини",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 0.0,
+        "water_m3": null,
+        "sewage_m3": null
+      },
+      {
+        "name": "Котельня лузгова (пермеат + пара)",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 0.0,
+        "water_m3": null,
+        "sewage_m3": null
+      },
+      {
+        "name": "Елеватор №2 (вул. Василя Симоненка, 13Б)",
+        "active_kwh": null,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Склад готової продукції",
+        "active_kwh": null,
+        "reactive_kvarh": null,
+        "specific_kwh": 0.0,
+        "water_m3": 0.0,
+        "sewage_m3": 0.0
+      },
+      {
+        "name": "Адміністрація, ВТЛ та госп.побут (Л.91)",
+        "active_kwh": null,
+        "reactive_kvarh": 0.0,
+        "specific_kwh": 0.0,
+        "water_m3": null,
+        "sewage_m3": null
+      }
+    ]
+  },
   "2026-10": {
     "month_name": "Жовтень 2026",
     "key": "2026-10",
@@ -7,7 +75,7 @@
     "water_m3": 476.0,
     "sewage_m3": 266.6,
     "gas_m3": 0.0,
-    "is_current": true,
+    "is_current": false,
     "departments": [
       {
         "name": "Олійнопресовий цех (підготовка)",
