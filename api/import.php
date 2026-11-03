@@ -159,6 +159,87 @@ function ensureSchemaExists(PDO $db): void {
     }
 }
 
+/**
+ * Парсер HTML-таблиць з файлів 1С, збережених з розширенням .xls (чистий PHP без shell_exec)
+ */
+function parseHtmlTableRows(string $content): array {
+    $rows = [];
+    if (class_exists('DOMDocument')) {
+        $dom = new DOMDocument();
+        @$dom->loadHTML('<?xml encoding="utf-8" ?>' . $content);
+        $tables = $dom->getElementsByTagName('table');
+        if ($tables->length > 0) {
+            $table = $tables->item(0);
+            $trList = $table->getElementsByTagName('tr');
+            foreach ($trList as $tr) {
+                $row = [];
+                $cells = $tr->childNodes;
+                foreach ($cells as $cell) {
+                    if (in_array(strtolower($cell->nodeName), ['td', 'th'], true)) {
+                        $val = trim($cell->textContent);
+                        $val = str_replace("\xc2\xa0", ' ', $val);
+                        $row[] = $val;
+                    }
+                }
+                if (!empty($row)) {
+                    $rows[] = $row;
+                }
+            }
+            if (!empty($rows)) {
+                return $rows;
+            }
+        }
+    }
+
+    if (preg_match_all('/<tr[^>]*>(.*?)<\/tr>/is', $content, $trMatches)) {
+        foreach ($trMatches[1] as $trHtml) {
+            $row = [];
+            if (preg_match_all('/<(?:td|th)[^>]*>(.*?)<\/(?:td|th)>/is', $trHtml, $tdMatches)) {
+                foreach ($tdMatches[1] as $cellHtml) {
+                    $val = html_entity_decode(strip_tags($cellHtml), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+                    $val = trim(str_replace("\xc2\xa0", ' ', $val));
+                    $row[] = $val;
+                }
+            }
+            if (!empty($row)) {
+                $rows[] = $row;
+            }
+        }
+    }
+    return $rows;
+}
+
+/**
+ * Парсер SpreadsheetML XML (Excel 2003 XML), збереженого з розширенням .xls (чистий PHP)
+ */
+function parseSpreadsheetMLSheets(string $content): array {
+    $sheets = [];
+    if (preg_match_all('/<Worksheet[^>]*ss:Name=([\'"])(.*?)\1[^>]*>(.*?)<\/Worksheet>/is', $content, $wsMatches, PREG_SET_ORDER)) {
+        foreach ($wsMatches as $ws) {
+            $sName = $ws[2];
+            $sContent = $ws[3];
+            $rows = [];
+            if (preg_match_all('/<Row[^>]*>(.*?)<\/Row>/is', $sContent, $rMatches)) {
+                foreach ($rMatches[1] as $rHtml) {
+                    $row = [];
+                    if (preg_match_all('/<Cell[^>]*>(?:<Data[^>]*>(.*?)<\/Data>)?<\/Cell>/is', $rHtml, $cMatches)) {
+                        foreach ($cMatches[1] as $cellVal) {
+                            $row[] = trim(html_entity_decode((string)$cellVal, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+                        }
+                    }
+                    if (!empty($row)) {
+                        $rows[] = $row;
+                    }
+                }
+            }
+            if (!empty($rows)) {
+                $sheets[$sName] = $rows;
+            }
+        }
+    }
+    return $sheets;
+}
+
 try {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         throw new Exception("Дозволено лише метод POST.");
@@ -256,7 +337,7 @@ try {
         $tmpPath = $file['tmp_name'];
         $ext = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
 
-        if (!in_array($ext, ['xlsx', 'xls', 'csv', 'json'])) {
+        if (!in_array($ext, ['xlsx', 'xls', 'csv', 'json', 'htm', 'html'])) {
             $details[] = "Файл «{$filename}»: пропущено (підтримуються .xlsx, .csv, .json)";
             continue;
         }
@@ -278,9 +359,21 @@ try {
             }
         }
 
+        // Перевіряємо сигнатуру файлу (Magic Bytes)
+        $magic = '';
+        $fHandle = @fopen($tmpPath, 'rb');
+        if ($fHandle) {
+            $magic = (string)@fread($fHandle, 8);
+            @fclose($fHandle);
+        }
+
         // Парсинг аркушів
         $sheetsData = [];
-        if ($ext === 'xlsx') {
+        // Якщо файл починається з сигнатури PK\x03\x04 (ZIP), це сучасний формат XLSX
+        // (навіть якщо розширення у назві помилково вказано як .xls)
+        $isZipXlsx = (strpos($magic, "PK\x03\x04") === 0);
+
+        if ($ext === 'xlsx' || $isZipXlsx) {
             try {
                 $sheetsData = XLSXParser::parse($tmpPath);
             } catch (Throwable $pe) {
@@ -299,24 +392,54 @@ try {
                 fclose($handle);
             }
             $sheetsData['CSV_Дані'] = $csvRows;
-        } elseif ($ext === 'xls') {
+        } elseif ($ext === 'xls' || $ext === 'htm' || $ext === 'html') {
             $parsedJson = null;
-            $scriptPath = __DIR__ . '/../scripts/parse_xls.py';
-            if (file_exists($scriptPath)) {
-                $pyCmds = ['python3', 'python'];
-                foreach ($pyCmds as $py) {
-                    $cmd = escapeshellcmd($py) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($tmpPath) . ' 2>&1';
-                    $out = @shell_exec($cmd);
-                    if ($out && ($decoded = json_decode($out, true)) && is_array($decoded) && !empty($decoded)) {
-                        $parsedJson = $decoded;
-                        break;
+
+            // Перевіряємо чи це HTML або XML таблиця (1С часто експортує веб-таблицю з розширенням .xls)
+            $headContent = (string)@file_get_contents($tmpPath, false, null, 0, 4096);
+            $headLower = mb_strtolower($headContent, 'UTF-8');
+
+            if (strpos($headLower, '<html') !== false || strpos($headLower, '<table') !== false || strpos($headLower, '<!doctype') !== false || strpos($headLower, 'xmlns:x="urn:schemas-microsoft-com:office:excel"') !== false) {
+                $fullContent = (string)@file_get_contents($tmpPath);
+                $htmlRows = parseHtmlTableRows($fullContent);
+                if (!empty($htmlRows)) {
+                    $sheetsData['Аркуш1'] = $htmlRows;
+                    $parsedJson = $sheetsData;
+                }
+            } elseif (strpos($headLower, '<?xml') !== false && (strpos($headLower, 'mso-application') !== false || strpos($headLower, 'progid="excel.sheet"') !== false || strpos($headLower, '<workbook') !== false)) {
+                $fullContent = (string)@file_get_contents($tmpPath);
+                $xmlSheets = parseSpreadsheetMLSheets($fullContent);
+                if (!empty($xmlSheets)) {
+                    $sheetsData = $xmlSheets;
+                    $parsedJson = $sheetsData;
+                }
+            }
+
+            // Якщо це бінарний OLE2 BIFF8 (.xls)
+            if (empty($parsedJson)) {
+                $canShell = function_exists('shell_exec') && !in_array('shell_exec', array_map('trim', explode(',', (string)ini_get('disable_functions'))), true);
+                if ($canShell) {
+                    $scriptPath = __DIR__ . '/../scripts/parse_xls.py';
+                    if (file_exists($scriptPath)) {
+                        $pyCmds = ['python3', 'python'];
+                        foreach ($pyCmds as $py) {
+                            $cmd = escapeshellcmd($py) . ' ' . escapeshellarg($scriptPath) . ' ' . escapeshellarg($tmpPath) . ' 2>&1';
+                            try {
+                                $out = @shell_exec($cmd);
+                                if ($out && ($decoded = json_decode($out, true)) && is_array($decoded) && !empty($decoded)) {
+                                    $parsedJson = $decoded;
+                                    break;
+                                }
+                            } catch (Throwable $se) {}
+                        }
                     }
                 }
             }
-            if ($parsedJson) {
+
+            if (!empty($parsedJson)) {
                 $sheetsData = $parsedJson;
             } else {
-                $details[] = "Файл «{$filename}»: старий бінарний формат XLS (Excel 97-2003). Рекомендується перезберегти як «Книга Excel (.xlsx)» або .csv в Excel та завантажити знову.";
+                $details[] = "⚠️ Файл «{$filename}»: старий бінарний формат XLS (Excel 97-2003). На веб-сервері з міркувань безпеки вимкнено shell_exec. Будь ласка, збережіть цей файл у Excel як «Книга Excel (.xlsx)» або .csv та завантажте знову.";
                 continue;
             }
         } else {
