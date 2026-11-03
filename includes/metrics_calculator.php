@@ -77,23 +77,6 @@ class MetricsCalculator {
                     ]
                 ];
                 break;
-            default:
-                $mInfo = MonthHelper::resolvePeriod($period);
-                if ($mInfo !== null) {
-                    $mPad = sprintf('%02d', $mInfo['month']);
-                    $yStr = (string)$mInfo['year'];
-                    $pattern = ".{$mPad}.{$yStr}";
-                    $shortPattern = ".{$mPad}.";
-                    foreach ($dailyRows as $r) {
-                        $d = $r['date'] ?? '';
-                        if (strpos($d, $pattern) !== false || (strpos($d, $shortPattern) !== false && (empty($yStr) || strpos($d, $yStr) !== false))) {
-                            $filtered[] = $r;
-                        }
-                    }
-                } else {
-                    $filtered = [end($dailyRows)];
-                }
-                break;
             case 'season':
                 $filtered = $dailyRows;
                 break;
@@ -114,8 +97,24 @@ class MetricsCalculator {
                 $filtered = (count($dailyRows) >= 2) ? [$dailyRows[count($dailyRows) - 2]] : [end($dailyRows)];
                 break;
             case 'day':
-            default:
                 $filtered = [end($dailyRows)];
+                break;
+            default:
+                $mInfo = MonthHelper::resolvePeriod($period);
+                if ($mInfo !== null) {
+                    $mPad = sprintf('%02d', $mInfo['month']);
+                    $yStr = (string)$mInfo['year'];
+                    $pattern = ".{$mPad}.{$yStr}";
+                    $shortPattern = ".{$mPad}.";
+                    foreach ($dailyRows as $r) {
+                        $d = $r['date'] ?? '';
+                        if (strpos($d, $pattern) !== false || (strpos($d, $shortPattern) !== false && (empty($yStr) || strpos($d, $yStr) !== false))) {
+                            $filtered[] = $r;
+                        }
+                    }
+                } else {
+                    $filtered = [end($dailyRows)];
+                }
                 break;
         }
 
