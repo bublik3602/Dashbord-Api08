@@ -77,33 +77,21 @@ class MetricsCalculator {
                     ]
                 ];
                 break;
-            case 'month_nov':
-                foreach ($dailyRows as $r) {
-                    if (strpos($r['date'] ?? '', '.11.') !== false) {
-                        $filtered[] = $r;
+            default:
+                $mInfo = MonthHelper::resolvePeriod($period);
+                if ($mInfo !== null) {
+                    $mPad = sprintf('%02d', $mInfo['month']);
+                    $yStr = (string)$mInfo['year'];
+                    $pattern = ".{$mPad}.{$yStr}";
+                    $shortPattern = ".{$mPad}.";
+                    foreach ($dailyRows as $r) {
+                        $d = $r['date'] ?? '';
+                        if (strpos($d, $pattern) !== false || (strpos($d, $shortPattern) !== false && (empty($yStr) || strpos($d, $yStr) !== false))) {
+                            $filtered[] = $r;
+                        }
                     }
-                }
-                break;
-            case 'month_oct':
-                foreach ($dailyRows as $r) {
-                    if (strpos($r['date'] ?? '', '.10.') !== false) {
-                        $filtered[] = $r;
-                    }
-                }
-                break;
-            case 'month':
-                $hasNovData = false;
-                foreach ($dailyRows as $r) {
-                    if (strpos($r['date'] ?? '', '.11.') !== false) {
-                        $hasNovData = true;
-                        break;
-                    }
-                }
-                $targetMonthPattern = $hasNovData ? '.11.' : '.10.';
-                foreach ($dailyRows as $r) {
-                    if (strpos($r['date'] ?? '', $targetMonthPattern) !== false) {
-                        $filtered[] = $r;
-                    }
+                } else {
+                    $filtered = [end($dailyRows)];
                 }
                 break;
             case 'season':
@@ -269,26 +257,24 @@ class MetricsCalculator {
             case 'month_sep_2025':
                 $rangeDisplay = "Місяць Вересень 2025 року (10 діб роботи • перероблено 4 435,44 т, вироблено 1 865,62 т олії)";
                 break;
-            case 'month_nov':
-                $rangeDisplay = "Місяць Листопад 2026 (0 діб переробки з 2 діб • завод стоїть / ППР, прийнято " . number_format($seedInPlant, 1, ',', ' ') . " т)";
-                break;
-            case 'month_oct':
-                $rangeDisplay = "Місяць Жовтень 2026 (" . ($octMetrics['working_days'] ?? 18) . " діб переробки • перероблено " . number_format($octMetrics['seed_processed'] ?? 11582.4, 1, ',', ' ') . " т, вироблено " . number_format($octMetrics['oil_out'] ?? 5082.5, 1, ',', ' ') . " т олії)";
-                break;
-            case 'month':
-                $liveSvod = $this->loadLiveSvodStocks();
-                $isNov = strpos($liveSvod['report_date'] ?? '', '.11.') !== false;
-                if ($isNov) {
-                    $rangeDisplay = "Місяць Листопад 2026 (0 діб переробки з 2 діб • завод стоїть / ППР, прийнято " . number_format($seedInPlant, 1, ',', ' ') . " т)";
-                } else {
-                    $rangeDisplay = "Місяць Жовтень 2026 (" . ($octMetrics['working_days'] ?? 18) . " діб переробки • перероблено " . number_format($octMetrics['seed_processed'] ?? 11582.4, 1, ',', ' ') . " т, вироблено " . number_format($octMetrics['oil_out'] ?? 5082.5, 1, ',', ' ') . " т олії)";
-                }
-                break;
             case 'season':
                 $rangeDisplay = "Виробничий сезон 2026–2027 (01.08.2026 — 01.08.2027 • " . ($seasonMetrics['working_days'] ?? 25) . " діб переробки • перероблено " . number_format($seasonMetrics['seed_processed'] ?? $seedProc, 1, ',', ' ') . " т, вироблено " . number_format($seasonMetrics['oil_out'] ?? $oilOut, 1, ',', ' ') . " т олії)";
                 break;
-            case 'day':
             default:
+                $mInfo = MonthHelper::resolvePeriod($period);
+                if ($mInfo !== null) {
+                    $mStats = $this->getSemenaPeriodStats($period);
+                    $wDays = $mStats['days_count'] ?? 0;
+                    $sDeliv = (float)($mStats['seed_in_plant'] ?? $seedInPlant);
+                    $sProc = (float)($mStats['seed_in_production'] ?? 0);
+                    $oOut = (float)($mStats['oil_out'] ?? 0);
+                    if ($sProc > 0) {
+                        $rangeDisplay = "Місяць {$mInfo['full_name']} ({$wDays} діб переробки • перероблено " . number_format($sProc, 1, ',', ' ') . " т, вироблено " . number_format($oOut, 1, ',', ' ') . " т олії)";
+                    } else {
+                        $rangeDisplay = "Місяць {$mInfo['full_name']} ({$wDays} діб обліку • завод у простої / ППР, прийнято " . number_format($sDeliv, 1, ',', ' ') . " т)";
+                    }
+                    break;
+                }
                 $rangeDisplay = $seedProc > 0
                     ? "Доба {$lastDateLabel} (перероблено {$seedProcFormatted} т, вироблено {$oilOutFormatted} т олії, {$mealOutFormatted} т шроту, {$huskOutFormatted} т лузги)"
                     : "Доба {$lastDateLabel} (прийомка {$seedInFormatted} т, переробка МЕЗ: 0 т • накопичення насіння)";
@@ -345,23 +331,19 @@ class MetricsCalculator {
                 return "recorded_at >= datetime('now', '-12 hours', 'localtime')";
             case 'week':
                 return "date(recorded_at) >= '2026-10-09' AND date(recorded_at) <= '2026-10-15'";
-            case 'month_aug':
-                return "recorded_at >= '2026-08-01 08:00:00' AND recorded_at < '2026-09-01 08:00:00'";
-            case 'month_sep':
-                return "recorded_at >= '2026-09-01 08:00:00' AND recorded_at < '2026-10-01 08:00:00'";
-            case 'month_nov':
-                return "recorded_at >= '2026-11-01 08:00:00' AND recorded_at < '2026-12-01 08:00:00'";
-            case 'month_oct':
-                return "recorded_at >= '2026-10-01 08:00:00' AND recorded_at < '2026-11-01 08:00:00'";
-            case 'month':
-                $liveSvod = $this->loadLiveSvodStocks();
-                $isNov = strpos($liveSvod['report_date'] ?? '', '.11.') !== false;
-                return $isNov
-                    ? "recorded_at >= '2026-11-01 08:00:00' AND recorded_at < '2026-12-01 08:00:00'"
-                    : "recorded_at >= '2026-10-01 08:00:00' AND recorded_at < '2026-11-01 08:00:00'";
             case 'season':
                 return "recorded_at >= '2026-08-01 08:00:00' AND recorded_at < '2027-08-01 08:00:00'";
             default:
+                $mInfo = MonthHelper::resolvePeriod($period);
+                if ($mInfo !== null) {
+                    $year = $mInfo['year'];
+                    $m = $mInfo['month'];
+                    $start = sprintf('%04d-%02d-01 08:00:00', $year, $m);
+                    $nextM = ($m === 12) ? 1 : $m + 1;
+                    $nextY = ($m === 12) ? $year + 1 : $year;
+                    $end = sprintf('%04d-%02d-01 08:00:00', $nextY, $nextM);
+                    return "recorded_at >= '{$start}' AND recorded_at < '{$end}'";
+                }
                 return "date(recorded_at) = '2026-10-15'";
         }
     }
@@ -377,27 +359,9 @@ class MetricsCalculator {
             case 'day_active': return 'Робоча доба (15.10.2026 — 309,0 т перероблено • 149,3 т олії)';
             case 'shift':      return 'Поточна зміна (12 год • 154,5 т переробка)';
             case 'week':       return 'За тиждень (3 доби переробки • 1 526,8 т)';
-            case 'month_jan':  return 'Січень 2026 (Архів показників енергетика)';
-            case 'month_feb':  return 'Лютий 2026 (Архів показників енергетика)';
-            case 'month_mar':  return 'Березень 2026 (Архів показників енергетика)';
-            case 'month_apr':  return 'Квітень 2026 (Архів показників енергетика)';
-            case 'month_may':  return 'Травень 2026 (Архів показників енергетика)';
-            case 'month_jun':  return 'Червень 2026 (Архів показників енергетика)';
-            case 'month_jul':  return 'Липень 2026 (Архів показників енергетика)';
-            case 'month_aug':  return 'Серпень 2026 (0 діб переробки з 31 • ППР)';
-            case 'month_sep':  return 'Вересень 2026 (працював 16 діб: 15.09–30.09 з 30)';
             case 'month_sep_2025': return 'Вересень 2025 року (10 діб роботи • 4 435,4 т)';
-            case 'month_nov':  return 'Листопад 2026 (0 діб переробки • ППР / завод стоїть)';
-            case 'month_oct':  return 'Жовтень 2026 (працював 18 діб • 11 582,5 т перероблено)';
-            case 'month':
-                $liveSvod = $this->loadLiveSvodStocks();
-                $isNov = strpos($liveSvod['report_date'] ?? '', '.11.') !== false;
-                return $isNov 
-                    ? 'Листопад 2026 (0 діб переробки • ППР / завод стоїть)'
-                    : 'Жовтень 2026 (працював 18 діб • 11 582,5 т перероблено)';
             case 'season':     return 'Сезон 2026–2027 (01.08.2026 — 01.08.2027 • 34 доби переробки)';
             case 'day':
-            default:
                 $liveSvod = $this->loadLiveSvodStocks();
                 if (!empty($liveSvod['report_date'])) {
                     if (preg_match('/(\d{2}\.\d{2}\.\d{4})/', $liveSvod['report_date'], $dm)) {
@@ -416,6 +380,23 @@ class MetricsCalculator {
                         }
                     }
                 } catch (Throwable $e) {}
+                return "Доба {$lastDate} (переробка МЕЗ: 0 т • накопичення насіння)";
+            default:
+                $mInfo = MonthHelper::resolvePeriod($period);
+                if ($mInfo !== null) {
+                    $mName = $mInfo['name_ua'];
+                    $year = $mInfo['year'];
+                    $daysWorked = (int)($semenaStats['days_count'] ?? 0);
+                    $seedProcessed = (float)($semenaStats['seed_in_plant'] ?? 0);
+                    if ($seedProcessed > 0) {
+                        $seedFmt = number_format($seedProcessed, 1, ',', ' ');
+                        return "{$mName} {$year} (працював {$daysWorked} діб • {$seedFmt} т перероблено)";
+                    } elseif ($daysWorked > 0) {
+                        return "{$mName} {$year} ({$daysWorked} діб роботи)";
+                    } else {
+                        return "{$mName} {$year} (0 діб переробки • ППР / завод стоїть)";
+                    }
+                }
                 return "Доба {$lastDate} (переробка МЕЗ: 0 т • накопичення насіння)";
         }
     }
@@ -651,12 +632,8 @@ class MetricsCalculator {
                     $conditioningLoss    = 0.0;
                     $conditioningLossPct = 0.0;
                 }
-            } elseif (in_array($period, ['month', 'month_nov', 'month_oct'], true)) {
-                $curYearMonth = ($period === 'month_oct') 
-                    ? '2026-10' 
-                    : (($period === 'month_nov') 
-                        ? '2026-11' 
-                        : (strpos($this->loadLiveSvodStocks()['report_date'] ?? '', '.11.') !== false ? '2026-11' : '2026-10'));
+            } elseif (($mInfo = MonthHelper::resolvePeriod($period)) !== null) {
+                $curYearMonth = sprintf('%04d-%02d', $mInfo['year'], $mInfo['month']);
                 $mStart = "{$curYearMonth}-01 00:00:00";
                 $mEnd   = date('Y-m-t 23:59:59', strtotime($mStart));
 
@@ -864,6 +841,32 @@ class MetricsCalculator {
             ['key' => '2026-10', 'month' => 'Жовтень 2026',  'short' => 'Жов\'26', 'active_kwh' => null,    'reactive_kvarh' => null,     'gas_m3' => null,    'water_m3' => null, 'sewage_m3' => null, 'daily_water_m3' => null,  'press_kwh' => null,   'extr_kwh' => null,   'elev_kwh' => null,   'boiler_kwh' => null,  'specific_kwh' => null,  'has_data' => false, 'note' => 'Немає даних (звіт очікується)'],
             ['key' => '2026-11', 'month' => 'Листопад 2026', 'short' => 'Лис\'26', 'active_kwh' => null,    'reactive_kvarh' => null,     'gas_m3' => 0.0,     'water_m3' => null, 'sewage_m3' => null, 'daily_water_m3' => null,  'press_kwh' => null,   'extr_kwh' => null,   'elev_kwh' => null,   'boiler_kwh' => 26.98, 'specific_kwh' => 0.00,  'has_data' => true,  'note' => 'Поточний місяць (облік пари: 26,98 т • завод у простої)'],
         ];
+
+        // Динамічно поповнюємо $monthly12 з актуального переліку місяців MonthHelper
+        $existingMKeys = array_column($monthly12, 'key');
+        foreach (array_reverse(MonthHelper::getSelectableMonths()) as $mOpt) {
+            $k = $mOpt['key'];
+            if (!in_array($k, $existingMKeys, true)) {
+                $monthly12[] = [
+                    'key'            => $k,
+                    'month'          => $mOpt['name_ua'] . ' ' . $mOpt['year'],
+                    'short'          => mb_substr($mOpt['name_ua'], 0, 3) . "'" . substr((string)$mOpt['year'], 2),
+                    'active_kwh'     => null,
+                    'reactive_kvarh' => null,
+                    'gas_m3'         => null,
+                    'water_m3'       => null,
+                    'sewage_m3'      => null,
+                    'daily_water_m3' => null,
+                    'press_kwh'      => null,
+                    'extr_kwh'       => null,
+                    'elev_kwh'       => null,
+                    'boiler_kwh'     => null,
+                    'specific_kwh'   => null,
+                    'has_data'       => false,
+                    'note'           => 'Звіт очікується',
+                ];
+            }
+        }
 
         $departmentsNov = $energyDeptArchive['2026-11']['departments'] ?? [
             ['name' => 'Олійнопресовий цех (підготовка)',                  'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0, 'water_m3' => null, 'sewage_m3' => null],
@@ -1213,15 +1216,15 @@ class MetricsCalculator {
             }
         }
 
-        // Перевіряємо поточний місяць: якщо звіт за листопад або зараз листопад, період 'month' відноситься до листопада
-        $liveSvod = $this->loadLiveSvodStocks();
-        $isNovActive = strpos($liveSvod['report_date'] ?? '', '.11.') !== false || date('m') === '11' || !empty($novEntries) || !empty($steamDb['daily_nov26']);
-        if ($period === 'month' && $isNovActive) {
-            $period = 'month_nov';
+        // Перевіряємо поточний місяць: якщо звіт за листопад або зараз листопад, період 'month' відноситься до активного місяця
+        $activeM = MonthHelper::getActiveMonthYear();
+        if ($period === 'month') {
+            $period = $activeM['period_key'];
         }
 
         switch ($period) {
             case 'month_nov':
+            case '2026-11':
                 $novDailyTable = $steamDb['daily_nov26'] ?? $steamDailyArchive['2026-11'] ?? [];
                 $novLabels = [];
                 $novPower = [];
@@ -1461,20 +1464,27 @@ class MetricsCalculator {
             case 'month_may':
             case 'month_jun':
             case 'month_jul':
+            case 'month_dec':
             case 'month_sep_2025':
-                $pMap = [
-                    'month_jan' => ['key' => '2026-01', 'name' => 'Січень 2026'],
-                    'month_feb' => ['key' => '2026-02', 'name' => 'Лютий 2026'],
-                    'month_mar' => ['key' => '2026-03', 'name' => 'Березень 2026'],
-                    'month_apr' => ['key' => '2026-04', 'name' => 'Квітень 2026'],
-                    'month_may' => ['key' => '2026-05', 'name' => 'Травень 2026'],
-                    'month_jun' => ['key' => '2026-06', 'name' => 'Червень 2026'],
-                    'month_jul' => ['key' => '2026-07', 'name' => 'Липень 2026'],
-                    'month_sep_2025' => ['key' => '2025-09', 'name' => 'Вересень 2025'],
-                ];
-                $targetInfo = $pMap[$period] ?? ['key' => '2026-09', 'name' => 'Вересень 2026'];
-                $tKey = $targetInfo['key'];
-                $tName = $targetInfo['name'];
+                $resolved = MonthHelper::resolvePeriod($period);
+                if ($resolved !== null) {
+                    $tKey = $resolved['key'];
+                    $tName = $resolved['name_ua'] . ' ' . $resolved['year'];
+                } else {
+                    $pMap = [
+                        'month_jan' => ['key' => '2026-01', 'name' => 'Січень 2026'],
+                        'month_feb' => ['key' => '2026-02', 'name' => 'Лютий 2026'],
+                        'month_mar' => ['key' => '2026-03', 'name' => 'Березень 2026'],
+                        'month_apr' => ['key' => '2026-04', 'name' => 'Квітень 2026'],
+                        'month_may' => ['key' => '2026-05', 'name' => 'Травень 2026'],
+                        'month_jun' => ['key' => '2026-06', 'name' => 'Червень 2026'],
+                        'month_jul' => ['key' => '2026-07', 'name' => 'Липень 2026'],
+                        'month_sep_2025' => ['key' => '2025-09', 'name' => 'Вересень 2025'],
+                    ];
+                    $targetInfo = $pMap[$period] ?? ['key' => '2026-09', 'name' => 'Вересень 2026'];
+                    $tKey = $targetInfo['key'];
+                    $tName = $targetInfo['name'];
+                }
                 $mArch = $energyDeptArchive[$tKey] ?? [];
 
                 $mRow = null;
@@ -2073,21 +2083,6 @@ class MetricsCalculator {
                     'husk_shipped_tonnes'          => 410.13,
                     'report_date'                  => '30.09.2025 20:00 (Вересень 2025)',
                 ];
-            case 'month_oct':
-            case 'month':
-                return [
-                    'seed_stock_tonnes'            => $seedStock,
-                    'seed_stock_accounting_tonnes' => $seedAcct,
-                    'oil_stock_tonnes'             => $oilStock,
-                    'meal_stock_tonnes'            => $mealStock,
-                    'husk_stock_tonnes'            => $huskStock,
-                    'husk_boiler_spent_tonnes'     => 363.31,
-                    'days_seed_reserve'            => $daysReserve,
-                    'oil_shipped_tonnes'           => $monthOilShip,
-                    'meal_shipped_tonnes'          => $monthMealShip,
-                    'husk_shipped_tonnes'          => $monthHuskShip,
-                    'report_date'                  => "Ежедн.отчет2 ({$sheetTitle}, СВОД_ОКТЯБРЬ 26)",
-                ];
             case 'season':
                 return [
                     'seed_stock_tonnes'            => $seedStock,
@@ -2106,6 +2101,23 @@ class MetricsCalculator {
             case 'day_prev':
             case 'day':
             default:
+                $mInfo = MonthHelper::resolvePeriod($period);
+                if ($mInfo !== null) {
+                    $mTitle = $mInfo['name_ua'] . ' ' . $mInfo['year'];
+                    return [
+                        'seed_stock_tonnes'            => $seedStock,
+                        'seed_stock_accounting_tonnes' => $seedAcct,
+                        'oil_stock_tonnes'             => $oilStock,
+                        'meal_stock_tonnes'            => $mealStock,
+                        'husk_stock_tonnes'            => $huskStock,
+                        'husk_boiler_spent_tonnes'     => 363.31,
+                        'days_seed_reserve'            => $daysReserve,
+                        'oil_shipped_tonnes'           => $monthOilShip,
+                        'meal_shipped_tonnes'          => $monthMealShip,
+                        'husk_shipped_tonnes'          => $monthHuskShip,
+                        'report_date'                  => "Ежедн.отчет2 ({$sheetTitle}, {$mTitle})",
+                    ];
+                }
                 // Фактичні складські залишки з файлу «Ежедн.отчет2» (наприклад, на «12 число»: насіння 13 115,47 т, бух.облік 13 794,46 т)
                 return [
                     'seed_stock_tonnes'            => $seedStock,
@@ -4198,18 +4210,6 @@ class MetricsCalculator {
                     'pending_specs_count' => 1,
                     'report_date'         => 'Вересень 2026',
                 ];
-            case 'month_oct':
-            case 'month':
-                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 6075.91;
-                return [
-                    'contracted_tonnes'   => 8000.0,
-                    'delivered_tonnes'    => round($deliv, 2),
-                    'remaining_tonnes'    => round(max(0.0, 8000.0 - $deliv), 2),
-                    'fulfillment_pct'     => round(($deliv / 8000.0) * 100, 1),
-                    'active_specs_count'  => $activeSpecs,
-                    'pending_specs_count' => $pendingSpecs,
-                    'report_date'         => 'Жовтень 2026',
-                ];
             case 'season':
                 $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 25361.41;
                 $rem   = (float)($summary['unfulfilled_rem'] ?? 1647.93);
@@ -4237,6 +4237,21 @@ class MetricsCalculator {
             case 'day_today':
             case 'day':
             default:
+                $mInfo = MonthHelper::resolvePeriod($period);
+                if ($mInfo !== null) {
+                    $mName = $mInfo['name_ua'] . ' ' . $mInfo['year'];
+                    $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 0.0;
+                    $contrPlan = 8000.0;
+                    return [
+                        'contracted_tonnes'   => $contrPlan,
+                        'delivered_tonnes'    => round($deliv, 2),
+                        'remaining_tonnes'    => round(max(0.0, $contrPlan - $deliv), 2),
+                        'fulfillment_pct'     => $contrPlan > 0 ? round(($deliv / $contrPlan) * 100, 1) : 0.0,
+                        'active_specs_count'  => $activeSpecs,
+                        'pending_specs_count' => $pendingSpecs,
+                        'report_date'         => $mName,
+                    ];
+                }
                 $contr = (float)($summary['total_contract'] ?? 18711.0);
                 $deliv = (float)($summary['total_delivered'] ?? 17642.9);
                 $rem   = (float)($summary['unfulfilled_rem'] ?? 1647.9);

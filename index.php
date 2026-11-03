@@ -101,17 +101,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-select-wrapper">
                     <select id="select-other-months" class="month-dropdown-select" title="Обрати місяць">
                         <option value="" disabled selected>📅 Оберіть місяць...</option>
-                        <option value="month_nov">Листопад 2026 року (Поточний)</option>
-                        <option value="month_oct">Жовтень 2026 року</option>
-                        <option value="month_sep">Вересень 2026 року</option>
-                        <option value="month_aug">Серпень 2026 року (ППР)</option>
-                        <option value="month_jul">Липень 2026 року</option>
-                        <option value="month_jun">Червень 2026 року</option>
-                        <option value="month_may">Травень 2026 року</option>
-                        <option value="month_apr">Квітень 2026 року</option>
-                        <option value="month_mar">Березень 2026 року</option>
-                        <option value="month_feb">Лютий 2026 року</option>
-                        <option value="month_jan">Січень 2026 року</option>
+                        <?= MonthHelper::renderMonthOptions(null, 'period_key') ?>
                         <option value="month_sep_2025">Вересень 2025 року</option>
                     </select>
                 </div>
@@ -788,17 +778,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <i data-lucide="zap" style="width: 14px; height: 14px; color: #0284c7;"></i>
                         <label for="energy-header-month-select" style="font-size: 11px; font-weight: 700; color: #0369a1; margin: 0; white-space: nowrap;">Місяць ел.енергії:</label>
                         <select id="energy-header-month-select" class="form-select form-select-sm" style="font-size: 11.5px; font-weight: 700; color: #0284c7; padding: 2px 8px; height: 28px; border-radius: 4px; border: 1px solid #7dd3fc; background: #ffffff; cursor: pointer;">
-                            <option value="2026-11" selected>Листопад 2026 (Поточний факт)</option>
-                            <option value="2026-10">Жовтень 2026 (Архів факту)</option>
-                            <option value="2026-09">Вересень 2026 (Архів факту)</option>
-                            <option value="2026-08">Серпень 2026 (ППР)</option>
-                            <option value="2026-07">Липень 2026</option>
-                            <option value="2026-06">Червень 2026</option>
-                            <option value="2026-05">Травень 2026</option>
-                            <option value="2026-04">Квітень 2026</option>
-                            <option value="2026-03">Березень 2026</option>
-                            <option value="2026-02">Лютий 2026</option>
-                            <option value="2026-01">Січень 2026</option>
+                            <?= MonthHelper::renderMonthOptions(null, 'key') ?>
                         </select>
                     </div>
 
@@ -908,19 +888,9 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <div style="display: inline-flex; align-items: center; gap: 8px;">
                             <label for="energy-month-select" style="font-size: 11px; color: #475569; font-weight: 600;">Місяць:</label>
                             <select id="energy-month-select" class="form-select form-select-sm" style="font-size: 11px; padding: 2px 8px; height: 26px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; font-weight: 600; cursor: pointer;">
-                                <option value="2026-11" selected>Листопад 2026 (Поточний факт)</option>
-                                <option value="2026-10">Жовтень 2026</option>
-                                <option value="2026-09">Вересень 2026</option>
-                                <option value="2026-08">Серпень 2026 (ППР)</option>
-                                <option value="2026-07">Липень 2026</option>
-                                <option value="2026-06">Червень 2026</option>
-                                <option value="2026-05">Травень 2026</option>
-                                <option value="2026-04">Квітень 2026</option>
-                                <option value="2026-03">Березень 2026</option>
-                                <option value="2026-02">Лютий 2026</option>
-                                <option value="2026-01">Січень 2026</option>
+                                <?= MonthHelper::renderMonthOptions(null, 'key') ?>
                             </select>
-                            <span id="energy-month-subtext" style="font-size: 11px; color: #64748b; font-weight: 500;">(Листопад 2026: поточний місяць • завод у простої)</span>
+                            <span id="energy-month-subtext" style="font-size: 11px; color: #64748b; font-weight: 500;">(Поточний факт за обраний місяць)</span>
                         </div>
                     </summary>
                     <div class="season-monthly-table-wrap" style="max-height: 440px; overflow-y: auto;">

@@ -115,9 +115,9 @@ def parse_php_brackets(filename):
     return True
 
 files = [
+    'includes/helpers.php',
     'includes/metrics_calculator.php',
-    'api/import.php',
-    'api/export.php'
+    'api/import.php'
 ]
 
 all_ok = True

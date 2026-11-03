@@ -18,8 +18,9 @@ if (Auth::isRole('energo')) {
 
 try {
     $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';
-    $validPeriods = ['shift', 'day', 'week', 'month', 'month_nov', 'month_oct', 'month_sep', 'month_aug', 'season', 'month_sep_2025'];
-    if (!in_array($period, $validPeriods, true)) {
+    $validBase = ['shift', 'day', 'day_today', 'day_prev', 'day_active', 'week', 'month', 'season', 'month_sep_2025'];
+    $isDynamicMonth = (MonthHelper::resolvePeriod($period) !== null) || str_starts_with($period, 'month_');
+    if (!in_array($period, $validBase, true) && !$isDynamicMonth) {
         $period = 'day';
     }
 
