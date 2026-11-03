@@ -94,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const targetBtn = document.querySelector(`.period-btn[data-period="${p}"]`);
             if (targetBtn) {
                 targetBtn.click();
-            } else if (monthDropdown && ['month_sep', 'month_aug', 'month_oct'].includes(p)) {
+            } else if (monthDropdown && ['month_sep', 'month_aug', 'month_oct', 'month_nov'].includes(p)) {
                 monthDropdown.value = p;
                 monthDropdown.dispatchEvent(new Event('change'));
             } else {
@@ -232,6 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     const periodMapFromKey = {
+        '2026-11': 'month_nov',
         '2026-10': 'month_oct',
         '2026-09': 'month_sep',
         '2026-08': 'month_aug',
@@ -825,8 +826,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const reversePeriodMap = {
+                'month_nov': '2026-11',
                 'month_oct': '2026-10',
-                'month': '2026-10',
+                'month': '2026-11',
                 'month_sep': '2026-09',
                 'month_aug': '2026-08',
                 'month_jul': '2026-07',
@@ -912,7 +914,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const btnP = btn.getAttribute('data-period');
             const isActive = (btnP === periodKey) ||
                              (btnP === 'day' && ['day', 'day_today', 'day_prev', 'shift'].includes(periodKey)) ||
-                             (btnP === 'month' && ['month', 'month_oct', 'month_sep', 'month_aug'].includes(periodKey));
+                             (btnP === 'month' && ['month', 'month_nov', 'month_oct', 'month_sep', 'month_aug'].includes(periodKey));
             btn.classList.toggle('active', isActive);
         });
 
@@ -1065,6 +1067,25 @@ document.addEventListener('DOMContentLoaded', function () {
             const footerOct = document.querySelector('#val-oct-footer');
             if (footerOct && oct.husk_out !== undefined) {
                 footerOct.innerHTML = `<span>Лузга: ${formatNumber(oct.husk_out, 1)} т &bull; Відвантажено: олія ${formatNumber(oct.oil_shipped || 0, 0)} т, шрот ${formatNumber(oct.meal_shipped || 0, 0)} т</span>`;
+            }
+        }
+
+        const nov = months.nov;
+        if (nov) {
+            if (nov.name) setElementText('#name-nov-card', nov.name);
+            if (nov.working_days_label) {
+                setElementText('#badge-nov-working-days', nov.working_days_label);
+                setElementText('#val-nov-work-days', nov.working_days_label);
+            }
+            if (nov.seed_in !== undefined) setElementText('#val-nov-seed-in', formatNumber(nov.seed_in, 2) + ' т');
+            if (nov.seed_processed !== undefined) setElementText('#val-nov-seed-proc', formatNumber(nov.seed_processed, 2) + ' т (' + (nov.working_days || 0) + ' діб)');
+            if (nov.oil_out !== undefined) setElementText('#val-nov-oil-out', formatNumber(nov.oil_out, 2) + ' т (' + (nov.oil_yield_pct || 0) + '%)');
+            if (nov.meal_out !== undefined) setElementText('#val-nov-meal-out', formatNumber(nov.meal_out, 2) + ' т (' + (nov.meal_yield_pct || 0) + '%)');
+            if (nov.trucks_count !== undefined) setElementText('#val-nov-trucks', nov.trucks_count + ' авто');
+            if (nov.seed_stock !== undefined) setElementText('#val-nov-seed-stock', formatNumber(nov.seed_stock, 2) + ' т');
+            const footerNov = document.querySelector('#val-nov-footer');
+            if (footerNov && nov.oil_stock !== undefined) {
+                footerNov.innerHTML = `<span>Залишок олії: ${formatNumber(nov.oil_stock, 1)} т &bull; Відвантажено у листопаді: олія ${formatNumber(nov.oil_shipped || 0, 1)} т, шрот ${formatNumber(nov.meal_shipped || 0, 1)} т</span>`;
             }
         }
     }

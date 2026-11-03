@@ -101,6 +101,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                 <div class="month-select-wrapper">
                     <select id="select-other-months" class="month-dropdown-select" title="Обрати місяць">
                         <option value="" disabled selected>📅 Оберіть місяць...</option>
+                        <option value="month_nov">Листопад 2026 року (Поточний)</option>
                         <option value="month_oct">Жовтень 2026 року</option>
                         <option value="month_sep">Вересень 2026 року</option>
                         <option value="month_aug">Серпень 2026 року (ППР)</option>
@@ -1149,6 +1150,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     $mAug        = $histMonths['aug'] ?? [];
     $mSep        = $histMonths['sep'] ?? [];
     $mOct        = $histMonths['oct'] ?? [];
+    $mNov        = $histMonths['nov'] ?? [];
     $seasonTot   = $historical['season_total'] ?? [];
     $season2025  = $historical['season_2025_comparison'] ?? [];
     $early2025   = $season2025['early_season_sep_oct'] ?? [];
@@ -1303,7 +1305,53 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                     </div>
                 </div>
                 <div class="month-card-footer" id="val-oct-footer">
-                    <span>Лузга: <?= number_format($mOct['husk_out'] ?? 718.27, 1, ',', ' ') ?> т &bull; Відвантажено: олія <?= number_format($mOct['oil_shipped'] ?? 1050.54, 0, ',', ' ') ?> т, шрот <?= number_format($mOct['meal_shipped'] ?? 2461.42, 0, ',', ' ') ?> т</span>
+                    <span>Лузга: <?= number_format($mOct['husk_out'] ?? 1682.14, 1, ',', ' ') ?> т &bull; Відвантажено: олія <?= number_format($mOct['oil_shipped'] ?? 1632.70, 0, ',', ' ') ?> т, шрот <?= number_format($mOct['meal_shipped'] ?? 3858.98, 0, ',', ' ') ?> т</span>
+                </div>
+            </div>
+
+            <!-- Листопад 2026 -->
+            <div class="history-month-card" data-period-trigger="month_nov">
+                <div class="month-card-header">
+                    <div class="month-card-title">
+                        <span class="month-name" id="name-nov-card"><?= htmlspecialchars($mNov['name'] ?? 'Листопад 2026') ?></span>
+                        <span class="month-badge badge-amber" id="badge-nov-working-days"><?= htmlspecialchars($mNov['working_days_label'] ?? '0 діб • Простій / ППР') ?></span>
+                    </div>
+                    <button type="button" class="btn-quick-period" data-period="month_nov" title="Показати дашборд за листопад">
+                        <span>Детально</span> &rarr;
+                    </button>
+                </div>
+                <div class="month-metrics-list">
+                    <div class="metric-row">
+                        <span class="metric-lbl">🗓️ Днів роботи (переробка):</span>
+                        <span class="metric-val bold" id="val-nov-work-days" style="color: #d97706;"><?= htmlspecialchars($mNov['working_days_label'] ?? '0 діб (простій / накопичення)') ?></span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌻 Завіз насіння:</span>
+                        <span class="metric-val bold text-primary" id="val-nov-seed-in"><?= number_format($mNov['seed_in'] ?? 176.04, 2, ',', ' ') ?> т</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">⚙️ Переробка:</span>
+                        <span class="metric-val bold" id="val-nov-seed-proc"><?= number_format($mNov['seed_processed'] ?? 0.0, 2, ',', ' ') ?> т (завод стоїть)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">💧 Вихід олії:</span>
+                        <span class="metric-val bold" id="val-nov-oil-out" style="color: #d97706;">0,0 т (0,00%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🌾 Вихід шроту:</span>
+                        <span class="metric-val bold" id="val-nov-meal-out" style="color: #2563eb;">0,0 т (0,00%)</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🚚 Автотранспорт:</span>
+                        <span class="metric-val bold" id="val-nov-trucks"><?= $mNov['trucks_count'] ?? 6 ?> авто</span>
+                    </div>
+                    <div class="metric-row">
+                        <span class="metric-lbl">🏢 Залишок насіння:</span>
+                        <span class="metric-val" id="val-nov-seed-stock"><?= number_format($mNov['seed_stock'] ?? 10164.16, 2, ',', ' ') ?> т</span>
+                    </div>
+                </div>
+                <div class="month-card-footer" id="val-nov-footer">
+                    <span>Залишок олії: <?= number_format($mNov['oil_stock'] ?? 4217.27, 1, ',', ' ') ?> т &bull; Відвантажено у листопаді: олія <?= number_format($mNov['oil_shipped'] ?? 178.02, 1, ',', ' ') ?> т, шрот <?= number_format($mNov['meal_shipped'] ?? 75.64, 1, ',', ' ') ?> т</span>
                 </div>
             </div>
 

@@ -680,35 +680,35 @@ try {
         $isSvodReport = false;
         $hasPlanSheet = false;
         foreach ($sheetsData as $sName => $_r) {
-            if (strpos(mb_strtolower($sName, 'UTF-8'), 'план производства') !== false) {
+            $sLowerCheck = mb_strtolower($sName, 'UTF-8');
+            if (strpos($sLowerCheck, 'план производства') !== false || strpos($sLowerCheck, 'план виробництва') !== false) {
                 $hasPlanSheet = true;
                 break;
             }
         }
 
-        if (!$hasPlanSheet) {
-            if (strpos($fnLower, 'ежедн.отчет2') !== false || strpos($fnLower, 'свод') !== false || strpos($fnLower, 'svod') !== false || strpos($fnLower, 'залишк') !== false || strpos($fnLower, 'остатк') !== false) {
-                $isSvodReport = true;
-            }
+        // Перевіряємо чи є у книзі ознаки зведення залишків продукції та руху сировини (СВОД / Ежедн.отчет2)
+        if (strpos($fnLower, 'ежедн.отчет2') !== false || strpos($fnLower, 'свод') !== false || strpos($fnLower, 'svod') !== false || strpos($fnLower, 'залишк') !== false || strpos($fnLower, 'остатк') !== false) {
+            $isSvodReport = true;
+        }
 
-            if (!$isSvodReport) {
-                foreach ($sheetsData as $sheetName => $rows) {
-                    $sLower = mb_strtolower($sheetName, 'UTF-8');
-                    if (strpos($sLower, 'свод_') !== false || strpos($sLower, 'залишк') !== false || strpos($sLower, 'остатк') !== false || strpos($sLower, 'рух') !== false) {
-                        $isSvodReport = true;
-                        break;
-                    }
+        if (!$isSvodReport) {
+            foreach ($sheetsData as $sheetName => $rows) {
+                $sLower = mb_strtolower($sheetName, 'UTF-8');
+                if (strpos($sLower, 'свод_') !== false || strpos($sLower, 'свод за період') !== false || strpos($sLower, 'свод за период') !== false || strpos($sLower, 'залишк') !== false || strpos($sLower, 'остатк') !== false || strpos($sLower, 'рух') !== false) {
+                    $isSvodReport = true;
+                    break;
                 }
             }
+        }
 
-            if (!$isSvodReport) {
-                $firstSheetRows = reset($sheetsData) ?: [];
-                foreach (array_slice($firstSheetRows, 0, 7) as $r) {
-                    $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                    if (strpos($rowText, 'движения сырья') !== false || strpos($rowText, 'рух сировини') !== false || strpos($rowText, 'семена всего') !== false || strpos($rowText, 'насіння всього') !== false) {
-                        $isSvodReport = true;
-                        break;
-                    }
+        if (!$isSvodReport) {
+            $firstSheetRows = reset($sheetsData) ?: [];
+            foreach (array_slice($firstSheetRows, 0, 7) as $r) {
+                $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
+                if (strpos($rowText, 'движения сырья') !== false || strpos($rowText, 'рух сировини') !== false || strpos($rowText, 'семена всего') !== false || strpos($rowText, 'насіння всього') !== false) {
+                    $isSvodReport = true;
+                    break;
                 }
             }
         }
@@ -959,21 +959,21 @@ try {
                 ]);
             } catch (Throwable $e) {}
 
-            // Якщо у щоденному аркуші СВОД є факт переробки насіння (Расход) та виробітку продукції (Приход)
-            if (!empty($parsedDay['seed_out']) && $parsedDay['seed_out'] > 0 && $lastMovementDayNum > 0) {
+            // Фіксуємо добу зведення у матеріальному балансі (навіть якщо переробка 0 т, коли завод стоїть)
+            if ($lastMovementDayNum > 0) {
                 $dCode = str_pad((string)$lastMovementDayNum, 2, '0', STR_PAD_LEFT);
-                $mCode = $validDaySheets[$lastMovementDayNum]['month'] ?? '10';
+                $mCode = $validDaySheets[$lastMovementDayNum]['month'] ?? '11';
                 $yCode = $validDaySheets[$lastMovementDayNum]['year'] ?? '2026';
                 $isoDate = "{$yCode}-{$mCode}-{$dCode}";
                 $dFormatted = "{$dCode}.{$mCode}.{$yCode}";
 
-                $sProd = $parsedDay['seed_out'];
-                $sPlant = ($parsedDay['seed_in'] > 0) ? $parsedDay['seed_in'] : $sProd;
-                $oOut = $parsedDay['oil_produced'] ?? 0.0;
-                $mOut = $parsedDay['meal_produced'] ?? 0.0;
-                $hOut = ($parsedDay['husk_produced'] ?? 0.0) + ($parsedDay['husk_boiler'] ?? 0.0);
+                $sProd = (float)($parsedDay['seed_out'] ?? 0.0);
+                $sPlant = (float)(($parsedDay['seed_in'] > 0) ? $parsedDay['seed_in'] : ($sProd > 0 ? $sProd : 0.0));
+                $oOut = (float)($parsedDay['oil_produced'] ?? 0.0);
+                $mOut = (float)($parsedDay['meal_produced'] ?? 0.0);
+                $hOut = (float)(($parsedDay['husk_produced'] ?? 0.0) + ($parsedDay['husk_boiler'] ?? 0.0));
                 $cLoss = max(0.0, round($sPlant - $sProd, 3));
-                $cLossPct = $sPlant > 0 ? round(($cLoss / $sPlant) * 100, 2) : 0.0;
+                $cLossPct = ($sPlant > 0 && $sProd > 0) ? round(($cLoss / $sPlant) * 100, 2) : 0.0;
                 $pLoss = max(0.0, round($sProd - ($oOut + $mOut + $hOut), 3));
                 $pLossPct = $sProd > 0 ? round(($pLoss / $sProd) * 100, 2) : 0.0;
 
@@ -998,7 +998,11 @@ try {
                     }
                     $processedReports[] = 'material_balance';
                     $detectedDates['material_balance'] = $dFormatted;
-                    $details[] = "✅ «Переробка та вихід продукції» за {$dFormatted}: перероблено {$sProd} т насіння, вироблено олії {$oOut} т, шроту {$mOut} т, лузги {$hOut} т";
+                    if ($sProd > 0) {
+                        $details[] = "✅ «Переробка та вихід продукції» за {$dFormatted}: перероблено {$sProd} т насіння, вироблено олії {$oOut} т, шроту {$mOut} т, лузги {$hOut} т";
+                    } else {
+                        $details[] = "⏸️ «Матеріальний баланс» за {$dFormatted}: переробка МЕЗ 0 т (завод стоїть / ППР • накопичення насіння {$sPlant} т)";
+                    }
                 } catch (Throwable $e) {}
             }
 
@@ -1274,7 +1278,7 @@ try {
         // Автоматичне оновлення виробничих та неврахованих втрат олії з виробничого звіту
         // -------------------------------------------------------------
         $oilCandidateSheets = [];
-        $priorityKeywords = ['окт', 'жовт', 'нояб', 'лист', 'дек', 'сент', 'верес', 'переработ', 'перероб', 'справка', 'информац', 'інформац'];
+        $priorityKeywords = ['нояб', 'лист', 'окт', 'жовт', 'дек', 'груд', 'сент', 'верес', 'переработ', 'перероб', 'справка', 'информац', 'інформац'];
         foreach ($priorityKeywords as $kw) {
             foreach ($sheetsData as $sName => $rows) {
                 if (strpos(mb_strtolower($sName, 'UTF-8'), $kw) !== false && !isset($oilCandidateSheets[$sName])) {

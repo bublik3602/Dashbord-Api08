@@ -27,9 +27,9 @@ try {
     $period = filter_input(INPUT_GET, 'period', FILTER_DEFAULT) ?? 'day';
     $validPeriods = [
         'shift', 'day', 'day_today', 'day_prev', 'day_active', 'week', 
-        'month', 'month_oct', 'month_sep', 'month_aug', 'month_jul', 
+        'month', 'month_nov', 'month_oct', 'month_sep', 'month_aug', 'month_jul', 
         'month_jun', 'month_may', 'month_apr', 'month_mar', 'month_feb', 
-        'month_jan', 'season', 'month_sep_2025'
+        'month_jan', 'month_dec', 'season', 'month_sep_2025'
     ];
     if (!in_array($period, $validPeriods, true)) {
         $period = 'day';
