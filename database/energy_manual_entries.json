@@ -364,13 +364,13 @@
     },
     "2026-11-01": {
         "date": "2026-11-01",
-        "power_kwh": null,
+        "power_kwh": 4457.5125,
         "water_m3": 2.0,
         "steam_t": 26.98,
         "steam_pressure_bar": 11.2,
-        "reactive_kvarh": null,
+        "reactive_kvarh": 1755.6,
         "note": "Листопад: простій заводу, розігрів / дежурний режим котельні",
-        "author": "import",
+        "author": "energo",
         "updated_at": "2026-11-03 11:00:00"
     }
 }

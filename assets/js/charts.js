@@ -999,7 +999,7 @@ window.FactoryCharts = {
             this.donutChart.updateSeries(data.material_balance.yield_chart.values);
         }
 
-        if (this.energyChart && data.energy && data.energy.timeline) {
+        if (data.energy && data.energy.timeline) {
             const tl = data.energy.timeline;
             this._currentEnergyTimeline = tl;
             const pName = tl.power_name || 'Активна електроенергія (кВт)';
@@ -1018,6 +1018,10 @@ window.FactoryCharts = {
             let noticeEl = document.querySelector("#energy-chart-no-data");
 
             if (!hasLabels) {
+                if (this.energyChart) {
+                    try { this.energyChart.destroy(); } catch (e) {}
+                    this.energyChart = null;
+                }
                 if (!noticeEl && chartEl) {
                     noticeEl = document.createElement("div");
                     noticeEl.id = "energy-chart-no-data";
@@ -1038,52 +1042,56 @@ window.FactoryCharts = {
                 if (noticeEl) noticeEl.style.display = "none";
                 if (chartEl) chartEl.style.display = "block";
 
-                const seriesList = [
-                    {
-                        name: pName,
-                        type: 'line',
-                        data: tl.power || []
-                    }
-                ];
-                const colors = ['#0284c7'];
-                const strokeWidths = [4.5]; // Жирна лінія для активної енергії
-
-                if (hasReactive) {
-                    seriesList.push({
-                        name: rName,
-                        type: 'line',
-                        data: tl.reactive || []
-                    });
-                    colors.push('#8b5cf6');
-                    strokeWidths.push(4.0); // Жирна лінія для реактивної енергії
-                }
-
-                this.energyChart.updateOptions({
-                    colors: colors,
-                    stroke: { width: strokeWidths, curve: 'smooth' },
-                    fill: { type: 'solid' },
-                    markers: {
-                        size: 4,
-                        hover: { sizeOffset: 3 }
-                    },
-                    xaxis: {
-                        categories: tl.labels || []
-                    },
-                    yaxis: {
-                        title: {
-                            text: hasReactive ? `${pUnit} / ${rUnit}` : pUnit,
-                            style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
-                        },
-                        labels: {
-                            style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
-                            formatter: function (v) {
-                                if (v === undefined || v === null || isNaN(v)) return '0';
-                                return v >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
-                            }
+                if (!this.energyChart) {
+                    this.initEnergyChart(tl);
+                } else {
+                    const seriesList = [
+                        {
+                            name: pName,
+                            type: 'line',
+                            data: tl.power || []
                         }
-                    },
-                    series: seriesList
-                }, true, true);
+                    ];
+                    const colors = ['#0284c7'];
+                    const strokeWidths = [4.5]; // Жирна лінія для активної енергії
+
+                    if (hasReactive) {
+                        seriesList.push({
+                            name: rName,
+                            type: 'line',
+                            data: tl.reactive || []
+                        });
+                        colors.push('#8b5cf6');
+                        strokeWidths.push(4.0); // Жирна лінія для реактивної енергії
+                    }
+
+                    this.energyChart.updateOptions({
+                        colors: colors,
+                        stroke: { width: strokeWidths, curve: 'smooth' },
+                        fill: { type: 'solid' },
+                        markers: {
+                            size: 4,
+                            hover: { sizeOffset: 3 }
+                        },
+                        xaxis: {
+                            categories: tl.labels || []
+                        },
+                        yaxis: {
+                            title: {
+                                text: hasReactive ? `${pUnit} / ${rUnit}` : pUnit,
+                                style: { color: '#0284c7', fontSize: '11px', fontWeight: 700 }
+                            },
+                            labels: {
+                                style: { colors: '#0284c7', fontSize: '11px', fontWeight: 600 },
+                                formatter: function (v) {
+                                    if (v === undefined || v === null || isNaN(v)) return '0';
+                                    return v >= 10000 ? (v / 1000).toFixed(0) + 'k' : Math.round(v).toLocaleString('uk-UA');
+                                }
+                            }
+                        },
+                        series: seriesList
+                    }, true, true);
+                }
             }
 
             // Оновлення окремого графіка води та пари

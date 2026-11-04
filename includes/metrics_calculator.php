@@ -1140,35 +1140,104 @@ class MetricsCalculator {
             }
         }
 
-        // Побудова timeline та добових рядків для Жовтня з ручних записів
-        $tlLabels = [];
-        $tlPower  = [];
-        $tlPowerMwh = [];
-        $tlPowerKwAvg = [];
-        $tlPowerMwAvg = [];
-        $tlReactive = [];
-        $tlWater  = [];
-        $tlSteam  = [];
+        // Побудова генератора timeline для обраного місяця
+        $buildTimelineForMonth = function(string $yearMonth, array $entries, array $steamDaily) {
+            $parts = explode('-', $yearMonth);
+            $year = (int)($parts[0] ?? 2026);
+            $month = (int)($parts[1] ?? 11);
+            $daysInMonth = (int)date('t', strtotime(sprintf('%04d-%02d-01', $year, $month)));
+
+            $steamByDay = [];
+            foreach ($steamDaily as $r) {
+                $d = (int)($r['day'] ?? (isset($r['date']) ? explode('.', $r['date'])[0] : 0));
+                if ($d > 0) {
+                    $steamByDay[$d] = $r;
+                }
+            }
+
+            $mEntries = [];
+            foreach ($entries as $dStr => $e) {
+                if (strpos($dStr, $yearMonth) === 0) {
+                    $mEntries[$dStr] = $e;
+                }
+            }
+
+            $labels = [];
+            $powers = [];
+            $reactives = [];
+            $powersMwh = [];
+            $powersKwAvg = [];
+            $powersMwAvg = [];
+            $waters = [];
+            $steams = [];
+
+            // Для Вересня 2026: завод запустився з 15.09
+            $startDay = ($yearMonth === '2026-09') ? 15 : 1;
+            $maxDay = $daysInMonth;
+
+            for ($day = $startDay; $day <= $maxDay; $day++) {
+                $dStr = sprintf('%04d-%02d-%02d', $year, $month, $day);
+                $label = sprintf('%02d.%02d', $day, $month);
+
+                $e = $mEntries[$dStr] ?? null;
+                $st = $steamByDay[$day] ?? null;
+
+                $pVal = (isset($e['power_kwh']) && $e['power_kwh'] !== null && $e['power_kwh'] !== '' && (float)$e['power_kwh'] > 0) ? (float)$e['power_kwh'] : null;
+                $hasR = isset($e['reactive_kvarh']) && $e['reactive_kvarh'] !== null && $e['reactive_kvarh'] !== '' && (float)$e['reactive_kvarh'] > 0;
+                $rVal = $hasR ? (float)$e['reactive_kvarh'] : ($pVal !== null ? round($pVal * 0.32, 1) : null);
+                $wVal = (isset($e['water_m3']) && $e['water_m3'] !== null && $e['water_m3'] !== '') ? (float)$e['water_m3'] : null;
+
+                $sVal = null;
+                if (isset($e['steam_t']) && $e['steam_t'] !== null && $e['steam_t'] !== '') {
+                    $sVal = (float)$e['steam_t'];
+                } elseif ($st && isset($st['boiler_t'])) {
+                    $sVal = (float)$st['boiler_t'];
+                }
+
+                $labels[]      = $label;
+                $powers[]      = $pVal !== null ? round($pVal, 4) : null;
+                $reactives[]   = $rVal !== null ? round($rVal, 1) : null;
+                $powersMwh[]   = $pVal !== null ? round($pVal / 1000, 4) : null;
+                $powersKwAvg[] = $pVal !== null ? round($pVal / 24, 4) : null;
+                $powersMwAvg[] = $pVal !== null ? round($pVal / 24000, 4) : null;
+                $waters[]      = $wVal !== null ? round($wVal, 2) : 0.0;
+                $steams[]      = $sVal !== null ? round($sVal, 2) : 0.0;
+            }
+
+            return [
+                'labels'        => $labels,
+                'power'         => $powers,
+                'reactive'      => $reactives,
+                'power_mwh'     => $powersMwh,
+                'power_kw_avg'  => $powersKwAvg,
+                'power_mw_avg'  => $powersMwAvg,
+                'water'         => $waters,
+                'steam'         => $steams,
+                'power_name'    => 'Активна електроенергія (кВт)',
+                'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
+                'water_name'    => 'Вода за добу по лічильнику (м³)',
+                'steam_name'    => 'Технологічна пара за добу (т)',
+                'power_unit'    => 'кВт',
+                'reactive_unit' => 'кВАр·год',
+                'water_unit'    => 'м³/д',
+                'steam_unit'    => 'т/д',
+            ];
+        };
+
+        // Побудова timeline та добових рядків для Жовтня
+        $octTimeline = $buildTimelineForMonth('2026-10', $manualEntries, $steamDb['daily_oct26'] ?? []);
+        $tlLabels     = $octTimeline['labels'];
+        $tlPower      = $octTimeline['power'];
+        $tlPowerMwh   = $octTimeline['power_mwh'];
+        $tlPowerKwAvg = $octTimeline['power_kw_avg'];
+        $tlPowerMwAvg = $octTimeline['power_mw_avg'];
+        $tlReactive   = $octTimeline['reactive'];
+        $tlWater      = $octTimeline['water'];
+        $tlSteam      = $octTimeline['steam'];
         $steamDailyRows = [];
 
         foreach ($octEntries as $dStr => $entry) {
-            $dayNum = date('d.m', strtotime($dStr));
-            $hasP   = isset($entry['power_kwh']) && $entry['power_kwh'] !== null && $entry['power_kwh'] !== '' && (float)$entry['power_kwh'] > 0;
-            $pVal   = $hasP ? (float)$entry['power_kwh'] : null;
-            $wVal   = isset($entry['water_m3']) && $entry['water_m3'] !== null && $entry['water_m3'] !== '' ? (float)$entry['water_m3'] : 0.0;
-            $sVal   = isset($entry['steam_t']) && $entry['steam_t'] !== null && $entry['steam_t'] !== '' ? (float)$entry['steam_t'] : 0.0;
-            $hasR   = isset($entry['reactive_kvarh']) && $entry['reactive_kvarh'] !== null && $entry['reactive_kvarh'] !== '' && (float)$entry['reactive_kvarh'] > 0;
-            $rVal   = $hasR ? (float)$entry['reactive_kvarh'] : ($pVal !== null ? round($pVal * 0.32, 1) : null);
-
-            $tlLabels[]     = $dayNum;
-            $tlPower[]      = $pVal !== null ? round($pVal, 4) : null;
-            $tlPowerMwh[]   = $pVal !== null ? round($pVal / 1000, 4) : null;
-            $tlPowerKwAvg[] = $pVal !== null ? round($pVal / 24, 4) : null;
-            $tlPowerMwAvg[] = $pVal !== null ? round($pVal / 24000, 4) : null;
-            $tlReactive[]   = $rVal !== null ? round($rVal, 1) : null;
-            $tlWater[]      = round($wVal, 2);
-            $tlSteam[]      = round($sVal, 2);
-
+            $sVal = isset($entry['steam_t']) && $entry['steam_t'] !== null && $entry['steam_t'] !== '' ? (float)$entry['steam_t'] : 0.0;
             if (isset($entry['steam_t']) && $entry['steam_t'] !== null && $entry['steam_t'] !== '') {
                 $steamDailyRows[] = [
                     'date'      => date('d.m.Y', strtotime($dStr)),
@@ -1194,6 +1263,7 @@ class MetricsCalculator {
             foreach ($monthly12 as $idx => $mRow) {
                 if (strpos($mRow['month'], 'Жовтень 2026') !== false) {
                     $monthly12[$idx] = [
+                        'key'            => '2026-10',
                         'month'          => 'Жовтень 2026',
                         'short'          => 'Жов\'26',
                         'active_kwh'     => $hasOctPower ? round($octSumPower, 4) : null,
@@ -1213,6 +1283,27 @@ class MetricsCalculator {
                     break;
                 }
             }
+
+            // Оновлюємо рядок Листопада в річній таблиці 12 місяців
+            if (!empty($novEntries)) {
+                $validNovPowers = array_values(array_filter(array_map(fn($e) => (isset($e['power_kwh']) && (float)$e['power_kwh'] > 0) ? (float)$e['power_kwh'] : null, $novEntries), fn($v) => $v !== null));
+                $hasNovPower = !empty($validNovPowers);
+                $novSumPower = $hasNovPower ? array_sum($validNovPowers) : null;
+                $novSumWater = array_sum(array_map(fn($e) => (float)($e['water_m3'] ?? 0), $novEntries));
+                foreach ($monthly12 as $idx => $mRow) {
+                    if (($mRow['key'] ?? '') === '2026-11' || strpos($mRow['month'], 'Листопад 2026') !== false) {
+                        $monthly12[$idx]['active_kwh'] = $hasNovPower ? round($novSumPower, 4) : null;
+                        $monthly12[$idx]['reactive_kvarh'] = $hasNovPower ? round($novSumPower * 0.32, 1) : null;
+                        if ($novSumWater > 0) {
+                            $monthly12[$idx]['water_m3'] = round($novSumWater, 0);
+                            $monthly12[$idx]['sewage_m3'] = round($novSumWater * 0.56, 0);
+                        }
+                        $monthly12[$idx]['has_data'] = true;
+                        $monthly12[$idx]['note'] = $hasNovPower ? 'Фактичні дані за звітні доби Листопада' : 'Поточний місяць (завод у простої)';
+                        break;
+                    }
+                }
+            }
         }
 
         // Перевіряємо поточний місяць: якщо звіт за листопад або зараз листопад, період 'month' відноситься до активного місяця
@@ -1224,28 +1315,15 @@ class MetricsCalculator {
         switch ($period) {
             case 'month_nov':
             case '2026-11':
-                $novDailyTable = $steamDb['daily_nov26'] ?? $steamDailyArchive['2026-11'] ?? [];
-                $novLabels = [];
-                $novPower = [];
-                $novWater = [];
-                $novSteam = [];
+                $novDailyTable = !empty($steamDb['daily_nov26']) ? $steamDb['daily_nov26'] : ($steamDailyArchive['2026-11'] ?? []);
+                $novTimeline = $buildTimelineForMonth('2026-11', $manualEntries, $novDailyTable);
 
-                if (!empty($novEntries)) {
-                    foreach ($novEntries as $dStr => $e) {
-                        $novLabels[] = date('d.m', strtotime($dStr));
-                        $p = isset($e['power_kwh']) && (float)$e['power_kwh'] > 0 ? (float)$e['power_kwh'] : null;
-                        $novPower[] = $p;
-                        $novWater[] = isset($e['water_m3']) ? (float)$e['water_m3'] : 0.0;
-                        $novSteam[] = isset($e['steam_t']) ? (float)$e['steam_t'] : 0.0;
-                    }
-                } elseif (!empty($novDailyTable)) {
-                    foreach (array_slice($novDailyTable, 0, 7) as $r) {
-                        $novLabels[] = sprintf('%02d.11', (int)($r['day'] ?? 1));
-                        $novPower[] = null;
-                        $novWater[] = null;
-                        $novSteam[] = (float)($r['boiler_t'] ?? 0.0);
-                    }
-                }
+                $powListNov = array_values(array_filter($novTimeline['power'], fn($v) => $v !== null && $v > 0));
+                $hasNovPow = !empty($powListNov);
+                $totNovPow = $hasNovPow ? array_sum($powListNov) : null;
+
+                $watListNov = array_values(array_filter(array_map(fn($e) => isset($e['water_m3']) && (float)$e['water_m3'] > 0 ? (float)$e['water_m3'] : null, $novEntries), fn($v) => $v !== null));
+                $totNovWat = !empty($watListNov) ? array_sum($watListNov) : 2.0;
 
                 $stNovBoiler = (float)($steamDb['november_summary']['boiler_t'] ?? 26.98);
                 $stNovProd   = (float)($steamDb['november_summary']['prod_t'] ?? 11.98);
@@ -1254,11 +1332,6 @@ class MetricsCalculator {
                 $stNovPrep   = (float)($steamDb['november_summary']['prep_t'] ?? 0.0);
                 $stNovElev   = (float)($steamDb['november_summary']['elev_t'] ?? 0.0);
                 $stNovHeat   = (float)($steamDb['november_summary']['heating_t'] ?? 1.61);
-
-                $powListNov = array_values(array_filter($novPower, fn($v) => $v !== null && $v > 0));
-                $hasNovPow = !empty($powListNov);
-                $totNovPow = $hasNovPow ? array_sum($powListNov) : null;
-                $totNovWat = !empty(array_filter($novWater)) ? array_sum(array_filter($novWater)) : null;
 
                 $novDept = $energyDeptArchive['2026-11']['departments'] ?? $departmentsNov;
 
@@ -1269,11 +1342,11 @@ class MetricsCalculator {
                     'has_steam'                  => true,
                     'current_power_kw'           => $hasNovPow ? round($totNovPow / (max(1, count($powListNov)) * 24), 4) : 0.0,
                     'total_kwh'                  => $totNovPow,
-                    'reactive_kvarh'             => $hasNovPow ? round($totNovPow * 0.32, 1) : null,
-                    'current_water_m3_hour'      => $totNovWat !== null ? round($totNovWat / (max(1, count($novWater)) * 24), 2) : 0.0,
-                    'daily_water_m3'             => $totNovWat !== null ? round($totNovWat / max(1, count($novWater)), 1) : 0.0,
+                    'reactive_kvarh'             => $hasNovPow ? (float)($novEntries['2026-11-01']['reactive_kvarh'] ?? round($totNovPow * 0.32, 1)) : null,
+                    'current_water_m3_hour'      => $totNovWat !== null ? round($totNovWat / (max(1, count($watListNov)) * 24), 2) : 0.08,
+                    'daily_water_m3'             => $totNovWat !== null ? round($totNovWat / max(1, count($watListNov)), 1) : 2.0,
                     'total_water_m3'             => $totNovWat,
-                    'sewage_m3'                  => $totNovWat !== null ? round($totNovWat * 0.56, 1) : null,
+                    'sewage_m3'                  => $totNovWat !== null ? round($totNovWat * 0.56, 1) : 1.1,
                     'gas_m3'                     => 0.0,
                     'steam_pressure_bar'         => 11.2,
                     'specific_kwh_per_tonne'     => 0.0,
@@ -1298,24 +1371,7 @@ class MetricsCalculator {
                     'energy_departments_archive' => $energyDeptArchive,
                     'water_meters'               => $waterMetersAccounting,
                     'monthly_12'                 => $monthly12,
-                    'timeline' => [
-                        'labels'        => !empty($novLabels) ? $novLabels : ['01.11', '02.11', '03.11'],
-                        'power'         => $novPower,
-                        'reactive'      => array_map(fn($p) => $p !== null ? round($p * 0.32, 1) : null, $novPower),
-                        'power_mwh'     => array_map(fn($p) => $p !== null ? round($p / 1000, 4) : null, $novPower),
-                        'power_kw_avg'  => array_map(fn($p) => $p !== null ? round($p / 24, 4) : null, $novPower),
-                        'power_mw_avg'  => array_map(fn($p) => $p !== null ? round($p / 24000, 4) : null, $novPower),
-                        'water'         => $novWater,
-                        'steam'         => !empty($novSteam) ? $novSteam : [26.98, 0.0, 0.0],
-                        'power_name'    => 'Активна електроенергія (кВт)',
-                        'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
-                        'water_name'    => 'Вода за добу по лічильнику (м³)',
-                        'steam_name'    => 'Технологічна пара за добу (т)',
-                        'power_unit'    => 'кВт',
-                        'reactive_unit' => 'кВАр·год',
-                        'water_unit'    => 'м³/д',
-                        'steam_unit'    => 'т/д',
-                    ]
+                    'timeline'                   => $novTimeline,
                 ];
 
             case 'month_sep':
@@ -1760,6 +1816,20 @@ class MetricsCalculator {
                     }
 
                     // 3. Період: ДОБА (day, shift, day_today, day_active, day_prev або за замовчуванням)
+                    $latestDate = $latest['date'] ?? date('Y-m-d');
+                    $latestYearMonth = date('Y-m', strtotime($latestDate));
+
+                    $activeSteamDaily = [];
+                    if ($latestYearMonth === '2026-11') {
+                        $activeSteamDaily = !empty($steamDb['daily_nov26']) ? $steamDb['daily_nov26'] : ($steamDailyArchive['2026-11'] ?? []);
+                    } elseif ($latestYearMonth === '2026-10') {
+                        $activeSteamDaily = !empty($steamDb['daily_oct26']) ? $steamDb['daily_oct26'] : ($steamDailyArchive['2026-10'] ?? []);
+                    } else {
+                        $activeSteamDaily = $steamDailyArchive[$latestYearMonth] ?? [];
+                    }
+
+                    $dayTimeline = $buildTimelineForMonth($latestYearMonth, $manualEntries, $activeSteamDaily);
+
                     $hasPower = isset($latest['power_kwh']) && $latest['power_kwh'] !== null && $latest['power_kwh'] !== '';
                     $hasWater = isset($latest['water_m3']) && $latest['water_m3'] !== null && $latest['water_m3'] !== '';
                     $hasSteam = isset($latest['steam_t']) && $latest['steam_t'] !== null && $latest['steam_t'] !== '';
@@ -1769,11 +1839,25 @@ class MetricsCalculator {
                     $curSteam = $hasSteam ? (float)$latest['steam_t'] : null;
                     $curBar   = (float)($latest['steam_pressure_bar'] ?? 11.2);
                     $curReact = $hasPower ? (float)($latest['reactive_kvarh'] ?? round($curKwh * 0.32, 1)) : null;
-                    $specKwh  = $hasPower ? round($curKwh / $seedProc, 4) : null;
-                    $specStm  = $hasSteam ? round(($curSteam * 1000) / $seedProc, 1) : null;
+                    $specKwh  = ($hasPower && $latestYearMonth === '2026-10') ? round($curKwh / $seedProc, 4) : 0.0;
+                    $specStm  = ($hasSteam && $latestYearMonth === '2026-10') ? round(($curSteam * 1000) / $seedProc, 1) : 0.0;
 
                     $deptPowerBase = $hasPower ? $curKwh : 0.0;
                     $deptWaterBase = $hasWater ? $curWater : 0.0;
+
+                    $dayDepartments = [
+                        ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 4), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
+                        ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 4), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
+                        ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 4), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
+                        ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 4), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
+                        ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                        ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
+                        ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
+                    ];
+
+                    if ($latestYearMonth === '2026-11' && !empty($energyDeptArchive['2026-11']['departments'])) {
+                        $dayDepartments = $energyDeptArchive['2026-11']['departments'];
+                    }
 
                     return [
                         'has_data'                   => true,
@@ -1790,7 +1874,7 @@ class MetricsCalculator {
                         'gas_m3'                     => 0.0,
                         'steam_pressure_bar'         => $curBar,
                         'specific_kwh_per_tonne'     => $specKwh,
-                        'specific_subtext'           => $hasPower ? "Розраховано від {$seedProc} т насіння у переробці" : "Показники електроенергії ще не внесені",
+                        'specific_subtext'           => $hasPower ? ($latestYearMonth === '2026-11' ? "Листопад 2026: черговий режим / завод у простої" : "Розраховано від {$seedProc} т насіння у переробці") : "Показники електроенергії ще не внесені",
                         'boiler_water_m3'            => $hasWater ? round($curWater * 0.408, 0) : null,
                         'extraction_water_m3'        => $hasWater ? round($curWater * 0.217, 0) : null,
                         'steam_boiler_tonnes'        => $hasSteam ? round($curSteam, 1) : null,
@@ -1803,40 +1887,15 @@ class MetricsCalculator {
                         'steam_specific_kg_per_tonne'=> $specStm,
                         'steam_subtext'              => $hasSteam ? ("Виробництво: " . number_format($curSteam, 1, ',', ' ') . " т • Тиск: {$curBar} бар") : "Показники пари ще не внесені",
                         'steam_distrib_subtext'      => $hasSteam ? ("Екстракція: " . number_format($curSteam * 0.544, 1, ',', ' ') . " т • Підготовка: " . number_format($curSteam * 0.383, 1, ',', ' ') . " т") : "",
-                        'steam_daily_table'          => !empty($steamDb['daily_oct26']) ? $steamDb['daily_oct26'] : array_reverse($steamDailyRows),
+                        'steam_daily_table'          => !empty($activeSteamDaily) ? $activeSteamDaily : (!empty($steamDb['daily_oct26']) ? $steamDb['daily_oct26'] : array_reverse($steamDailyRows)),
                         'steam_monthly_history'      => $steamMonthly,
                         'steam_daily_archive'        => $steamDailyArchive,
                         'period_note'                => "Доба: " . date('d.m.Y', strtotime($latest['date'])) . " (фактичні дані енергетика)",
-                        'departments'                => [
-                            ['name' => 'Олійнопресовий цех',                      'active_kwh' => round($deptPowerBase * 0.557, 4), 'reactive_kvarh' => round($deptPowerBase * 0.216, 1), 'specific_kwh' => 29.68, 'water_m3' => round($deptWaterBase * 0.111, 0),  'sewage_m3' => round($deptWaterBase * 0.038, 0)],
-                            ['name' => 'Дільниця екстракції (водооборотка)',      'active_kwh' => round($deptPowerBase * 0.218, 4), 'reactive_kvarh' => round($deptPowerBase * 0.075, 1), 'specific_kwh' => 11.62, 'water_m3' => round($deptWaterBase * 0.217, 0),  'sewage_m3' => round($deptWaterBase * 0.104, 0)],
-                            ['name' => 'Дільниця приймання, доробки та зберіг.',  'active_kwh' => round($deptPowerBase * 0.149, 4), 'reactive_kvarh' => round($deptPowerBase * 0.063, 1), 'specific_kwh' => 7.94,  'water_m3' => round($deptWaterBase * 0.003, 0),  'sewage_m3' => round($deptWaterBase * 0.003, 0)],
-                            ['name' => 'Котельня лузгова (пермеат + пара)',       'active_kwh' => round($deptPowerBase * 0.062, 4), 'reactive_kvarh' => round($deptPowerBase * 0.024, 1), 'specific_kwh' => 3.30,  'water_m3' => round($deptWaterBase * 0.408, 0),  'sewage_m3' => round($deptWaterBase * 0.155, 0)],
-                            ['name' => 'Елеватор №2 (вул. Пушкіна, 13Б)',         'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
-                            ['name' => 'Склад готової продукції',                 'active_kwh' => round($deptPowerBase * 0.006, 4), 'reactive_kvarh' => round($deptPowerBase * 0.002, 1), 'specific_kwh' => 0.32,  'water_m3' => 0,                                  'sewage_m3' => 0],
-                            ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
-                        ],
+                        'departments'                => $dayDepartments,
                         'energy_departments_archive' => $energyDeptArchive,
                         'water_meters'               => $waterMetersAccounting,
                         'monthly_12'                 => $monthly12,
-                        'timeline' => [
-                            'labels'        => $tlLabels,
-                            'power'         => $tlPower,
-                            'reactive'      => $tlReactive,
-                            'power_mwh'     => $tlPowerMwh,
-                            'power_kw_avg'  => $tlPowerKwAvg,
-                            'power_mw_avg'  => $tlPowerMwAvg,
-                            'water'         => $tlWater,
-                            'steam'         => $tlSteam,
-                            'power_name'    => 'Активна електроенергія (кВт)',
-                            'reactive_name' => 'Реактивна електроенергія (кВАр·год)',
-                            'water_name'    => 'Вода за добу по лічильнику (м³)',
-                            'steam_name'    => 'Технологічна пара за добу (т)',
-                            'power_unit'    => 'кВт',
-                            'reactive_unit' => 'кВАр·год',
-                            'water_unit'    => 'м³/д',
-                            'steam_unit'    => 'т/д',
-                        ]
+                        'timeline'                   => $dayTimeline,
                     ];
                 }
 

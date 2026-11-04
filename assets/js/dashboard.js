@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const key = this.value;
             window.selectEnergyMonth(key);
             const p = periodMapFromKey[key];
-            if (p && p !== currentPeriod) {
+            if (p) {
                 const monthDropdown = document.getElementById('select-other-months');
                 if (monthDropdown) monthDropdown.value = p;
                 periodButtons.forEach(b => b.classList.remove('active'));
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const headerSel = document.getElementById('energy-header-month-select');
             if (headerSel) headerSel.value = key;
             const p = periodMapFromKey[key];
-            if (p && p !== currentPeriod) {
+            if (p) {
                 const monthDropdown = document.getElementById('select-other-months');
                 if (monthDropdown) monthDropdown.value = p;
                 periodButtons.forEach(b => b.classList.remove('active'));
@@ -1463,11 +1463,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const energyPeriodButtons = document.querySelectorAll('.energy-period-btn');
     energyPeriodButtons.forEach(btn => {
         btn.addEventListener('click', function () {
-            const p = this.getAttribute('data-period');
+            let p = this.getAttribute('data-period');
             if (!p || isFetching) return;
 
             energyPeriodButtons.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
+
+            if (p === 'month') {
+                const headerSel = document.getElementById('energy-header-month-select');
+                if (headerSel && headerSel.value && periodMapFromKey[headerSel.value]) {
+                    p = periodMapFromKey[headerSel.value];
+                }
+            }
 
             // Синхронізуємо з глобальним селектором періоду, якщо є
             const globalBtn = document.querySelector(`.period-btn:not(.energy-period-btn)[data-period="${p}"]`);
