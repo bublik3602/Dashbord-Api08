@@ -888,7 +888,7 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
                         <div style="display: inline-flex; align-items: center; gap: 8px;">
                             <label for="energy-month-select" style="font-size: 11px; color: #475569; font-weight: 600;">Місяць:</label>
                             <select id="energy-month-select" class="form-select form-select-sm" style="font-size: 11px; padding: 2px 8px; height: 26px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; font-weight: 600; cursor: pointer;">
-                                <?= MonthHelper::renderMonthOptions(null, 'key') ?>
+                                <?= MonthHelper::renderMonthOptions('2026-10', 'key') ?>
                             </select>
                             <span id="energy-month-subtext" style="font-size: 11px; color: #64748b; font-weight: 500;">(Поточний факт за обраний місяць)</span>
                         </div>
@@ -1134,17 +1134,23 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
     $pcRows      = $periodComp['rows'] ?? [];
     ?>
     <div class="historical-analytics-section" id="historical-analytics-section">
-        <div class="section-title">
-            <i data-lucide="line-chart" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
-            <span>Блок Г: Порівняльна аналітика періодів (Серпень — Вересень — Жовтень 2026)</span>
-            <span class="section-badge badge-blue" id="badge-historical-season"><?= htmlspecialchars($seasonTot['badge_label'] ?? ('Виробничий сезон 2026–2027 (01.08.2026 — 01.08.2027 • ' . ($seasonTot['working_days'] ?? 25) . ' діб переробки)')) ?></span>
+        <div class="section-title" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i data-lucide="line-chart" style="width: 18px; height: 18px; color: var(--color-primary);"></i>
+                <span>Блок Г: Порівняльна аналітика періодів (Вересень — Жовтень — Листопад 2026)</span>
+                <span class="section-badge badge-blue" id="badge-historical-season"><?= htmlspecialchars($seasonTot['badge_label'] ?? ('Виробничий сезон 2026–2027 (01.08.2026 — 01.08.2027 • ' . ($seasonTot['working_days'] ?? 25) . ' діб переробки)')) ?></span>
+            </div>
+            <button type="button" class="btn-toggle-all-months" id="btn-toggle-historical-months" style="background: #f8fafc; border: 1px solid #cbd5e1; color: #475569; padding: 4px 12px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                <i data-lucide="archive" style="width: 13px; height: 13px; color: #64748b;"></i>
+                <span id="btn-toggle-historical-months-text">Показати всі (Серпень 2026)</span>
+            </button>
         </div>
 
-        <!-- Картки-підсумки помісячно (Серпень, Вересень, Жовтень, Сезон) -->
+        <!-- Картки-підсумки помісячно (3 останні місяці: Вересень, Жовтень, Листопад + Сезон; Серпень сховано) -->
         <div class="historical-cards-grid">
             
-            <!-- Серпень 2026 -->
-            <div class="history-month-card" data-period-trigger="month_aug">
+            <!-- Серпень 2026 (Приховано за замовчуванням, доступно по кнопці "Показати всі") -->
+            <div class="history-month-card history-month-older" data-period-trigger="month_aug" style="display: none;">
                 <div class="month-card-header">
                     <div class="month-card-title">
                         <span class="month-name">Серпень 2026</span>

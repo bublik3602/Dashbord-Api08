@@ -867,6 +867,16 @@ class MetricsCalculator {
             }
         }
 
+        $departmentsOct = $energyDeptArchive['2026-10']['departments'] ?? [
+            ['name' => 'Олійнопресовий цех (підготовка)',                  'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 29.68, 'water_m3' => 53,  'sewage_m3' => 18],
+            ['name' => 'Дільниця екстракції (водооборотка)',              'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 11.62, 'water_m3' => 103, 'sewage_m3' => 50],
+            ['name' => 'Дільниця приймання, доробки та зберіг. сировини', 'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 7.94,  'water_m3' => 1,   'sewage_m3' => 1],
+            ['name' => 'Котельня лузгова (пермеат + пара)',               'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 3.30,  'water_m3' => 194, 'sewage_m3' => 74],
+            ['name' => 'Елеватор №2 (вул. Василя Симоненка, 13Б)',         'active_kwh' => null, 'reactive_kvarh' => 0.0,  'specific_kwh' => 0.32,  'water_m3' => 0,   'sewage_m3' => 0],
+            ['name' => 'Склад готової продукції',                         'active_kwh' => 1200, 'reactive_kvarh' => null, 'specific_kwh' => 0.0,   'water_m3' => 0,   'sewage_m3' => 0],
+            ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)',         'active_kwh' => 15400,'reactive_kvarh' => 0.0,  'specific_kwh' => 0.0,   'water_m3' => 125, 'sewage_m3' => 124],
+        ];
+
         $departmentsNov = $energyDeptArchive['2026-11']['departments'] ?? [
             ['name' => 'Олійнопресовий цех (підготовка)',                  'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0, 'water_m3' => null, 'sewage_m3' => null],
             ['name' => 'Дільниця екстракції (водооборотка)',              'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0, 'water_m3' => null, 'sewage_m3' => null],
@@ -897,7 +907,7 @@ class MetricsCalculator {
             ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => 1899,   'reactive_kvarh' => 0.0,      'specific_kwh' => 0.0,   'water_m3' => 416,  'sewage_m3' => 361],
         ];
 
-        // Детальний технологічний облік води та стоків по вузлах (Серпень — Вересень 2026 - факт)
+        // Детальний технологічний облік води та стоків по вузлах (Серпень — Жовтень 2026 - факт з журналу енергетика)
         $waterMetersAccounting = [
             [
                 'node'        => '1. Вхідний лічильник (Загальний ввід МЕЗ)',
@@ -905,10 +915,10 @@ class MetricsCalculator {
                 'aug_m3'      => 616.0,
                 'sep_m3'      => 2059.0,
                 'sep_daily'   => 137.3,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 2675.0,
-                'note'        => 'Серпень: 616 м³ • Вересень (факт з 15.09): 2059 м³ (разом за лічильником: 2 508 м³ з урахуванням об\'єктів)',
+                'oct_m3'      => 476.0,
+                'oct_daily'   => 15.4,
+                'season_m3'   => 3151.0,
+                'note'        => 'Серпень: 616 м³ • Вересень: 2059 м³ • Жовтень: 476 м³ (разом за сезон 3 151 м³)',
             ],
             [
                 'node'        => '2. Водонасосна станція (Тех. вода на виробництво)',
@@ -916,10 +926,10 @@ class MetricsCalculator {
                 'aug_m3'      => 450.0,
                 'sep_m3'      => 2001.0,
                 'sep_daily'   => 133.4,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 2451.0,
-                'note'        => 'Подача тех. води у виробничі цехи заводу',
+                'oct_m3'      => 351.0,
+                'oct_daily'   => 11.3,
+                'season_m3'   => 2802.0,
+                'note'        => 'Подача тех. води у виробничі цехи заводу (Жовтень 351 м³)',
             ],
             [
                 'node'        => '3. Котельня на лушпинні (Загальна подача ХВО)',
@@ -927,10 +937,10 @@ class MetricsCalculator {
                 'aug_m3'      => 57.0,
                 'sep_m3'      => 1023.0,
                 'sep_daily'   => 68.2,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 1080.0,
-                'note'        => 'Пермеат (пара): 716 м³ (70,0%) • Скид концентрату у КНС: 307 м³ (30%)',
+                'oct_m3'      => 194.0,
+                'oct_daily'   => 6.3,
+                'season_m3'   => 1274.0,
+                'note'        => 'Пермеат (пара) та ХВО котельні (Жовтень 194 м³)',
             ],
             [
                 'node'        => '4. Водооборотка цеху екстракції (Підживлення градирень)',
@@ -938,10 +948,10 @@ class MetricsCalculator {
                 'aug_m3'      => 28.0,
                 'sep_m3'      => 544.0,
                 'sep_daily'   => 36.3,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 572.0,
-                'note'        => 'Випар на градирнях ГМВ: 544 м³ (100% у Вересні)',
+                'oct_m3'      => 103.0,
+                'oct_daily'   => 3.3,
+                'season_m3'   => 675.0,
+                'note'        => 'Випар на градирнях ГМВ екстракції (Жовтень 103 м³)',
             ],
             [
                 'node'        => '5. Барометричний конденсатор (Екстракція)',
@@ -949,10 +959,10 @@ class MetricsCalculator {
                 'aug_m3'      => 0.0,
                 'sep_m3'      => 137.0,
                 'sep_daily'   => 9.1,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 137.0,
-                'note'        => 'Технологічні стоки барометрички (Вересень)',
+                'oct_m3'      => 24.0,
+                'oct_daily'   => 0.8,
+                'season_m3'   => 161.0,
+                'note'        => 'Технологічні стоки барометрички',
             ],
             [
                 'node'        => '6. СБК (Станція біологічної / побутової очистки)',
@@ -960,9 +970,9 @@ class MetricsCalculator {
                 'aug_m3'      => 24.0,
                 'sep_m3'      => 161.0,
                 'sep_daily'   => 10.7,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 185.0,
+                'oct_m3'      => 45.0,
+                'oct_daily'   => 1.5,
+                'season_m3'   => 230.0,
                 'note'        => 'Очистка господарсько-побутових стоків',
             ],
             [
@@ -971,9 +981,9 @@ class MetricsCalculator {
                 'aug_m3'      => 12.0,
                 'sep_m3'      => 36.0,
                 'sep_daily'   => 2.4,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 48.0,
+                'oct_m3'      => 18.0,
+                'oct_daily'   => 0.6,
+                'season_m3'   => 66.0,
                 'note'        => 'Лабораторні потреби та охолодження дистиляторів',
             ],
             [
@@ -982,9 +992,9 @@ class MetricsCalculator {
                 'aug_m3'      => 18.0,
                 'sep_m3'      => 93.0,
                 'sep_daily'   => 6.2,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 111.0,
+                'oct_m3'      => 32.0,
+                'oct_daily'   => 1.0,
+                'season_m3'   => 143.0,
                 'note'        => 'Побутові та допоміжні приміщення вводу №1',
             ],
             [
@@ -993,10 +1003,10 @@ class MetricsCalculator {
                 'aug_m3'      => 20.0,
                 'sep_m3'      => 34.0,
                 'sep_daily'   => 2.3,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 54.0,
-                'note'        => 'Душові, санвузли та побутові приміщення АПК',
+                'oct_m3'      => 28.0,
+                'oct_daily'   => 0.9,
+                'season_m3'   => 82.0,
+                'note'        => 'Душові, санвузли та побутові приміщення АПК (Жовтень 28 м³)',
             ],
             [
                 'node'        => '10. Госп.-питні потреби: ОПЦ (Олійнопресовий цех)',
@@ -1004,9 +1014,9 @@ class MetricsCalculator {
                 'aug_m3'      => 15.0,
                 'sep_m3'      => 22.0,
                 'sep_daily'   => 1.5,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 37.0,
+                'oct_m3'      => 15.0,
+                'oct_daily'   => 0.5,
+                'season_m3'   => 52.0,
                 'note'        => 'Побутові та санітарні потреби персоналу пресового цеху',
             ],
             [
@@ -1015,9 +1025,9 @@ class MetricsCalculator {
                 'aug_m3'      => 6.0,
                 'sep_m3'      => 9.0,
                 'sep_daily'   => 0.6,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 15.0,
+                'oct_m3'      => 8.0,
+                'oct_daily'   => 0.3,
+                'season_m3'   => 23.0,
                 'note'        => 'Пож./мех. майстерня та Вагова',
             ],
             [
@@ -1026,10 +1036,10 @@ class MetricsCalculator {
                 'aug_m3'      => 400.0,
                 'sep_m3'      => 764.3,
                 'sep_daily'   => 51.0,
-                'oct_m3'      => null,
-                'oct_daily'   => null,
-                'season_m3'   => 1164.3,
-                'note'        => 'Госп.-побутові + Пром. стоки (скид у КНС: Серпень 400 м³, Вересень 1 409 м³)',
+                'oct_m3'      => 266.6,
+                'oct_daily'   => 8.6,
+                'season_m3'   => 1430.9,
+                'note'        => 'Госп.-побутові + Пром. стоки (скид у КНС: Серпень 400 м³, Вересень 764 м³, Жовтень 267 м³)',
             ],
         ];
 
@@ -1333,7 +1343,9 @@ class MetricsCalculator {
                 $stNovElev   = (float)($steamDb['november_summary']['elev_t'] ?? 0.0);
                 $stNovHeat   = (float)($steamDb['november_summary']['heating_t'] ?? 1.61);
 
-                $novDept = $energyDeptArchive['2026-11']['departments'] ?? $departmentsNov;
+                $novDept = (!empty($energyDeptArchive['2026-11']['departments']) && (float)($energyDeptArchive['2026-11']['departments'][0]['specific_kwh'] ?? 0) > 0)
+                    ? $energyDeptArchive['2026-11']['departments']
+                    : $departmentsOct;
 
                 return [
                     'has_data'                   => true,
@@ -1855,8 +1867,10 @@ class MetricsCalculator {
                         ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)', 'active_kwh' => round($deptPowerBase * 0.002, 4), 'reactive_kvarh' => 0.0,                              'specific_kwh' => 0.10,  'water_m3' => round($deptWaterBase * 0.261, 0),  'sewage_m3' => round($deptWaterBase * 0.261, 0)],
                     ];
 
-                    if ($latestYearMonth === '2026-11' && !empty($energyDeptArchive['2026-11']['departments'])) {
-                        $dayDepartments = $energyDeptArchive['2026-11']['departments'];
+                    if ($latestYearMonth === '2026-11') {
+                        $dayDepartments = (!empty($energyDeptArchive['2026-11']['departments']) && (float)($energyDeptArchive['2026-11']['departments'][0]['specific_kwh'] ?? 0) > 0)
+                            ? $energyDeptArchive['2026-11']['departments']
+                            : $departmentsOct;
                     }
 
                     return [
@@ -4230,104 +4244,27 @@ class MetricsCalculator {
     public function getContractsSummary(string $period = 'day'): array {
         $semena = $this->getSemenaData();
         $summary = $semena['summary'] ?? [];
-        $stats = $this->getSemenaPeriodStats($period);
 
         $activeSpecs = (int)($summary['active_specs'] ?? 11);
         $pendingSpecs = (int)($summary['pending_specs'] ?? 3);
 
-        switch ($period) {
-            case 'week':
-                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 3767.78;
-                $plan  = 4200.0;
-                return [
-                    'contracted_tonnes'   => $plan,
-                    'delivered_tonnes'    => round($deliv, 2),
-                    'remaining_tonnes'    => round(max(0.0, $plan - $deliv), 2),
-                    'fulfillment_pct'     => round(($deliv / $plan) * 100, 1),
-                    'active_specs_count'  => $activeSpecs,
-                    'pending_specs_count' => $pendingSpecs,
-                    'report_date'         => ($stats['first_date'] ?? '05.10') . ' — ' . ($stats['last_date'] ?? '11.10.2026') . ' (Тиждень)',
-                ];
-            case 'day_active':
-                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 589.76;
-                $plan  = 600.0;
-                return [
-                    'contracted_tonnes'   => $plan,
-                    'delivered_tonnes'    => round($deliv, 2),
-                    'remaining_tonnes'    => round(max(0.0, $plan - $deliv), 2),
-                    'fulfillment_pct'     => round(($deliv / $plan) * 100, 1),
-                    'active_specs_count'  => $activeSpecs,
-                    'pending_specs_count' => $pendingSpecs,
-                    'report_date'         => '06.10.2026 (Доба переробки)',
-                ];
-            case 'month_aug':
-                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 207.96;
-                return [
-                    'contracted_tonnes'   => 5000.0,
-                    'delivered_tonnes'    => round($deliv, 2),
-                    'remaining_tonnes'    => round(max(0.0, 5000.0 - $deliv), 2),
-                    'fulfillment_pct'     => round(($deliv / 5000.0) * 100, 1),
-                    'active_specs_count'  => 4,
-                    'pending_specs_count' => 12,
-                    'report_date'         => 'Серпень 2026',
-                ];
-            case 'month_sep':
-                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 19077.54;
-                return [
-                    'contracted_tonnes'   => 20000.0,
-                    'delivered_tonnes'    => round($deliv, 2),
-                    'remaining_tonnes'    => round(max(0.0, 20000.0 - $deliv), 2),
-                    'fulfillment_pct'     => round(($deliv / 20000.0) * 100, 1),
-                    'active_specs_count'  => 18,
-                    'pending_specs_count' => 1,
-                    'report_date'         => 'Вересень 2026',
-                ];
-            case 'season':
-                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 25361.41;
-                $rem   = (float)($summary['unfulfilled_rem'] ?? 1647.93);
-                $contr = round($deliv + $rem, 2);
-                return [
-                    'contracted_tonnes'   => $contr,
-                    'delivered_tonnes'    => round($deliv, 2),
-                    'remaining_tonnes'    => round($rem, 2),
-                    'fulfillment_pct'     => $contr > 0 ? round(($deliv / $contr) * 100, 1) : 93.9,
-                    'active_specs_count'  => $activeSpecs,
-                    'pending_specs_count' => $pendingSpecs,
-                    'report_date'         => 'Сезон 2026–2027 (Лист погодження)',
-                ];
-            case 'day_prev':
-                $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 465.86;
-                return [
-                    'contracted_tonnes'   => 600.0,
-                    'delivered_tonnes'    => round($deliv, 2),
-                    'remaining_tonnes'    => round(max(0.0, 600.0 - $deliv), 2),
-                    'fulfillment_pct'     => round(($deliv / 600.0) * 100, 1),
-                    'active_specs_count'  => $activeSpecs,
-                    'pending_specs_count' => $pendingSpecs,
-                    'report_date'         => ($stats['last_date'] ?? '11.10.2026') . ' 20:00',
-                ];
-            case 'day_today':
-            case 'day':
-            default:
-                $mInfo = MonthHelper::resolvePeriod($period);
-                if ($mInfo !== null) {
-                    $mName = $mInfo['name_ua'] . ' ' . $mInfo['year'];
-                    $deliv = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 0.0;
-                    $contrPlan = 8000.0;
-                    return [
-                        'contracted_tonnes'   => $contrPlan,
-                        'delivered_tonnes'    => round($deliv, 2),
-                        'remaining_tonnes'    => round(max(0.0, $contrPlan - $deliv), 2),
-                        'fulfillment_pct'     => $contrPlan > 0 ? round(($deliv / $contrPlan) * 100, 1) : 0.0,
-                        'active_specs_count'  => $activeSpecs,
-                        'pending_specs_count' => $pendingSpecs,
-                        'report_date'         => $mName,
-                    ];
-                }
-                $contr = (float)($summary['total_contract'] ?? 18711.0);
-                $deliv = (float)($summary['total_delivered'] ?? 17642.9);
-                $rem   = (float)($summary['unfulfilled_rem'] ?? 1647.9);
-                $pct   = (float)($summary['fulfillment_pct'] ?? ($contr > 0 ? round(($deliv / $contr) * 100, 1) : 94.3));
+        // Виконання контрактів (1С) — постійна величина згідно всього реєстру договорів (Лист погодження),
+        // не змінюється при перемиканні періоду (доба, місяць, рік).
+        $contr = (float)($summary['total_contract'] ?? 18711.0);
+        $deliv = (float)($summary['total_delivered'] ?? 17642.9);
+        $rem   = (float)($summary['unfulfilled_rem'] ?? 1647.9);
+        $pct   = (float)($summary['fulfillment_pct'] ?? ($contr > 0 ? round(($deliv / $contr) * 100, 1) : 94.3));
+
+        return [
+            'contracted_tonnes'   => $contr,
+            'delivered_tonnes'    => round($deliv, 2),
+            'remaining_tonnes'    => round($rem, 2),
+            'fulfillment_pct'     => $pct,
+            'active_specs_count'  => $activeSpecs,
+            'pending_specs_count' => $pendingSpecs,
+            'report_date'         => 'Лист погодження (Реєстр договорів 1С)',
+        ];
+    }
                 return [
                     'contracted_tonnes'   => round($contr, 1),
                     'delivered_tonnes'    => round($deliv, 1),

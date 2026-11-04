@@ -281,6 +281,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // 2.05 Перемикач відображення всіх архівних місяців у Блоці Г (залишати 3 останні + сезон, старіші розгортати по кліку)
+    const btnToggleHist = document.getElementById('btn-toggle-historical-months');
+    if (btnToggleHist) {
+        btnToggleHist.addEventListener('click', function () {
+            const olderCards = document.querySelectorAll('.history-month-older');
+            const txt = document.getElementById('btn-toggle-historical-months-text');
+            let isVisible = false;
+            olderCards.forEach(c => {
+                if (c.style.display === 'none' || !c.classList.contains('is-visible')) {
+                    c.style.display = 'flex';
+                    c.classList.add('is-visible');
+                    isVisible = true;
+                } else {
+                    c.style.display = 'none';
+                    c.classList.remove('is-visible');
+                }
+            });
+            if (txt) {
+                txt.textContent = isVisible ? 'Згорнути минулі місяці' : 'Показати всі (Серпень 2026)';
+            }
+        });
+    }
+
     // 2.1 Обробники перемикання вкладок вантажу (Всі, Насіння, Олія, Шрот, Лузга)
     cargoButtons.forEach(btn => {
         btn.addEventListener('click', function () {
@@ -841,7 +864,11 @@ document.addEventListener('DOMContentLoaded', function () {
             };
             const energyMonthSelEl = document.getElementById('energy-month-select');
             const headerMonthSelEl = document.getElementById('energy-header-month-select');
-            const selectedEnergyMonthKey = reversePeriodMap[currentPeriod] || (headerMonthSelEl ? headerMonthSelEl.value : (energyMonthSelEl ? energyMonthSelEl.value : '2026-11'));
+            let selectedEnergyMonthKey = reversePeriodMap[currentPeriod] || (headerMonthSelEl ? headerMonthSelEl.value : (energyMonthSelEl ? energyMonthSelEl.value : '2026-10'));
+            if (selectedEnergyMonthKey === '2026-11' || !selectedEnergyMonthKey) {
+                // За вимогою: розподіл за структурними підрозділами за замовчуванням показує минулий місяць (жовтень)
+                selectedEnergyMonthKey = '2026-10';
+            }
 
             if (headerMonthSelEl && selectedEnergyMonthKey) headerMonthSelEl.value = selectedEnergyMonthKey;
             if (energyMonthSelEl && selectedEnergyMonthKey) energyMonthSelEl.value = selectedEnergyMonthKey;
