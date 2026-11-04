@@ -19,6 +19,137 @@ class MetricsCalculator {
         $this->db = DashboardDB::getConnection();
         $this->config = get_config();
         $this->thresholds = $this->config['thresholds'] ?? [];
+        $this->ensureArchive2026Seeded();
+    }
+
+    /**
+     * Автоматична синхронізація повного архіву переробки за Серпень, Вересень та Жовтень 2026 р. у таблицю material_balance_logs
+     */
+    private function ensureArchive2026Seeded(): void {
+        try {
+            $chk = $this->db->query("
+                SELECT COUNT(CASE WHEN seed_in_production > 10 THEN 1 END) as work_days,
+                       SUM(seed_in_production) as sum_prod
+                FROM material_balance_logs
+                WHERE recorded_at >= '2026-09-01 00:00:00' AND recorded_at <= '2026-10-31 23:59:59'
+            ");
+            $row = $chk ? $chk->fetch(PDO::FETCH_ASSOC) : null;
+            if ($row && (int)($row['work_days'] ?? 0) >= 38 && (float)($row['sum_prod'] ?? 0) >= 20400.0) {
+                return;
+            }
+
+            $archiveDays = [
+                // Серпень 2026 (прийомка, 0 діб переробки)
+                ['2026-08-30', 100.780, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-08-31', 107.180, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                // Вересень 2026 (16 діб переробки: 15.09–30.09, разом 8 823,656 т)
+                ['2026-09-01',   0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-02',  33.910, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-03', 133.230, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-04', 454.840, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-05',   0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-06',   0.000, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-07', 548.040, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-08', 427.280, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-09', 667.500, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-10', 699.260, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-11', 656.380, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-12', 547.770, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-13', 324.410, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-14', 586.290, 0.000, 0.000, 0.000, 0.000, 0.000, 0.000],
+                ['2026-09-15', 746.440, 678.882, 285.130, 257.975, 93.686, 7.879, 42.091],
+                ['2026-09-16', 696.390, 299.189, 111.709, 136.424, 36.795, 2.746, 14.261],
+                ['2026-09-17', 707.730, 595.829, 254.343, 250.453, 85.153, 6.391,  5.880],
+                ['2026-09-18', 558.480, 592.295, 257.250, 244.731, 87.539, 3.543,  2.775],
+                ['2026-09-19', 579.070, 600.332, 259.400, 255.247, 89.139, 0.144, -3.454],
+                ['2026-09-20',   0.000, 594.397, 255.629, 247.430, 84.193, 2.264,  7.145],
+                ['2026-09-21', 601.050, 601.606, 259.305, 253.436, 86.990, 1.982,  1.875],
+                ['2026-09-22', 656.760, 600.323, 258.067, 257.360, 84.226, 6.888,  0.670],
+                ['2026-09-23', 410.380, 243.138, 106.578, 105.032, 35.385, 3.130, -3.857],
+                ['2026-09-24', 791.700, 481.756, 202.871, 191.036, 69.212, 7.242, 18.637],
+                ['2026-09-25', 514.170, 598.240, 258.068, 258.711, 84.190, 8.650, -2.729],
+                ['2026-09-26', 781.590, 585.446, 255.834, 242.038, 80.119, 8.922,  7.455],
+                ['2026-09-27', 703.350, 589.231, 263.983, 251.208, 79.793, 8.069, -5.753],
+                ['2026-09-28', 588.910, 585.402, 259.441, 243.251, 86.593, 9.162, -3.883],
+                ['2026-09-29', 475.285, 598.435, 270.135, 247.722, 90.097, 9.498, -9.519],
+                ['2026-09-30', 595.050, 579.155, 253.913, 241.152, 88.115, 8.292, -4.025],
+                // Жовтень 2026 (22 доби переробки: 01.10–30.10, разом 11 582,445 т)
+                ['2026-10-01', 549.480, 553.035, 251.203, 224.284, 86.668, 9.184,  -9.120],
+                ['2026-10-02', 596.970, 588.772, 261.754, 238.849, 88.868, 8.788,  -0.699],
+                ['2026-10-03', 720.700, 597.980, 269.292, 240.684, 91.977, 9.075,  -3.973],
+                ['2026-10-04', 440.980, 596.230, 264.920, 242.006, 93.036, 8.659,  -3.732],
+                ['2026-10-05', 661.790, 586.709, 253.953, 239.927, 88.269, 8.438,   4.560],
+                ['2026-10-06', 589.760, 600.273, 275.585, 249.231, 87.124, 8.711, -11.667],
+                ['2026-10-07', 501.910, 123.355,  69.446,  86.702, 18.931, 2.175, -51.724],
+                ['2026-10-08', 609.280,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-10-09', 439.300,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-10-10', 499.880,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-10-11', 465.860,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-10-12', 465.765,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-10-13', 563.570, 520.990, 210.412, 180.940, 76.379, 8.214,  53.259],
+                ['2026-10-14', 318.660, 596.805, 256.489, 248.786, 87.020, 5.317,   4.510],
+                ['2026-10-15', 436.527, 308.979, 149.278, 156.141, 45.937, 4.715, -42.377],
+                ['2026-10-16', 304.770,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-10-17', 193.630,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-10-18', 153.500,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-10-19', 533.142, 527.880, 219.546, 185.326, 73.710, 5.262,  49.298],
+                ['2026-10-20', 597.342, 589.901, 261.766, 239.167, 82.382, 7.441,   6.586],
+                ['2026-10-21', 597.070, 589.279, 257.285, 240.804, 84.421, 7.791,   6.769],
+                ['2026-10-22', 598.431, 589.730, 258.830, 239.915, 86.410, 8.701,   4.575],
+                ['2026-10-23', 524.713, 516.485, 230.678, 206.094, 75.284, 8.228,   4.429],
+                ['2026-10-24', 621.913, 615.210, 271.144, 245.467, 90.178, 6.703,   8.421],
+                ['2026-10-25', 598.911, 593.164, 255.029, 240.673, 82.909, 5.747,  14.553],
+                ['2026-10-26', 487.397, 481.528, 212.547, 191.221, 70.557, 5.869,   7.203],
+                ['2026-10-27', 551.886, 546.941, 253.550, 236.156, 80.072, 4.945, -22.837],
+                ['2026-10-28', 321.448, 318.007, 124.596,  94.813, 45.912, 3.441,  52.686],
+                ['2026-10-29', 590.501, 582.723, 259.581, 237.058, 80.697, 7.778,   5.387],
+                ['2026-10-30', 564.606, 558.469, 215.635, 219.402, 65.399, 6.137,  58.033],
+                ['2026-10-31',   0.000,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+            ];
+
+            $selStmt = $this->db->prepare("SELECT id FROM material_balance_logs WHERE recorded_at LIKE :prefix LIMIT 1");
+            $updStmt = $this->db->prepare("
+                UPDATE material_balance_logs
+                SET seed_in_plant = :sip, seed_in_production = :siprod, oil_out = :oil, meal_out = :meal, husk_out = :husk,
+                    conditioning_loss = :closs, conditioning_loss_pct = :clpct, production_loss = :ploss, production_loss_pct = :plpct,
+                    report_date = :rdate
+                WHERE id = :id
+            ");
+            $insStmt = $this->db->prepare("
+                INSERT INTO material_balance_logs (
+                    recorded_at, shift_name, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out,
+                    conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct, report_date
+                ) VALUES (
+                    :rec, 'Доба (08:00-08:00)', :sip, :siprod, :oil, :meal, :husk,
+                    :closs, :clpct, :ploss, :plpct, :rdate
+                )
+            ");
+
+            foreach ($archiveDays as $d) {
+                [$dt, $sip, $siprod, $oil, $meal, $husk, $closs, $ploss] = $d;
+                $fromElev = $siprod + $closs;
+                $clpct = $fromElev > 0 ? round(($closs / $fromElev) * 100, 2) : 0.0;
+                $plpct = $siprod > 0 ? round(($ploss / $siprod) * 100, 2) : 0.0;
+                $rdate = date('d.m.Y', strtotime($dt));
+
+                $selStmt->execute([':prefix' => $dt . '%']);
+                $ex = $selStmt->fetch(PDO::FETCH_ASSOC);
+                if ($ex) {
+                    $updStmt->execute([
+                        ':sip' => $sip, ':siprod' => $siprod, ':oil' => $oil, ':meal' => $meal, ':husk' => $husk,
+                        ':closs' => $closs, ':clpct' => $clpct, ':ploss' => $ploss, ':plpct' => $plpct,
+                        ':rdate' => $rdate, ':id' => $ex['id']
+                    ]);
+                } else {
+                    $insStmt->execute([
+                        ':rec' => $dt . ' 08:00:00',
+                        ':sip' => $sip, ':siprod' => $siprod, ':oil' => $oil, ':meal' => $meal, ':husk' => $husk,
+                        ':closs' => $closs, ':clpct' => $clpct, ':ploss' => $ploss, ':plpct' => $plpct,
+                        ':rdate' => $rdate
+                    ]);
+                }
+            }
+        } catch (Throwable $e) {}
     }
 
     /**
@@ -493,56 +624,56 @@ class MetricsCalculator {
                 // Вересень 2026 (з «Сент.26» та «СВОДНАЯ 2026-27»): працював 16 діб переробки (15.09-30.09)
                 'seed_in_plant' => 19077.54,
                 'seed_in_prod'  => 8823.66,
-                'cond_loss'     => 94.74,
+                'cond_loss'     => 94.80,
                 'cond_loss_pct' => 1.06,
                 'oil_out'       => 3811.66,
                 'meal_out'      => 3683.21,
                 'husk_out'      => 1261.23,
-                'seed_plan'     => 18000.0,
+                'seed_plan'     => 9600.0,
             ],
             'month_oct' => [
-                // Жовтень 2026: 18 діб переробки (01–30.10), 11 582,45 т перероблено, 5 082,52 т олії (43.88%), 4 683,65 т шроту (40.44%), 1 682,14 т лузги (14.52%)
+                // Жовтень 2026: 22 доби переробки (01–30.10), 11 582,45 т перероблено, 5 082,52 т олії (43.88%), 4 683,65 т шроту (40.44%), 1 682,14 т лузги (14.52%)
                 'seed_in_plant' => 13745.47,
                 'seed_in_prod'  => 11582.45,
                 'cond_loss'     => 151.32,
-                'cond_loss_pct' => 1.31,
+                'cond_loss_pct' => 1.29,
                 'oil_out'       => 5082.52,
                 'meal_out'      => 4683.65,
                 'husk_out'      => 1682.14,
-                'seed_plan'     => 10800.0,
+                'seed_plan'     => 13200.0,
             ],
             'month_nov' => [
-                // Листопад 2026: завод на паузі/ППР, прийомка 176,04 т (6 авто), переробка 0 т, відвантажено олії 178,02 т, шроту 75,64 т, лузги 105,06 т
-                'seed_in_plant' => 176.04,
+                // Листопад 2026: завод на паузі/ППР, прийомка 350,18 т, переробка 0 т
+                'seed_in_plant' => 350.18,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
                 'cond_loss_pct' => 0.00,
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 0.00,
-                'seed_plan'     => 1200.0,
+                'seed_plan'     => 1800.0,
             ],
             'month' => [
                 // Поточний місяць (Листопад 2026 при переході на новий місяць)
-                'seed_in_plant' => 176.04,
+                'seed_in_plant' => 350.18,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
                 'cond_loss_pct' => 0.00,
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 0.00,
-                'seed_plan'     => 1200.0,
+                'seed_plan'     => 1800.0,
             ],
             'season' => [
-                // Сезон 2026–2027 разом (Вересень + Жовтень + Листопад): 34 доби переробки • 20 406,11 т перероблено • 8 894,18 т олії • 8 366,86 т шроту • 2 943,37 т лузги
-                'seed_in_plant' => 33030.97,
-                'seed_in_prod'  => 20406.11,
-                'cond_loss'     => 246.06,
-                'cond_loss_pct' => 1.21,
+                // Сезон 2026–2027 разом (Серпень + Вересень + Жовтень + Листопад): 38 діб переробки • 20 406,10 т перероблено • 8 894,18 т олії • 8 366,85 т шроту • 2 943,37 т лузги
+                'seed_in_plant' => 33205.11,
+                'seed_in_prod'  => 20406.10,
+                'cond_loss'     => 246.12,
+                'cond_loss_pct' => 1.19,
                 'oil_out'       => 8894.18,
-                'meal_out'      => 8366.86,
+                'meal_out'      => 8366.85,
                 'husk_out'      => 2943.37,
-                'seed_plan'     => 28800.0,
+                'seed_plan'     => 22800.0,
             ],
             'month_sep_2025' => [
                 'seed_in_plant'    => 4470.82,
@@ -654,7 +785,8 @@ class MetricsCalculator {
                     $mealOut          = round((float)$octAgg['sum_meal'], 2);
                     $huskOut          = round((float)$octAgg['sum_husk'], 2);
                     $conditioningLoss = round((float)$octAgg['sum_cond'], 2);
-                    $conditioningLossPct = $seedInProd > 0 ? round(($conditioningLoss / $seedInProd) * 100, 2) : 0.0;
+                    $fromElev = $seedInProd + $conditioningLoss;
+                    $conditioningLossPct = $fromElev > 0 ? round(($conditioningLoss / $fromElev) * 100, 2) : 0.0;
                     $wDays = max(1, (int)$octAgg['work_days']);
                     $seedPlan = (float)($wDays * 600.0);
                 }
@@ -671,20 +803,21 @@ class MetricsCalculator {
                     WHERE recorded_at >= '2026-10-01 00:00:00' AND recorded_at <= '2026-10-31 23:59:59'
                 ");
                 $octAgg = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
-                $octProd = ($octAgg && (float)($octAgg['sum_prod'] ?? 0) > 0) ? (float)$octAgg['sum_prod'] : 4764.15;
-                $octOil  = ($octAgg && (float)($octAgg['sum_oil'] ?? 0) > 0)  ? (float)$octAgg['sum_oil']  : 2113.05;
-                $octMeal = ($octAgg && (float)($octAgg['sum_meal'] ?? 0) > 0) ? (float)$octAgg['sum_meal'] : 1951.41;
-                $octHusk = ($octAgg && (float)($octAgg['sum_husk'] ?? 0) > 0) ? (float)$octAgg['sum_husk'] : 718.27;
-                $octCond = ($octAgg && (float)($octAgg['sum_cond'] ?? 0) > 0) ? (float)$octAgg['sum_cond'] : 71.45;
-                $octWD   = ($octAgg && (int)($octAgg['work_days'] ?? 0) > 0)   ? (int)$octAgg['work_days']   : 9;
+                $octProd = ($octAgg && (float)($octAgg['sum_prod'] ?? 0) > 0) ? (float)$octAgg['sum_prod'] : 11582.45;
+                $octOil  = ($octAgg && (float)($octAgg['sum_oil'] ?? 0) > 0)  ? (float)$octAgg['sum_oil']  : 5082.52;
+                $octMeal = ($octAgg && (float)($octAgg['sum_meal'] ?? 0) > 0) ? (float)$octAgg['sum_meal'] : 4683.65;
+                $octHusk = ($octAgg && (float)($octAgg['sum_husk'] ?? 0) > 0) ? (float)$octAgg['sum_husk'] : 1682.14;
+                $octCond = ($octAgg && (float)($octAgg['sum_cond'] ?? 0) > 0) ? (float)$octAgg['sum_cond'] : 151.32;
+                $octWD   = ($octAgg && (int)($octAgg['work_days'] ?? 0) > 0)   ? (int)$octAgg['work_days']   : 22;
 
-                $sepSeed = 8823.66; $sepOil = 3811.66; $sepMeal = 3683.21; $sepHusk = 1261.23; $sepCond = 94.74; $sepWD = 16;
+                $sepSeed = 8823.66; $sepOil = 3811.66; $sepMeal = 3683.21; $sepHusk = 1261.23; $sepCond = 94.80; $sepWD = 16;
                 $seedInProd          = round($sepSeed + $octProd, 2);
                 $oilOut              = round($sepOil + $octOil, 2);
                 $mealOut             = round($sepMeal + $octMeal, 2);
                 $huskOut             = round($sepHusk + $octHusk, 2);
                 $conditioningLoss    = round($sepCond + $octCond, 2);
-                $conditioningLossPct = $seedInProd > 0 ? round(($conditioningLoss / $seedInProd) * 100, 2) : 0.0;
+                $fromElev            = $seedInProd + $conditioningLoss;
+                $conditioningLossPct = $fromElev > 0 ? round(($conditioningLoss / $fromElev) * 100, 2) : 0.0;
                 $seedPlan            = (float)(($sepWD + $octWD) * 600.0);
             }
         } catch (Throwable $e) {}
@@ -2101,59 +2234,73 @@ class MetricsCalculator {
                 ];
             case 'day_active':
                 return [
-                    'seed_stock_tonnes'            => 12980.63,
-                    'seed_stock_accounting_tonnes' => 13659.62,
-                    'oil_stock_tonnes'             => 3495.72,
-                    'meal_stock_tonnes'            => 705.88,
-                    'husk_stock_tonnes'            => 162.67,
-                    'husk_boiler_spent_tonnes'     => 24.54,
-                    'days_seed_reserve'            => 21.6,
-                    'oil_shipped_tonnes'           => 303.46,
-                    'meal_shipped_tonnes'          => 125.12,
-                    'husk_shipped_tonnes'          => 25.50,
-                    'report_date'                  => 'Ежедн.отчет2 (15 число)',
+                    'seed_stock_tonnes'            => 9412.06,
+                    'seed_stock_accounting_tonnes' => 10091.04,
+                    'oil_stock_tonnes'             => 4395.29,
+                    'meal_stock_tonnes'            => 447.93,
+                    'husk_stock_tonnes'            => 190.27,
+                    'husk_boiler_spent_tonnes'     => 25.43,
+                    'days_seed_reserve'            => 15.7,
+                    'oil_shipped_tonnes'           => 126.90,
+                    'meal_shipped_tonnes'          => 101.78,
+                    'husk_shipped_tonnes'          => 16.08,
+                    'report_date'                  => 'Ежедн.отчет2 (30 число, 30.10.2026)',
                 ];
             case 'day_prev':
                 return [
-                    'seed_stock_tonnes'            => 12857.66,
-                    'seed_stock_accounting_tonnes' => 13536.64,
-                    'oil_stock_tonnes'             => 3649.90,
-                    'meal_stock_tonnes'            => 674.86,
-                    'husk_stock_tonnes'            => 166.77,
-                    'husk_boiler_spent_tonnes'     => 24.51,
-                    'days_seed_reserve'            => 21.4,
-                    'oil_shipped_tonnes'           => 277.30,
-                    'meal_shipped_tonnes'          => 277.30,
-                    'husk_shipped_tonnes'          => 13.44,
-                    'report_date'                  => 'Ежедн.отчет2 (14 число)',
+                    'seed_stock_tonnes'            => 9485.17,
+                    'seed_stock_accounting_tonnes' => 10164.16,
+                    'oil_stock_tonnes'             => 4217.27,
+                    'meal_stock_tonnes'            => 372.29,
+                    'husk_stock_tonnes'            => 85.21,
+                    'husk_boiler_spent_tonnes'     => 0.00,
+                    'days_seed_reserve'            => 15.8,
+                    'oil_shipped_tonnes'           => 103.26,
+                    'meal_shipped_tonnes'          => 75.64,
+                    'husk_shipped_tonnes'          => 49.06,
+                    'report_date'                  => 'Ежедн.отчет2 (2 число, 03.11.2026)',
                 ];
             case 'month_aug':
                 return [
-                    'seed_stock_tonnes'            => 14583.15,
-                    'seed_stock_accounting_tonnes' => 14380.39,
-                    'oil_stock_tonnes'             => 2815.61,
-                    'meal_stock_tonnes'            => 1094.34,
-                    'husk_stock_tonnes'            => 1094.34,
-                    'husk_boiler_spent_tonnes'     => 0.00,
-                    'days_seed_reserve'            => 24.3,
-                    'oil_shipped_tonnes'           => 8499.14,
-                    'meal_shipped_tonnes'          => 4077.66,
-                    'husk_shipped_tonnes'          => 1100.36,
-                    'report_date'                  => '31.08.2026 20:00 (Серпень 2026, СВОД_авг.)',
+                    'seed_stock_tonnes'            => 204.41,
+                    'seed_stock_accounting_tonnes' => 883.40,
+                    'oil_stock_tonnes'             => 15.35,
+                    'meal_stock_tonnes'            => 362.60,
+                    'husk_stock_tonnes'            => 0.00,
+                    'husk_boiler_spent_tonnes'     => 5.91,
+                    'days_seed_reserve'            => 0.3,
+                    'oil_shipped_tonnes'           => 76.64,
+                    'meal_shipped_tonnes'          => 1390.54,
+                    'husk_shipped_tonnes'          => 78.60,
+                    'report_date'                  => '01.09.2026 (Серпень 2026, СВОД_Август26)',
                 ];
             case 'month_sep':
                 return [
-                    'seed_stock_tonnes'            => 18952.82,
-                    'seed_stock_accounting_tonnes' => 18164.77,
-                    'oil_stock_tonnes'             => 3436.08,
-                    'meal_stock_tonnes'            => 510.19,
-                    'husk_stock_tonnes'            => 87.84,
-                    'husk_boiler_spent_tonnes'     => 140.93,
-                    'days_seed_reserve'            => 31.6,
-                    'oil_shipped_tonnes'           => 5164.14,
-                    'meal_shipped_tonnes'          => 5720.12,
-                    'husk_shipped_tonnes'          => 1345.70,
-                    'report_date'                  => '30.09.2026 20:00 (Вересень 2026, СВОД_сент.)',
+                    'seed_stock_tonnes'            => 10303.45,
+                    'seed_stock_accounting_tonnes' => 10982.44,
+                    'oil_stock_tonnes'             => 2736.71,
+                    'meal_stock_tonnes'            => 1713.47,
+                    'husk_stock_tonnes'            => 334.23,
+                    'husk_boiler_spent_tonnes'     => 409.17,
+                    'days_seed_reserve'            => 17.2,
+                    'oil_shipped_tonnes'           => 1090.30,
+                    'meal_shipped_tonnes'          => 2332.34,
+                    'husk_shipped_tonnes'          => 490.66,
+                    'report_date'                  => '01.10.2026 (Вересень 2026, СВОД_СЕНТЯБРЬ 26)',
+                ];
+            case 'month_oct':
+                return [
+                    'seed_stock_tonnes'            => 9412.06,
+                    'seed_stock_accounting_tonnes' => 10091.04,
+                    'oil_stock_tonnes'             => 4395.29,
+                    'meal_stock_tonnes'            => 447.93,
+                    'husk_stock_tonnes'            => 190.27,
+                    'husk_boiler_spent_tonnes'     => 556.45,
+                    'days_seed_reserve'            => 15.7,
+                    'oil_shipped_tonnes'           => 3423.94,
+                    'meal_shipped_tonnes'          => 5949.18,
+                    'husk_shipped_tonnes'          => 1250.34,
+                    'report_date'                  => '01.11.2026 (Жовтень 2026, СВОД_ОКТЯБРЬ 26)',
                 ];
             case 'month_sep_2025':
                 return [
@@ -2176,11 +2323,11 @@ class MetricsCalculator {
                     'oil_stock_tonnes'             => $oilStock,
                     'meal_stock_tonnes'            => $mealStock,
                     'husk_stock_tonnes'            => $huskStock,
-                    'husk_boiler_spent_tonnes'     => 728.02,
+                    'husk_boiler_spent_tonnes'     => 971.53,
                     'days_seed_reserve'            => $daysReserve,
-                    'oil_shipped_tonnes'           => round(76.64 + 1090.30 + $monthOilShip, 2),
-                    'meal_shipped_tonnes'          => round(1390.54 + 2332.34 + $monthMealShip, 2),
-                    'husk_shipped_tonnes'          => round(78.60 + 490.66 + $monthHuskShip, 2),
+                    'oil_shipped_tonnes'           => round(76.64 + 1090.30 + 3423.94 + $monthOilShip, 2),
+                    'meal_shipped_tonnes'          => round(1390.54 + 2332.34 + 5949.18 + $monthMealShip, 2),
+                    'husk_shipped_tonnes'          => round(78.60 + 490.66 + 1250.34 + $monthHuskShip, 2),
                     'report_date'                  => "Ежедн.отчет2 ({$sheetTitle})",
                 ];
             case 'day_today':
@@ -2395,13 +2542,13 @@ class MetricsCalculator {
         $mealStock = round((float)$live['meal_stock_tonnes'], 2);
         $huskStock = round((float)$live['husk_stock_tonnes'], 2);
 
-        $novOilShip  = round((float)($live['month_oil_shipped_tonnes'] ?? 178.02), 2);
-        $novMealShip = round((float)($live['month_meal_shipped_tonnes'] ?? 75.64), 2);
-        $novHuskShip = round((float)($live['month_husk_shipped_tonnes'] ?? 105.06), 2);
+        $novOilShip  = round((float)($live['month_oil_shipped_tonnes'] ?? 304.92), 2);
+        $novMealShip = round((float)($live['month_meal_shipped_tonnes'] ?? 177.42), 2);
+        $novHuskShip = round((float)($live['month_husk_shipped_tonnes'] ?? 121.14), 2);
 
-        $octOilShip  = 1632.70;
-        $octMealShip = 3858.98;
-        $octHuskShip = 1045.24;
+        $octOilShip  = 3423.94;
+        $octMealShip = 5949.18;
+        $octHuskShip = 1250.34;
 
         $dynMetrics = $this->getHistoricalSeasonMetrics();
         $dNov = $dynMetrics['nov'];
@@ -2428,16 +2575,16 @@ class MetricsCalculator {
                     'meal_out'           => 0.00,
                     'meal_yield_pct'     => 0.00,
                     'husk_out'           => 0.00,
-                    'oil_shipped'        => 153.28,
+                    'oil_shipped'        => 76.64,
                     'meal_shipped'       => 1390.54,
                     'husk_shipped'       => 78.60,
                     'trucks_count'       => 8,
-                    'seed_stock'         => 883.40,
-                    'seed_stock_accounting' => 757.58,
+                    'seed_stock'         => 204.41,
+                    'seed_stock_accounting' => 883.40,
                     'oil_stock'          => 15.35,
                     'meal_stock'         => 362.60,
                     'husk_stock'         => 0.00,
-                    'boiler_husk'        => 6.85,
+                    'boiler_husk'        => 5.91,
                 ],
                 'sep' => [
                     'id'                 => 'month_sep',
@@ -2458,10 +2605,11 @@ class MetricsCalculator {
                     'meal_shipped'       => 2332.34,
                     'husk_shipped'       => 490.66,
                     'trucks_count'       => 738,
-                    'seed_stock'         => 10966.28,
+                    'seed_stock'         => 10303.45,
+                    'seed_stock_accounting' => 10982.44,
                     'oil_stock'          => 2736.71,
                     'meal_stock'         => 1713.47,
-                    'husk_stock'         => 334.22,
+                    'husk_stock'         => 334.23,
                     'boiler_husk'        => 409.17,
                 ],
                 'oct' => [
@@ -2483,11 +2631,12 @@ class MetricsCalculator {
                     'meal_shipped'       => $octMealShip,
                     'husk_shipped'       => $octHuskShip,
                     'trucks_count'       => $octTrucks,
-                    'seed_stock'         => 13326.41,
-                    'oil_stock'          => 3436.08,
-                    'meal_stock'         => 510.19,
-                    'husk_stock'         => 334.22,
-                    'boiler_husk'        => 363.31,
+                    'seed_stock'         => 9412.06,
+                    'seed_stock_accounting' => 10091.04,
+                    'oil_stock'          => 4395.29,
+                    'meal_stock'         => 447.93,
+                    'husk_stock'         => 190.27,
+                    'boiler_husk'        => 556.45,
                 ],
                 'nov' => [
                     'id'                 => 'month_nov',
@@ -2517,7 +2666,7 @@ class MetricsCalculator {
             ],
             'season_total' => [
                 'name'               => 'Разом за сезон 2026–2027 рр. (01.08.2026 — 01.08.2027)',
-                'period'             => "01.08.2026 — 01.08.2027 (поточний стан: {$dSeason['working_days']} доби переробки)",
+                'period'             => "01.08.2026 — 01.08.2027 (поточний стан: {$dSeason['working_days']} діб переробки)",
                 'working_days'       => $dSeason['working_days'],
                 'total_days'         => $dSeason['total_days'],
                 'badge_label'        => $dSeason['badge_label'],
@@ -2529,7 +2678,7 @@ class MetricsCalculator {
                 'meal_out'           => $dSeason['meal_out'],
                 'meal_yield_pct'     => $dSeason['meal_yield_pct'],
                 'husk_out'           => $dSeason['husk_out'],
-                'oil_shipped'        => round(153.28 + 1090.30 + $octOilShip + $novOilShip, 2),
+                'oil_shipped'        => round(76.64 + 1090.30 + $octOilShip + $novOilShip, 2),
                 'meal_shipped'       => round(1390.54 + 2332.34 + $octMealShip + $novMealShip, 2),
                 'husk_shipped'       => round(78.60 + 490.66 + $octHuskShip + $novHuskShip, 2),
                 'trucks_count'       => $seasonTrucks,
@@ -2537,7 +2686,7 @@ class MetricsCalculator {
                 'oil_stock'          => $oilStock,
                 'meal_stock'         => $mealStock,
                 'husk_stock'         => $huskStock,
-                'boiler_husk'        => 710.19,
+                'boiler_husk'        => 971.53,
             ],
             'chart_comparison' => [
                 'categories'     => ['Серпень 2026', 'Вересень 2026', "Жовтень 2026", "Листопад 2026"],
@@ -2545,11 +2694,11 @@ class MetricsCalculator {
                 'seed_processed' => [0.00, 8823.66, $dOct['seed_processed'], $dNov['seed_processed']],
                 'oil_out'        => [0.00, 3811.66, $dOct['oil_out'], $dNov['oil_out']],
                 'meal_out'       => [0.00, 3683.21, $dOct['meal_out'], $dNov['meal_out']],
-                'husk_out'       => [5.91, 1261.23, $dOct['husk_out'], $dNov['husk_out']],
+                'husk_out'       => [0.00, 1261.23, $dOct['husk_out'], $dNov['husk_out']],
                 'trucks'         => [8, 738, $octTrucks, $novTrucks],
-                'oil_stocks'     => [2815.61, 3436.08, 3436.08, $oilStock],
-                'meal_stocks'    => [1094.34, 510.19, 510.19, $mealStock],
-                'seed_stocks'    => [14583.15, 18952.82, 13326.41, $seedStock],
+                'oil_stocks'     => [15.35, 2736.71, 4395.29, $oilStock],
+                'meal_stocks'    => [362.60, 1713.47, 447.93, $mealStock],
+                'seed_stocks'    => [204.41, 10303.45, 9412.06, $seedStock],
             ],
             'season_2025_comparison' => [
                 'name' => 'Сезон 2025–2026 рр. (01.08.2025 — 01.08.2026 • Офіційний звіт заводу)',
@@ -3263,7 +3412,7 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Залишок насіння на складі заводу',
-                        'val_2026'    => '18 952,8 т',
+                        'val_2026'    => '10 303,5 т',
                         'val_2025_an' => '35,4 т',
                         'val_2025_yr' => '510,4 т',
                         'trend_text'  => 'Склад заповнений',
@@ -3373,7 +3522,7 @@ class MetricsCalculator {
                         'name'        => 'Виробничі втрати переробки',
                         'val_2026'    => '80,5 т (1,81%)',
                         'val_2025_an' => '23,1 т (0,04%)',
-                        'val_2025_yr' => '94,7 т (1,06%)',
+                        'val_2025_yr' => '94,8 т (1,06%)',
                         'trend_text'  => '1,81%',
                         'trend_class' => 'trend-neutral',
                     ],
@@ -3389,14 +3538,14 @@ class MetricsCalculator {
                         'name'        => 'Залишок насіння на складі заводу',
                         'val_2026'    => '35,4 т',
                         'val_2025_an' => '510,4 т',
-                        'val_2025_yr' => '18 952,8 т',
+                        'val_2025_yr' => '10 303,5 т',
                         'trend_text'  => 'Кінець місяця',
                         'trend_class' => 'trend-good',
                     ],
                 ]
             ];
         } elseif ($norm === 'season') {
-            $seasonSeed = !empty($this->getSemenaPeriodStats('season')['seed_in_plant']) ? (float)$this->getSemenaPeriodStats('season')['seed_in_plant'] : 25353.92;
+            $seasonSeed = !empty($this->getSemenaPeriodStats('season')['seed_in_plant']) ? (float)$this->getSemenaPeriodStats('season')['seed_in_plant'] : 33205.11;
             $dyn = $this->getHistoricalSeasonMetrics();
             $dSeason = $dyn['season'];
             $oilMealSumPct = round($dSeason['oil_yield_pct'] + $dSeason['meal_yield_pct'], 2);
@@ -3408,7 +3557,7 @@ class MetricsCalculator {
                 'kpis' => [
                     'seed_processed' => [
                         'title'        => '⚙️ Переробка насіння',
-                        'badge'        => "Сезон 2026–2027 ({$dSeason['working_days']} доби)",
+                        'badge'        => "Сезон 2026–2027 ({$dSeason['working_days']} діб)",
                         'number'       => number_format($dSeason['seed_processed'], 1, ',', ' '),
                         'unit'         => 'т (Сезон 2026–2027)',
                         'subtext'      => '2025–2026 (Вер–Жов): <strong>21 117,1 т</strong> &bull; Сезон 2025–2026: <strong>61 892,9 т</strong>',
@@ -3445,7 +3594,7 @@ class MetricsCalculator {
                 ],
                 'headers' => [
                     'col_indicator'   => 'Показник виробництва',
-                    'col_2026'        => "Сезон 2026–2027 ({$dSeason['working_days']} доби)",
+                    'col_2026'        => "Сезон 2026–2027 ({$dSeason['working_days']} діб)",
                     'col_2025_analog' => 'Сезон 2025–2026 (Вер–Жов)',
                     'col_2025_year'   => 'Весь сезон 2025–2026 (61,9 тис. т)',
                     'col_trend'       => 'Динаміка',
@@ -3456,12 +3605,12 @@ class MetricsCalculator {
                         'val_2026'    => number_format($seasonSeed, 1, ',', ' ') . ' т',
                         'val_2025_an' => '21 329,0 т',
                         'val_2025_yr' => '62 403,3 т',
-                        'trend_text'  => '+18.9% завіз',
+                        'trend_text'  => '+55.7% завіз',
                         'trend_class' => 'trend-good',
                     ],
                     [
                         'name'        => 'Перероблено соняшнику (очищене)',
-                        'val_2026'    => number_format($dSeason['seed_processed'], 1, ',', ' ') . ' т (' . $dSeason['working_days'] . ' доби)',
+                        'val_2026'    => number_format($dSeason['seed_processed'], 1, ',', ' ') . ' т (' . $dSeason['working_days'] . ' діб)',
                         'val_2025_an' => '21 117,1 т',
                         'val_2025_yr' => '61 892,9 т',
                         'trend_text'  => $dSeason['working_days'] . ' діб роботи',
@@ -3469,7 +3618,7 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Середня олійність сировини (вхід у цех)',
-                        'val_2026'    => '44,69% (товарна олійність)',
+                        'val_2026'    => '44,42% (товарна олійність)',
                         'val_2025_an' => '44,79%',
                         'val_2025_yr' => '45,13%',
                         'trend_text'  => 'В межах норми',
@@ -3488,12 +3637,12 @@ class MetricsCalculator {
                         'val_2026'    => number_format($dSeason['meal_out'], 1, ',', ' ') . ' т (' . number_format($dSeason['meal_yield_pct'], 2, ',', ' ') . '%)',
                         'val_2025_an' => '8 835,8 т (41,84%)',
                         'val_2025_yr' => '25 790,4 т (41,67%)',
-                        'trend_text'  => '+0,07% до року',
+                        'trend_text'  => 'Стабільно',
                         'trend_class' => 'trend-good',
                     ],
                     [
                         'name'        => 'Вихід лузги (т / %)',
-                        'val_2026'    => number_format($dSeason['husk_out'], 1, ',', ' ') . ' т',
+                        'val_2026'    => number_format($dSeason['husk_out'], 1, ',', ' ') . ' т (14,42%)',
                         'val_2025_an' => '2 678,6 т (12,68%)',
                         'val_2025_yr' => '7 971,8 т (12,88%)',
                         'trend_text'  => 'Паливний баланс',
@@ -3501,7 +3650,7 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Втрати з елеватора (підробка)',
-                        'val_2026'    => '148,3 т (1,18%)',
+                        'val_2026'    => '246,1 т (1,19%)',
                         'val_2025_an' => '322,9 т (1,53%)',
                         'val_2025_yr' => '510,4 т (0,82%)',
                         'trend_text'  => 'Норма < 2,5%',
@@ -3528,13 +3677,13 @@ class MetricsCalculator {
                         'val_2026'    => number_format($seedStock, 1, ',', ' ') . ' т',
                         'val_2025_an' => '211,9 т',
                         'val_2025_yr' => '510,4 т',
-                        'trend_text'  => '22,2 доби автономії',
+                        'trend_text'  => round($seedStock / 600.0, 1) . ' діб автономії',
                         'trend_class' => 'trend-good',
                     ],
                 ]
             ];
         } elseif ($norm === 'month_oct') {
-            $octSeed = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 6075.91;
+            $octSeed = !empty($stats['seed_in_plant']) ? (float)$stats['seed_in_plant'] : 13745.47;
             $dyn = $this->getHistoricalSeasonMetrics();
             $dOct = $dyn['oct'];
             $octOilMealSumPct = round($dOct['oil_yield_pct'] + $dOct['meal_yield_pct'], 2);
@@ -3546,7 +3695,7 @@ class MetricsCalculator {
                 'kpis' => [
                     'seed_processed' => [
                         'title'        => '⚙️ Переробка насіння',
-                        'badge'        => "Жовтень 2026 ({$dOct['working_days']} діб)",
+                        'badge'        => "Жовтень 2026 ({$dOct['working_days']} доби)",
                         'number'       => number_format($dOct['seed_processed'], 1, ',', ' '),
                         'unit'         => 'т (Жовтень 2026)',
                         'subtext'      => "2025 аналог: <strong>16 681,7 т</strong> (31 доба) &bull; Фактично: <strong>{$dOct['working_days_label']}</strong>",
@@ -3594,7 +3743,7 @@ class MetricsCalculator {
                         'val_2026'    => number_format($octSeed, 1, ',', ' ') . ' т',
                         'val_2025_an' => '16 858,2 т',
                         'val_2025_yr' => '62 403,3 т',
-                        'trend_text'  => 'Прийомка йде',
+                        'trend_text'  => '22 робочі доби',
                         'trend_class' => 'trend-good',
                     ],
                     [
@@ -3602,15 +3751,15 @@ class MetricsCalculator {
                         'val_2026'    => number_format($dOct['seed_processed'], 1, ',', ' ') . ' т (' . $dOct['working_days'] . ' діб)',
                         'val_2025_an' => '16 681,7 т (31 день)',
                         'val_2025_yr' => '61 892,9 т',
-                        'trend_text'  => $dOct['working_days'] . ' діб роботи',
+                        'trend_text'  => $dOct['working_days'] . ' доби роботи',
                         'trend_class' => 'trend-good',
                     ],
                     [
                         'name'        => 'Середня олійність сировини (вхід у цех)',
-                        'val_2026'    => '45,30% (товарна олійність)',
+                        'val_2026'    => '44,71% (товарна олійність)',
                         'val_2025_an' => '45,29%',
                         'val_2025_yr' => '45,13%',
-                        'trend_text'  => '+0,01% якість',
+                        'trend_text'  => '48,66% на АСР',
                         'trend_class' => 'trend-good',
                     ],
                     [
@@ -3618,7 +3767,7 @@ class MetricsCalculator {
                         'val_2026'    => number_format($dOct['oil_out'], 1, ',', ' ') . ' т (' . number_format($dOct['oil_yield_pct'], 2, ',', ' ') . '%)',
                         'val_2025_an' => '7 414,2 т (44,45%)',
                         'val_2025_yr' => '27 416,9 т (44,30%)',
-                        'trend_text'  => '+' . number_format($dOct['oil_yield_pct'] - 44.45, 2, ',', '') . '% до 2025',
+                        'trend_text'  => number_format($dOct['oil_yield_pct'], 2, ',', '') . '% вихід',
                         'trend_class' => 'trend-good',
                     ],
                     [
@@ -3626,12 +3775,12 @@ class MetricsCalculator {
                         'val_2026'    => number_format($dOct['meal_out'], 1, ',', ' ') . ' т (' . number_format($dOct['meal_yield_pct'], 2, ',', ' ') . '%)',
                         'val_2025_an' => '6 966,6 т (41,76%)',
                         'val_2025_yr' => '25 790,4 т (41,67%)',
-                        'trend_text'  => '-0.03% стабільність',
+                        'trend_text'  => number_format($dOct['meal_yield_pct'], 2, ',', '') . '% вихід',
                         'trend_class' => 'trend-good',
                     ],
                     [
                         'name'        => 'Вихід лузги (т / %)',
-                        'val_2026'    => number_format($dOct['husk_out'], 1, ',', ' ') . ' т',
+                        'val_2026'    => number_format($dOct['husk_out'], 1, ',', ' ') . ' т (14,52%)',
                         'val_2025_an' => '2 058,4 т (12,34%)',
                         'val_2025_yr' => '7 971,8 т (12,88%)',
                         'trend_text'  => 'Паливна безпека',
@@ -3639,10 +3788,10 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Втрати з елеватора (підробка)',
-                        'val_2026'    => '53,6 т (1,45%)',
+                        'val_2026'    => '151,3 т (1,29%)',
                         'val_2025_an' => '242,4 т (1,45%)',
                         'val_2025_yr' => '510,4 т (0,82%)',
-                        'trend_text'  => '1 в 1 з 2025 (1.45%)',
+                        'trend_text'  => '-0,16% менше втрат',
                         'trend_class' => 'trend-good',
                     ],
                     [
@@ -3650,7 +3799,7 @@ class MetricsCalculator {
                         'val_2026'    => number_format($octOilMealSumPct, 2, ',', ' ') . '%',
                         'val_2025_an' => '86,21%',
                         'val_2025_yr' => '85,97%',
-                        'trend_text'  => '+0.67% до 2025',
+                        'trend_text'  => 'У межах норми',
                         'trend_class' => 'trend-good',
                     ],
                     [
@@ -3663,10 +3812,10 @@ class MetricsCalculator {
                     ],
                     [
                         'name'        => 'Залишок насіння на складі заводу',
-                        'val_2026'    => number_format($seedStock, 1, ',', ' ') . ' т',
+                        'val_2026'    => '9 412,1 т',
                         'val_2025_an' => '176,5 т',
                         'val_2025_yr' => '510,4 т',
-                        'trend_text'  => '22,2 доби автономії',
+                        'trend_text'  => '15,7 діб автономії',
                         'trend_class' => 'trend-good',
                     ],
                 ]
@@ -3908,7 +4057,7 @@ class MetricsCalculator {
                 $seedProc = 8823.66;
                 $seedPlan = 9600.0;
                 $oil = 44.05;
-                $moist = 6.80;
+                $moist = 6.41;
                 return [
                     'sunflower_oil_pct'           => 44.05,
                     'yield_oil_pct'               => 43.20,
@@ -3918,20 +4067,20 @@ class MetricsCalculator {
                     'husk_oil_pct'                => 3.37,
                     'process_loss_pct'            => 0.77,
                     'balance_oil_calc_kg'         => 3887146.7,
-                    'balance_oil_fact_kg'         => 3882414,
+                    'balance_oil_fact_kg'         => 3882414.3,
                     'oil_out_kg'                  => 3811656,
-                    'oil_loss_kg'                 => 70758,
+                    'oil_loss_kg'                 => 70758.3,
                     'oil_loss_pct'                => 0.80,
                     'oil_in_meal_kg'              => 28309.0,
-                    'oil_in_husk_kg'              => 42449,
-                    'oil_unaccounted_loss_kg'     => 4732,
+                    'oil_in_husk_kg'              => 42449.3,
+                    'oil_unaccounted_loss_kg'     => 4732.4,
                     'oil_unaccounted_loss_pct'    => 0.05,
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
-                    'oil_asr_pct'                 => round($oil / (1 - ($moist / 100)), 2),
+                    'oil_asr_pct'                 => 48.01,
                     'moisture_pct'                => $moist,
-                    'impurity_pct'                => 1.85,
+                    'impurity_pct'                => 1.96,
                     'seed_processed_tonnes'       => $seedProc,
                     'seed_plan_tonnes'            => $seedPlan,
                     'plan_fulfillment_pct'        => round(($seedProc / $seedPlan) * 100, 1),
@@ -3975,23 +4124,35 @@ class MetricsCalculator {
             case 'season':
                 $seedProc = $dSeason['seed_processed'];
                 $seedPlan = $dSeason['working_days'] * 600.0;
-                $oil = 44.55;
-                $moist = 6.60;
+                $oil = 44.42;
+                $moist = 6.39;
                 return [
+                    'sunflower_oil_pct'           => $oil,
+                    'yield_oil_pct'               => 43.59,
+                    'yield_meal_pct'              => 41.00,
+                    'meal_oil_pct'                => 0.75,
+                    'yield_husk_pct'              => 14.42,
+                    'husk_oil_pct'                => 3.29,
+                    'process_loss_pct'            => 0.99,
+                    'balance_oil_calc_kg'         => 9065611.8,
+                    'balance_oil_fact_kg'         => 9053671.3,
+                    'oil_out_kg'                  => 8894175,
+                    'oil_loss_kg'                 => 159496.3,
+                    'oil_loss_pct'                => 0.78,
+                    'oil_in_meal_kg'              => 62674.3,
+                    'oil_in_husk_kg'              => 96822.0,
+                    'oil_unaccounted_loss_kg'     => 11940.5,
+                    'oil_unaccounted_loss_pct'    => 0.06,
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
-                    'oil_asr_pct'                 => round($oil / (1 - ($moist / 100)), 2),
-                    'oil_loss_kg'                 => $defaultOilLossKg,
-                    'oil_loss_pct'                => $defaultOilLossPct,
-                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
-                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
+                    'oil_asr_pct'                 => 48.38,
                     'moisture_pct'                => $moist,
-                    'impurity_pct'                => 1.77,
+                    'impurity_pct'                => 1.91,
                     'seed_processed_tonnes'       => $seedProc,
                     'seed_plan_tonnes'            => $seedPlan,
                     'plan_fulfillment_pct'        => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
-                    'report_date'                 => "Сезон 2026–2027 ({$dSeason['working_days']} доби роботи, СВОД)",
+                    'report_date'                 => "Сезон 2026–2027 ({$dSeason['working_days']} діб роботи, СВОД)",
                     'processed_note'              => "Загалом перероблено за сезон " . number_format($seedProc, 1, ',', ' ') . " т",
                 ];
 
@@ -4108,27 +4269,38 @@ class MetricsCalculator {
             case 'month_oct':
                 $seedProc = $dOct['seed_processed'];
                 $seedPlan = $dOct['working_days'] * 600.0;
-                $oil = 42.45;
-                $oilAsr = 45.26;
-                $moist = 6.20;
+                $oil = 44.71;
+                $oilAsr = 48.66;
+                $moist = 6.38;
                 return array_merge($balanceDefaults, [
                     'sunflower_oil_pct'           => $oil,
+                    'yield_oil_pct'               => 43.88,
+                    'yield_meal_pct'              => 40.44,
+                    'meal_oil_pct'                => 0.73,
+                    'yield_husk_pct'              => 14.52,
+                    'husk_oil_pct'                => 3.23,
+                    'process_loss_pct'            => 1.16,
+                    'balance_oil_calc_kg'         => 5178465.2,
+                    'balance_oil_fact_kg'         => 5171257.0,
+                    'oil_out_kg'                  => 5082519,
+                    'oil_in_meal_kg'              => 34365.3,
+                    'oil_in_husk_kg'              => 54372.7,
                     'oil_content_pct'             => $oil,
                     'oil_content_base_pct'        => $basePct,
                     'oil_deviation_pct'           => round($oil - $basePct, 2),
                     'oil_asr_pct'                 => $oilAsr,
                     'oil_loss_kg'                 => 88738,
                     'oil_loss_pct'                => 0.77,
-                    'oil_unaccounted_loss_kg'     => $defaultOilUnaccountedLossKg,
-                    'oil_unaccounted_loss_pct'    => $defaultOilUnaccountedLossPct,
-                    'oil_date'                    => '30.10',
-                    'oil_note'                    => 'Фактична товарна олійність за Жовтень 2026 (звіт МЕЗ, СВОД)',
+                    'oil_unaccounted_loss_kg'     => 7208.1,
+                    'oil_unaccounted_loss_pct'    => 0.06,
+                    'oil_date'                    => '01–30.10',
+                    'oil_note'                    => 'Середньозважена товарна олійність за Жовтень 2026 (звіт МЕЗ, СВОД)',
                     'moisture_pct'                => $moist,
-                    'impurity_pct'                => 1.74,
+                    'impurity_pct'                => 1.87,
                     'seed_processed_tonnes'       => $seedProc,
                     'seed_plan_tonnes'            => $seedPlan,
                     'plan_fulfillment_pct'        => $seedPlan > 0 ? round(($seedProc / $seedPlan) * 100, 1) : 100.0,
-                    'report_date'                 => "Жовтень 2026 ({$dOct['working_days']} діб переробки з {$dOct['days_count']}, СВОД)",
+                    'report_date'                 => "Жовтень 2026 ({$dOct['working_days']} доби переробки з {$dOct['days_count']}, СВОД)",
                     'processed_note'              => "Середньозважена якість насіння у переробку (" . number_format($seedProc, 1, ',', ' ') . " т)",
                 ]);
 
@@ -4264,17 +4436,6 @@ class MetricsCalculator {
             'pending_specs_count' => $pendingSpecs,
             'report_date'         => 'Лист погодження (Реєстр договорів 1С)',
         ];
-    }
-                return [
-                    'contracted_tonnes'   => round($contr, 1),
-                    'delivered_tonnes'    => round($deliv, 1),
-                    'remaining_tonnes'    => round($rem, 1),
-                    'fulfillment_pct'     => $pct,
-                    'active_specs_count'  => $activeSpecs,
-                    'pending_specs_count' => $pendingSpecs,
-                    'report_date'         => ($semena['updated_at'] ?? '12.10.2026') . ' (Лист погодження)',
-                ];
-        }
     }
 }
 

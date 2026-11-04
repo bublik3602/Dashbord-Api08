@@ -854,25 +854,29 @@ try {
                 'декабря' => '12', 'грудня' => '12', 'декабрь' => '12'
             ];
 
-            // Визначаємо цільовий місяць книги за останнім аркушем «СВОД»
+            // Визначаємо цільовий місяць книги за останнім аркушем «СВОД» (пропускаючи застарілі вкладки 2021-2024 рр.)
             $workbookMonthCode = null;
             $svodSummarySheet = null;
             foreach ($sheetsData as $sName => $rows) {
                 $sLow = mb_strtolower($sName, 'UTF-8');
                 if (strpos($sLow, 'свод') !== false) {
+                    $headerTxt = '';
+                    foreach (array_slice($rows, 0, 8) as $r) {
+                        $headerTxt .= ' ' . mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
+                    }
+                    if (preg_match('/202[1-4]/u', $headerTxt) && !preg_match('/202[5-9]|26|27/u', $sLow)) {
+                        continue;
+                    }
                     foreach ($monthsMap as $mName => $mCode) {
                         if (strpos($sLow, $mName) !== false) {
                             $workbookMonthCode = $mCode;
                             $svodSummarySheet = $rows;
                         }
                     }
-                    foreach (array_slice($rows, 0, 8) as $r) {
-                        $rTxt = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                        foreach ($monthsMap as $mName => $mCode) {
-                            if (strpos($rTxt, $mName) !== false) {
-                                $workbookMonthCode = $mCode;
-                                $svodSummarySheet = $rows;
-                            }
+                    foreach ($monthsMap as $mName => $mCode) {
+                        if (strpos($headerTxt, $mName) !== false) {
+                            $workbookMonthCode = $mCode;
+                            $svodSummarySheet = $rows;
                         }
                     }
                 }
@@ -1218,7 +1222,7 @@ try {
                 $feedTrashColIdx = $feedOilColIdx + 4; // Col X (23)
                 $feedAsrColIdx   = $feedOilColIdx + 6; // Col Z (25)
 
-                foreach ($rows as $r) {
+                foreach ($rows as $rIdx => $r) {
                     $dCell = trim((string)($r[0] ?? ''));
                     $matchedDay = false;
                     $isoDate = '';
@@ -1301,6 +1305,10 @@ try {
                         // 2. Широкий формат цеху екстракції у кг (де Col 17 = Насіння у виробництво факт в кг, напр. 553 035)
                         elseif (isset($r[17]) && is_numeric($r[17]) && (float)$r[17] > 1000) {
                             $seedCleaned = round((float)$r[17] / 1000.0, 3);
+                            $nextRow     = $rows[$rIdx + 1] ?? [];
+                            if (isset($nextRow[17]) && is_numeric($nextRow[17]) && (float)$nextRow[17] >= 0) {
+                                $elevLoss = round((float)$nextRow[17] / 1000.0, 3);
+                            }
                             $oilTonnes   = isset($r[29]) && is_numeric($r[29]) ? round((float)$r[29] / 1000.0, 3) : 0.0;
                             $mealTonnes  = isset($r[31]) && is_numeric($r[31]) ? round((float)$r[31] / 1000.0, 3) : 0.0;
                             $huskTonnes  = isset($r[38]) && is_numeric($r[38]) ? round((float)$r[38] / 1000.0, 3) : 0.0;
