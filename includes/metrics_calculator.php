@@ -36,6 +36,10 @@ class MetricsCalculator {
             ");
             $row = $chk ? $chk->fetch(PDO::FETCH_ASSOC) : null;
             if ($row && (int)($row['work_days'] ?? 0) >= 38 && (float)($row['sum_prod'] ?? 0) >= 20400.0 && (int)($row['nov_in_days'] ?? 0) >= 2) {
+                // Очищуємо застарілий жовтневий демо-запис (13429.903 т) з warehouse_stocks навіть якщо material_balance_logs вже заповнена
+                try {
+                    $this->db->exec("DELETE FROM warehouse_stocks WHERE ABS(seed_stock_tonnes - 13429.903) < 0.5 OR ABS(seed_stock_tonnes - 12980.633) < 0.5 OR ABS(oil_stock_tonnes - 3332.32) < 0.5");
+                } catch (Throwable $e) {}
                 return;
             }
 
@@ -153,6 +157,26 @@ class MetricsCalculator {
                         ':rdate' => $rdate
                     ]);
                 }
+            }
+        } catch (Throwable $e) {}
+
+        // Очищуємо застарілий жовтневий демо-запис (13429.903 т) з warehouse_stocks і синхронізуємо актуальні залишки (04.11.2026)
+        try {
+            $this->db->exec("DELETE FROM warehouse_stocks WHERE ABS(seed_stock_tonnes - 13429.903) < 0.5 OR ABS(seed_stock_tonnes - 12980.633) < 0.5 OR ABS(oil_stock_tonnes - 3332.32) < 0.5");
+            $chkWs = $this->db->query("SELECT id FROM warehouse_stocks WHERE recorded_at >= '2026-11-04 00:00:00' LIMIT 1");
+            $hasNov4 = $chkWs ? $chkWs->fetch(PDO::FETCH_ASSOC) : null;
+            if (!$hasNov4) {
+                $this->db->exec("
+                    INSERT INTO warehouse_stocks (
+                        recorded_at, report_date, seed_stock_tonnes, seed_stock_accounting_tonnes,
+                        oil_stock_tonnes, meal_stock_tonnes, husk_stock_tonnes, husk_boiler_spent_tonnes,
+                        days_seed_reserve, oil_shipped_tonnes, meal_shipped_tonnes, husk_shipped_tonnes
+                    ) VALUES (
+                        '2026-11-04 08:00:00', '04.11.2026 (4 число)', 9659.320, 10338.301,
+                        4090.367, 270.510, 69.130, 0.000,
+                        16.1, 126.900, 101.780, 16.080
+                    )
+                ");
             }
         } catch (Throwable $e) {}
     }
@@ -2179,10 +2203,12 @@ class MetricsCalculator {
             ");
             $row = $stmt ? $stmt->fetch() : null;
             if ($row) {
-                // Відкидаємо застарілі/помилкові дефолтні значення жовтня (3332.32 / 773.73 / 87.64)
+                // Відкидаємо застарілі/помилкові дефолтні значення жовтня (3332.32 / 773.73 / 87.64 або старі демо-рядки 13429.90 / 12980.63)
                 $isLegacyFallback = (
-                    abs((float)$row['oil_stock_tonnes'] - 3332.32) < 0.05 && 
-                    abs((float)$row['meal_stock_tonnes'] - 773.73) < 0.05
+                    (abs((float)$row['oil_stock_tonnes'] - 3332.32) < 0.05 && abs((float)$row['meal_stock_tonnes'] - 773.73) < 0.05) ||
+                    abs((float)$row['seed_stock_tonnes'] - 13429.903) < 0.5 ||
+                    abs((float)$row['seed_stock_tonnes'] - 12980.633) < 0.5 ||
+                    (!empty($row['recorded_at']) && $row['recorded_at'] < '2026-11-04 00:00:00')
                 );
                 if (!$isLegacyFallback && (float)$row['seed_stock_tonnes'] > 1000) {
                     $defaults['seed_stock_tonnes']            = round((float)$row['seed_stock_tonnes'], 2);
