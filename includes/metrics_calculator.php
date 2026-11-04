@@ -29,12 +29,13 @@ class MetricsCalculator {
         try {
             $chk = $this->db->query("
                 SELECT COUNT(CASE WHEN seed_in_production > 10 THEN 1 END) as work_days,
-                       SUM(seed_in_production) as sum_prod
+                       SUM(seed_in_production) as sum_prod,
+                       COUNT(CASE WHEN recorded_at >= '2026-11-01 00:00:00' AND seed_in_plant > 10 THEN 1 END) as nov_in_days
                 FROM material_balance_logs
-                WHERE recorded_at >= '2026-09-01 00:00:00' AND recorded_at <= '2026-10-31 23:59:59'
+                WHERE recorded_at >= '2026-09-01 00:00:00' AND recorded_at <= '2026-11-05 23:59:59'
             ");
             $row = $chk ? $chk->fetch(PDO::FETCH_ASSOC) : null;
-            if ($row && (int)($row['work_days'] ?? 0) >= 38 && (float)($row['sum_prod'] ?? 0) >= 20400.0) {
+            if ($row && (int)($row['work_days'] ?? 0) >= 38 && (float)($row['sum_prod'] ?? 0) >= 20400.0 && (int)($row['nov_in_days'] ?? 0) >= 2) {
                 return;
             }
 
@@ -105,6 +106,10 @@ class MetricsCalculator {
                 ['2026-10-29', 590.501, 582.723, 259.581, 237.058, 80.697, 7.778,   5.387],
                 ['2026-10-30', 564.606, 558.469, 215.635, 219.402, 65.399, 6.137,  58.033],
                 ['2026-10-31',   0.000,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                // Листопад 2026 (01.11–04.11: завод у простої, прийомка 350,182 т за 02.11–03.11, переробка 0 т)
+                ['2026-11-01',   0.000,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-11-02', 176.040,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-11-03', 174.142,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
             ];
 
             $selStmt = $this->db->prepare("SELECT id FROM material_balance_logs WHERE recorded_at LIKE :prefix LIMIT 1");
