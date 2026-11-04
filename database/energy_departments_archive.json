@@ -72,8 +72,8 @@
     "key": "2026-10",
     "active_kwh": null,
     "reactive_kvarh": null,
-    "water_m3": 476.0,
-    "sewage_m3": 266.6,
+    "water_m3": 3259.0,
+    "sewage_m3": 1224.8,
     "gas_m3": 0.0,
     "is_current": false,
     "departments": [
@@ -82,32 +82,32 @@
         "active_kwh": null,
         "reactive_kvarh": null,
         "specific_kwh": 29.68,
-        "water_m3": 53.0,
-        "sewage_m3": 18.0
+        "water_m3": 366.0,
+        "sewage_m3": 152.0
       },
       {
-        "name": "Дільниця екстракції (водооборотка)",
+        "name": "Дільниця екстракції (водооборотка + барометричка)",
         "active_kwh": null,
         "reactive_kvarh": null,
         "specific_kwh": 11.62,
-        "water_m3": 103.0,
-        "sewage_m3": 50.0
+        "water_m3": 962.0,
+        "sewage_m3": 226.0
       },
       {
         "name": "Дільниця приймання, доробки та зберіг. сировини",
         "active_kwh": null,
         "reactive_kvarh": null,
         "specific_kwh": 7.94,
-        "water_m3": 2.0,
-        "sewage_m3": 2.0
+        "water_m3": 9.0,
+        "sewage_m3": 9.0
       },
       {
-        "name": "Котельня лузгова (пермеат + пара)",
+        "name": "Котельня лузгова (пермеат + ХВО)",
         "active_kwh": null,
         "reactive_kvarh": null,
         "specific_kwh": 3.3,
-        "water_m3": 194.0,
-        "sewage_m3": 74.0
+        "water_m3": 1576.0,
+        "sewage_m3": 586.0
       },
       {
         "name": "Елеватор №2 (вул. Василя Симоненка, 13Б)",
@@ -130,10 +130,11 @@
         "active_kwh": null,
         "reactive_kvarh": 0.0,
         "specific_kwh": 0.1,
-        "water_m3": 124.0,
-        "sewage_m3": 124.0
+        "water_m3": 346.0,
+        "sewage_m3": 251.8
       }
-    ]
+    ],
+    "seed_processed_t": 11582.45
   },
   "2026-09": {
     "month_name": "Вересень 2026",
