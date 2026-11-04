@@ -70,71 +70,71 @@
   "2026-10": {
     "month_name": "Жовтень 2026",
     "key": "2026-10",
-    "active_kwh": null,
-    "reactive_kvarh": null,
-    "water_m3": 3259.0,
-    "sewage_m3": 1224.8,
+    "active_kwh": 623776.0,
+    "reactive_kvarh": 206346.37,
+    "water_m3": 3261.0,
+    "sewage_m3": 1871.0,
     "gas_m3": 0.0,
+    "seed_processed_t": 11582.45,
     "is_current": false,
     "departments": [
       {
-        "name": "Олійнопресовий цех (підготовка)",
-        "active_kwh": null,
-        "reactive_kvarh": null,
-        "specific_kwh": 29.68,
-        "water_m3": 366.0,
-        "sewage_m3": 152.0
+        "name": "Олійнопресовий цех (маслопрессовый участок)",
+        "active_kwh": 367320.0,
+        "reactive_kvarh": 125304.8,
+        "specific_kwh": 31.71,
+        "water_m3": 253.0,
+        "sewage_m3": 105.0
       },
       {
-        "name": "Дільниця екстракції (водооборотка + барометричка)",
-        "active_kwh": null,
-        "reactive_kvarh": null,
-        "specific_kwh": 11.62,
-        "water_m3": 962.0,
-        "sewage_m3": 226.0
+        "name": "Дільниця екстракції (участок экстракции)",
+        "active_kwh": 139760.0,
+        "reactive_kvarh": 41930.0,
+        "specific_kwh": 12.07,
+        "water_m3": 810.0,
+        "sewage_m3": 310.0
       },
       {
         "name": "Дільниця приймання, доробки та зберіг. сировини",
-        "active_kwh": null,
-        "reactive_kvarh": null,
-        "specific_kwh": 7.94,
-        "water_m3": 9.0,
-        "sewage_m3": 9.0
+        "active_kwh": 63960.0,
+        "reactive_kvarh": 21986.8,
+        "specific_kwh": 5.52,
+        "water_m3": 17.0,
+        "sewage_m3": 17.0
       },
       {
         "name": "Котельня лузгова (пермеат + ХВО)",
-        "active_kwh": null,
-        "reactive_kvarh": null,
-        "specific_kwh": 3.3,
+        "active_kwh": 45780.0,
+        "reactive_kvarh": 16303.0,
+        "specific_kwh": 3.95,
         "water_m3": 1576.0,
-        "sewage_m3": 586.0
+        "sewage_m3": 790.0
       },
       {
-        "name": "Елеватор №2 (вул. Василя Симоненка, 13Б)",
-        "active_kwh": null,
+        "name": "Елеватор №2 (вул. Пушкіна / Симоненка, 13Б)",
+        "active_kwh": 4065.0,
         "reactive_kvarh": 0.0,
-        "specific_kwh": 0.32,
+        "specific_kwh": 0.35,
         "water_m3": 0.0,
         "sewage_m3": 0.0
       },
       {
         "name": "Склад готової продукції",
-        "active_kwh": null,
-        "reactive_kvarh": null,
-        "specific_kwh": 0.32,
+        "active_kwh": 2221.0,
+        "reactive_kvarh": 821.77,
+        "specific_kwh": 0.19,
         "water_m3": 0.0,
         "sewage_m3": 0.0
       },
       {
         "name": "Адміністрація, ВТЛ та госп.побут (Л.91)",
-        "active_kwh": null,
+        "active_kwh": 670.0,
         "reactive_kvarh": 0.0,
-        "specific_kwh": 0.1,
-        "water_m3": 346.0,
-        "sewage_m3": 251.8
+        "specific_kwh": 0.06,
+        "water_m3": 605.0,
+        "sewage_m3": 649.0
       }
-    ],
-    "seed_processed_t": 11582.45
+    ]
   },
   "2026-09": {
     "month_name": "Вересень 2026",

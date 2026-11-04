@@ -975,7 +975,7 @@ class MetricsCalculator {
             ['key' => '2026-07', 'month' => 'Липень 2026',   'short' => 'Лип\'26', 'active_kwh' => 46923,   'reactive_kvarh' => 37957.6,  'gas_m3' => 3364.1,  'water_m3' => 464,  'sewage_m3' => 274,  'daily_water_m3' => 15.0,  'press_kwh' => 21850,  'extr_kwh' => 1500,   'elev_kwh' => 15140,  'boiler_kwh' => 1448,  'specific_kwh' => 0.00,  'has_data' => true],
             ['key' => '2026-08', 'month' => 'Серпень 2026',  'short' => 'Сер\'26', 'active_kwh' => 49379,   'reactive_kvarh' => 67011.0,  'gas_m3' => 96.0,    'water_m3' => 616,  'sewage_m3' => 400,  'daily_water_m3' => 19.9,  'press_kwh' => 14640,  'extr_kwh' => 1360,   'elev_kwh' => 14918,  'boiler_kwh' => 960,   'specific_kwh' => 0.00,  'has_data' => true],
             ['key' => '2026-09', 'month' => 'Вересень 2026', 'short' => 'Вер\'26', 'active_kwh' => 485070,  'reactive_kvarh' => 184589.7, 'gas_m3' => 990.9,   'water_m3' => 2508, 'sewage_m3' => 1409, 'daily_water_m3' => 83.6,  'press_kwh' => 270231, 'extr_kwh' => 106000, 'elev_kwh' => 75249,  'boiler_kwh' => 29940, 'specific_kwh' => 54.97, 'has_data' => true],
-            ['key' => '2026-10', 'month' => 'Жовтень 2026',  'short' => 'Жов\'26', 'active_kwh' => null,    'reactive_kvarh' => null,     'gas_m3' => 0.0,     'water_m3' => 3259, 'sewage_m3' => 1224.8,'daily_water_m3' => 105.1, 'press_kwh' => null,   'extr_kwh' => null,   'elev_kwh' => null,   'boiler_kwh' => null,  'specific_kwh' => null,  'has_data' => true,  'note' => 'Облік води (3 259 м³) та пари (2 785,84 т)'],
+            ['key' => '2026-10', 'month' => 'Жовтень 2026',  'short' => 'Жов\'26', 'active_kwh' => 623776,  'reactive_kvarh' => 206346.4, 'gas_m3' => 0.0,     'water_m3' => 3261, 'sewage_m3' => 1871,  'daily_water_m3' => 105.2, 'press_kwh' => 367320, 'extr_kwh' => 139760, 'elev_kwh' => 68025,  'boiler_kwh' => 45780, 'specific_kwh' => 53.86, 'has_data' => true,  'note' => 'Факт за звітом енергетика (623 776 кВт·год • 3 261 м³ води • 2 785,83 т пари)'],
             ['key' => '2026-11', 'month' => 'Листопад 2026', 'short' => 'Лис\'26', 'active_kwh' => null,    'reactive_kvarh' => null,     'gas_m3' => 0.0,     'water_m3' => null, 'sewage_m3' => null, 'daily_water_m3' => null,  'press_kwh' => null,   'extr_kwh' => null,   'elev_kwh' => null,   'boiler_kwh' => 26.98, 'specific_kwh' => 0.00,  'has_data' => true,  'note' => 'Поточний місяць (облік пари: 26,98 т • завод у простої)'],
         ];
 
@@ -1006,13 +1006,13 @@ class MetricsCalculator {
         }
 
         $departmentsOct = $energyDeptArchive['2026-10']['departments'] ?? [
-            ['name' => 'Олійнопресовий цех (підготовка)',                  'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 29.68, 'water_m3' => 366,  'sewage_m3' => 152],
-            ['name' => 'Дільниця екстракції (водооборотка + барометричка)','active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 11.62, 'water_m3' => 962,  'sewage_m3' => 226],
-            ['name' => 'Дільниця приймання, доробки та зберіг. сировини', 'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 7.94,  'water_m3' => 9,    'sewage_m3' => 9],
-            ['name' => 'Котельня лузгова (пермеат + ХВО)',                'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 3.30,  'water_m3' => 1576, 'sewage_m3' => 586],
-            ['name' => 'Елеватор №2 (вул. Василя Симоненка, 13Б)',         'active_kwh' => null, 'reactive_kvarh' => 0.0,  'specific_kwh' => 0.32,  'water_m3' => 0,    'sewage_m3' => 0],
-            ['name' => 'Склад готової продукції',                         'active_kwh' => null, 'reactive_kvarh' => null, 'specific_kwh' => 0.0,   'water_m3' => 0,    'sewage_m3' => 0],
-            ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)',         'active_kwh' => null, 'reactive_kvarh' => 0.0,  'specific_kwh' => 0.0,   'water_m3' => 346,  'sewage_m3' => 251.8],
+            ['name' => 'Олійнопресовий цех (маслопрессовый участок)',     'active_kwh' => 367320, 'reactive_kvarh' => 125304.8, 'specific_kwh' => 31.71, 'water_m3' => 253,  'sewage_m3' => 105],
+            ['name' => 'Дільниця екстракції (участок экстракции)',        'active_kwh' => 139760, 'reactive_kvarh' => 41930.0,  'specific_kwh' => 12.07, 'water_m3' => 810,  'sewage_m3' => 310],
+            ['name' => 'Дільниця приймання, доробки та зберіг. сировини', 'active_kwh' => 63960,  'reactive_kvarh' => 21986.8,  'specific_kwh' => 5.52,  'water_m3' => 17,   'sewage_m3' => 17],
+            ['name' => 'Котельня лузгова (пермеат + ХВО)',                'active_kwh' => 45780,  'reactive_kvarh' => 16303.0,  'specific_kwh' => 3.95,  'water_m3' => 1576, 'sewage_m3' => 790],
+            ['name' => 'Елеватор №2 (вул. Пушкіна / Симоненка, 13Б)',     'active_kwh' => 4065,   'reactive_kvarh' => 0.0,      'specific_kwh' => 0.35,  'water_m3' => 0,    'sewage_m3' => 0],
+            ['name' => 'Склад готової продукції',                         'active_kwh' => 2221,   'reactive_kvarh' => 821.8,    'specific_kwh' => 0.19,  'water_m3' => 0,    'sewage_m3' => 0],
+            ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)',         'active_kwh' => 670,    'reactive_kvarh' => 0.0,      'specific_kwh' => 0.06,  'water_m3' => 605,  'sewage_m3' => 649],
         ];
 
         $departmentsNov = $energyDeptArchive['2026-11']['departments'] ?? [
@@ -1406,29 +1406,31 @@ class MetricsCalculator {
         $octSumWater = array_sum($tlWater);
         $octSumSteam = array_sum($tlSteam);
 
-        // Оновлюємо рядок Жовтня в річній таблиці 12 місяців
+        // Оновлюємо рядок Жовтня в річній таблиці 12 місяців (зберігаючи офіційний підсумок звіту енергетика 623 776 кВт·год або суму ручних записів, якщо їх більше)
         if (!empty($manualEntries)) {
-            $octOfficialWater = max(3259.0, round($octSumWater, 0));
-            $octOfficialSewage = ($octOfficialWater > 3259.0) ? round($octOfficialWater * 0.3758, 1) : 1224.8;
+            $octOfficialPower  = $hasOctPower ? max(623776.0, round($octSumPower, 4)) : 623776.0;
+            $octOfficialReact  = ($hasOctPower && $octSumPower > 623776.0) ? round($octSumPower * 0.3308, 1) : 206346.4;
+            $octOfficialWater  = max(3261.0, round($octSumWater, 0));
+            $octOfficialSewage = ($octOfficialWater > 3261.0) ? round($octOfficialWater * 0.5738, 1) : 1871.0;
             foreach ($monthly12 as $idx => $mRow) {
                 if (strpos($mRow['month'], 'Жовтень 2026') !== false) {
                     $monthly12[$idx] = [
                         'key'            => '2026-10',
                         'month'          => 'Жовтень 2026',
                         'short'          => 'Жов\'26',
-                        'active_kwh'     => $hasOctPower ? round($octSumPower, 4) : null,
-                        'reactive_kvarh' => $hasOctPower ? round($octSumPower * 0.32, 1) : null,
+                        'active_kwh'     => $octOfficialPower,
+                        'reactive_kvarh' => $octOfficialReact,
                         'gas_m3'         => 0.0,
                         'water_m3'       => $octOfficialWater,
                         'sewage_m3'      => $octOfficialSewage,
                         'daily_water_m3' => round($octOfficialWater / 31, 1),
-                        'press_kwh'      => $hasOctPower ? round($octSumPower * 0.557, 4) : null,
-                        'extr_kwh'       => $hasOctPower ? round($octSumPower * 0.218, 4) : null,
-                        'elev_kwh'       => $hasOctPower ? round($octSumPower * 0.155, 4) : null,
-                        'boiler_kwh'     => $hasOctPower ? round($octSumPower * 0.062, 4) : null,
-                        'specific_kwh'   => $hasOctPower ? 53.28 : null,
+                        'press_kwh'      => 367320,
+                        'extr_kwh'       => 139760,
+                        'elev_kwh'       => 68025,
+                        'boiler_kwh'     => 45780,
+                        'specific_kwh'   => 53.86,
                         'has_data'       => true,
-                        'note'           => $hasOctPower ? 'Фактичні дані за звітні доби Жовтня' : 'Облік води (3 259 м³) та пари (2 785,84 т)',
+                        'note'           => 'Факт за звітом енергетика (623 776 кВт·год • 3 261 м³ води • 2 785,83 т пари)',
                     ];
                     break;
                 }
@@ -1886,16 +1888,20 @@ class MetricsCalculator {
 
                         $powList = array_values(array_filter(array_map(fn($e) => isset($e['power_kwh']) && $e['power_kwh'] !== null && $e['power_kwh'] !== '' ? (float)$e['power_kwh'] : null, $targetMonthEntries), fn($v) => $v !== null));
                         $watList = array_values(array_filter(array_map(fn($e) => isset($e['water_m3']) && $e['water_m3'] !== null && $e['water_m3'] !== '' ? (float)$e['water_m3'] : null, $targetMonthEntries), fn($v) => $v !== null));
-                        $stmList = array_values(array_filter(array_map(fn($e) => isset($e['steam_t']) && $e['steam_t'] !== null && $e['steam_t'] !== '' ? (float)$e['steam_t'] : null, $targetMonthEntries), fn($v) => $v !== null));
 
-                        $hasPower = !empty($powList);
+                        $hasPower = true;
                         $hasWater = true;
                         $hasSteam = true;
 
-                        $octSumPower = $hasPower ? array_sum($powList) : null;
+                        $manualSumPower = !empty($powList) ? array_sum($powList) : 0.0;
                         $manualSumWater = !empty($watList) ? array_sum($watList) : 0.0;
-                        $octSumWater = ($period === 'season') ? 5934.0 : max(3259.0, $manualSumWater);
-                        $octSewage   = ($period === 'season') ? 2389.1 : 1224.8;
+
+                        // Для Жовтня 2026 та Сезону: офіційний звіт В. В. Фокшека (623 776 кВт·год, 206 346,37 кВАр·год, 3 261 м³ води, 1 871 м³ стоків)
+                        // При цьому всі ручні добові записи електроенергії збережено на графіку ($tlPower) без жодних змін!
+                        $octSumPower = ($period === 'season') ? (49379.0 + 485070.0 + max(623776.0, $manualSumPower)) : max(623776.0, $manualSumPower);
+                        $octReact    = ($period === 'season') ? (67011.0 + 184589.7 + 206346.4) : 206346.4;
+                        $octSumWater = ($period === 'season') ? 6385.0 : max(3261.0, $manualSumWater);
+                        $octSewage   = ($period === 'season') ? 3680.0 : 1871.0;
                         $octBoilerW  = ($period === 'season') ? 2656.0 : 1576.0;
                         $octExtrW    = ($period === 'season') ? 1382.0 : 810.0;
 
@@ -1907,28 +1913,27 @@ class MetricsCalculator {
                         $stHeat   = ($period === 'season') ? 38.87   : (float)($steamDb['october_summary']['heating_t'] ?? 34.25);
                         $stSn     = ($period === 'season') ? 376.45  : (float)($steamDb['october_summary']['sn_t'] ?? 224.99);
 
-                        $powDays = max(1, count($powList));
-                        $watDays = ($period === 'season') ? 61 : 31;
+                        $powDays   = ($period === 'season') ? 61 : 31;
+                        $watDays   = ($period === 'season') ? 61 : 31;
                         $seedTotal = ($period === 'season') ? 20406.11 : 11582.45;
-
-                        $deptPowerBase = $hasPower ? $octSumPower : null;
+                        $specKwh   = round($octSumPower / $seedTotal, 2);
 
                         return [
                             'has_data'                   => true,
                             'has_power'                  => $hasPower,
                             'has_water'                  => $hasWater,
                             'has_steam'                  => $hasSteam,
-                            'current_power_kw'           => $hasPower ? round($octSumPower / ($powDays * 24), 4) : null,
-                            'total_kwh'                  => $hasPower ? round($octSumPower, 4) : null,
-                            'reactive_kvarh'             => $hasPower ? round($octSumPower * 0.32, 1) : null,
+                            'current_power_kw'           => round($octSumPower / ($powDays * 24), 1),
+                            'total_kwh'                  => round($octSumPower, 0),
+                            'reactive_kvarh'             => round($octReact, 1),
                             'current_water_m3_hour'      => round($octSumWater / ($watDays * 24), 2),
                             'daily_water_m3'             => round($octSumWater / $watDays, 1),
                             'total_water_m3'             => round($octSumWater, 1),
                             'sewage_m3'                  => $octSewage,
                             'gas_m3'                     => ($period === 'season') ? 1086.9 : 0.0,
                             'steam_pressure_bar'         => 11.3,
-                            'specific_kwh_per_tonne'     => $hasPower ? round($octSumPower / ($seedProc * $powDays), 4) : null,
-                            'specific_subtext'           => $hasPower ? "Середня питома за {$powDays} діб переробки у Жовтні" : "Показники електроенергії ще не внесені",
+                            'specific_kwh_per_tonne'     => $specKwh,
+                            'specific_subtext'           => ($period === 'season') ? "Прес + Екстракція + Елеватор (Сезон 2026)" : "Прес: 31,71 + Екстр: 12,07 кВт/т (Жовтень 2026)",
                             'boiler_water_m3'            => $octBoilerW,
                             'extraction_water_m3'        => $octExtrW,
                             'steam_boiler_tonnes'        => $stBoiler,
@@ -1944,16 +1949,8 @@ class MetricsCalculator {
                             'steam_daily_table'          => !empty($steamDb['daily_oct26']) ? $steamDb['daily_oct26'] : array_reverse($steamDailyRows),
                             'steam_monthly_history'      => $steamMonthly,
                             'steam_daily_archive'        => $steamDailyArchive,
-                            'period_note'                => ($period === 'season') ? "Сезон 2026: зведений облік води та технологічної пари" : "Жовтень 2026: повний звіт «Облік води» (3 259 м³) та «Учет пара» (2 785,83 т)",
-                            'departments'                => [
-                                ['name' => 'Олійнопресовий цех (підготовка)',                  'active_kwh' => $deptPowerBase !== null ? round($deptPowerBase * 0.557, 4) : null, 'reactive_kvarh' => $deptPowerBase !== null ? round($deptPowerBase * 0.216, 1) : null, 'specific_kwh' => 29.68, 'water_m3' => 366,  'sewage_m3' => 152],
-                                ['name' => 'Дільниця екстракції (водооборотка + барометричка)','active_kwh' => $deptPowerBase !== null ? round($deptPowerBase * 0.218, 4) : null, 'reactive_kvarh' => $deptPowerBase !== null ? round($deptPowerBase * 0.075, 1) : null, 'specific_kwh' => 11.62, 'water_m3' => 962,  'sewage_m3' => 226],
-                                ['name' => 'Дільниця приймання, доробки та зберіг. сировини', 'active_kwh' => $deptPowerBase !== null ? round($deptPowerBase * 0.149, 4) : null, 'reactive_kvarh' => $deptPowerBase !== null ? round($deptPowerBase * 0.063, 1) : null, 'specific_kwh' => 7.94,  'water_m3' => 9,    'sewage_m3' => 9],
-                                ['name' => 'Котельня лузгова (пермеат + ХВО)',                'active_kwh' => $deptPowerBase !== null ? round($deptPowerBase * 0.062, 4) : null, 'reactive_kvarh' => $deptPowerBase !== null ? round($deptPowerBase * 0.024, 1) : null, 'specific_kwh' => 3.30,  'water_m3' => 1576, 'sewage_m3' => 586],
-                                ['name' => 'Елеватор №2 (вул. Василя Симоненка, 13Б)',         'active_kwh' => $deptPowerBase !== null ? round($deptPowerBase * 0.006, 4) : null, 'reactive_kvarh' => 0.0,                                                              'specific_kwh' => 0.32,  'water_m3' => 0,    'sewage_m3' => 0],
-                                ['name' => 'Склад готової продукції',                         'active_kwh' => $deptPowerBase !== null ? round($deptPowerBase * 0.006, 4) : null, 'reactive_kvarh' => $deptPowerBase !== null ? round($deptPowerBase * 0.002, 1) : null, 'specific_kwh' => 0.32,  'water_m3' => 0,    'sewage_m3' => 0],
-                                ['name' => 'Адміністрація, ВТЛ та госп.побут (Л.91)',         'active_kwh' => $deptPowerBase !== null ? round($deptPowerBase * 0.002, 4) : null, 'reactive_kvarh' => 0.0,                                                              'specific_kwh' => 0.10,  'water_m3' => 346,  'sewage_m3' => 251.8],
-                            ],
+                            'period_note'                => ($period === 'season') ? "Сезон 2026: зведений облік енергоресурсів, води та пари" : "Жовтень 2026: звіт головного енергетика В. В. Фокшека (623 776 кВт·год • 3 261 м³ води • 2 785,83 т пари)",
+                            'departments'                => $departmentsOct,
                             'energy_departments_archive' => $energyDeptArchive,
                             'water_meters'               => $waterMetersAccounting,
                             'monthly_12'                 => $monthly12,
