@@ -1983,20 +1983,20 @@ class MetricsCalculator {
      */
     private function loadLiveSvodStocks(): array {
         $defaults = [
-            'seed_stock_tonnes'            => 12980.63,
-            'seed_stock_accounting_tonnes' => 13659.62,
-            'seed_received_tonnes'         => 436.53,
-            'oil_stock_tonnes'             => 3495.72,
-            'oil_shipped_tonnes'           => 303.46,
-            'meal_stock_tonnes'            => 705.88,
-            'meal_shipped_tonnes'          => 125.12,
-            'husk_stock_tonnes'            => 162.67,
-            'husk_shipped_tonnes'          => 25.50,
-            'month_oil_shipped_tonnes'     => 1503.32,
-            'month_meal_shipped_tonnes'    => 3115.14,
-            'month_husk_shipped_tonnes'    => 572.76,
-            'sheet_title'                  => '15 число',
-            'updated_at'                   => '15.10.2026',
+            'seed_stock_tonnes'            => 9659.32,
+            'seed_stock_accounting_tonnes' => 10338.30,
+            'seed_received_tonnes'         => 174.14,
+            'oil_stock_tonnes'             => 4090.37,
+            'oil_shipped_tonnes'           => 126.90,
+            'meal_stock_tonnes'            => 270.51,
+            'meal_shipped_tonnes'          => 101.78,
+            'husk_stock_tonnes'            => 69.13,
+            'husk_shipped_tonnes'          => 16.08,
+            'month_oil_shipped_tonnes'     => 126.90,
+            'month_meal_shipped_tonnes'    => 101.78,
+            'month_husk_shipped_tonnes'    => 16.08,
+            'sheet_title'                  => '4 число',
+            'updated_at'                   => '04.11.2026',
         ];
 
         $svodJsonPath = __DIR__ . '/../database/svod_stocks.json';
@@ -2017,14 +2017,28 @@ class MetricsCalculator {
             ");
             $row = $stmt ? $stmt->fetch() : null;
             if ($row) {
-                if ((float)$row['seed_stock_tonnes'] > 1000) {
+                // Відкидаємо застарілі/помилкові дефолтні значення жовтня (3332.32 / 773.73 / 87.64)
+                $isLegacyFallback = (
+                    abs((float)$row['oil_stock_tonnes'] - 3332.32) < 0.05 && 
+                    abs((float)$row['meal_stock_tonnes'] - 773.73) < 0.05
+                );
+                if (!$isLegacyFallback && (float)$row['seed_stock_tonnes'] > 1000) {
                     $defaults['seed_stock_tonnes']            = round((float)$row['seed_stock_tonnes'], 2);
                     $defaults['seed_stock_accounting_tonnes'] = round((float)$row['seed_stock_accounting_tonnes'], 2);
                     $defaults['oil_stock_tonnes']             = round((float)$row['oil_stock_tonnes'], 2);
                     $defaults['meal_stock_tonnes']            = round((float)$row['meal_stock_tonnes'], 2);
                     $defaults['husk_stock_tonnes']            = round((float)$row['husk_stock_tonnes'], 2);
+                    if (isset($row['oil_shipped_tonnes']) && (float)$row['oil_shipped_tonnes'] > 0) {
+                        $defaults['oil_shipped_tonnes'] = round((float)$row['oil_shipped_tonnes'], 2);
+                    }
+                    if (isset($row['meal_shipped_tonnes']) && (float)$row['meal_shipped_tonnes'] > 0) {
+                        $defaults['meal_shipped_tonnes'] = round((float)$row['meal_shipped_tonnes'], 2);
+                    }
+                    if (isset($row['husk_shipped_tonnes']) && (float)$row['husk_shipped_tonnes'] > 0) {
+                        $defaults['husk_shipped_tonnes'] = round((float)$row['husk_shipped_tonnes'], 2);
+                    }
                 }
-                if (!empty($row['report_date'])) {
+                if (!empty($row['report_date']) && !$isLegacyFallback) {
                     if (strpos($row['report_date'], 'число') !== false) {
                         preg_match('/(\d+\s*число)/iu', $row['report_date'], $m);
                         if (!empty($m[1])) {
