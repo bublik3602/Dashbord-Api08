@@ -1015,17 +1015,17 @@ $shiftName = ($hour >= 8 && $hour < 20) ? 'Денна зміна (08:00 — 20:0
 
             <!-- Блок технологічного обліку пари заводу («Учет пара на ООО “Агропроинвест 08”») -->
             <div style="margin-top: 16px;">
-                <details class="season-monthly-details" id="steam-daily-details" open>
-                    <summary style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <details class="season-monthly-details" id="steam-daily-details">
+                    <summary style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; cursor: pointer;">
                         <span><i data-lucide="flame" style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px; color: #f59e0b;"></i> Добовий журнал обліку технологічної пари («Учет пара на ООО “Агропроинвест 08”»)</span>
-                        <div style="display: inline-flex; align-items: center; gap: 8px;">
+                        <div style="display: inline-flex; align-items: center; gap: 8px;" onclick="event.stopPropagation();">
                             <label for="steam-month-select" style="font-size: 11px; color: #475569; font-weight: 600;">Місяць:</label>
                             <select id="steam-month-select" class="form-select form-select-sm" style="font-size: 11px; padding: 2px 8px; height: 26px; border-radius: 4px; border: 1px solid #cbd5e1; background: #fff; font-weight: 600; cursor: pointer;">
                                 <?php foreach (($en['steam_monthly_history'] ?? []) as $smRow): ?>
                                     <option value="<?= htmlspecialchars($smRow['key'] ?? '') ?>"><?= htmlspecialchars($smRow['month_ua'] ?? $smRow['sheet'] ?? '') ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <span id="steam-month-subtext" style="font-size: 11px; color: #64748b; font-weight: 500;">(Жовтень 2026: факт за звітні доби)</span>
+                            <span id="steam-month-subtext" style="font-size: 11px; color: #64748b; font-weight: 500;">(Листопад 2026)</span>
                         </div>
                     </summary>
                     <div class="season-monthly-table-wrap" style="max-height: 420px; overflow-y: auto;">

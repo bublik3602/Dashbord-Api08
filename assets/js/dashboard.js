@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // 2.03 Інтерактивний архів пари за 12 років (2015–2026 рр.)
-    window.selectSteamMonth = function(key) {
+    window.selectSteamMonth = function(key, shouldOpen = false) {
         if (!key) return;
         const sel = document.getElementById('steam-month-select');
         if (sel && sel.value !== key) {
@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const records = archive[key] || [];
 
         const details = document.getElementById('steam-daily-details');
-        if (details && !details.open) {
+        if (shouldOpen && details && !details.open) {
             details.open = true;
         }
         
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const steamMonthSel = document.getElementById('steam-month-select');
     if (steamMonthSel) {
         steamMonthSel.addEventListener('change', function () {
-            window.selectSteamMonth(this.value);
+            window.selectSteamMonth(this.value, true);
         });
     }
 
