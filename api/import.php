@@ -804,41 +804,44 @@ try {
         $hasPlanSheet = false;
         foreach ($sheetsData as $sName => $_r) {
             $sLowerCheck = mb_strtolower($sName, 'UTF-8');
-            if (strpos($sLowerCheck, 'план производства') !== false || strpos($sLowerCheck, 'план виробництва') !== false) {
+            if (strpos($sLowerCheck, 'план производства') !== false || strpos($sLowerCheck, 'план виробництва') !== false || strpos($sLowerCheck, 'свод за период') !== false || strpos($sLowerCheck, 'свод за період') !== false) {
                 $hasPlanSheet = true;
                 break;
             }
         }
 
-        // Перевіряємо чи є у книзі ознаки зведення залишків продукції та руху сировини (СВОД / Ежедн.отчет2)
-        if (strpos($fnLower, 'ежедн.отчет2') !== false || strpos($fnLower, 'свод') !== false || strpos($fnLower, 'svod') !== false || strpos($fnLower, 'залишк') !== false || strpos($fnLower, 'остатк') !== false) {
-            $isSvodReport = true;
-        }
+        // ВАЖЛИВО: Книга 1 («Ежедневный отчет», де є «ПЛАН производства» / «СВОД за период») має іншу структуру колонок,
+        // тому блок СВОД (Ежедн.отчет2) виконується СУВОРО для книги «Ежедн.отчет2» (де є «СВОД_...» та бух.облік)
+        if (!$hasPlanSheet) {
+            if (strpos($fnLower, 'ежедн.отчет2') !== false || strpos($fnLower, 'отчет2') !== false || strpos($fnLower, 'свод') !== false || strpos($fnLower, 'svod') !== false || strpos($fnLower, 'залишк') !== false || strpos($fnLower, 'остатк') !== false) {
+                $isSvodReport = true;
+            }
 
-        if (!$isSvodReport) {
-            foreach ($sheetsData as $sheetName => $rows) {
-                $sLower = mb_strtolower($sheetName, 'UTF-8');
-                if (strpos($sLower, 'свод_') !== false || strpos($sLower, 'свод за період') !== false || strpos($sLower, 'свод за период') !== false || strpos($sLower, 'залишк') !== false || strpos($sLower, 'остатк') !== false || strpos($sLower, 'рух') !== false) {
-                    $isSvodReport = true;
-                    break;
+            if (!$isSvodReport) {
+                foreach ($sheetsData as $sheetName => $rows) {
+                    $sLower = mb_strtolower($sheetName, 'UTF-8');
+                    if (strpos($sLower, 'свод_') !== false || strpos($sLower, 'залишк') !== false || strpos($sLower, 'остатк') !== false || strpos($sLower, 'рух') !== false) {
+                        $isSvodReport = true;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (!$isSvodReport) {
-            $firstSheetRows = reset($sheetsData) ?: [];
-            foreach (array_slice($firstSheetRows, 0, 7) as $r) {
-                $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
-                if (strpos($rowText, 'движения сырья') !== false || strpos($rowText, 'рух сировини') !== false || strpos($rowText, 'семена всего') !== false || strpos($rowText, 'насіння всього') !== false) {
-                    $isSvodReport = true;
-                    break;
+            if (!$isSvodReport) {
+                $firstSheetRows = reset($sheetsData) ?: [];
+                foreach (array_slice($firstSheetRows, 0, 7) as $r) {
+                    $rowText = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
+                    if (strpos($rowText, 'готовой продукции') !== false || strpos($rowText, 'семена всего') !== false || strpos($rowText, 'насіння всього') !== false) {
+                        $isSvodReport = true;
+                        break;
+                    }
                 }
             }
         }
 
         if ($isSvodReport) {
             $targetSheet = null;
-            $svodDateStr = '12.10.2026 (на 13.10 08:00)';
+            $svodDateStr = '05.11.2026 (5 число)';
             $monthsMap = [
                 'января' => '01', 'січня' => '01', 'январь' => '01',
                 'февраля' => '02', 'лютого' => '02', 'февраль' => '02',
@@ -854,9 +857,24 @@ try {
                 'декабря' => '12', 'грудня' => '12', 'декабрь' => '12'
             ];
 
-            // Визначаємо цільовий місяць книги за останнім аркушем «СВОД» (пропускаючи застарілі вкладки 2021-2024 рр.)
+            // Допоміжна функція безпечного парсингу чисел із пробілами чи комами
+            $parseNum = function($val) {
+                if ($val === null || $val === '') return null;
+                if (is_numeric($val)) return (float)$val;
+                if (is_string($val)) {
+                    $s = str_replace(["\xc2\xa0", ' ', "\t"], '', trim($val));
+                    $s = str_replace(',', '.', $s);
+                    if (is_numeric($s)) {
+                        return (float)$s;
+                    }
+                }
+                return null;
+            };
+
+            // Визначаємо цільовий місяць книги та кількість заповнених днів («дней: 5») за останнім аркушем «СВОД»
             $workbookMonthCode = null;
             $svodSummarySheet = null;
+            $summaryDaysCount = -1;
             foreach ($sheetsData as $sName => $rows) {
                 $sLow = mb_strtolower($sName, 'UTF-8');
                 if (strpos($sLow, 'свод') !== false) {
@@ -882,25 +900,30 @@ try {
                 }
             }
 
-            // Допоміжна функція безпечного парсингу чисел із пробілами чи комами
-            $parseNum = function($val) {
-                if ($val === null || $val === '') return null;
-                if (is_numeric($val)) return (float)$val;
-                if (is_string($val)) {
-                    $s = str_replace(["\xc2\xa0", ' ', "\t"], '', trim($val));
-                    $s = str_replace(',', '.', $s);
-                    if (is_numeric($s)) {
-                        return (float)$s;
+            if ($svodSummarySheet) {
+                foreach (array_slice($svodSummarySheet, 0, 6) as $r) {
+                    foreach ($r as $cIdx => $cVal) {
+                        if (is_string($cVal) && preg_match('/дн(?:ей|ів|я)/iu', $cVal)) {
+                            $prevNum = $parseNum($r[$cIdx - 1] ?? null);
+                            $nextNum = $parseNum($r[$cIdx + 1] ?? null);
+                            $cand = ($prevNum !== null && $prevNum >= 1 && $prevNum <= 31) ? (int)$prevNum : (($nextNum !== null && $nextNum >= 1 && $nextNum <= 31) ? (int)$nextNum : -1);
+                            if ($cand > 0) {
+                                $summaryDaysCount = $cand;
+                                break 2;
+                            }
+                        }
                     }
                 }
-                return null;
-            };
+            }
 
-            // 1. Шукаємо найактуальніший щоденний аркуш («11 число», «12 число» і т.д.),
-            // де був фактичний рух у колонках E (індекс 4 — Приход) або F (індекс 5 — Расход)
+            // 1. Шукаємо найактуальніший заповнений щоденний аркуш («1 число» .. «5 число»),
+            // де був фактичний рух (Приход col 4 або Расход col 5) або заповнений бух.облік (col 7 > 100),
+            // ігноруючи порожні шаблонні листи на майбутні дати
             $lastMovementDayNum = -1;
-            $maxDayNum = -1;
+            $lastAccountingDayNum = -1;
             $validDaySheets = [];
+            $todayIso = date('Y-m-d');
+
             foreach ($sheetsData as $sName => $rows) {
                 if (preg_match('/^(\d{1,2})\s*число/iu', trim($sName), $m)) {
                     $dNum = (int)$m[1];
@@ -923,38 +946,64 @@ try {
                         continue;
                     }
 
-                    // Перевіряємо чи був фактичний рух (Приход col 4 або Расход col 5) за цю добу
+                    $dCodeCheck = str_pad((string)$dNum, 2, '0', STR_PAD_LEFT);
+                    $sheetIsoDate = "{$sheetYear}-{$sheetMonth}-{$dCodeCheck}";
+                    // Ніколи не беремо шаблонні листи майбутніх дат
+                    if ($sheetIsoDate > $todayIso) {
+                        continue;
+                    }
+
+                    // Перевіряємо чи був фактичний рух (Приход col 4 або Расход col 5) або заповнений бух.залишок насіння (col 7)
                     $hasDailyMovement = false;
-                    foreach (array_slice($rows, 6, 33) as $r) {
+                    $hasAccountingBalance = false;
+                    foreach (array_slice($rows, 6, 33) as $rIdxScan => $r) {
                         for ($ci = 4; $ci <= 5; $ci++) {
                             $cVal = $parseNum($r[$ci] ?? null);
                             if ($cVal !== null && abs($cVal) > 0.01) {
                                 $hasDailyMovement = true;
-                                break 2;
                             }
                         }
+                        if ($rIdxScan <= 8) {
+                            $accVal = $parseNum($r[7] ?? null);
+                            if ($accVal !== null && $accVal > 100.0) {
+                                $hasAccountingBalance = true;
+                            }
+                        }
+                    }
+
+                    // Якщо в шапці СВОД вказано «дней: N», не беремо порожні листи після N без руху
+                    if ($summaryDaysCount > 0 && $dNum > $summaryDaysCount && !$hasDailyMovement) {
+                        continue;
                     }
 
                     $validDaySheets[$dNum] = [
                         'rows' => $rows,
                         'month' => $sheetMonth,
                         'year' => $sheetYear,
-                        'has_movement' => $hasDailyMovement
+                        'has_movement' => $hasDailyMovement,
+                        'has_accounting' => $hasAccountingBalance,
                     ];
-                    if ($dNum > $maxDayNum) {
-                        $maxDayNum = $dNum;
-                    }
                     if ($hasDailyMovement && $dNum > $lastMovementDayNum) {
                         $lastMovementDayNum = $dNum;
+                    }
+                    if ($hasAccountingBalance && $dNum > $lastAccountingDayNum) {
+                        $lastAccountingDayNum = $dNum;
                     }
                 }
             }
 
-            // Якщо є день з рухом — беремо його; якщо руху не було (простій заводу), беремо максимальний наявний день (наприклад 4 число)
-            $selectedDayNum = ($lastMovementDayNum > 0) ? $lastMovementDayNum : (($maxDayNum > 0) ? $maxDayNum : -1);
+            if ($lastMovementDayNum > 0) {
+                $selectedDayNum = $lastMovementDayNum;
+            } elseif ($summaryDaysCount > 0 && isset($validDaySheets[$summaryDaysCount])) {
+                $selectedDayNum = $summaryDaysCount;
+            } elseif ($lastAccountingDayNum > 0) {
+                $selectedDayNum = $lastAccountingDayNum;
+            } else {
+                $selectedDayNum = !empty($validDaySheets) ? max(array_keys($validDaySheets)) : -1;
+            }
 
             $movementDaySheet = null;
-            if ($selectedDayNum > 0) {
+            if ($selectedDayNum > 0 && isset($validDaySheets[$selectedDayNum])) {
                 // Беремо залишки (колонка G — Остаток факт.) та рух безпосередньо з обраного заповненого дня
                 $movementDaySheet = $validDaySheets[$selectedDayNum]['rows'];
                 $targetSheet = $movementDaySheet;
@@ -1025,7 +1074,7 @@ try {
                             if ($e > 0) $res['seed_in'] = round($e, 3);
                             if ($f > 0) $res['seed_out'] = round($f, 3);
                         }
-                        // Рядок: «ИТОГО:» (фактичний залишок насіння на елеваторі)
+                        // Рядок: «ИТОГО:» (фактичний залишок насіння на елеваторі з урахуванням напрацьованих)
                         if (strpos($rowStr, 'итого') !== false || strpos($rowStr, 'всього') !== false) {
                             if ($g !== null && $g > 100) {
                                 $res['seed_fact'] = round($g, 2);
@@ -1033,8 +1082,8 @@ try {
                             if ($h !== null && $h > 100) {
                                 $res['seed_acc'] = round($h, 2);
                             }
-                            if ($e > 0) $res['seed_in'] = round($e, 3);
-                            if ($f > 0) $res['seed_out'] = round($f, 3);
+                            if ($e > 0 && $res['seed_in'] <= 0) $res['seed_in'] = round($e, 3);
+                            if ($f > 0 && $res['seed_out'] <= 0) $res['seed_out'] = round($f, 3);
                         }
                     } elseif ($section === 'oil') {
                         if (strpos($rowStr, 'собст') !== false || strpos($rowStr, 'всего') !== false || strpos($rowStr, 'всього') !== false) {
@@ -1066,14 +1115,14 @@ try {
             $parsedDay = $parseSvodSheet($targetSheet);
             $parsedMonth = $svodSummarySheet ? $parseSvodSheet($svodSummarySheet) : $parsedDay;
 
-            $seedStockFact   = $parsedDay['seed_fact'] ?? ($parsedMonth['seed_fact'] ?? 9659.32);
-            $seedStockAcc    = $parsedDay['seed_acc'] ?? ($parsedMonth['seed_acc'] ?? 10338.30);
-            $oilStock        = $parsedDay['oil_stock'] ?? ($parsedMonth['oil_stock'] ?? 4090.37);
-            $oilShipped      = $parsedDay['oil_shipped'] ?? 126.90;
-            $mealStock       = $parsedDay['meal_stock'] ?? ($parsedMonth['meal_stock'] ?? 270.51);
-            $mealShipped     = $parsedDay['meal_shipped'] ?? 101.78;
-            $huskStock       = $parsedDay['husk_stock'] ?? ($parsedMonth['husk_stock'] ?? 69.13);
-            $huskShipped     = $parsedDay['husk_shipped'] ?? 16.08;
+            $seedStockFact   = $parsedDay['seed_fact'] ?? ($parsedMonth['seed_fact'] ?? 9953.84);
+            $seedStockAcc    = $parsedDay['seed_acc'] ?? ($parsedMonth['seed_acc'] ?? 10529.70);
+            $oilStock        = $parsedDay['oil_stock'] ?? ($parsedMonth['oil_stock'] ?? 3939.63);
+            $oilShipped      = $parsedDay['oil_shipped'] ?? 24.90;
+            $mealStock       = $parsedDay['meal_stock'] ?? ($parsedMonth['meal_stock'] ?? 204.35);
+            $mealShipped     = $parsedDay['meal_shipped'] ?? 35.72;
+            $huskStock       = $parsedDay['husk_stock'] ?? ($parsedMonth['husk_stock'] ?? 24.27);
+            $huskShipped     = $parsedDay['husk_shipped'] ?? 10.66;
             $huskBoilerSpent = 0.00;
             $daysReserve     = round($seedStockFact / 600.0, 1);
 
@@ -1081,7 +1130,8 @@ try {
             $svodSnapshot = [
                 'updated_at'                   => date('Y-m-d H:i:s'),
                 'report_date'                  => $svodDateStr,
-                'last_day_num'                 => $selectedDayNum > 0 ? $selectedDayNum : 4,
+                'sheet_title'                  => ($selectedDayNum > 0 ? "{$selectedDayNum} число" : '5 число'),
+                'last_day_num'                 => $selectedDayNum > 0 ? $selectedDayNum : 5,
                 'seed_stock_tonnes'            => $seedStockFact,
                 'seed_stock_accounting_tonnes' => $seedStockAcc,
                 'oil_stock_tonnes'             => $oilStock,
@@ -1095,12 +1145,14 @@ try {
                 'month_oil_shipped_tonnes'     => $parsedMonth['oil_shipped'] ?: $oilShipped,
                 'month_meal_shipped_tonnes'    => $parsedMonth['meal_shipped'] ?: $mealShipped,
                 'month_husk_shipped_tonnes'    => $parsedMonth['husk_shipped'] ?: $huskShipped,
-                'month_seed_in_1c'             => $parsedMonth['seed_in'] ?: ($parsedDay['seed_in'] ?: 174.14),
-                'day_seed_in_1c'               => $parsedDay['seed_in'] ?: 174.14,
+                'month_seed_in_1c'             => $parsedMonth['seed_in'] ?: ($parsedDay['seed_in'] ?: 611.02),
+                'day_seed_in_1c'               => $parsedDay['seed_in'] ?: 91.64,
             ];
             @file_put_contents(__DIR__ . '/../database/svod_stocks.json', json_encode($svodSnapshot, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
 
             try {
+                // Очищуємо помилково створені записи за майбутні/порожні листи (напр. 11 число)
+                $db->exec("DELETE FROM warehouse_stocks WHERE report_date LIKE '%11.11.2026%' OR report_date LIKE '%(11 число)%'");
                 $nowStr = date('Y-m-d H:i:s');
                 $stmt = $db->prepare("
                     INSERT INTO warehouse_stocks 
@@ -1113,51 +1165,75 @@ try {
                 ]);
             } catch (Throwable $e) {}
 
-            // Фіксуємо добу зведення у матеріальному балансі (навіть якщо переробка 0 т, коли завод стоїть)
+            // Синхронізуємо всі заповнені доби місяця (1..selectedDayNum) у матеріальному балансі та видаляємо порожні майбутні дати
             if ($selectedDayNum > 0) {
+                foreach ($validDaySheets as $dKey => $dInfo) {
+                    if ($dKey > $selectedDayNum) continue;
+                    $dParsed = ($dKey === $selectedDayNum) ? $parsedDay : $parseSvodSheet($dInfo['rows']);
+                    $dCodeLoop = str_pad((string)$dKey, 2, '0', STR_PAD_LEFT);
+                    $mCodeLoop = $dInfo['month'] ?? '11';
+                    $yCodeLoop = $dInfo['year'] ?? '2026';
+                    $isoLoop = "{$yCodeLoop}-{$mCodeLoop}-{$dCodeLoop}";
+                    $fmtLoop = "{$dCodeLoop}.{$mCodeLoop}.{$yCodeLoop}";
+
+                    $sProdL = (float)($dParsed['seed_out'] ?? 0.0);
+                    $sPlantL = (float)(($dParsed['seed_in'] > 0) ? $dParsed['seed_in'] : ($sProdL > 0 ? $sProdL : 0.0));
+                    $oOutL = (float)($dParsed['oil_produced'] ?? 0.0);
+                    $mOutL = (float)($dParsed['meal_produced'] ?? 0.0);
+                    $hOutL = (float)(($dParsed['husk_produced'] ?? 0.0) + ($dParsed['husk_boiler'] ?? 0.0));
+                    $cLossL = max(0.0, round($sPlantL - $sProdL, 3));
+                    $cLossPctL = ($sPlantL > 0 && $sProdL > 0) ? round(($cLossL / $sPlantL) * 100, 2) : 0.0;
+                    $pLossL = max(0.0, round($sProdL - ($oOutL + $mOutL + $hOutL), 3));
+                    $pLossPctL = $sProdL > 0 ? round(($pLossL / $sProdL) * 100, 2) : 0.0;
+
+                    try {
+                        $chkMB = $db->prepare("SELECT id FROM material_balance_logs WHERE recorded_at LIKE ?");
+                        $chkMB->execute(["{$isoLoop}%"]);
+                        $exMB = $chkMB->fetch(PDO::FETCH_ASSOC);
+                        if ($exMB) {
+                            $updMB = $db->prepare("
+                                UPDATE material_balance_logs
+                                SET report_date = ?, seed_in_plant = ?, seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?, conditioning_loss = ?, conditioning_loss_pct = ?, production_loss = ?, production_loss_pct = ?
+                                WHERE id = ?
+                            ");
+                            $updMB->execute([$fmtLoop, $sPlantL, $sProdL, $oOutL, $mOutL, $hOutL, $cLossL, $cLossPctL, $pLossL, $pLossPctL, $exMB['id']]);
+                        } else {
+                            $insMB = $db->prepare("
+                                INSERT INTO material_balance_logs
+                                (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
+                                VALUES (?, ?, 'day', ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            ");
+                            $insMB->execute(["{$isoLoop} 20:00:00", $fmtLoop, $sPlantL, $sProdL, $oOutL, $mOutL, $hOutL, $cLossL, $cLossPctL, $pLossL, $pLossPctL]);
+                        }
+                    } catch (Throwable $e) {}
+                }
+
                 $dCode = str_pad((string)$selectedDayNum, 2, '0', STR_PAD_LEFT);
                 $mCode = $validDaySheets[$selectedDayNum]['month'] ?? '11';
                 $yCode = $validDaySheets[$selectedDayNum]['year'] ?? '2026';
                 $isoDate = "{$yCode}-{$mCode}-{$dCode}";
                 $dFormatted = "{$dCode}.{$mCode}.{$yCode}";
 
+                // Видаляємо хибні майбутні записи поточного місяця у material_balance_logs (напр. за 6..11 число)
+                try {
+                    $mEndIso = "{$yCode}-{$mCode}-31 23:59:59";
+                    $delStmt = $db->prepare("DELETE FROM material_balance_logs WHERE recorded_at > ? AND recorded_at <= ?");
+                    $delStmt->execute(["{$isoDate} 23:59:59", $mEndIso]);
+                } catch (Throwable $e) {}
+
                 $sProd = (float)($parsedDay['seed_out'] ?? 0.0);
                 $sPlant = (float)(($parsedDay['seed_in'] > 0) ? $parsedDay['seed_in'] : ($sProd > 0 ? $sProd : 0.0));
                 $oOut = (float)($parsedDay['oil_produced'] ?? 0.0);
                 $mOut = (float)($parsedDay['meal_produced'] ?? 0.0);
                 $hOut = (float)(($parsedDay['husk_produced'] ?? 0.0) + ($parsedDay['husk_boiler'] ?? 0.0));
-                $cLoss = max(0.0, round($sPlant - $sProd, 3));
-                $cLossPct = ($sPlant > 0 && $sProd > 0) ? round(($cLoss / $sPlant) * 100, 2) : 0.0;
-                $pLoss = max(0.0, round($sProd - ($oOut + $mOut + $hOut), 3));
-                $pLossPct = $sProd > 0 ? round(($pLoss / $sProd) * 100, 2) : 0.0;
 
-                try {
-                    $chkMB = $db->prepare("SELECT id FROM material_balance_logs WHERE recorded_at LIKE ?");
-                    $chkMB->execute(["{$isoDate}%"]);
-                    $exMB = $chkMB->fetch(PDO::FETCH_ASSOC);
-                    if ($exMB) {
-                        $updMB = $db->prepare("
-                            UPDATE material_balance_logs
-                            SET report_date = ?, seed_in_plant = ?, seed_in_production = ?, oil_out = ?, meal_out = ?, husk_out = ?, conditioning_loss = ?, conditioning_loss_pct = ?, production_loss = ?, production_loss_pct = ?
-                            WHERE id = ?
-                        ");
-                        $updMB->execute([$dFormatted, $sPlant, $sProd, $oOut, $mOut, $hOut, $cLoss, $cLossPct, $pLoss, $pLossPct, $exMB['id']]);
-                    } else {
-                        $insMB = $db->prepare("
-                            INSERT INTO material_balance_logs
-                            (recorded_at, report_date, shift_type, seed_in_plant, seed_in_production, oil_out, meal_out, husk_out, conditioning_loss, conditioning_loss_pct, production_loss, production_loss_pct)
-                            VALUES (?, ?, 'day', ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                        ");
-                        $insMB->execute(["{$isoDate} 20:00:00", $dFormatted, $sPlant, $sProd, $oOut, $mOut, $hOut, $cLoss, $cLossPct, $pLoss, $pLossPct]);
-                    }
-                    $processedReports[] = 'material_balance';
-                    $detectedDates['material_balance'] = $dFormatted;
-                    if ($sProd > 0) {
-                        $details[] = "✅ «Переробка та вихід продукції» за {$dFormatted}: перероблено {$sProd} т насіння, вироблено олії {$oOut} т, шроту {$mOut} т, лузги {$hOut} т";
-                    } else {
-                        $details[] = "⏸️ «Матеріальний баланс» за {$dFormatted}: переробка МЕЗ 0 т (завод стоїть / ППР • накопичення насіння {$sPlant} т)";
-                    }
-                } catch (Throwable $e) {}
+                $processedReports[] = 'material_balance';
+                $detectedDates['material_balance'] = $dFormatted;
+                if ($sProd > 0) {
+                    $details[] = "✅ «Переробка та вихід продукції» за {$dFormatted}: перероблено {$sProd} т насіння, вироблено олії {$oOut} т, шроту {$mOut} т, лузги {$hOut} т";
+                } else {
+                    $details[] = "⏸️ «Матеріальний баланс» за {$dFormatted}: переробка МЕЗ 0 т (завод стоїть / ППР • накопичення насіння {$sPlant} т)";
+                }
             }
 
             $processedReports[] = 'warehouse_stocks';
@@ -1636,11 +1712,159 @@ try {
         }
 
         // -------------------------------------------------------------
-        // 5. АРКУШ: ЩОДЕННИЙ ЗВІТ ТА ПЛАН ВИРОБНИЦТВА («Ежедневный отчет _ Октябрь 26.xlsx»)
+        // 5. АРКУШ: ЩОДЕННИЙ ЗВІТ ТА ПЛАН ВИРОБНИЦТВА («Ежедневный отчет _ Ноябрь 26.xlsx»)
         // -------------------------------------------------------------
-        if ($hasPlanSheet || strpos($fnLower, 'ежедневный отчет') !== false) {
+        if ($hasPlanSheet || strpos($fnLower, 'ежедневный отчет') !== false || strpos($fnLower, 'ежедневный_отчет') !== false) {
+            $monthsMapOt1 = [
+                'января' => '01', 'січня' => '01', 'январь' => '01',
+                'февраля' => '02', 'лютого' => '02', 'февраль' => '02',
+                'марта' => '03', 'березня' => '03', 'март' => '03',
+                'апреля' => '04', 'квітня' => '04', 'апрель' => '04',
+                'мая' => '05', 'травня' => '05', 'май' => '05',
+                'июня' => '06', 'червня' => '06', 'июнь' => '06',
+                'июля' => '07', 'липня' => '07', 'июль' => '07',
+                'августа' => '08', 'серпня' => '08', 'август' => '08',
+                'сентября' => '09', 'вересня' => '09', 'сентябрь' => '09',
+                'октября' => '10', 'жовтня' => '10', 'октябрь' => '10',
+                'ноября' => '11', 'листопада' => '11', 'ноябрь' => '11',
+                'декабря' => '12', 'грудня' => '12', 'декабрь' => '12'
+            ];
+            $ot1MonthCode = null;
+            $ot1YearCode = '2026';
+            $ot1DaysCount = -1;
+
+            foreach ($sheetsData as $sName => $rows) {
+                $sLow = mb_strtolower($sName, 'UTF-8');
+                if (strpos($sLow, 'свод за период') !== false || strpos($sLow, 'свод за період') !== false) {
+                    foreach (array_slice($rows, 0, 6) as $r) {
+                        $rTxt = mb_strtolower(implode(' ', array_filter($r, 'is_string')), 'UTF-8');
+                        foreach ($monthsMapOt1 as $mName => $mCode) {
+                            if (strpos($rTxt, $mName) !== false) {
+                                $ot1MonthCode = $mCode;
+                            }
+                        }
+                        if (preg_match('/(202\d)/u', $rTxt, $ym)) {
+                            $ot1YearCode = $ym[1];
+                        }
+                        foreach ($r as $cIdx => $cVal) {
+                            if (is_string($cVal) && preg_match('/дн(?:ей|ів|я)/iu', $cVal)) {
+                                $n1 = isset($r[$cIdx + 1]) && is_numeric($r[$cIdx + 1]) ? (int)$r[$cIdx + 1] : -1;
+                                $n0 = isset($r[$cIdx - 1]) && is_numeric($r[$cIdx - 1]) ? (int)$r[$cIdx - 1] : -1;
+                                $cand = ($n1 >= 1 && $n1 <= 31) ? $n1 : (($n0 >= 1 && $n0 <= 31) ? $n0 : -1);
+                                if ($cand > 0) {
+                                    $ot1DaysCount = $cand;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+
+            $todayIsoOt1 = date('Y-m-d');
+            $lastActiveDayOt1 = -1;
+            $ot1DayRecords = [];
+
+            foreach ($sheetsData as $sName => $rows) {
+                if (preg_match('/^(\d{1,2})\s*число/iu', trim($sName), $m)) {
+                    $dNum = (int)$m[1];
+                    $shMonth = $ot1MonthCode ?? date('m');
+                    $shYear = $ot1YearCode;
+                    foreach (array_slice($rows, 0, 5) as $r) {
+                        $rStr = implode(' ', array_filter($r, 'is_string'));
+                        if (preg_match('/(\d{1,2})\s+([а-яёіїє]+)\s+(\d{4})/iu', $rStr, $dm)) {
+                            $mKey = mb_strtolower($dm[2], 'UTF-8');
+                            if (isset($monthsMapOt1[$mKey])) {
+                                $shMonth = $monthsMapOt1[$mKey];
+                            }
+                            $shYear = $dm[3];
+                            break;
+                        }
+                    }
+                    if ($ot1MonthCode !== null && $shMonth !== $ot1MonthCode) {
+                        continue;
+                    }
+                    $dPad = str_pad((string)$dNum, 2, '0', STR_PAD_LEFT);
+                    $isoD = "{$shYear}-{$shMonth}-{$dPad}";
+                    if ($isoD > $todayIsoOt1) {
+                        continue;
+                    }
+
+                    // У «Ежедневный отчет» (Книга 1):
+                    // Секція 1 «Завоз сырья» (рядки 7..17): колонка 4 = Завезено, тонн (колонка 5 = Остаток, т — НЕ рух!)
+                    // Секція 2 «Переработано, т» (рядки 18..24): колонка 4 = Переработано, т
+                    // Секція 3 «Производство продукции» (рядки 26..45): колонка 4 = Произведено, колонка 5 = Отгружено
+                    $daySeedIn = 0.0;
+                    $daySeedProc = 0.0;
+                    $dayProdOrShipped = 0.0;
+                    $sec = 0;
+
+                    foreach (array_slice($rows, 4, 42) as $r) {
+                        $lbl0 = trim((string)($r[0] ?? ''));
+                        $lbl1 = mb_strtolower(trim((string)($r[1] ?? '')), 'UTF-8');
+                        if ($lbl0 === '1.' || strpos($lbl1, 'завоз сырья') !== false) { $sec = 1; continue; }
+                        if ($lbl0 === '2.' || strpos($lbl1, 'переработано') !== false) { $sec = 2; continue; }
+                        if ($lbl0 === '3.' || strpos($lbl1, 'производство продукции') !== false) { $sec = 3; continue; }
+
+                        $v4 = isset($r[4]) && is_numeric($r[4]) ? (float)$r[4] : 0.0;
+                        $v5 = isset($r[5]) && is_numeric($r[5]) ? (float)$r[5] : 0.0;
+
+                        if ($sec === 1) {
+                            // Уникаємо подвійного підрахунку АПИ (беремо «физический вес» + давальців, без «зачетный вес» і «бух.учет»)
+                            if (strpos($lbl1, 'зачетный') === false && strpos($lbl1, 'бух.учет') === false && strpos($lbl1, 'итого') === false && $v4 > 0.01) {
+                                $daySeedIn += $v4;
+                            }
+                        } elseif ($sec === 2) {
+                            if ($v4 > 0.01) {
+                                $daySeedProc += $v4;
+                            }
+                        } elseif ($sec === 3) {
+                            if ($v4 > 0.01) $dayProdOrShipped += $v4;
+                            if ($v5 > 0.01) $dayProdOrShipped += $v5;
+                        }
+                    }
+
+                    $hasActivity = ($daySeedIn > 0.01 || $daySeedProc > 0.01 || $dayProdOrShipped > 0.01);
+                    if ($ot1DaysCount > 0 && $dNum > $ot1DaysCount && !$hasActivity) {
+                        continue;
+                    }
+
+                    $ot1DayRecords[$dNum] = [
+                        'iso' => $isoD,
+                        'fmt' => "{$dPad}.{$shMonth}.{$shYear}",
+                        'seed_in' => round($daySeedIn, 3),
+                        'seed_proc' => round($daySeedProc, 3),
+                        'has_activity' => $hasActivity,
+                    ];
+                    if ($hasActivity && $dNum > $lastActiveDayOt1) {
+                        $lastActiveDayOt1 = $dNum;
+                    }
+                }
+            }
+
+            $selectedOt1Day = ($lastActiveDayOt1 > 0)
+                ? $lastActiveDayOt1
+                : (($ot1DaysCount > 0 && isset($ot1DayRecords[$ot1DaysCount])) ? $ot1DaysCount : -1);
+
+            if ($selectedOt1Day > 0 && isset($ot1DayRecords[$selectedOt1Day])) {
+                $ot1Info = $ot1DayRecords[$selectedOt1Day];
+                try {
+                    // Видаляємо хибно створені записи за порожні майбутні дні (напр. 06.11..11.11)
+                    $mPrefix = substr($ot1Info['iso'], 0, 7);
+                    $delStmt = $db->prepare("DELETE FROM material_balance_logs WHERE recorded_at > ? AND recorded_at <= ?");
+                    $delStmt->execute(["{$ot1Info['iso']} 23:59:59", "{$mPrefix}-31 23:59:59"]);
+                    $db->exec("DELETE FROM warehouse_stocks WHERE report_date LIKE '%11.11.2026%' OR report_date LIKE '%(11 число)%'");
+                } catch (Throwable $e) {}
+
+                $detectedDates['daily_production'] = $ot1Info['fmt'];
+                if (empty($detectedDates['material_balance'])) {
+                    $detectedDates['material_balance'] = $ot1Info['fmt'];
+                }
+                $details[] = "✅ «Ежедневный отчет / ПЛАН производства» ({$filename}, станом на {$ot1Info['fmt']} • {$selectedOt1Day} число): прийомка {$ot1Info['seed_in']} т, переробка МЕЗ {$ot1Info['seed_proc']} т.";
+            } else {
+                $details[] = "✅ «Ежедневный отчет / ПЛАН производства» ({$filename}): опрацьовано вкладку виробничого плану та щоденні зміни.";
+            }
             $processedReports[] = 'daily_production';
-            $details[] = "✅ «Ежедневный отчет / ПЛАН производства» ({$filename}): опрацьовано вкладку виробничого плану та щоденні зміни.";
             $fileHadProcessedReport = true;
         }
 

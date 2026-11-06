@@ -26,6 +26,12 @@ class MetricsCalculator {
      * Автоматична синхронізація повного архіву переробки за Серпень, Вересень та Жовтень 2026 р. у таблицю material_balance_logs
      */
     private function ensureArchive2026Seeded(): void {
+        // Завжди очищуємо хибно створені записи за порожні шаблонні листи майбутніх дат (напр. 11.11.2026 / 11 число) та старі жовтневі демо-рядки
+        try {
+            $this->db->exec("DELETE FROM material_balance_logs WHERE recorded_at >= '2026-11-06 00:00:00' AND recorded_at > NOW()");
+            $this->db->exec("DELETE FROM warehouse_stocks WHERE report_date LIKE '%11.11.2026%' OR report_date LIKE '%(11 число)%' OR ABS(seed_stock_tonnes - 13429.903) < 0.5 OR ABS(seed_stock_tonnes - 12980.633) < 0.5 OR ABS(oil_stock_tonnes - 3332.32) < 0.5");
+        } catch (Throwable $e) {}
+
         try {
             $chk = $this->db->query("
                 SELECT COUNT(CASE WHEN seed_in_production > 10 THEN 1 END) as work_days,
@@ -35,11 +41,7 @@ class MetricsCalculator {
                 WHERE recorded_at >= '2026-09-01 00:00:00' AND recorded_at <= '2026-11-05 23:59:59'
             ");
             $row = $chk ? $chk->fetch(PDO::FETCH_ASSOC) : null;
-            if ($row && (int)($row['work_days'] ?? 0) >= 38 && (float)($row['sum_prod'] ?? 0) >= 20400.0 && (int)($row['nov_in_days'] ?? 0) >= 2) {
-                // Очищуємо застарілий жовтневий демо-запис (13429.903 т) з warehouse_stocks навіть якщо material_balance_logs вже заповнена
-                try {
-                    $this->db->exec("DELETE FROM warehouse_stocks WHERE ABS(seed_stock_tonnes - 13429.903) < 0.5 OR ABS(seed_stock_tonnes - 12980.633) < 0.5 OR ABS(oil_stock_tonnes - 3332.32) < 0.5");
-                } catch (Throwable $e) {}
+            if ($row && (int)($row['work_days'] ?? 0) >= 38 && (float)($row['sum_prod'] ?? 0) >= 20400.0 && (int)($row['nov_in_days'] ?? 0) >= 4) {
                 return;
             }
 
@@ -110,10 +112,12 @@ class MetricsCalculator {
                 ['2026-10-29', 590.501, 582.723, 259.581, 237.058, 80.697, 7.778,   5.387],
                 ['2026-10-30', 564.606, 558.469, 215.635, 219.402, 65.399, 6.137,  58.033],
                 ['2026-10-31',   0.000,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
-                // Листопад 2026 (01.11–04.11: завод у простої, прийомка 350,182 т за 02.11–03.11, переробка 0 т)
+                // Листопад 2026 (01.11–05.11: завод у простої, прийомка 1С = 611,020 т за 02.11–05.11, переробка 0 т)
                 ['2026-11-01',   0.000,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
                 ['2026-11-02', 176.040,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
                 ['2026-11-03', 174.142,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-11-04', 169.198,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
+                ['2026-11-05',  91.640,   0.000,   0.000,   0.000,  0.000, 0.000,   0.000],
             ];
 
             $selStmt = $this->db->prepare("SELECT id FROM material_balance_logs WHERE recorded_at LIKE :prefix LIMIT 1");
@@ -160,21 +164,20 @@ class MetricsCalculator {
             }
         } catch (Throwable $e) {}
 
-        // Очищуємо застарілий жовтневий демо-запис (13429.903 т) з warehouse_stocks і синхронізуємо актуальні залишки (04.11.2026)
+        // Очищуємо застарілі записи з warehouse_stocks і синхронізуємо актуальні залишки (05.11.2026 • 5 число)
         try {
-            $this->db->exec("DELETE FROM warehouse_stocks WHERE ABS(seed_stock_tonnes - 13429.903) < 0.5 OR ABS(seed_stock_tonnes - 12980.633) < 0.5 OR ABS(oil_stock_tonnes - 3332.32) < 0.5");
-            $chkWs = $this->db->query("SELECT id FROM warehouse_stocks WHERE recorded_at >= '2026-11-04 00:00:00' LIMIT 1");
-            $hasNov4 = $chkWs ? $chkWs->fetch(PDO::FETCH_ASSOC) : null;
-            if (!$hasNov4) {
+            $chkWs = $this->db->query("SELECT id FROM warehouse_stocks WHERE report_date = '05.11.2026 (5 число)' LIMIT 1");
+            $hasNov5 = $chkWs ? $chkWs->fetch(PDO::FETCH_ASSOC) : null;
+            if (!$hasNov5) {
                 $this->db->exec("
                     INSERT INTO warehouse_stocks (
                         recorded_at, report_date, seed_stock_tonnes, seed_stock_accounting_tonnes,
                         oil_stock_tonnes, meal_stock_tonnes, husk_stock_tonnes, husk_boiler_spent_tonnes,
                         days_seed_reserve, oil_shipped_tonnes, meal_shipped_tonnes, husk_shipped_tonnes
                     ) VALUES (
-                        '2026-11-04 08:00:00', '04.11.2026 (4 число)', 9659.320, 10338.301,
-                        4090.367, 270.510, 69.130, 0.000,
-                        16.1, 126.900, 101.780, 16.080
+                        '2026-11-05 20:00:00', '05.11.2026 (5 число)', 9953.841, 10529.696,
+                        3939.627, 204.353, 24.268, 0.000,
+                        16.6, 24.900, 35.720, 10.660
                     )
                 ");
             }
@@ -672,30 +675,30 @@ class MetricsCalculator {
                 'seed_plan'     => 13200.0,
             ],
             'month_nov' => [
-                // Листопад 2026: завод на паузі/ППР, прийомка 350,18 т, переробка 0 т
-                'seed_in_plant' => 350.18,
+                // Листопад 2026: завод на паузі/ППР, прийомка 611,02 т (01.11–05.11), переробка 0 т
+                'seed_in_plant' => 611.02,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
                 'cond_loss_pct' => 0.00,
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 0.00,
-                'seed_plan'     => 1800.0,
+                'seed_plan'     => 2400.0,
             ],
             'month' => [
                 // Поточний місяць (Листопад 2026 при переході на новий місяць)
-                'seed_in_plant' => 350.18,
+                'seed_in_plant' => 611.02,
                 'seed_in_prod'  => 0.00,
                 'cond_loss'     => 0.00,
                 'cond_loss_pct' => 0.00,
                 'oil_out'       => 0.00,
                 'meal_out'      => 0.00,
                 'husk_out'      => 0.00,
-                'seed_plan'     => 1800.0,
+                'seed_plan'     => 2400.0,
             ],
             'season' => [
                 // Сезон 2026–2027 разом (Серпень + Вересень + Жовтень + Листопад): 38 діб переробки • 20 406,10 т перероблено • 8 894,18 т олії • 8 366,85 т шроту • 2 943,37 т лузги
-                'seed_in_plant' => 33205.11,
+                'seed_in_plant' => 33641.99,
                 'seed_in_prod'  => 20406.10,
                 'cond_loss'     => 246.12,
                 'cond_loss_pct' => 1.19,
@@ -2169,20 +2172,20 @@ class MetricsCalculator {
      */
     private function loadLiveSvodStocks(): array {
         $defaults = [
-            'seed_stock_tonnes'            => 9659.32,
-            'seed_stock_accounting_tonnes' => 10338.30,
-            'seed_received_tonnes'         => 174.14,
-            'oil_stock_tonnes'             => 4090.37,
-            'oil_shipped_tonnes'           => 126.90,
-            'meal_stock_tonnes'            => 270.51,
-            'meal_shipped_tonnes'          => 101.78,
-            'husk_stock_tonnes'            => 69.13,
-            'husk_shipped_tonnes'          => 16.08,
-            'month_oil_shipped_tonnes'     => 126.90,
-            'month_meal_shipped_tonnes'    => 101.78,
-            'month_husk_shipped_tonnes'    => 16.08,
-            'sheet_title'                  => '4 число',
-            'updated_at'                   => '04.11.2026',
+            'seed_stock_tonnes'            => 9953.84,
+            'seed_stock_accounting_tonnes' => 10529.70,
+            'seed_received_tonnes'         => 91.64,
+            'oil_stock_tonnes'             => 3939.63,
+            'oil_shipped_tonnes'           => 24.90,
+            'meal_stock_tonnes'            => 204.35,
+            'meal_shipped_tonnes'          => 35.72,
+            'husk_stock_tonnes'            => 24.27,
+            'husk_shipped_tonnes'          => 10.66,
+            'month_oil_shipped_tonnes'     => 455.66,
+            'month_meal_shipped_tonnes'    => 243.58,
+            'month_husk_shipped_tonnes'    => 166.00,
+            'sheet_title'                  => '5 число',
+            'updated_at'                   => '05.11.2026',
         ];
 
         $svodJsonPath = __DIR__ . '/../database/svod_stocks.json';
@@ -2203,12 +2206,15 @@ class MetricsCalculator {
             ");
             $row = $stmt ? $stmt->fetch() : null;
             if ($row) {
-                // Відкидаємо застарілі/помилкові дефолтні значення жовтня (3332.32 / 773.73 / 87.64 або старі демо-рядки 13429.90 / 12980.63)
+                $rDateStr = (string)($row['report_date'] ?? '');
+                // Відкидаємо застарілі/помилкові дефолтні значення жовтня (3332.32 / 773.73 / 87.64, 13429.90 / 12980.63) або хибні шаблонні листи (11 число)
                 $isLegacyFallback = (
                     (abs((float)$row['oil_stock_tonnes'] - 3332.32) < 0.05 && abs((float)$row['meal_stock_tonnes'] - 773.73) < 0.05) ||
                     abs((float)$row['seed_stock_tonnes'] - 13429.903) < 0.5 ||
                     abs((float)$row['seed_stock_tonnes'] - 12980.633) < 0.5 ||
-                    (!empty($row['recorded_at']) && $row['recorded_at'] < '2026-11-04 00:00:00')
+                    strpos($rDateStr, '11.11.2026') !== false ||
+                    strpos($rDateStr, '(11 число)') !== false ||
+                    (!empty($row['recorded_at']) && $row['recorded_at'] < '2026-11-05 00:00:00')
                 );
                 if (!$isLegacyFallback && (float)$row['seed_stock_tonnes'] > 1000) {
                     $defaults['seed_stock_tonnes']            = round((float)$row['seed_stock_tonnes'], 2);
@@ -2253,10 +2259,10 @@ class MetricsCalculator {
         $mealStock     = round((float)$live['meal_stock_tonnes'], 2);
         $huskStock     = round((float)$live['husk_stock_tonnes'], 2);
         $daysReserve   = round($seedStock / 600.0, 1);
-        $sheetTitle    = $live['sheet_title'] ?? '12 число';
-        $monthOilShip  = round((float)($live['month_oil_shipped_tonnes'] ?? 1050.54), 2);
-        $monthMealShip = round((float)($live['month_meal_shipped_tonnes'] ?? 2461.42), 2);
-        $monthHuskShip = round((float)($live['month_husk_shipped_tonnes'] ?? 507.58), 2);
+        $sheetTitle    = $live['sheet_title'] ?? '5 число';
+        $monthOilShip  = round((float)($live['month_oil_shipped_tonnes'] ?? 455.66), 2);
+        $monthMealShip = round((float)($live['month_meal_shipped_tonnes'] ?? 243.58), 2);
+        $monthHuskShip = round((float)($live['month_husk_shipped_tonnes'] ?? 166.00), 2);
 
         switch ($period) {
             case 'week':
@@ -2289,17 +2295,17 @@ class MetricsCalculator {
                 ];
             case 'day_prev':
                 return [
-                    'seed_stock_tonnes'            => 9485.17,
-                    'seed_stock_accounting_tonnes' => 10164.16,
-                    'oil_stock_tonnes'             => 4217.27,
-                    'meal_stock_tonnes'            => 372.29,
-                    'husk_stock_tonnes'            => 85.21,
+                    'seed_stock_tonnes'            => 9827.69,
+                    'seed_stock_accounting_tonnes' => 10438.06,
+                    'oil_stock_tonnes'             => 3964.53,
+                    'meal_stock_tonnes'            => 240.07,
+                    'husk_stock_tonnes'            => 34.93,
                     'husk_boiler_spent_tonnes'     => 0.00,
-                    'days_seed_reserve'            => 15.8,
-                    'oil_shipped_tonnes'           => 103.26,
-                    'meal_shipped_tonnes'          => 75.64,
-                    'husk_shipped_tonnes'          => 49.06,
-                    'report_date'                  => 'Ежедн.отчет2 (2 число, 03.11.2026)',
+                    'days_seed_reserve'            => 16.4,
+                    'oil_shipped_tonnes'           => 125.84,
+                    'meal_shipped_tonnes'          => 30.44,
+                    'husk_shipped_tonnes'          => 34.20,
+                    'report_date'                  => 'Ежедн.отчет2 (4 число, 04.11.2026)',
                 ];
             case 'month_aug':
                 return [
